@@ -1,0 +1,34 @@
+[Unit]
+Description=AnchorMarks Bookmark Manager
+Documentation=https://github.com/anchormarks
+After=network.target
+
+[Service]
+Type=simple
+User=anchormarks
+Group=anchormarks
+WorkingDirectory=/opt/anchormarks
+ExecStart=/usr/bin/node /opt/anchormarks/server/index.js
+Restart=on-failure
+RestartSec=10
+
+# Environment
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOST=127.0.0.1
+EnvironmentFile=-/opt/anchormarks/.env
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/anchormarks/server /opt/anchormarks/public/favicons
+
+# Logging
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=anchormarks
+
+[Install]
+WantedBy=multi-user.target

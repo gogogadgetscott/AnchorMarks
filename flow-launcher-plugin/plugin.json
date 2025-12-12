@@ -1,0 +1,12 @@
+{
+    "ID": "D2F4A3B1-8C5E-4A7D-9E6F-1B2C3D4E5F6A",
+    "ActionKeyword": "lv",
+    "Name": "AnchorMarks",
+    "Description": "Search and open bookmarks from your AnchorMarks bookmark manager",
+    "Author": "AnchorMarks",
+    "Version": "1.0.0",
+    "Language": "python",
+    "Website": "https://github.com/anchormarks",
+    "IcoPath": "icon.png",
+    "ExecuteFileName": "main.py"
+}

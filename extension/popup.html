@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnchorMarks Sync</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            width: 320px;
+            padding: 16px;
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo svg {
+            width: 18px;
+            height: 18px;
+            color: white;
+        }
+
+        .title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #94a3b8;
+        }
+
+        .status-dot.connected {
+            background: #22c55e;
+        }
+
+        .status-dot.syncing {
+            background: #f59e0b;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .status-text {
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            margin-top: 8px;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .stat {
+            padding: 12px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #6366f1;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .actions {
+            margin-top: 12px;
+        }
+
+        .quick-add {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .current-page {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+        </div>
+        <span class="title">AnchorMarks Sync</span>
+    </div>
+
+    <!-- Login View -->
+    <div id="login-view">
+        <div class="form-group">
+            <label>Server URL</label>
+            <input type="url" id="server-url" placeholder="http://localhost:3000" value="http://localhost:3000">
+        </div>
+        <div class="form-group">
+            <label>API Key</label>
+            <input type="text" id="api-key" placeholder="lv_xxxxxxxxxxxxxxxx">
+        </div>
+        <button class="btn btn-primary" id="connect-btn">Connect</button>
+    </div>
+
+    <!-- Connected View -->
+    <div id="connected-view" class="hidden">
+        <div class="status">
+            <span class="status-dot connected" id="status-dot"></span>
+            <span class="status-text" id="status-text">Connected to AnchorMarks</span>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="bookmark-count">0</div>
+                <div class="stat-label">Bookmarks</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="folder-count">0</div>
+                <div class="stat-label">Folders</div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-primary" id="sync-btn">Sync Now</button>
+            <button class="btn btn-secondary" id="push-btn">Push Browser Bookmarks</button>
+            <button class="btn btn-secondary" id="disconnect-btn">Disconnect</button>
+        </div>
+
+        <div class="quick-add">
+            <div class="current-page" id="current-page">Current page</div>
+            <button class="btn btn-primary" id="add-current-btn">Add Current Page</button>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>
