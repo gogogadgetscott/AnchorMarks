@@ -39,11 +39,11 @@
         <form id="login-form" class="auth-form">
           <div class="form-group">
             <label for="login-email">Email</label>
-            <input type="email" id="login-email" required placeholder="you@example.com">
+            <input type="email" id="login-email" required placeholder="you@example.com" autocomplete="username">
           </div>
           <div class="form-group">
             <label for="login-password">Password</label>
-            <input type="password" id="login-password" required placeholder="••••••••">
+            <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
           </div>
           <button type="submit" class="btn btn-primary btn-full">
             <span>Sign In</span>
@@ -56,7 +56,7 @@
         <form id="register-form" class="auth-form hidden">
           <div class="form-group">
             <label for="register-username">Username</label>
-            <input type="text" id="register-username" required placeholder="johndoe">
+            <input type="text" id="register-username" required placeholder="johndoe" autocomplete="username">
           </div>
           <div class="form-group">
             <label for="register-email">Email</label>
@@ -64,7 +64,7 @@
           </div>
           <div class="form-group">
             <label for="register-password">Password</label>
-            <input type="password" id="register-password" required placeholder="••••••••" minlength="6">
+            <input type="password" id="register-password" required placeholder="••••••••" minlength="6" autocomplete="new-password">
           </div>
           <button type="submit" class="btn btn-primary btn-full">
             <span>Create Account</span>
@@ -181,7 +181,7 @@
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 <polyline points="9,22 9,12 15,12 15,22" />
               </svg>
-              <span>All Bookmarks</span>
+              <span>Bookmarks</span>
               <span class="badge" id="all-count">0</span>
             </div>
             <div class="nav-item" data-view="favorites">
@@ -297,7 +297,7 @@
       <main class="main-content">
         <header class="content-header">
           <div class="header-left">
-            <h1 id="view-title">All Bookmarks</h1>
+            <h1 id="view-title">Bookmarks</h1>
             <span class="bookmark-count" id="view-count">0 bookmarks</span>
           </div>
           <div class="header-right">
@@ -825,7 +825,7 @@
               </div>
               <div class="feature-text">
                 <h4>Quick Search</h4>
-                <p>Press <kbd>Ctrl+K</kbd> to search all bookmarks instantly</p>
+                <p>Press <kbd>Ctrl+K</kbd> to search bookmarks instantly</p>
               </div>
             </div>
 

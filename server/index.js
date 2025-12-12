@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
@@ -317,6 +318,7 @@ if (ENABLE_BACKGROUND_JOBS && ENABLE_FAVICON_BACKGROUND_JOBS) {
 const cspDirectives = {
     defaultSrc: ["'self'"],
     scriptSrc: ["'self'"],
+    scriptSrcAttr: ["'self'"],
     styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
     fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
     imgSrc: ["'self'", 'data:', 'blob:', 'https:', 'http:'],
@@ -345,9 +347,11 @@ if (NODE_ENV === 'production') {
 // CORS configuration
 const corsOptions = {
     origin: resolveCorsOrigin(),
-    credentials: true
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token']
 };
 app.use(cors(corsOptions));
+app.use(cookieParser());
 
 // Rate limiting for API
 const requestCounts = new Map();
@@ -383,6 +387,20 @@ app.use(express.static(path.join(__dirname, '../public'), {
     maxAge: NODE_ENV === 'production' ? '1d' : 0
 }));
 
+// Apply CSRF validation to state-changing operations (skip auth endpoints)
+app.use('/api', (req, res, next) => {
+    // Skip CSRF check for unauthenticated auth endpoints
+    const unauthenticatedPaths = ['/auth/login', '/auth/register', '/health'];
+    if (unauthenticatedPaths.some(path => req.url === path || req.url.startsWith(path))) {
+        return next();
+    }
+    
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+        return validateCsrfToken(req, res, next);
+    }
+    next();
+});
+
 // Request logging
 app.use((req, res, next) => {
     if (NODE_ENV === 'development') {
@@ -391,9 +409,13 @@ app.use((req, res, next) => {
     next();
 });
 
+// Generate CSRF token
+function generateCsrfToken() {
+    return uuidv4().replace(/-/g, '');
+}
+
 // Auth Middleware
 const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
     const apiKey = req.headers['x-api-key'];
 
     // Scoped API key support (Flow Launcher / extension)
@@ -409,8 +431,8 @@ const authenticateToken = (req, res, next) => {
         }
     }
 
-    // JWT bearer fallback
-    const token = authHeader && authHeader.split(' ')[1];
+    // JWT from HTTP-only cookie
+    const token = req.cookies.token;
     if (!token) {
         return res.status(401).json({ error: 'Access token required' });
     }
@@ -424,8 +446,32 @@ const authenticateToken = (req, res, next) => {
         req.authType = 'jwt';
         next();
     } catch (err) {
+        res.clearCookie('token');
         return res.status(403).json({ error: 'Invalid token' });
     }
+};
+
+// CSRF token middleware
+const validateCsrfToken = (req, res, next) => {
+    // Skip CSRF check for safe methods
+    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+    
+    // Check if using API key auth - skip CSRF for API keys
+    const apiKey = req.headers['x-api-key'];
+    if (apiKey) {
+        const user = db.prepare('SELECT * FROM users WHERE api_key = ?').get(apiKey);
+        if (user) {
+            return next(); // API key bypass CSRF
+        }
+    }
+
+    const csrfToken = req.headers['x-csrf-token'] || req.body?.csrfToken;
+    const sessionCsrf = req.cookies.csrfToken;
+
+    if (!csrfToken || !sessionCsrf || csrfToken !== sessionCsrf) {
+        return res.status(403).json({ error: 'Invalid CSRF token' });
+    }
+    next();
 };
 
 // ============== HEALTH CHECK ==============
@@ -475,10 +521,27 @@ app.post('/api/auth/register', async (req, res) => {
         createExampleBookmarks(userId, defaultFolderId);
 
         const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: '30d' });
+        const csrfToken = generateCsrfToken();
+
+        // Set HTTP-only cookie for token
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+        });
+
+        // Set CSRF token cookie
+        res.cookie('csrfToken', csrfToken, {
+            httpOnly: false, // Accessible to JavaScript for sending in headers
+            secure: NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 30 * 24 * 60 * 60 * 1000
+        });
 
         res.json({
-            token,
-            user: { id: userId, username, email, api_key: apiKey }
+            user: { id: userId, username, email, api_key: apiKey },
+            csrfToken
         });
     } catch (err) {
         console.error(err);
@@ -502,10 +565,27 @@ app.post('/api/auth/login', async (req, res) => {
         }
 
         const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
+        const csrfToken = generateCsrfToken();
+
+        // Set HTTP-only cookie for token
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+        });
+
+        // Set CSRF token cookie
+        res.cookie('csrfToken', csrfToken, {
+            httpOnly: false, // Accessible to JavaScript for sending in headers
+            secure: NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 30 * 24 * 60 * 60 * 1000
+        });
 
         res.json({
-            token,
-            user: { id: user.id, username: user.username, email: user.email, api_key: user.api_key }
+            user: { id: user.id, username: user.username, email: user.email, api_key: user.api_key },
+            csrfToken
         });
     } catch (err) {
         console.error(err);
@@ -521,8 +601,16 @@ app.get('/api/auth/me', authenticateToken, (req, res) => {
             username: req.user.username,
             email: req.user.email,
             api_key: req.user.api_key
-        }
+        },
+        csrfToken: req.cookies.csrfToken
     });
+});
+
+// Logout
+app.post('/api/auth/logout', authenticateToken, (req, res) => {
+    res.clearCookie('token');
+    res.clearCookie('csrfToken');
+    res.json({ success: true });
 });
 
 // Regenerate API key

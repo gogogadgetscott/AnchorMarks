@@ -21,7 +21,8 @@ function migrateLocalStorageKeys() {
 migrateLocalStorageKeys();
 
 const API_BASE = '/api';
-let authToken = localStorage.getItem('anchormarks_token');
+let authToken = null; // No longer using localStorage
+let csrfToken = null; // Will be set from server
 let currentUser = null;
 let bookmarks = [];
 let folders = [];
@@ -32,7 +33,7 @@ let currentFolder = null;
 let viewMode = localStorage.getItem('anchormarks_view') || 'grid';
 let hideFavicons = localStorage.getItem('anchormarks_hide_favicons') === 'true';
 let dashboardConfig = JSON.parse(localStorage.getItem('anchormarks_dashboard_config')) || { mode: 'folder', tags: [], bookmarkSort: 'updated_desc' };
-let filterConfig = { sort: 'updated_desc', tags: [], tagSort: 'count_desc' };
+let filterConfig = { sort: 'updated_desc', tags: [], tagSort: 'count_desc', tagMode: 'OR' };
 let selectedBookmarks = new Set();
 let lastSelectedIndex = null;
 let bulkMode = false;
@@ -40,6 +41,7 @@ let commandPaletteOpen = false;
 let commandPaletteEntries = [];
 let commandPaletteActiveIndex = 0;
 let lastTagRenameAction = null;
+let isInitialLoad = true;
 
 // Lazy loading state
 const BOOKMARKS_PER_PAGE = 50;
@@ -75,10 +77,11 @@ const tagRenameUndoBtn = document.getElementById('tag-rename-undo-btn');
 // API Helper
 async function api(endpoint, options = {}) {
     const headers = { 'Content-Type': 'application/json' };
-    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+    if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
 
     const response = await fetch(`${API_BASE}${endpoint}`, {
         ...options,
+        credentials: 'include', // Include cookies in request
         headers: { ...headers, ...options.headers }
     });
 
@@ -99,9 +102,8 @@ async function login(email, password) {
             method: 'POST',
             body: JSON.stringify({ email, password })
         });
-        authToken = data.token;
+        csrfToken = data.csrfToken;
         currentUser = data.user;
-        localStorage.setItem('anchormarks_token', authToken);
         showMainApp();
         showToast('Welcome back!', 'success');
     } catch (err) {
@@ -115,9 +117,8 @@ async function register(username, email, password) {
             method: 'POST',
             body: JSON.stringify({ username, email, password })
         });
-        authToken = data.token;
+        csrfToken = data.csrfToken;
         currentUser = data.user;
-        localStorage.setItem('anchormarks_token', authToken);
         showMainApp();
         showToast('Account created successfully!', 'success');
     } catch (err) {
@@ -126,23 +127,23 @@ async function register(username, email, password) {
 }
 
 function logout() {
-    authToken = null;
+    csrfToken = null;
     currentUser = null;
-    localStorage.removeItem('anchormarks_token');
+    api('/auth/logout', { method: 'POST' }).catch(() => {});
     showAuthScreen();
 }
 
 async function checkAuth() {
-    if (!authToken) {
-        showAuthScreen();
-        return;
-    }
-
     try {
         const data = await api('/auth/me');
         currentUser = data.user;
+        csrfToken = data.csrfToken;
         showMainApp();
     } catch (err) {
+        // If token verification fails, show login
+        console.error('Auth check failed:', err.message);
+        csrfToken = null;
+        currentUser = null;
         showAuthScreen();
     }
 }
@@ -205,6 +206,9 @@ async function loadBookmarks() {
 
 // Welcome Tour
 function checkWelcomeTour() {
+    // Only show on initial app load, not on filter changes
+    if (!isInitialLoad) return;
+    
     const dismissed = localStorage.getItem('anchormarks_welcome_dismissed');
     if (dismissed) return;
 
@@ -214,6 +218,9 @@ function checkWelcomeTour() {
             document.getElementById('welcome-modal').classList.remove('hidden');
         }, 500);
     }
+    
+    // Mark that we've done the initial check
+    isInitialLoad = false;
 }
 
 function closeWelcomeTour() {
@@ -598,11 +605,18 @@ function renderBookmarks() {
         // Apply Filter Sort
         const sort = filterConfig.sort;
         filtered = filtered.filter(b => {
-            // Tag Filter (Multi-select OR)
+            // Tag Filter (Multi-select AND/OR)
             if (filterConfig.tags.length > 0) {
                 if (!b.tags) return false;
                 const bTags = b.tags.split(',').map(t => t.trim());
-                return filterConfig.tags.some(t => bTags.includes(t));
+                
+                if (filterConfig.tagMode === 'AND') {
+                    // Bookmark must have ALL selected tags
+                    return filterConfig.tags.every(t => bTags.includes(t));
+                } else {
+                    // Bookmark must have ANY selected tag (OR mode)
+                    return filterConfig.tags.some(t => bTags.includes(t));
+                }
             }
             return true;
         });
@@ -648,6 +662,7 @@ function renderBookmarks() {
     attachBookmarkCardListeners();
 
     updateBulkUI();
+    updateCounts();
 }
 
 function attachBookmarkCardListeners() {
@@ -661,6 +676,11 @@ function attachBookmarkCardListeners() {
 
             if (e.target.closest('.bookmark-select')) return;
             if (e.target.closest('.bookmark-actions')) return;
+            
+            // Don't open bookmark if clicking on tags - let the event bubble to body handler
+            if (e.target.closest('.bookmark-tags')) {
+                return;
+            }
 
             if (bulkMode) {
                 // Always multi-select (additive) in bulk mode or simply by default as requested
@@ -1029,7 +1049,7 @@ function getCommandPaletteCommands() {
                 currentView = 'all';
                 currentFolder = null;
                 updateActiveNav();
-                viewTitle.textContent = 'All Bookmarks';
+                viewTitle.textContent = 'Bookmarks';
                 loadBookmarks();
             }
         },
@@ -1369,7 +1389,7 @@ async function deleteFolder(id) {
         if (currentFolder === id) {
             currentFolder = null;
             currentView = 'all';
-            viewTitle.textContent = 'All Bookmarks';
+            viewTitle.textContent = 'Bookmarks';
         }
         renderFolders();
         updateFolderSelect();
@@ -1459,14 +1479,14 @@ function sidebarFilterTag(tag) {
 
     // Update view title to reflect selected tags
     if (filterConfig.tags.length === 0) {
-        viewTitle.textContent = 'All Bookmarks';
+        viewTitle.textContent = 'Bookmarks';
     } else {
         viewTitle.textContent = `Tags: ${filterConfig.tags.join(', ')}`;
     }
 
     updateActiveNav();
+    renderActiveFilters();
     renderBookmarks();
-    renderFilterSidebar();
     renderSidebarTags();
     updateActiveFilters();
 }
@@ -1539,66 +1559,27 @@ function clearAllFilters() {
     searchInput.value = '';
     currentView = 'all';
     currentFolder = null;
-    viewTitle.textContent = 'All Bookmarks';
+    viewTitle.textContent = 'Bookmarks';
     updateActiveNav();
+    renderActiveFilters();
     renderBookmarks();
-    renderFilterSidebar();
     renderSidebarTags();
     updateActiveFilters();
 }
 
 // Update active filters display
 function updateActiveFilters() {
-    const section = document.getElementById('active-filters-section');
-    const chipsContainer = document.getElementById('active-filters-chips');
-    if (!section || !chipsContainer) return;
-
-    const hasFilters = filterConfig.tags.length > 0 || searchInput.value.trim();
-
-    if (!hasFilters) {
-        section.classList.add('hidden');
-        return;
-    }
-
-    section.classList.remove('hidden');
-
-    let chips = '';
-    filterConfig.tags.forEach(tag => {
-        chips += `
-            <div class="filter-chip">
-                <span>${escapeHtml(tag)}</span>
-                <button data-action="remove-tag-filter" data-tag="${escapeHtml(tag)}" title="Remove">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                </button>
-            </div>
-        `;
-    });
-
-    if (searchInput.value.trim()) {
-        chips += `
-            <div class="filter-chip">
-                <span>Search: ${escapeHtml(searchInput.value)}</span>
-                <button data-action="clear-search" title="Remove">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                </button>
-            </div>
-        `;
-    }
-
-    chipsContainer.innerHTML = chips;
+    renderActiveFilters();
 }
 
 function removeTagFilter(tag) {
     filterConfig.tags = filterConfig.tags.filter(t => t !== tag);
+    renderActiveFilters();
     renderBookmarks();
     renderSidebarTags();
     updateActiveFilters();
     if (filterConfig.tags.length === 0) {
-        viewTitle.textContent = 'All Bookmarks';
+        viewTitle.textContent = 'Bookmarks';
     }
 }
 
@@ -1615,13 +1596,14 @@ function updateStats() {
     const statTags = document.getElementById('stat-tags');
     const foldersCount = document.getElementById('folders-count');
 
-    if (statBookmarks) statBookmarks.textContent = bookmarks.length;
+    // Show currently displayed bookmarks count, not total
+    if (statBookmarks) statBookmarks.textContent = renderedBookmarks.length;
     if (statFolders) statFolders.textContent = folders.length;
     if (foldersCount) foldersCount.textContent = folders.length;
 
-    // Count unique tags
+    // Count unique tags from currently displayed bookmarks
     const tagSet = new Set();
-    bookmarks.forEach(b => {
+    renderedBookmarks.forEach(b => {
         if (b.tags) {
             b.tags.split(',').forEach(t => {
                 const tag = t.trim();
@@ -1650,10 +1632,11 @@ function updateActiveNav() {
 function updateCounts() {
     const allCount = bookmarks.length;
     const favCount = bookmarks.filter(b => b.is_favorite).length;
+    const viewCount = renderedBookmarks.length;
 
     document.getElementById('all-count').textContent = allCount;
     document.getElementById('fav-count').textContent = favCount;
-    document.getElementById('view-count').textContent = `${allCount} bookmark${allCount !== 1 ? 's' : ''}`;
+    document.getElementById('view-count').textContent = `${viewCount} bookmark${viewCount !== 1 ? 's' : ''}`;
 
     renderFolders();
     updateStats();
@@ -1712,90 +1695,69 @@ function toggleFavicons() {
     }
 }
 
-// Filter Sidebar
+// Active Filters Section
 function toggleFilterSidebar() {
-    const sidebar = document.getElementById('filter-sidebar');
-    const btn = document.getElementById('filter-btn');
-    sidebar.classList.toggle('open');
-    btn.classList.toggle('active', sidebar.classList.contains('open'));
-    if (sidebar.classList.contains('open')) {
-        renderFilterSidebar();
-    }
+    // Stub for backward compatibility - filter sidebar controls now update active-filters-section
 }
 
-function renderFilterSidebar() {
-    const selectedContainer = document.getElementById('filter-selected-tags');
-    const availableContainer = document.getElementById('filter-available-tags');
-    const noTags = document.getElementById('filter-no-tags');
-    const sortSelect = document.getElementById('filter-sort');
-    const tagSortSelect = document.getElementById('filter-tag-sort');
-    const tagSearch = document.getElementById('filter-tag-search');
+function renderActiveFilters() {
+    const section = document.getElementById('active-filters-section');
+    const chipsContainer = document.getElementById('active-filters-chips');
+    if (!section || !chipsContainer) return;
 
-    sortSelect.value = filterConfig.sort;
-    tagSortSelect.value = filterConfig.tagSort;
+    const hasFilters = filterConfig.tags.length > 0 || searchInput.value.trim();
 
-    // Selected Tags
-    if (filterConfig.tags.length === 0) {
-        if (noTags) noTags.classList.remove('hidden');
-        selectedContainer.innerHTML = '';
-        if (noTags) selectedContainer.appendChild(noTags);
-    } else {
-        if (noTags) noTags.classList.add('hidden');
-        selectedContainer.innerHTML = filterConfig.tags.map(tag => `
-            <div class="selected-tag-chip">
-                ${escapeHtml(tag)}
-                <button data-action="toggle-filter-tag" data-tag="${escapeHtml(tag)}" title="Remove">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+    if (!hasFilters) {
+        section.classList.add('hidden');
+        return;
+    }
+
+    section.classList.remove('hidden');
+
+    let html = '';
+    
+    // Tag mode button (show when tags are selected)
+    if (filterConfig.tags.length > 0) {
+        html += `
+            <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center; flex-wrap: wrap;">
+                <button id="filter-tag-mode-btn" data-action="toggle-tag-mode" class="tag-mode-btn ${filterConfig.tagMode === 'AND' ? 'and-mode' : 'or-mode'}">
+                    Match: ${filterConfig.tagMode}
+                </button>
+                <span style="font-size: 12px; color: var(--text-muted);">${filterConfig.tags.length} tag${filterConfig.tags.length !== 1 ? 's' : ''} selected</span>
+            </div>
+        `;
+    }
+
+    // Selected tag chips
+    let chips = '';
+    filterConfig.tags.forEach(tag => {
+        chips += `
+            <div class="filter-chip">
+                <span>${escapeHtml(tag)}</span>
+                <button data-action="remove-tag-filter" data-tag="${escapeHtml(tag)}" title="Remove">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
                 </button>
             </div>
-        `).join('');
-    }
-
-    // Available Tags
-    const tagCounts = {};
-    bookmarks.forEach(b => {
-        if (b.tags) {
-            b.tags.split(',').forEach(t => {
-                const tag = t.trim();
-                if (tag) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-            });
-        }
+        `;
     });
 
-    const allTags = Object.keys(tagCounts).filter(t => !filterConfig.tags.includes(t));
-    const searchTerm = (tagSearch.value || '').toLowerCase();
-    const tagsEmptyState = document.getElementById('filter-tags-empty');
-
-    let filteredTags = allTags.filter(t => t.toLowerCase().includes(searchTerm));
-
-    // Sort Tags
-    const sortMode = filterConfig.tagSort;
-    filteredTags.sort((a, b) => {
-        if (sortMode === 'count_desc') return tagCounts[b] - tagCounts[a];
-        if (sortMode === 'count_asc') return tagCounts[a] - tagCounts[b];
-        return a.localeCompare(b);
-    });
-
-    // Show empty state if no tags at all
-    if (Object.keys(tagCounts).length === 0) {
-        availableContainer.innerHTML = '';
-        if (tagsEmptyState) tagsEmptyState.classList.remove('hidden');
-        availableContainer.classList.add('hidden');
-    } else {
-        if (tagsEmptyState) tagsEmptyState.classList.add('hidden');
-        availableContainer.classList.remove('hidden');
-
-        availableContainer.innerHTML = filteredTags.map(tag => `
-            <div class="tag-list-item" data-action="toggle-filter-tag" data-tag="${escapeHtml(tag)}" title="Click to filter by this tag">
-                <span>${escapeHtml(tag)}</span>
-                <span class="tag-count">${tagCounts[tag]}</span>
+    if (searchInput.value.trim()) {
+        chips += `
+            <div class="filter-chip">
+                <span>Search: ${escapeHtml(searchInput.value)}</span>
+                <button data-action="clear-search" title="Remove">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
             </div>
-        `).join('');
-
-        if (filteredTags.length === 0 && searchTerm) {
-            availableContainer.innerHTML = '<div style="padding: 0.75rem; text-align: center; color: var(--text-tertiary); font-size: 0.8125rem;">No tags match your search</div>';
-        }
+        `;
     }
+
+    html += chips;
+    chipsContainer.innerHTML = html;
 }
 
 function toggleFilterTag(tag) {
@@ -1804,11 +1766,40 @@ function toggleFilterTag(tag) {
     } else {
         filterConfig.tags.push(tag);
     }
-    renderFilterSidebar();
+    
+    // Update view state
+    currentView = 'all';
+    currentFolder = null;
+    searchInput.value = '';
+    
+    // Update title
+    if (filterConfig.tags.length === 0) {
+        viewTitle.textContent = 'Bookmarks';
+    } else {
+        viewTitle.textContent = `Tags: ${filterConfig.tags.join(', ')} (${filterConfig.tagMode})`;
+    }
+    
+    updateActiveNav();
+    renderActiveFilters();
+    renderSidebarTags();
+    updateActiveFilters();
+    renderBookmarks();
+}
+
+function toggleTagMode() {
+    filterConfig.tagMode = filterConfig.tagMode === 'OR' ? 'AND' : 'OR';
+    
+    // Update title
+    if (filterConfig.tags.length > 0) {
+        viewTitle.textContent = `Tags: ${filterConfig.tags.join(', ')} (${filterConfig.tagMode})`;
+    }
+    
+    renderActiveFilters();
     renderBookmarks();
 }
 
 window.toggleFilterTag = toggleFilterTag;
+window.toggleTagMode = toggleTagMode;
 
 // Dashboard Settings
 async function loadDashboardSettings() {
@@ -2036,7 +2027,7 @@ async function resetBookmarks() {
         const data = await api('/settings/reset-bookmarks', { method: 'POST' });
         currentFolder = null;
         currentView = 'all';
-        viewTitle.textContent = 'All Bookmarks';
+        viewTitle.textContent = 'Bookmarks';
         await Promise.all([loadFolders(), loadBookmarks()]);
         updateActiveNav();
         closeModals();
@@ -2491,7 +2482,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'remove-tag-filter': if (tag) removeTagFilter(tag); break;
             case 'clear-search': clearSearch(); break;
-            case 'toggle-filter-tag': if (tag) toggleFilterTag(tag); break;
+            case 'toggle-filter-tag': 
+                e.stopPropagation();
+                if (tag) toggleFilterTag(tag); 
+                break;
+            case 'toggle-tag-mode':
+                e.stopPropagation();
+                toggleTagMode();
+                break;
             case 'load-dashboard-settings': loadDashboardSettings(); break;
             case 'close-welcome-tour': closeWelcomeTour(); break;
             case 'welcome-import':
