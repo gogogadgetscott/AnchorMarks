@@ -55,10 +55,6 @@
 
         <form id="register-form" class="auth-form hidden">
           <div class="form-group">
-            <label for="register-username">Username</label>
-            <input type="text" id="register-username" required placeholder="johndoe" autocomplete="username">
-          </div>
-          <div class="form-group">
             <label for="register-email">Email</label>
             <input type="email" id="register-email" required placeholder="you@example.com">
           </div>
@@ -282,6 +278,13 @@
               <span id="user-name">User</span>
               <span class="user-plan">Free Plan</span>
             </div>
+            <a href="/help.html" target="_blank" class="btn-icon" title="Help & Documentation">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </a>
             <button class="btn-icon" id="settings-btn" title="Settings">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="3" />
@@ -297,6 +300,13 @@
       <main class="main-content">
         <header class="content-header">
           <div class="header-left">
+            <button class="btn-icon" id="toggle-sidebar-btn" title="Toggle Sidebar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
             <h1 id="view-title">Bookmarks</h1>
             <span class="bookmark-count" id="view-count">0 bookmarks</span>
           </div>
@@ -354,6 +364,7 @@
         </div>
 
         <div class="content-body">
+          <div id="smart-insights-widget" class="smart-insights-widget" style="display:none;"></div>
           <div id="bookmarks-container" class="bookmarks-grid">
             <!-- Bookmarks will be rendered here -->
           </div>
@@ -395,7 +406,16 @@
           <input type="hidden" id="bookmark-id">
           <div class="form-group">
             <label for="bookmark-url">URL *</label>
-            <input type="url" id="bookmark-url" required placeholder="https://example.com">
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="url" id="bookmark-url" required placeholder="https://example.com" style="flex: 1;">
+              <button type="button" id="fetch-metadata-btn" class="btn btn-secondary" title="Auto-fetch title and description">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
+                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  <path d="M9 12l2 2 4-4"/>
+                </svg>
+                Fetch Info
+              </button>
+            </div>
           </div>
           <div class="form-group">
             <label for="bookmark-title">Title</label>
@@ -416,6 +436,7 @@
               <label for="bookmark-tags">Tags</label>
               <input type="text" id="bookmark-tags" placeholder="work, design, tools">
               <div class="tag-suggestions" id="tag-suggestions"></div>
+              <div class="smart-suggestions" id="smart-collections-suggestions" style="display:none;"></div>
             </div>
           </div>
           <div class="modal-footer">
@@ -490,11 +511,11 @@
         <div class="filter-section">
           <h4>Sort bookmarks</h4>
           <select id="filter-sort" class="form-input">
-            <option value="updated_desc">Recently modified first</option>
-            <option value="updated_asc">Oldest modified first</option>
-            <option value="created_desc">Newest first</option>
-            <option value="created_asc">Oldest first</option>
-            <option value="alpha">A → Z</option>
+            <option value="recently_added">Recently added</option>
+            <option value="oldest_first">Oldest first</option>
+            <option value="most_visited">Most visited</option>
+            <option value="a_z">A – Z</option>
+            <option value="z_a">Z – A</option>
           </select>
         </div>
 
@@ -553,6 +574,7 @@
             <button class="settings-tab" data-settings-tab="dashboard"
               data-action="load-dashboard-settings">Dashboard</button>
             <button class="settings-tab" data-settings-tab="tags">Tags</button>
+            <button class="settings-tab" data-settings-tab="shortcuts">Keyboard Shortcuts</button>
           </div>
 
           <div class="settings-panel active" id="settings-general">
@@ -620,11 +642,11 @@
                 <p>Sort order of bookmarks within columns</p>
               </div>
               <select id="dashboard-bookmark-sort" class="form-input" style="width: auto;">
-                <option value="updated_desc">Date Modified: Latest ➜ Oldest</option>
-                <option value="updated_asc">Date Modified: Oldest ➜ Newest</option>
-                <option value="created_desc">Date Added: Newest ➜ Oldest</option>
-                <option value="created_asc">Date Added: Oldest ➜ Newest</option>
-                <option value="alpha">Alphabetical</option>
+                <option value="recently_added">Recently Added</option>
+                <option value="oldest_first">Oldest First</option>
+                <option value="most_visited">Most Visited</option>
+                <option value="a_z">A – Z</option>
+                <option value="z_a">Z – A</option>
               </select>
             </div>
 
@@ -791,116 +813,180 @@
                     <line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
                   Export as HTML
-                </button>
-              </div>
+            </div>
+          </div>
+
+          <div class="settings-panel" id="settings-shortcuts">
+            <div class="shortcuts-section">
+              <h4>Navigation</h4>
+              <table class="shortcuts-table">
+                <tr>
+                  <td><kbd>Ctrl+Shift+D</kbd> / <kbd>Cmd+Shift+D</kbd></td>
+                  <td>Go to Dashboard</td>
+                </tr>
+                <tr>
+                  <td><kbd>Ctrl+Shift+F</kbd> / <kbd>Cmd+Shift+F</kbd></td>
+                  <td>Go to Favorites</td>
+                </tr>
+                <tr>
+                  <td><kbd>Ctrl+Shift+A</kbd> / <kbd>Cmd+Shift+A</kbd></td>
+                  <td>Go to All Bookmarks</td>
+                </tr>
+                <tr>
+                  <td><kbd>Ctrl+1</kbd> to <kbd>Ctrl+9</kbd> / <kbd>Cmd+1</kbd> to <kbd>Cmd+9</kbd></td>
+                  <td>Jump to folder 1-9</td>
+                </tr>
+              </table>
+            </div>
+
+            <div class="shortcuts-section">
+              <h4>Bookmarks</h4>
+              <table class="shortcuts-table">
+                <tr>
+                  <td><kbd>Ctrl+N</kbd> / <kbd>Cmd+N</kbd></td>
+                  <td>Add new bookmark</td>
+                </tr>
+                <tr>
+                  <td><kbd>Ctrl+F</kbd> / <kbd>Cmd+F</kbd></td>
+                  <td>Focus search</td>
+                </tr>
+                <tr>
+                  <td><kbd>Ctrl+K</kbd> / <kbd>Cmd+K</kbd></td>
+                  <td>Focus search (alternative)</td>
+                </tr>
+                <tr>
+                  <td><kbd>Ctrl+A</kbd> / <kbd>Cmd+A</kbd></td>
+                  <td>Select all bookmarks</td>
+                </tr>
+              </table>
+            </div>
+
+            <div class="shortcuts-section">
+              <h4>General</h4>
+              <table class="shortcuts-table">
+                <tr>
+                  <td><kbd>Ctrl+Shift+P</kbd> / <kbd>Cmd+Shift+P</kbd></td>
+                  <td>Open command palette</td>
+                </tr>
+                <tr>
+                  <td><kbd>Esc</kbd></td>
+                  <td>Close modals and selections</td>
+                </tr>
+                <tr>
+                  <td><kbd>↓</kbd> / <kbd>↑</kbd></td>
+                  <td>Navigate command palette (when open)</td>
+                </tr>
+              </table>
             </div>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Welcome Tour Modal -->
-    <div id="welcome-modal" class="modal hidden">
-      <div class="modal-backdrop" data-action="close-welcome-tour"></div>
-      <div class="modal-content modal-lg">
-        <div class="modal-header">
-          <h2>👋 Welcome to AnchorMarks!</h2>
-          <button class="btn-icon modal-close" data-action="close-welcome-tour">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+    <!-- Onboarding Tour -->
+    <div id="tour-overlay" class="tour-overlay hidden"></div>
+    <div id="tour-popover" class="tour-popover hidden">
+      <div class="tour-header">
+        <div class="tour-steps">
+          <span class="tour-step" id="tour-step-1">1</span>
+          <span class="tour-step" id="tour-step-2">2</span>
+          <span class="tour-step" id="tour-step-3">3</span>
         </div>
-        <div class="welcome-content">
-          <p class="welcome-intro">Your personal bookmark manager. Here's how to get started:</p>
-
-          <div class="welcome-features">
-            <div class="welcome-feature">
-              <div class="feature-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="M21 21l-4.35-4.35" />
-                </svg>
-              </div>
-              <div class="feature-text">
-                <h4>Quick Search</h4>
-                <p>Press <kbd>Ctrl+K</kbd> to search bookmarks instantly</p>
-              </div>
-            </div>
-
-            <div class="welcome-feature">
-              <div class="feature-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                </svg>
-              </div>
-              <div class="feature-text">
-                <h4>Organize with Folders</h4>
-                <p>Create folders to group related bookmarks together</p>
-              </div>
-            </div>
-
-            <div class="welcome-feature">
-              <div class="feature-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-                  <line x1="7" y1="7" x2="7.01" y2="7" />
-                </svg>
-              </div>
-              <div class="feature-text">
-                <h4>Tag Everything</h4>
-                <p>Add tags to bookmarks for flexible filtering</p>
-              </div>
-            </div>
-
-            <div class="welcome-feature">
-              <div class="feature-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="3" width="7" height="9" />
-                  <rect x="14" y="3" width="7" height="5" />
-                  <rect x="14" y="12" width="7" height="9" />
-                  <rect x="3" y="16" width="7" height="5" />
-                </svg>
-              </div>
-              <div class="feature-text">
-                <h4>Dashboard View</h4>
-                <p>See all your bookmarks organized by folder or tag</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="welcome-actions">
-            <button class="btn btn-secondary" data-action="welcome-import">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                style="width:16px;height:16px">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              Import Bookmarks
-            </button>
-            <button class="btn btn-primary" data-action="welcome-add">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                style="width:16px;height:16px">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              Add First Bookmark
-            </button>
-          </div>
-
-          <label class="welcome-checkbox">
-            <input type="checkbox" id="dont-show-again" checked>
-            <span>Don't show this again</span>
-          </label>
-        </div>
+        <button class="btn-icon tour-close" data-action="skip-tour">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="tour-content">
+        <h3 id="tour-title"></h3>
+        <p id="tour-description"></p>
+      </div>
+      <div class="tour-actions">
+        <button class="btn btn-secondary tour-skip" data-action="skip-tour">Skip</button>
+        <button class="btn btn-primary tour-next" id="tour-next-btn">Next</button>
       </div>
     </div>
 
     <!-- Toast Notification -->
     <div id="toast" class="toast hidden">
       <span class="toast-message"></span>
+    </div>
+
+    <!-- Keyboard Shortcuts Help Popup -->
+    <div id="shortcuts-popup" class="shortcuts-popup hidden">
+      <div class="shortcuts-popup-backdrop"></div>
+      <div class="shortcuts-popup-panel">
+        <div class="shortcuts-popup-header">
+          <h2>Keyboard Shortcuts</h2>
+          <button class="btn-icon shortcuts-popup-close" id="shortcuts-popup-close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="shortcuts-popup-content">
+          <div class="shortcuts-group">
+            <h3>Navigation</h3>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Ctrl+Shift+D</kbd></div>
+              <div class="shortcut-label">Dashboard</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Ctrl+Shift+F</kbd></div>
+              <div class="shortcut-label">Favorites</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Ctrl+Shift+A</kbd></div>
+              <div class="shortcut-label">All Bookmarks</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Ctrl+1</kbd>–<kbd>9</kbd></div>
+              <div class="shortcut-label">Jump to Folder</div>
+            </div>
+          </div>
+
+          <div class="shortcuts-group">
+            <h3>Bookmarks</h3>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Ctrl+N</kbd></div>
+              <div class="shortcut-label">Add Bookmark</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Ctrl+F</kbd></div>
+              <div class="shortcut-label">Search</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Ctrl+A</kbd></div>
+              <div class="shortcut-label">Select All</div>
+            </div>
+          </div>
+
+          <div class="shortcuts-group">
+            <h3>General</h3>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Ctrl+Shift+P</kbd></div>
+              <div class="shortcut-label">Command Palette</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Shift+/</kbd> or <kbd>></kbd></div>
+              <div class="shortcut-label">Help (this menu)</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Esc</kbd></div>
+              <div class="shortcut-label">Close/Cancel</div>
+            </div>
+          </div>
+
+          <div class="shortcuts-info">
+            <p>💡 On Mac, use <kbd>Cmd</kbd> instead of <kbd>Ctrl</kbd></p>
+            <a href="/help.html" target="_blank" class="shortcuts-help-link">
+              📚 View Full Documentation
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="command-palette" class="command-palette hidden">
@@ -916,6 +1002,7 @@
     </div>
   </div>
 
+  <script src="js/smart-organization-ui.js"></script>
   <script src="js/app.js"></script>
 </body>
 

@@ -30,10 +30,14 @@ let renderedBookmarks = [];
 let currentDashboardTab = null;
 let currentView = 'dashboard';
 let currentFolder = null;
-let viewMode = localStorage.getItem('anchormarks_view') || 'grid';
-let hideFavicons = localStorage.getItem('anchormarks_hide_favicons') === 'true';
-let dashboardConfig = JSON.parse(localStorage.getItem('anchormarks_dashboard_config')) || { mode: 'folder', tags: [], bookmarkSort: 'updated_desc' };
-let filterConfig = { sort: 'updated_desc', tags: [], tagSort: 'count_desc', tagMode: 'OR' };
+let viewMode = 'grid'; // Will be loaded from database
+let hideFavicons = false; // Will be loaded from database
+let hideSidebar = false; // Will be loaded from database
+let dashboardConfig = { mode: 'folder', tags: [], bookmarkSort: 'recently_added' }; // Will be loaded from database
+let widgetOrder = {}; // Will be loaded from database
+let dashboardWidgets = []; // Freeform positioned widgets with {id, type, x, y, w, h}
+let collapsedSections = []; // Will be loaded from database
+let filterConfig = { sort: 'recently_added', tags: [], tagSort: 'count_desc', tagMode: 'OR' };
 let selectedBookmarks = new Set();
 let lastSelectedIndex = null;
 let bulkMode = false;
@@ -111,11 +115,11 @@ async function login(email, password) {
     }
 }
 
-async function register(username, email, password) {
+async function register(email, password) {
     try {
         const data = await api('/auth/register', {
             method: 'POST',
-            body: JSON.stringify({ username, email, password })
+            body: JSON.stringify({ email, password })
         });
         csrfToken = data.csrfToken;
         currentUser = data.user;
@@ -127,10 +131,12 @@ async function register(username, email, password) {
 }
 
 function logout() {
-    csrfToken = null;
-    currentUser = null;
-    api('/auth/logout', { method: 'POST' }).catch(() => {});
-    showAuthScreen();
+    // Call logout API first (needs csrfToken), then clear state
+    api('/auth/logout', { method: 'POST' }).catch(() => {}).finally(() => {
+        csrfToken = null;
+        currentUser = null;
+        showAuthScreen();
+    });
 }
 
 async function checkAuth() {
@@ -138,6 +144,7 @@ async function checkAuth() {
         const data = await api('/auth/me');
         currentUser = data.user;
         csrfToken = data.csrfToken;
+        await loadSettings(); // Load user settings from database
         showMainApp();
     } catch (err) {
         // If token verification fails, show login
@@ -148,8 +155,59 @@ async function checkAuth() {
     }
 }
 
+// Settings API
+async function loadSettings() {
+    try {
+        const settings = await api('/settings');
+        viewMode = settings.view_mode || 'grid';
+        hideFavicons = settings.hide_favicons || false;
+        hideSidebar = settings.hide_sidebar || false;
+        dashboardConfig = {
+            mode: settings.dashboard_mode || 'folder',
+            tags: settings.dashboard_tags || [],
+            bookmarkSort: settings.dashboard_sort || 'recently_added'
+        };
+        widgetOrder = settings.widget_order || {};
+        dashboardWidgets = settings.dashboard_widgets || [];
+        collapsedSections = settings.collapsed_sections || [];
+        
+        // Apply theme
+        document.documentElement.setAttribute('data-theme', settings.theme || 'dark');
+        const darkToggle = document.getElementById('dark-mode-toggle');
+        if (darkToggle) darkToggle.checked = settings.theme === 'dark';
+        
+        // Apply sidebar collapsed state from localStorage (UI preference)
+        const sidebarCollapsed = localStorage.getItem('anchormarks_sidebar_collapsed') === 'true';
+        if (sidebarCollapsed) {
+            document.body.classList.add('sidebar-collapsed');
+            // Initialize popouts after a short delay to ensure DOM is ready
+            setTimeout(() => initSidebarPopouts(), 100);
+        }
+        
+        // Apply collapsed sections
+        collapsedSections.forEach(sectionId => {
+            const section = document.getElementById(sectionId);
+            if (section) section.classList.add('collapsed');
+        });
+    } catch (err) {
+        console.error('Failed to load settings:', err);
+    }
+}
+
+async function saveSettings(updates) {
+    try {
+        await api('/settings', {
+            method: 'PUT',
+            body: JSON.stringify(updates)
+        });
+    } catch (err) {
+        console.error('Failed to save settings:', err);
+    }
+}
+
 // UI State
 function showAuthScreen() {
+    closeModals(); // Close any open modals (settings, etc.)
     authScreen.classList.remove('hidden');
     mainApp.classList.add('hidden');
 }
@@ -169,8 +227,8 @@ async function initializeApp() {
 
 function updateUserInfo() {
     if (currentUser) {
-        document.getElementById('user-name').textContent = currentUser.username;
-        document.getElementById('user-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
+        document.getElementById('user-name').textContent = currentUser.email;
+        document.getElementById('user-avatar').textContent = currentUser.email.charAt(0).toUpperCase();
         document.getElementById('api-key-value').textContent = currentUser.api_key;
     }
 }
@@ -183,6 +241,10 @@ async function loadBookmarks() {
 
         if (currentView === 'favorites') params.append('favorites', 'true');
         if (currentFolder) params.append('folder_id', currentFolder);
+        
+        // Add sort parameter from filter config or dashboard config
+        const sortOption = filterConfig.sort || dashboardConfig.bookmarkSort || 'recently_added';
+        params.append('sort', sortOption);
 
         const query = params.toString();
         if (query) endpoint += `?${query}`;
@@ -204,31 +266,174 @@ async function loadBookmarks() {
     }
 }
 
-// Welcome Tour
+// Onboarding Tour
+let tourState = {
+    active: false,
+    currentStep: 0,
+    steps: [
+        {
+            title: '✨ Add Your First Bookmark',
+            description: 'Click the "Add Bookmark" button to save your first link.',
+            target: 'sidebar-add-bookmark-btn',
+            position: 'bottom'
+        },
+        {
+            title: '🔍 Search in Seconds',
+            description: 'Use Ctrl+K to search all your bookmarks instantly.',
+            target: 'search-input',
+            position: 'bottom'
+        },
+        {
+            title: '🏷️ Organize with Tags',
+            description: 'Add tags to bookmarks for flexible filtering and organization.',
+            target: 'bookmark-tags',
+            position: 'bottom'
+        }
+    ]
+};
+
 function checkWelcomeTour() {
     // Only show on initial app load, not on filter changes
     if (!isInitialLoad) return;
     
-    const dismissed = localStorage.getItem('anchormarks_welcome_dismissed');
+    const dismissed = localStorage.getItem('anchormarks_tour_dismissed');
     if (dismissed) return;
 
-    // Show welcome tour for new users (fewer than 5 bookmarks)
-    if (bookmarks.length < 5) {
+    // Show tour for new users (fewer than 20 bookmarks)
+    if (bookmarks.length < 20) {
         setTimeout(() => {
-            document.getElementById('welcome-modal').classList.remove('hidden');
-        }, 500);
+            startTour();
+        }, 800);
     }
     
     // Mark that we've done the initial check
     isInitialLoad = false;
 }
 
-function closeWelcomeTour() {
-    const dontShowAgain = document.getElementById('dont-show-again')?.checked;
-    if (dontShowAgain) {
-        localStorage.setItem('anchormarks_welcome_dismissed', 'true');
+function startTour() {
+    if (tourState.active) return;
+    tourState.active = true;
+    tourState.currentStep = 0;
+    showTourStep();
+}
+
+function showTourStep() {
+    const step = tourState.steps[tourState.currentStep];
+    if (!step) return;
+
+    const overlay = document.getElementById('tour-overlay');
+    const popover = document.getElementById('tour-popover');
+    const titleEl = document.getElementById('tour-title');
+    const descEl = document.getElementById('tour-description');
+    const nextBtn = document.getElementById('tour-next-btn');
+
+    // Update content
+    titleEl.textContent = step.title;
+    descEl.textContent = step.description;
+
+    // Update step indicators
+    document.querySelectorAll('.tour-step').forEach((el, i) => {
+        el.classList.toggle('active', i === tourState.currentStep);
+    });
+
+    // Update button text
+    const isLastStep = tourState.currentStep === tourState.steps.length - 1;
+    nextBtn.textContent = isLastStep ? 'Got it!' : 'Next';
+
+    // Position popover near target element
+    const targetEl = document.getElementById(step.target);
+    if (targetEl) {
+        positionPopover(popover, targetEl, step.position);
+        // Highlight target
+        targetEl.classList.add('tour-highlight');
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-    document.getElementById('welcome-modal').classList.add('hidden');
+
+    // Show overlay and popover
+    overlay.classList.remove('hidden');
+    popover.classList.remove('hidden');
+}
+
+function positionPopover(popover, target, position) {
+    const rect = target.getBoundingClientRect();
+    const popoverRect = popover.getBoundingClientRect();
+    const gap = 16;
+    let top, left;
+
+    // Calculate position
+    if (position === 'bottom') {
+        top = rect.bottom + gap;
+        left = rect.left + rect.width / 2 - popoverRect.width / 2;
+    } else if (position === 'top') {
+        top = rect.top - popoverRect.height - gap;
+        left = rect.left + rect.width / 2 - popoverRect.width / 2;
+    } else if (position === 'right') {
+        top = rect.top + rect.height / 2 - popoverRect.height / 2;
+        left = rect.right + gap;
+    } else {
+        top = rect.top + rect.height / 2 - popoverRect.height / 2;
+        left = rect.left - popoverRect.width - gap;
+    }
+
+    // Keep within viewport
+    const minPadding = 16;
+    left = Math.max(minPadding, Math.min(left, window.innerWidth - popoverRect.width - minPadding));
+    top = Math.max(minPadding, Math.min(top, window.innerHeight - popoverRect.height - minPadding));
+
+    popover.style.left = left + 'px';
+    popover.style.top = top + 'px';
+}
+
+function nextTourStep() {
+    // Remove highlight from current target
+    const currentStep = tourState.steps[tourState.currentStep];
+    const targetEl = document.getElementById(currentStep.target);
+    if (targetEl) {
+        targetEl.classList.remove('tour-highlight');
+    }
+
+    tourState.currentStep++;
+    
+    if (tourState.currentStep >= tourState.steps.length) {
+        endTour();
+    } else {
+        showTourStep();
+    }
+}
+
+function endTour() {
+    const overlay = document.getElementById('tour-overlay');
+    const popover = document.getElementById('tour-popover');
+
+    // Remove highlight
+    document.querySelectorAll('.tour-highlight').forEach(el => {
+        el.classList.remove('tour-highlight');
+    });
+
+    // Hide elements
+    overlay.classList.add('hidden');
+    popover.classList.add('hidden');
+
+    tourState.active = false;
+    localStorage.setItem('anchormarks_tour_dismissed', 'true');
+    showToast('🎉 Tour complete! Happy bookmarking!');
+}
+
+function skipTour() {
+    const overlay = document.getElementById('tour-overlay');
+    const popover = document.getElementById('tour-popover');
+
+    // Remove highlight
+    document.querySelectorAll('.tour-highlight').forEach(el => {
+        el.classList.remove('tour-highlight');
+    });
+
+    // Hide elements
+    overlay.classList.add('hidden');
+    popover.classList.add('hidden');
+
+    tourState.active = false;
+    localStorage.setItem('anchormarks_tour_dismissed', 'true');
 }
 
 function filterByTag(tag) {
@@ -311,12 +516,28 @@ const widgetColors = ['blue', 'gold', 'orange', 'teal', 'gray', 'purple', 'red',
 
 // Sorting Helper
 function sortBookmarks(list) {
-    const sort = dashboardConfig.bookmarkSort || 'updated_desc';
+    const sort = dashboardConfig.bookmarkSort || 'recently_added';
     return [...list].sort((a, b) => {
-        if (sort === 'alpha') return a.title.localeCompare(b.title);
-        if (sort === 'created_asc' || sort === 'updated_asc') return new Date(a.created_at) - new Date(b.created_at);
-        // Default updated_desc / created_desc
-        return new Date(b.created_at) - new Date(a.created_at);
+        switch (sort) {
+            case 'a_z':
+            case 'a-z':
+            case 'alpha':
+                return a.title.localeCompare(b.title);
+            case 'z_a':
+            case 'z-a':
+                return b.title.localeCompare(a.title);
+            case 'most_visited':
+                return (b.click_count || 0) - (a.click_count || 0);
+            case 'oldest_first':
+            case 'created_asc':
+            case 'updated_asc':
+                return new Date(a.created_at) - new Date(b.created_at);
+            case 'recently_added':
+            case 'created_desc':
+            case 'updated_desc':
+            default:
+                return new Date(b.created_at) - new Date(a.created_at);
+        }
     });
 }
 
@@ -326,76 +547,72 @@ function renderDashboard() {
     bulkBar?.classList.add('hidden');
 
     // Clear container
-    bookmarksContainer.className = '';
+    bookmarksContainer.className = 'dashboard-freeform';
     bookmarksContainer.innerHTML = '';
     emptyState.classList.add('hidden');
 
-
-    if (dashboardConfig.mode === 'tag') {
-        if (!dashboardConfig.tags || dashboardConfig.tags.length === 0) {
-            bookmarksContainer.innerHTML = '<div class="empty-state"><h3>No Tags Selected</h3><p>Go to Settings > Dashboard to select tags.</p></div>';
-            return;
-        }
-
-        const tabsHtml = '<div class="dashboard-tabs"><button class="dashboard-tab active" data-color="blue">My Tags</button></div>';
-
-        const actionBarHtml = `
-            <div class="dashboard-action-bar">
-                <input type="text" placeholder="Search bookmarks..." id="dashboard-bookmark-search" oninput="filterDashboardBookmarks(this.value)">
+    // Create dashboard container with drop zone
+    const dashboardHtml = `
+        <div class="dashboard-freeform-container" id="dashboard-drop-zone">
+            <div class="dashboard-help-text">
+                ${dashboardWidgets.length === 0 ? 
+                    '<p>Drag folders or tags from the sidebar to create widgets</p>' : 
+                    ''}
             </div>
-        `;
-
-        let contentHtml = '<div class="dashboard-content"><div class="dashboard-columns" id="dashboard-widgets">';
-
-        dashboardConfig.tags.forEach((tag, i) => {
-            let widgetBookmarks = bookmarks.filter(b => b.tags && b.tags.split(',').map(t => t.trim()).includes(tag));
-            widgetBookmarks = sortBookmarks(widgetBookmarks);
-            const color = widgetColors[i % widgetColors.length];
-            contentHtml += createDashboardWidget({ name: tag, id: tag, isTag: true, color: color }, widgetBookmarks, i);
-        });
-
-        contentHtml += '</div></div>';
-        bookmarksContainer.innerHTML = `<div class="dashboard-view">${tabsHtml}${actionBarHtml}${contentHtml}</div>`;
-        initDashboardDragDrop();
-        return;
-    }
-
-    // Folder Mode - Show all folders as widgets
-    const topLevelFolders = folders.filter(f => !f.parent_id);
-
-    if (topLevelFolders.length === 0) {
-        bookmarksContainer.innerHTML = '<div class="empty-state"><h3>No Folders</h3><p>Create some folders to get started.</p></div>';
-        return;
-    }
-
-    // Action bar
-    const actionBarHtml = `
-        <div class="dashboard-action-bar">
-            <button class="btn btn-secondary btn-sm" data-action="open-modal" data-modal-target="folder-modal">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Add Folder
-            </button>
-            <input type="text" placeholder="Search bookmarks..." id="dashboard-bookmark-search" data-action="filter-dashboard-bookmarks">
+            <div class="dashboard-widgets-container" id="dashboard-widgets-freeform">
+                ${renderFreeformWidgets()}
+            </div>
         </div>
     `;
 
-    let contentHtml = '<div class="dashboard-content"><div class="dashboard-columns" id="dashboard-widgets">';
-    let widgetIndex = 0;
+    bookmarksContainer.innerHTML = dashboardHtml;
+    initDashboardDragDrop();
+}
 
-    // Show uncategorized/root bookmarks first if any
-    let rootBookmarks = bookmarks.filter(b => !b.folder_id);
-    if (rootBookmarks.length > 0) {
-        rootBookmarks = sortBookmarks(rootBookmarks);
-        // Fallback for root items
-        contentHtml += `
-        <div class="dashboard-widget" draggable="false" data-widget-id="uncategorized" data-index="${widgetIndex++}">
-            <div class="widget-header" data-color="${widgetColors[0]}">
-                <div class="widget-title">Uncategorized</div>
-                <div class="widget-count">${rootBookmarks.length}</div>
+function renderFreeformWidgets() {
+    let html = '';
+    
+    dashboardWidgets.forEach((widget, index) => {
+        const widgetData = getWidgetData(widget);
+        if (!widgetData) return;
+
+        const { name, color, bookmarks: widgetBookmarks, count } = widgetData;
+        const sortedBookmarks = sortBookmarks(widgetBookmarks);
+        const widgetColor = widget.color || color; // Use custom color if set, otherwise default
+
+        html += `
+        <div class="dashboard-widget-freeform" 
+             data-widget-index="${index}"
+             data-widget-id="${widget.id}"
+             data-widget-type="${widget.type}"
+             draggable="true"
+             style="left: ${widget.x || 0}px; top: ${widget.y || 0}px; width: ${widget.w || 320}px; height: ${widget.h || 400}px;">
+            <div class="widget-header" data-color="${widgetColor}">
+                <div class="widget-drag-handle" title="Drag to move">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+                        <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
+                        <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
+                    </svg>
+                </div>
+                <div class="widget-title">${escapeHtml(name)}</div>
+                <div class="widget-count">${count}</div>
+                <div class="widget-actions">
+                    <button class="btn-icon widget-color-btn" data-action="change-widget-color" data-index="${index}" title="Change color">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 2a10 10 0 0 0 0 20"/>
+                        </svg>
+                    </button>
+                    <button class="btn-icon widget-remove" data-action="remove-widget" data-index="${index}" title="Remove widget">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="widget-body">
                 <div class="compact-list">
-                    ${rootBookmarks.slice(0, 15).map(b => `
+                    ${sortedBookmarks.slice(0, 50).map(b => `
                         <a href="${b.url}" target="_blank" class="compact-item" data-action="track-click" data-id="${b.id}">
                             <div class="compact-favicon">
                                 ${!hideFavicons && b.favicon ? `<img src="${b.favicon}" alt="">` :
@@ -404,41 +621,41 @@ function renderDashboard() {
                             <span class="compact-text">${escapeHtml(b.title)}</span>
                         </a>
                     `).join('')}
-                    ${rootBookmarks.length > 15 ? `<div style="padding:0.5rem;font-size:0.75rem;color:var(--text-tertiary);text-align:center">+${rootBookmarks.length - 15} more</div>` : ''}
+                    ${sortedBookmarks.length > 50 ? `<div style="padding:0.5rem;font-size:0.75rem;color:var(--text-tertiary);text-align:center">+${sortedBookmarks.length - 50} more</div>` : ''}
                 </div>
             </div>
-        </div>
-        `;
-    }
-
-    // Iterate through all top-level folders
-    topLevelFolders.forEach(folder => {
-        const color = folder.color || widgetColors[widgetIndex % widgetColors.length];
-        const innerHtml = renderNestedWidgetContent(folder.id);
-        const totalCount = countBookmarksInTree(folder.id);
-
-        contentHtml += `
-        <div class="dashboard-widget" draggable="true" data-widget-id="${folder.id}" data-index="${widgetIndex++}">
-            <div class="widget-header" data-color="${color}">
-                <div class="widget-drag-handle" title="Drag to reorder">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;opacity:0.6">
-                        <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
-                        <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
-                    </svg>
-                </div>
-                <div class="widget-title">${escapeHtml(folder.name)}</div>
-                <div class="widget-count">${totalCount}</div>
-            </div>
-            <div class="widget-body">
-                ${innerHtml}
-            </div>
+            <div class="widget-resize-handle" title="Drag to resize"></div>
         </div>
         `;
     });
 
-    contentHtml += '</div></div>';
-    bookmarksContainer.innerHTML = `<div class="dashboard-view">${actionBarHtml}${contentHtml}</div>`;
-    initDashboardDragDrop();
+    return html;
+}
+
+function getWidgetData(widget) {
+    if (widget.type === 'folder') {
+        const folder = folders.find(f => f.id === widget.id);
+        if (!folder) return null;
+        
+        const folderBookmarks = bookmarks.filter(b => b.folder_id === folder.id);
+        return {
+            name: folder.name,
+            color: folder.color || '#6366f1',
+            bookmarks: folderBookmarks,
+            count: folderBookmarks.length
+        };
+    } else if (widget.type === 'tag') {
+        const tagBookmarks = bookmarks.filter(b => 
+            b.tags && b.tags.split(',').map(t => t.trim()).includes(widget.id)
+        );
+        return {
+            name: widget.id,
+            color: '#10b981',
+            bookmarks: tagBookmarks,
+            count: tagBookmarks.length
+        };
+    }
+    return null;
 }
 
 function renderNestedWidgetContent(folderId) {
@@ -499,50 +716,269 @@ function createDashboardWidget(folder, widgetBookmarks, index) {
 
 // Dashboard Drag and Drop
 let draggedWidget = null;
+let draggedSidebarItem = null;
+let isDraggingWidget = false;
+let dragStartPos = { x: 0, y: 0 };
+let widgetStartPos = { x: 0, y: 0 };
+let isResizing = false;
+let resizingWidget = null;
+let resizeStartSize = { w: 0, h: 0 };
 
 function initDashboardDragDrop() {
-    const container = document.getElementById('dashboard-widgets');
-    if (!container) return;
+    const dropZone = document.getElementById('dashboard-drop-zone');
+    if (!dropZone) return;
 
-    container.querySelectorAll('.dashboard-widget').forEach(widget => {
-        widget.addEventListener('dragstart', (e) => {
+    // Handle drops from sidebar
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', (e) => {
+        if (e.target === dropZone) {
+            dropZone.classList.remove('drag-over');
+        }
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+
+        // Get drop position relative to dashboard
+        const rect = dropZone.getBoundingClientRect();
+        const x = e.clientX - rect.left + dropZone.scrollLeft;
+        const y = e.clientY - rect.top + dropZone.scrollTop;
+
+        // Check if dropping from sidebar
+        if (draggedSidebarItem) {
+            const { type, id, name, color } = draggedSidebarItem;
+            addDashboardWidget(type, id, x, y);
+            draggedSidebarItem = null;
+        }
+    });
+
+    // Setup widget drag and resize
+    document.querySelectorAll('.dashboard-widget-freeform').forEach(widget => {
+        const header = widget.querySelector('.widget-header');
+        const resizeHandle = widget.querySelector('.widget-resize-handle');
+
+        // Drag to move
+        header.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.widget-remove')) return;
+            
+            isDraggingWidget = true;
             draggedWidget = widget;
+            dragStartPos = { x: e.clientX, y: e.clientY };
+            widgetStartPos = {
+                x: parseInt(widget.style.left) || 0,
+                y: parseInt(widget.style.top) || 0
+            };
             widget.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
-        });
-
-        widget.addEventListener('dragend', () => {
-            widget.classList.remove('dragging');
-            draggedWidget = null;
-            saveDashboardWidgetOrder();
-        });
-
-        widget.addEventListener('dragover', (e) => {
             e.preventDefault();
-            if (!draggedWidget || draggedWidget === widget) return;
+        });
 
-            const rect = widget.getBoundingClientRect();
-            const midY = rect.top + rect.height / 2;
+        // Resize handle
+        if (resizeHandle) {
+            resizeHandle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                resizingWidget = widget;
+                dragStartPos = { x: e.clientX, y: e.clientY };
+                resizeStartSize = {
+                    w: parseInt(widget.style.width) || 320,
+                    h: parseInt(widget.style.height) || 400
+                };
+                widget.classList.add('resizing');
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        }
+    });
 
-            if (e.clientY < midY) {
-                widget.parentNode.insertBefore(draggedWidget, widget);
-            } else {
-                widget.parentNode.insertBefore(draggedWidget, widget.nextSibling);
-            }
+    // Global mouse move and up handlers
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    // Setup remove widget buttons
+    document.querySelectorAll('[data-action="remove-widget"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const index = parseInt(btn.dataset.index);
+            removeDashboardWidget(index);
+        });
+    });
+
+    // Setup color change buttons
+    document.querySelectorAll('[data-action="change-widget-color"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const index = parseInt(btn.dataset.index);
+            showWidgetColorPicker(index, btn);
         });
     });
 }
 
-function saveDashboardWidgetOrder() {
-    const container = document.getElementById('dashboard-widgets');
-    if (!container) return;
+function handleMouseMove(e) {
+    if (isDraggingWidget && draggedWidget) {
+        const deltaX = e.clientX - dragStartPos.x;
+        const deltaY = e.clientY - dragStartPos.y;
+        
+        draggedWidget.style.left = `${widgetStartPos.x + deltaX}px`;
+        draggedWidget.style.top = `${widgetStartPos.y + deltaY}px`;
+    } else if (isResizing && resizingWidget) {
+        const deltaX = e.clientX - dragStartPos.x;
+        const deltaY = e.clientY - dragStartPos.y;
+        
+        const newWidth = Math.max(250, resizeStartSize.w + deltaX);
+        const newHeight = Math.max(200, resizeStartSize.h + deltaY);
+        
+        resizingWidget.style.width = `${newWidth}px`;
+        resizingWidget.style.height = `${newHeight}px`;
+    }
+}
 
-    const order = Array.from(container.querySelectorAll('.dashboard-widget'))
-        .map(w => w.dataset.widgetId);
+function handleMouseUp(e) {
+    if (isDraggingWidget && draggedWidget) {
+        draggedWidget.classList.remove('dragging');
+        
+        // Save new position
+        const index = parseInt(draggedWidget.dataset.widgetIndex);
+        if (dashboardWidgets[index]) {
+            dashboardWidgets[index].x = parseInt(draggedWidget.style.left) || 0;
+            dashboardWidgets[index].y = parseInt(draggedWidget.style.top) || 0;
+            saveDashboardWidgets();
+        }
+        
+        isDraggingWidget = false;
+        draggedWidget = null;
+    } else if (isResizing && resizingWidget) {
+        resizingWidget.classList.remove('resizing');
+        
+        // Save new size
+        const index = parseInt(resizingWidget.dataset.widgetIndex);
+        if (dashboardWidgets[index]) {
+            dashboardWidgets[index].w = parseInt(resizingWidget.style.width) || 320;
+            dashboardWidgets[index].h = parseInt(resizingWidget.style.height) || 400;
+            saveDashboardWidgets();
+        }
+        
+        isResizing = false;
+        resizingWidget = null;
+    }
+}
 
-    // Save order to localStorage
-    const orderKey = dashboardConfig.mode === 'tag' ? 'anchormarks_widget_order_tags' : `anchormarks_widget_order_${currentDashboardTab} `;
-    localStorage.setItem(orderKey, JSON.stringify(order));
+function addDashboardWidget(type, id, x, y) {
+    // Check if widget already exists
+    const exists = dashboardWidgets.some(w => w.type === type && w.id === id);
+    if (exists) {
+        showToast('Widget already exists on dashboard', 'info');
+        return;
+    }
+
+    const newWidget = {
+        id: id,
+        type: type,
+        x: x,
+        y: y,
+        w: 320,
+        h: 400
+    };
+
+    dashboardWidgets.push(newWidget);
+    saveDashboardWidgets();
+    renderDashboard();
+    showToast(`${type === 'folder' ? 'Folder' : 'Tag'} added to dashboard`, 'success');
+}
+
+function removeDashboardWidget(index) {
+    dashboardWidgets.splice(index, 1);
+    saveDashboardWidgets();
+    renderDashboard();
+    showToast('Widget removed', 'success');
+}
+
+function showWidgetColorPicker(index, button) {
+    // Remove any existing color picker
+    const existingPicker = document.querySelector('.widget-color-picker');
+    if (existingPicker) {
+        existingPicker.remove();
+    }
+
+    const widget = dashboardWidgets[index];
+    if (!widget) return;
+
+    // Color options
+    const colors = [
+        { name: 'Blue', value: '#6366f1' },
+        { name: 'Purple', value: '#a855f7' },
+        { name: 'Pink', value: '#ec4899' },
+        { name: 'Red', value: '#ef4444' },
+        { name: 'Orange', value: '#f97316' },
+        { name: 'Yellow', value: '#eab308' },
+        { name: 'Green', value: '#10b981' },
+        { name: 'Teal', value: '#14b8a6' },
+        { name: 'Cyan', value: '#06b6d4' },
+        { name: 'Indigo', value: '#4f46e5' },
+        { name: 'Gray', value: '#6b7280' },
+        { name: 'Slate', value: '#475569' }
+    ];
+
+    // Create color picker
+    const picker = document.createElement('div');
+    picker.className = 'widget-color-picker';
+    picker.innerHTML = `
+        <div class="color-picker-grid">
+            ${colors.map(c => `
+                <button class="color-picker-option" 
+                        data-color="${c.value}" 
+                        title="${c.name}"
+                        style="background: ${c.value}">
+                    ${widget.color === c.value ? '<span class="color-check">✓</span>' : ''}
+                </button>
+            `).join('')}
+        </div>
+    `;
+
+    // Position picker near button
+    const rect = button.getBoundingClientRect();
+    picker.style.position = 'fixed';
+    picker.style.top = `${rect.bottom + 5}px`;
+    picker.style.left = `${rect.left - 100}px`;
+
+    document.body.appendChild(picker);
+
+    // Setup color option handlers
+    picker.querySelectorAll('.color-picker-option').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const color = opt.dataset.color;
+            updateWidgetColor(index, color);
+            picker.remove();
+        });
+    });
+
+    // Close picker when clicking outside
+    setTimeout(() => {
+        document.addEventListener('click', function closePickerHandler(e) {
+            if (!picker.contains(e.target)) {
+                picker.remove();
+                document.removeEventListener('click', closePickerHandler);
+            }
+        });
+    }, 100);
+}
+
+function updateWidgetColor(index, color) {
+    if (dashboardWidgets[index]) {
+        dashboardWidgets[index].color = color;
+        saveDashboardWidgets();
+        renderDashboard();
+        showToast('Widget color updated', 'success');
+    }
+}
+
+function saveDashboardWidgets() {
+    saveSettings({ dashboard_widgets: dashboardWidgets });
 }
 
 // Dashboard helpers
@@ -621,10 +1057,28 @@ function renderBookmarks() {
             return true;
         });
 
+        // Apply sort using the same logic as sortBookmarks
         filtered.sort((a, b) => {
-            if (sort === 'alpha') return a.title.localeCompare(b.title);
-            if (sort === 'created_asc' || sort === 'updated_asc') return new Date(a.created_at) - new Date(b.created_at);
-            return new Date(b.created_at) - new Date(a.created_at);
+            switch (sort) {
+                case 'a_z':
+                case 'a-z':
+                case 'alpha':
+                    return a.title.localeCompare(b.title);
+                case 'z_a':
+                case 'z-a':
+                    return b.title.localeCompare(a.title);
+                case 'most_visited':
+                    return (b.click_count || 0) - (a.click_count || 0);
+                case 'oldest_first':
+                case 'created_asc':
+                case 'updated_asc':
+                    return new Date(a.created_at) - new Date(b.created_at);
+                case 'recently_added':
+                case 'created_desc':
+                case 'updated_desc':
+                default:
+                    return new Date(b.created_at) - new Date(a.created_at);
+            }
         });
     }
 
@@ -763,38 +1217,48 @@ function createBookmarkCard(bookmark, index) {
         <input type="checkbox" ${isSelected ? 'checked' : ''}>
       </label>
       <div class="bookmark-header">
-                <div class="bookmark-favicon">
-                    ${!hideFavicons && bookmark.favicon
+        <div class="bookmark-favicon">
+          ${!hideFavicons && bookmark.favicon
             ? `<img src="${bookmark.favicon}" alt="" onerror="this.parentElement.innerHTML='<svg viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><path d=\\'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\\'/><path d=\\'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\\'/></svg>'">`
             : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
-        }
-                </div>
-                <div class="bookmark-info">
-                    <div class="bookmark-title">${escapeHtml(bookmark.title)}</div>
-                    <div class="bookmark-url">${hostname}</div>
-                </div>
-                <div class="bookmark-actions">
-                    <button class="btn-icon bookmark-favorite ${bookmark.is_favorite ? 'active' : ''}" data-action="toggle-favorite" data-id="${bookmark.id}" title="Favorite">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                        </svg>
-                    </button>
-                    <button class="btn-icon" data-action="edit-bookmark" data-id="${bookmark.id}" title="Edit">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
-                    </button>
-                    <button class="btn-icon" data-action="delete-bookmark" data-id="${bookmark.id}" title="Delete">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
+          }
+        </div>
+        <div class="bookmark-info">
+          <div class="bookmark-title">${escapeHtml(bookmark.title)}</div>
+          <div class="bookmark-url">${hostname}</div>
+        </div>
+      </div>
       ${bookmark.description ? `<div class="bookmark-description">${escapeHtml(bookmark.description)}</div>` : ''}
-      ${tags.length ? `<div class="bookmark-tags">${tags.map(t => `<span class="tag" data-action="toggle-filter-tag" data-tag="${escapeHtml(t)}" style="cursor:pointer">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+      ${tags.length ? `<div class="bookmark-tags">${tags.map(t => `<span class="tag" data-action="toggle-filter-tag" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+      <div class="bookmark-actions">
+        <button class="bookmark-action-btn primary" data-action="open-bookmark" data-url="${escapeHtml(bookmark.url)}" title="Open bookmark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          <span>Open</span>
+        </button>
+        <button class="bookmark-action-btn" data-action="edit-bookmark" data-id="${bookmark.id}" title="Edit bookmark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          <span>Edit</span>
+        </button>
+        <button class="bookmark-action-btn" data-action="copy-link" data-url="${escapeHtml(bookmark.url)}" title="Copy link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+        </button>
+        <button class="bookmark-action-btn danger" data-action="delete-bookmark" data-id="${bookmark.id}" title="Delete bookmark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+        </button>
+      </div>
     </div >
         `;
 }
@@ -1123,6 +1587,19 @@ function runActiveCommand() {
     cmd.action();
 }
 
+// Shortcuts Help Popup
+function openShortcutsPopup() {
+    const popup = document.getElementById('shortcuts-popup');
+    if (!popup) return;
+    popup.classList.remove('hidden');
+}
+
+function closeShortcutsPopup() {
+    const popup = document.getElementById('shortcuts-popup');
+    if (!popup) return;
+    popup.classList.add('hidden');
+}
+
 async function createBookmark(data) {
     try {
         const bookmark = await api('/bookmarks', {
@@ -1249,7 +1726,12 @@ function renderFolders() {
             const indentation = level * 12; // px indentation per level
 
             return `
-            <div class="nav-item folder-item ${currentFolder === f.id ? 'active' : ''} ${isEmpty ? 'empty' : ''}" data-folder="${f.id}" style="padding-left: ${12 + indentation}px">
+            <div class="nav-item folder-item ${currentFolder === f.id ? 'active' : ''} ${isEmpty ? 'empty' : ''}" 
+                 data-folder="${f.id}" 
+                 data-folder-name="${escapeHtml(f.name)}"
+                 data-folder-color="${f.color}"
+                 draggable="true"
+                 style="padding-left: ${12 + indentation}px; cursor: grab;">
                 <span class="folder-color" style="background: ${f.color}"></span>
                 <span class="folder-name">${escapeHtml(f.name)}</span>
                 ${count > 0 ? `<span class="badge">${count}</span>` : ''}
@@ -1276,7 +1758,10 @@ function renderFolders() {
     container.innerHTML = renderFolderTree(rootFolders);
 
     container.querySelectorAll('.folder-item').forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', (e) => {
+            // Don't navigate if currently dragging
+            if (e.defaultPrevented) return;
+            
             currentFolder = item.dataset.folder;
             currentView = 'folder';
             updateActiveNav();
@@ -1284,7 +1769,31 @@ function renderFolders() {
             const folder = folders.find(f => f.id === currentFolder);
             viewTitle.textContent = folder ? folder.name : 'Folder';
         });
+        
+        // Setup drag for dashboard
+        if (item.getAttribute('draggable') === 'true') {
+            item.addEventListener('dragstart', (e) => {
+                draggedSidebarItem = {
+                    type: 'folder',
+                    id: item.dataset.folder,
+                    name: item.dataset.folderName,
+                    color: item.dataset.folderColor
+                };
+                e.dataTransfer.effectAllowed = 'copy';
+                e.dataTransfer.setData('text/plain', item.dataset.folderName);
+            });
+
+            item.addEventListener('dragend', () => {
+                draggedSidebarItem = null;
+            });
+        }
     });
+    
+    // Reinitialize popouts if sidebar is collapsed
+    if (document.body.classList.contains('sidebar-collapsed')) {
+        removeSidebarPopouts();
+        setTimeout(() => initSidebarPopouts(), 50);
+    }
 }
 
 function updateFolderSelect() {
@@ -1421,6 +1930,22 @@ function editFolder(id) {
     openModal('folder-modal');
 }
 
+// Helper function to navigate to a folder by index using keyboard shortcuts
+function navigateToFolderByIndex(index) {
+    const rootFolders = folders.filter(f => !f.parent_id);
+    
+    if (index < 0 || index >= rootFolders.length) {
+        return; // Out of range, silently return
+    }
+
+    const folder = rootFolders[index];
+    currentFolder = folder.id;
+    currentView = 'folder';
+    viewTitle.textContent = folder.name;
+    updateActiveNav();
+    loadBookmarks();
+}
+
 // Sidebar Tags
 function renderSidebarTags() {
     const container = document.getElementById('sidebar-tags-list');
@@ -1496,7 +2021,17 @@ function toggleSection(sectionId) {
     const section = document.getElementById(sectionId);
     if (section) {
         section.classList.toggle('collapsed');
-        localStorage.setItem(`anchormarks_${sectionId}_collapsed`, section.classList.contains('collapsed'));
+        const isCollapsed = section.classList.contains('collapsed');
+        
+        if (isCollapsed) {
+            if (!collapsedSections.includes(sectionId)) {
+                collapsedSections.push(sectionId);
+            }
+        } else {
+            collapsedSections = collapsedSections.filter(id => id !== sectionId);
+        }
+        
+        saveSettings({ collapsed_sections: collapsedSections });
     }
 }
 
@@ -1543,11 +2078,36 @@ function renderTagsList(tags) {
     tags.forEach(tag => {
         const div = document.createElement('div');
         div.className = `sidebar-tag-item ${filterConfig.tags.includes(tag.name) ? 'active' : ''}`;
+        div.draggable = true;
+        div.style.cursor = 'grab';
+        div.dataset.tagName = tag.name;
+        div.dataset.tagCount = tag.count;
         div.innerHTML = `
             <span class="tag-name">${escapeHtml(tag.name)}</span>
             <span class="tag-count">${tag.count}</span>
         `;
-        div.addEventListener('click', () => sidebarFilterTag(tag.name));
+        div.addEventListener('click', (e) => {
+            // Don't filter if currently dragging
+            if (e.defaultPrevented) return;
+            sidebarFilterTag(tag.name);
+        });
+        
+        // Setup drag for dashboard
+        div.addEventListener('dragstart', (e) => {
+            draggedSidebarItem = {
+                type: 'tag',
+                id: tag.name,
+                name: tag.name,
+                color: '#10b981'
+            };
+            e.dataTransfer.effectAllowed = 'copy';
+            e.dataTransfer.setData('text/plain', tag.name);
+        });
+
+        div.addEventListener('dragend', () => {
+            draggedSidebarItem = null;
+        });
+        
         container.appendChild(div);
     });
 }
@@ -1555,7 +2115,7 @@ function renderTagsList(tags) {
 // Clear all filters
 function clearAllFilters() {
     filterConfig.tags = [];
-    filterConfig.sort = 'updated_desc';
+    filterConfig.sort = 'recently_added';
     searchInput.value = '';
     currentView = 'all';
     currentFolder = null;
@@ -1645,7 +2205,7 @@ function updateCounts() {
 // View Mode
 function setViewMode(mode) {
     viewMode = mode;
-    localStorage.setItem('anchormarks_view', mode);
+    saveSettings({ view_mode: mode });
 
     document.querySelectorAll('.view-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.viewMode === mode);
@@ -1665,20 +2225,18 @@ function setViewMode(mode) {
 
 // Theme
 function applyTheme() {
-    const dark = localStorage.getItem('anchormarks_dark') === 'true';
-    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-    document.getElementById('dark-mode-toggle').checked = dark;
+    // Theme is applied when settings are loaded
 }
 
 function toggleTheme() {
     const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-    document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
-    localStorage.setItem('anchormarks_dark', (!dark).toString());
+    const newTheme = dark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    saveSettings({ theme: newTheme });
 }
 
 // Favicon Setting
 function applyFaviconSetting() {
-    hideFavicons = localStorage.getItem('anchormarks_hide_favicons') === 'true';
     const toggle = document.getElementById('hide-favicons-toggle');
     if (toggle) toggle.checked = hideFavicons;
 }
@@ -1686,12 +2244,222 @@ function applyFaviconSetting() {
 function toggleFavicons() {
     const toggle = document.getElementById('hide-favicons-toggle');
     hideFavicons = toggle?.checked || false;
-    localStorage.setItem('anchormarks_hide_favicons', hideFavicons.toString());
+    saveSettings({ hide_favicons: hideFavicons });
     // Re-render to apply change
     if (currentView === 'dashboard') {
         renderDashboard();
     } else {
         renderBookmarks();
+    }
+}
+
+function toggleSidebar() {
+    const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('anchormarks_sidebar_collapsed', isCollapsed);
+    
+    // Initialize or remove popout handlers
+    if (isCollapsed) {
+        initSidebarPopouts();
+    } else {
+        removeSidebarPopouts();
+    }
+}
+
+// Sidebar Popout for Collapsed State
+let sidebarPopout = null;
+let popoutTimeout = null;
+
+function initSidebarPopouts() {
+    // Create popout element if it doesn't exist
+    if (!sidebarPopout) {
+        sidebarPopout = document.createElement('div');
+        sidebarPopout.className = 'sidebar-popout';
+        document.body.appendChild(sidebarPopout);
+    }
+    
+    // Add event listeners to nav sections when collapsed
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    
+    // Handle folder sections
+    sidebar.querySelectorAll('.nav-section').forEach(section => {
+        const header = section.querySelector('.nav-section-header');
+        if (!header) return;
+        
+        header.addEventListener('mouseenter', handleSectionHover);
+        header.addEventListener('mouseleave', handlePopoutLeave);
+        header.addEventListener('click', handleSectionClick);
+    });
+    
+    // Handle individual nav items
+    sidebar.querySelectorAll('.nav-item').forEach(item => {
+        // Skip items that are inside sections (they'll be in popout)
+        if (!item.closest('.nav-section-content')) {
+            item.addEventListener('mouseenter', handleNavItemHover);
+            item.addEventListener('mouseleave', handlePopoutLeave);
+        }
+    });
+}
+
+function removeSidebarPopouts() {
+    if (sidebarPopout) {
+        sidebarPopout.classList.remove('show');
+    }
+    
+    // Remove event listeners
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    
+    sidebar.querySelectorAll('.nav-section-header').forEach(header => {
+        header.removeEventListener('mouseenter', handleSectionHover);
+        header.removeEventListener('mouseleave', handlePopoutLeave);
+        header.removeEventListener('click', handleSectionClick);
+    });
+    
+    sidebar.querySelectorAll('.nav-item').forEach(item => {
+        item.removeEventListener('mouseenter', handleNavItemHover);
+        item.removeEventListener('mouseleave', handlePopoutLeave);
+    });
+}
+
+function handleSectionHover(e) {
+    if (!document.body.classList.contains('sidebar-collapsed')) return;
+    
+    clearTimeout(popoutTimeout);
+    const section = e.currentTarget.closest('.nav-section');
+    if (!section) return;
+    
+    popoutTimeout = setTimeout(() => {
+        showSectionPopout(section, e.currentTarget);
+    }, 300);
+}
+
+function handleSectionClick(e) {
+    if (!document.body.classList.contains('sidebar-collapsed')) return;
+    
+    const section = e.currentTarget.closest('.nav-section');
+    if (!section) return;
+    
+    if (sidebarPopout && sidebarPopout.classList.contains('show') && sidebarPopout._currentSection === section) {
+        hidePopout();
+    } else {
+        showSectionPopout(section, e.currentTarget);
+    }
+}
+
+function handleNavItemHover(e) {
+    if (!document.body.classList.contains('sidebar-collapsed')) return;
+    // For now, just show tooltip on hover - could expand this later
+}
+
+function handlePopoutLeave(e) {
+    clearTimeout(popoutTimeout);
+    
+    // Check if mouse is entering the popout
+    const relatedTarget = e.relatedTarget;
+    if (relatedTarget && (relatedTarget === sidebarPopout || sidebarPopout.contains(relatedTarget))) {
+        return;
+    }
+    
+    popoutTimeout = setTimeout(() => {
+        hidePopout();
+    }, 200);
+}
+
+function showSectionPopout(section, headerElement) {
+    if (!sidebarPopout) return;
+    
+    const content = section.querySelector('.nav-section-content');
+    if (!content) return;
+    
+    const headerText = headerElement.querySelector('span')?.textContent || 'Items';
+    const items = content.querySelectorAll('.folder-item, .nav-item');
+    
+    if (items.length === 0) return;
+    
+    // Build popout content
+    let html = `<div class="sidebar-popout-header">${headerText}</div>`;
+    html += '<div class="sidebar-popout-content">';
+    
+    items.forEach(item => {
+        const clone = item.cloneNode(true);
+        // Make sure text is visible in popout
+        clone.style.opacity = '1';
+        const textElements = clone.querySelectorAll('span, .folder-name, .badge');
+        textElements.forEach(el => {
+            el.style.opacity = '1';
+            el.style.pointerEvents = 'auto';
+        });
+        html += clone.outerHTML;
+    });
+    
+    html += '</div>';
+    
+    sidebarPopout.innerHTML = html;
+    sidebarPopout._currentSection = section;
+    
+    // Position popout
+    const rect = headerElement.getBoundingClientRect();
+    sidebarPopout.style.top = `${rect.top}px`;
+    sidebarPopout.style.left = '70px';
+    
+    // Show popout
+    sidebarPopout.classList.add('show');
+    
+    // Re-attach event listeners to cloned items
+    sidebarPopout.querySelectorAll('.folder-item, .nav-item').forEach((item, index) => {
+        const originalItem = items[index];
+        
+        // Handle main item click (navigate to folder/view)
+        const mainClickArea = item;
+        mainClickArea.addEventListener('click', (e) => {
+            // Don't navigate if clicking on action buttons
+            if (e.target.closest('.folder-actions')) {
+                return;
+            }
+            originalItem.click();
+            hidePopout();
+        });
+        
+        // Handle folder action buttons
+        const editBtn = item.querySelector('[data-action="edit-folder"]');
+        const deleteBtn = item.querySelector('[data-action="delete-folder"]');
+        
+        if (editBtn) {
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const originalEditBtn = originalItem.querySelector('[data-action="edit-folder"]');
+                originalEditBtn?.click();
+                hidePopout();
+            });
+        }
+        
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const originalDeleteBtn = originalItem.querySelector('[data-action="delete-folder"]');
+                originalDeleteBtn?.click();
+                hidePopout();
+            });
+        }
+    });
+    
+    // Keep popout open when hovering over it
+    sidebarPopout.addEventListener('mouseenter', () => {
+        clearTimeout(popoutTimeout);
+    });
+    
+    sidebarPopout.addEventListener('mouseleave', () => {
+        popoutTimeout = setTimeout(() => {
+            hidePopout();
+        }, 200);
+    });
+}
+
+function hidePopout() {
+    if (sidebarPopout) {
+        sidebarPopout.classList.remove('show');
+        sidebarPopout._currentSection = null;
     }
 }
 
@@ -1821,7 +2589,7 @@ async function loadDashboardSettings() {
 
     // Set current values
     modeSelect.value = dashboardConfig.mode;
-    if (sortSelect) sortSelect.value = dashboardConfig.bookmarkSort || 'updated_desc';
+    if (sortSelect) sortSelect.value = dashboardConfig.bookmarkSort || 'recently_added';
 
     // Show loading state
     console.log('Setting loading state...');
@@ -1901,7 +2669,10 @@ async function loadDashboardSettings() {
     function saveConfig() {
         dashboardConfig.mode = modeSelect.value;
         if (sortSelect) dashboardConfig.bookmarkSort = sortSelect.value;
-        localStorage.setItem('anchormarks_dashboard_config', JSON.stringify(dashboardConfig));
+        saveSettings({
+            dashboard_mode: dashboardConfig.mode,
+            dashboard_sort: dashboardConfig.bookmarkSort
+        });
         if (currentView === 'dashboard') renderDashboard();
     }
 
@@ -2096,8 +2867,14 @@ async function showTagSuggestions(url) {
     clearTimeout(tagSuggestTimeout);
     tagSuggestTimeout = setTimeout(async () => {
         try {
-            const suggestions = await api(`/tags/suggest?url=${encodeURIComponent(url)}`);
-            renderTagSuggestions(suggestions);
+            // Try to get smart suggestions first
+            if (typeof showSmartTagSuggestions === 'function') {
+                await showSmartTagSuggestions(url);
+            } else {
+                // Fallback to basic suggestions if smart module not loaded
+                const suggestions = await api(`/tags/suggest?url=${encodeURIComponent(url)}`);
+                renderTagSuggestions(suggestions);
+            }
         } catch (err) {
             renderTagSuggestions([]);
         }
@@ -2128,10 +2905,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     registerForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const username = document.getElementById('register-username').value;
         const email = document.getElementById('register-email').value;
         const password = document.getElementById('register-password').value;
-        register(username, email, password);
+        register(email, password);
     });
 
     // Navigation
@@ -2157,19 +2933,44 @@ document.addEventListener('DOMContentLoaded', () => {
     // Shortcuts
     document.addEventListener('keydown', (e) => {
         const key = (e.key || '').toLowerCase();
+        const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+        const modifier = e.ctrlKey || e.metaKey;
 
-        if ((e.ctrlKey || e.metaKey) && key === 'k' && !commandPaletteOpen) {
+        // Escape key - close modals/palettes
+        if (key === 'escape') {
+            if (commandPaletteOpen) {
+                e.preventDefault();
+                closeCommandPalette();
+            } else if (bulkMode) {
+                clearSelections();
+            }
+            return;
+        }
+
+        // Ctrl+N / Cmd+N: Add new bookmark
+        if (modifier && key === 'n') {
+            if (!['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName) || 
+                document.activeElement.id === 'command-palette-input') {
+                e.preventDefault();
+                openModal('bookmark-modal');
+            }
+        }
+
+        // Ctrl+F / Cmd+F: Focus search (prevent browser default)
+        if (modifier && key === 'f') {
+            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
             e.preventDefault();
             searchInput.focus();
         }
 
-        if ((e.ctrlKey || e.metaKey) && key === 'a') {
-            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+        // Ctrl+K / Cmd+K: Focus search (alternative)
+        if (modifier && key === 'k' && !commandPaletteOpen) {
             e.preventDefault();
-            selectAllBookmarks();
+            searchInput.focus();
         }
 
-        if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === 'p') {
+        // Ctrl+Shift+P / Cmd+Shift+P: Open command palette
+        if (modifier && e.shiftKey && key === 'p') {
             e.preventDefault();
             if (commandPaletteOpen) {
                 closeCommandPalette();
@@ -2178,11 +2979,73 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        if (commandPaletteOpen && key === 'escape') {
+        // Ctrl+A / Cmd+A: Select all bookmarks (when not in input)
+        if (modifier && key === 'a') {
+            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
             e.preventDefault();
-            closeCommandPalette();
-        } else if (bulkMode && key === 'escape') {
-            clearSelections();
+            selectAllBookmarks();
+        }
+
+        // Ctrl+1 to Ctrl+9 / Cmd+1 to Cmd+9: Navigate to folders/collections
+        if (modifier && !e.shiftKey && key >= '1' && key <= '9') {
+            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+            e.preventDefault();
+            const folderIndex = parseInt(key) - 1;
+            navigateToFolderByIndex(folderIndex);
+        }
+
+        // Ctrl+Shift+D: Go to dashboard
+        if (modifier && e.shiftKey && key === 'd') {
+            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+            e.preventDefault();
+            currentView = 'dashboard';
+            currentFolder = null;
+            updateActiveNav();
+            viewTitle.textContent = 'Dashboard';
+            loadBookmarks();
+        }
+
+        // Ctrl+Shift+F: Go to favorites
+        if (modifier && e.shiftKey && key === 'f') {
+            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+            e.preventDefault();
+            currentView = 'favorites';
+            currentFolder = null;
+            updateActiveNav();
+            viewTitle.textContent = 'Favorites';
+            loadBookmarks();
+        }
+
+        // Ctrl+Shift+A: Go to all bookmarks
+        if (modifier && e.shiftKey && key === 'a') {
+            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+            e.preventDefault();
+            currentView = 'all';
+            currentFolder = null;
+            updateActiveNav();
+            viewTitle.textContent = 'Bookmarks';
+            loadBookmarks();
+        }
+
+        // Shift+/ or >: Open shortcuts help popup
+        if ((e.shiftKey && key === '/') || key === '>') {
+            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+            e.preventDefault();
+            openShortcutsPopup();
+        }
+
+        // Command palette navigation (arrow keys and enter)
+        if (commandPaletteOpen) {
+            if (key === 'arrowdown') {
+                e.preventDefault();
+                updateCommandPaletteActive(1);
+            } else if (key === 'arrowup') {
+                e.preventDefault();
+                updateCommandPaletteActive(-1);
+            } else if (key === 'enter') {
+                e.preventDefault();
+                runActiveCommand();
+            }
         }
     });
 
@@ -2245,6 +3108,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Shortcuts popup
+    const shortcutsPopup = document.getElementById('shortcuts-popup');
+    const shortcutsPopupClose = document.getElementById('shortcuts-popup-close');
+    
+    if (shortcutsPopupClose) {
+        shortcutsPopupClose.addEventListener('click', closeShortcutsPopup);
+    }
+    
+    if (shortcutsPopup) {
+        shortcutsPopup.addEventListener('click', (e) => {
+            // Close when clicking on backdrop
+            if (e.target === shortcutsPopup) {
+                closeShortcutsPopup();
+            }
+        });
+    }
+
     if (commandPaletteList) {
         commandPaletteList.addEventListener('click', (e) => {
             const item = e.target.closest('.command-item');
@@ -2284,6 +3164,63 @@ document.addEventListener('DOMContentLoaded', () => {
             updateBookmark(id, data);
         } else {
             createBookmark(data);
+        }
+    });
+
+    // Fetch Metadata Button
+    document.getElementById('fetch-metadata-btn')?.addEventListener('click', async () => {
+        const urlInput = document.getElementById('bookmark-url');
+        const url = urlInput.value.trim();
+        
+        if (!url) {
+            showToast('Please enter a URL first', 'warning');
+            urlInput.focus();
+            return;
+        }
+
+        // Validate URL format
+        try {
+            new URL(url);
+        } catch {
+            showToast('Please enter a valid URL', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('fetch-metadata-btn');
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;animation:spin 1s linear infinite">
+                <path d="M21 12a9 9 0 11-6.219-8.56"/>
+            </svg>
+            Fetching...
+        `;
+
+        try {
+            const metadata = await api('/bookmarks/fetch-metadata', {
+                method: 'POST',
+                body: JSON.stringify({ url })
+            });
+
+            // Only populate title if it's empty
+            const titleInput = document.getElementById('bookmark-title');
+            if (!titleInput.value && metadata.title) {
+                titleInput.value = metadata.title;
+            }
+
+            // Only populate description if it's empty
+            const descInput = document.getElementById('bookmark-description');
+            if (!descInput.value && metadata.description) {
+                descInput.value = metadata.description;
+            }
+
+            showToast('Metadata fetched successfully!', 'success');
+        } catch (err) {
+            console.error('Failed to fetch metadata:', err);
+            showToast(err.message || 'Failed to fetch metadata', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
         }
     });
 
@@ -2349,6 +3286,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('dark-mode-toggle').addEventListener('change', toggleTheme);
     document.getElementById('hide-favicons-toggle')?.addEventListener('change', toggleFavicons);
+    document.getElementById('toggle-sidebar-btn')?.addEventListener('click', toggleSidebar);
     applyFaviconSetting();
 
     document.getElementById('logout-btn').addEventListener('click', logout);
@@ -2456,6 +3394,24 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'open-modal': if (modal) openModal(modal); break;
             case 'switch-dashboard-tab': if (id) switchDashboardTab(id); break;
             case 'track-click': if (id) trackClick(id); break;
+            case 'open-bookmark':
+                e.stopPropagation();
+                if (target.dataset.url) {
+                    window.open(target.dataset.url, '_blank');
+                    const bookmarkId = bookmarks.find(b => b.url === target.dataset.url)?.id;
+                    if (bookmarkId) trackClick(bookmarkId);
+                }
+                break;
+            case 'copy-link':
+                e.stopPropagation();
+                if (target.dataset.url) {
+                    navigator.clipboard.writeText(target.dataset.url).then(() => {
+                        showToast('Link copied to clipboard', 'success');
+                    }).catch(() => {
+                        showToast('Failed to copy link', 'error');
+                    });
+                }
+                break;
             case 'toggle-favorite':
                 e.stopPropagation();
                 if (id) toggleFavorite(id);
@@ -2491,19 +3447,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleTagMode();
                 break;
             case 'load-dashboard-settings': loadDashboardSettings(); break;
-            case 'close-welcome-tour': closeWelcomeTour(); break;
-            case 'welcome-import':
-                closeWelcomeTour();
-                openModal('settings-modal');
-                // ideally switch to import tab, but general is fine for now
-                break;
-            case 'welcome-add':
-                closeWelcomeTour();
-                openModal('bookmark-modal');
-                break;
+            case 'skip-tour': skipTour(); break;
             case 'bulk-select-all': selectAllBookmarks(); break;
             case 'bulk-unselect-all': clearSelections(); break;
         }
     });
+
+    // Tour next button
+    document.getElementById('tour-next-btn')?.addEventListener('click', nextTourStep);
+
+    // Initialize smart organization features
+    if (typeof initSmartOrganization === 'function') {
+        initSmartOrganization();
+    }
 });
 

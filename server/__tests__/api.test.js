@@ -21,7 +21,6 @@ beforeAll(async () => {
     agent = request.agent(app); // Create persistent agent for cookie handling
     const unique = Date.now();
     const user = {
-        username: `tester-${unique}`,
         email: `tester${unique}@example.com`,
         password: 'password123'
     };
