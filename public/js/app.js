@@ -102,6 +102,7 @@ async function api(endpoint, options = {}) {
 // Auth Functions
 async function login(email, password) {
     try {
+        console.log('Attempting login for:', email);
         const data = await api('/auth/login', {
             method: 'POST',
             body: JSON.stringify({ email, password })
@@ -111,6 +112,7 @@ async function login(email, password) {
         showMainApp();
         showToast('Welcome back!', 'success');
     } catch (err) {
+        console.error('Login failed:', err.message);
         showToast(err.message, 'error');
     }
 }
@@ -2815,7 +2817,13 @@ function showToast(message, type = '') {
     toast.className = `toast ${type}`;
     toast.classList.remove('hidden');
 
-    setTimeout(() => toast.classList.add('hidden'), 3000);
+    // Don't auto-hide error toasts, let user dismiss them
+    if (type !== 'error') {
+        setTimeout(() => toast.classList.add('hidden'), 3000);
+    } else {
+        // Add click to dismiss for error toasts
+        toast.onclick = () => toast.classList.add('hidden');
+    }
 }
 
 // Helpers
