@@ -90,12 +90,6 @@ npm install
 npm run dev
 ```
 
-Or using Makefile:
-
-```bash
-make install && make dev
-```
-
 ### Step 5: Access the Application
 
 Open http://localhost:3000 in your browser and create an account!
@@ -108,7 +102,7 @@ Choose the installation method that best suits your needs:
 
 ### Development
 - **For local development & testing**
-- [Quick Start](#quick-start-development) or [Using Makefile](#using-makefile)
+- [Quick Start](#quick-start-development)
 
 ### Production - Docker (Recommended)
 - **For easy deployment & scaling**
@@ -524,29 +518,6 @@ sudo systemctl disable anchormarks
    # Start service
    nssm start AnchorMarks
    ```
-
----
-
-## Using Makefile (Linux/macOS)
-
-For development, use the Makefile for convenience:
-
-```bash
-# Install dependencies
-make install
-
-# Start development server
-make dev
-
-# Start production server
-make prod
-
-# Run tests
-make test
-
-# View all commands
-make help
-```
 
 ---
 

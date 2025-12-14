@@ -434,6 +434,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         await loadSettings();
         showMainApp();
         await initializeApp();
+        // Initialize smart organization features only when authenticated
+        SmartOrg.init();
     }
 
     // Auth tabs
@@ -815,9 +817,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Tour next button
     document.getElementById('tour-next-btn')?.addEventListener('click', nextTourStep);
-
-    // Initialize smart organization features
-    SmartOrg.init();
 });
 
 // ============================================================
@@ -827,6 +826,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 window.AnchorMarks = {
     // API
     api: api,
+
+    // Auth
+    isAuthenticated: () => state.isAuthenticated,
 
     // State getters/setters
     get bookmarks() { return state.bookmarks; },

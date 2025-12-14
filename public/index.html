@@ -56,7 +56,7 @@
         <form id="register-form" class="auth-form hidden">
           <div class="form-group">
             <label for="register-email">Email</label>
-            <input type="email" id="register-email" required placeholder="you@example.com">
+            <input type="email" id="register-email" required placeholder="you@example.com" autocomplete="username">
           </div>
           <div class="form-group">
             <label for="register-password">Password</label>
@@ -282,8 +282,8 @@
             <a href="/help.html" target="_blank" class="btn-icon" title="Help & Documentation">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10" />
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3v1" />
+                <circle cx="12" cy="17" r="0.5" fill="currentColor" />
               </svg>
             </a>
             <button class="btn-icon" id="settings-btn" title="Settings">
@@ -313,7 +313,7 @@
           </div>
           <div class="header-right">
             <div class="view-toggle">
-              <button class="view-btn active" data-view-mode="grid" title="Grid View--">
+              <button class="view-btn active" data-view-mode="grid" title="Grid View">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="3" width="7" height="7" />
                   <rect x="14" y="3" width="7" height="7" />
@@ -510,7 +510,6 @@
           </svg>
         </button>
       </div>
-      
       <div class="filter-content">
         <div class="filter-section">
           <h4>Sort bookmarks</h4>

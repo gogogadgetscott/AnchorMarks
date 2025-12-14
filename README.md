@@ -25,12 +25,6 @@ npm run dev
 # Visit http://localhost:3000
 ```
 
-**Using Makefile:**
-```bash
-make install
-make dev
-```
-
 📘 **[View full documentation →](public/help.html)** | [Installation Guide](INSTALL.md)
 
 ## 🔧 Configuration

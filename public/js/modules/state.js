@@ -10,6 +10,7 @@ export const API_BASE = '/api';
 export let authToken = null;
 export let csrfToken = null;
 export let currentUser = null;
+export let isAuthenticated = false;
 
 // Data State
 export let bookmarks = [];
@@ -105,6 +106,7 @@ export const widgetColors = ['blue', 'gold', 'orange', 'teal', 'gray', 'purple',
 export function setAuthToken(val) { authToken = val; }
 export function setCsrfToken(val) { csrfToken = val; }
 export function setCurrentUser(val) { currentUser = val; }
+export function setIsAuthenticated(val) { isAuthenticated = val; }
 export function setBookmarks(val) { bookmarks = val; }
 export function setFolders(val) { folders = val; }
 export function setRenderedBookmarks(val) { renderedBookmarks = val; }

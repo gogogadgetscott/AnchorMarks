@@ -17,9 +17,13 @@ export async function api(endpoint, options = {}) {
     });
 
     if (response.status === 401) {
-        // Import dynamically to avoid circular dependency
-        const { logout } = await import('./auth.js');
-        logout();
+        // Clear local auth state without making another API call
+        state.setCsrfToken(null);
+        state.setCurrentUser(null);
+        state.setIsAuthenticated(false);
+        // Show auth screen (import dynamically to avoid circular dependency)
+        const { showAuthScreen } = await import('./auth.js');
+        showAuthScreen();
         throw new Error('Session expired');
     }
 

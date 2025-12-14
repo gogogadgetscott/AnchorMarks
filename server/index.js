@@ -181,7 +181,7 @@ app.use('/api', (req, res, next) => {
     if (unauthenticatedPaths.some(path => req.url === path || req.url.startsWith(path))) {
         return next();
     }
-    
+
     if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
         return validateCsrfTokenMiddleware(req, res, next);
     }
@@ -222,7 +222,7 @@ setupAuthRoutes(app, db, authenticateTokenMiddleware, fetchFaviconWrapper);
 app.get('/api/settings', authenticateTokenMiddleware, (req, res) => {
     try {
         const settings = db.prepare('SELECT * FROM user_settings WHERE user_id = ?').get(req.user.id);
-        
+
         if (!settings) {
             // Return defaults
             res.json({
@@ -458,7 +458,7 @@ app.get('/api/tags', authenticateTokenMiddleware, (req, res) => {
 // Create tag
 app.post('/api/tags', authenticateTokenMiddleware, (req, res) => {
     const { name, color, icon } = req.body;
-    
+
     if (!name || !name.trim()) {
         return res.status(400).json({ error: 'Tag name is required' });
     }
@@ -504,11 +504,11 @@ app.put('/api/tags/:id', authenticateTokenMiddleware, (req, res) => {
         WHERE t.id = ?
         GROUP BY t.id
     `).get(req.params.id);
-    
+
     if (!tag) {
         return res.status(404).json({ error: 'Tag not found' });
     }
-    
+
     res.json(tag);
 });
 
@@ -791,33 +791,33 @@ function parseHtmlMetadata(html, url) {
 
     // Extract meta description
     const descMatch = html.match(/<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i) ||
-                      html.match(/<meta\s+content=["']([^"']+)["']\s+name=["']description["']/i);
+        html.match(/<meta\s+content=["']([^"']+)["']\s+name=["']description["']/i);
     if (descMatch) {
         metadata.description = decodeHtmlEntities(descMatch[1].trim());
     }
 
     // Try Open Graph tags
     const ogTitleMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i) ||
-                         html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:title["']/i);
+        html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:title["']/i);
     if (ogTitleMatch && !metadata.title) {
         metadata.title = decodeHtmlEntities(ogTitleMatch[1].trim());
     }
 
     const ogDescMatch = html.match(/<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i) ||
-                        html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:description["']/i);
+        html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:description["']/i);
     if (ogDescMatch && !metadata.description) {
         metadata.description = decodeHtmlEntities(ogDescMatch[1].trim());
     }
 
     // Try Twitter Card tags
     const twitterTitleMatch = html.match(/<meta\s+name=["']twitter:title["']\s+content=["']([^"']+)["']/i) ||
-                              html.match(/<meta\s+content=["']([^"']+)["']\s+name=["']twitter:title["']/i);
+        html.match(/<meta\s+content=["']([^"']+)["']\s+name=["']twitter:title["']/i);
     if (twitterTitleMatch && !metadata.title) {
         metadata.title = decodeHtmlEntities(twitterTitleMatch[1].trim());
     }
 
     const twitterDescMatch = html.match(/<meta\s+name=["']twitter:description["']\s+content=["']([^"']+)["']/i) ||
-                             html.match(/<meta\s+content=["']([^"']+)["']\s+name=["']twitter:description["']/i);
+        html.match(/<meta\s+content=["']([^"']+)["']\s+name=["']twitter:description["']/i);
     if (twitterDescMatch && !metadata.description) {
         metadata.description = decodeHtmlEntities(twitterDescMatch[1].trim());
     }
@@ -881,7 +881,7 @@ app.post('/api/bookmarks', authenticateTokenMiddleware, async (req, res) => {
                 // Get or create tag
                 let tag = db.prepare('SELECT id FROM tags WHERE user_id = ? AND name = ?')
                     .get(req.user.id, tagName);
-                
+
                 if (!tag) {
                     const tagId = uuidv4();
                     const maxTagPos = db.prepare('SELECT MAX(position) as max FROM tags WHERE user_id = ?').get(req.user.id);
@@ -1012,7 +1012,7 @@ app.put('/api/bookmarks/:id', authenticateTokenMiddleware, (req, res) => {
                     // Get or create tag
                     let tag = db.prepare('SELECT id FROM tags WHERE user_id = ? AND name = ?')
                         .get(req.user.id, tagName);
-                    
+
                     if (!tag) {
                         const tagId = uuidv4();
                         const maxTagPos = db.prepare('SELECT MAX(position) as max FROM tags WHERE user_id = ?').get(req.user.id);
@@ -1827,7 +1827,7 @@ app.get('/api/tags/suggest-smart', authenticateTokenMiddleware, (req, res) => {
     const include_domain = req.query.include_domain !== 'false';
     const include_activity = req.query.include_activity !== 'false';
     const include_similar = req.query.include_similar !== 'false';
-    
+
     if (!url) {
         return res.status(400).json({ error: 'URL parameter required' });
     }
@@ -1835,35 +1835,35 @@ app.get('/api/tags/suggest-smart', authenticateTokenMiddleware, (req, res) => {
     try {
         const urlObj = new URL(url);
         const domain = urlObj.hostname.replace(/^www\./, '');
-        
+
         // Get domain category info
         const categoryInfo = smartOrg.getDomainCategory(url);
         const domainStats = smartOrg.getDomainStats(db, req.user.id, domain);
-        
+
         // Collect all possible tags to score
         const tagsToScore = new Set();
-        
+
         // Add domain category tags
         if (include_domain && categoryInfo.tags) {
             categoryInfo.tags.forEach(t => tagsToScore.add(t));
         }
-        
+
         // Add existing tags from user's bookmarks
         const userTags = db.prepare('SELECT DISTINCT name FROM tags WHERE user_id = ?').all(req.user.id);
         userTags.forEach(row => tagsToScore.add(row.name));
-        
+
         // Add tags from domain bookmarks
         const domainTags = db.prepare(`
             SELECT DISTINCT tags FROM bookmarks 
             WHERE user_id = ? AND url LIKE ?
         `).all(req.user.id, `%${domain}%`);
-        
+
         domainTags.forEach(row => {
             if (row.tags) {
                 smartOrg.tokenizeText(row.tags).forEach(t => tagsToScore.add(t));
             }
         });
-        
+
         // Score all tags
         const suggestions = [];
         tagsToScore.forEach(tag => {
@@ -1872,7 +1872,7 @@ app.get('/api/tags/suggest-smart', authenticateTokenMiddleware, (req, res) => {
                 activity: include_activity ? 0.40 : 0,
                 similarity: include_similar ? 0.25 : 0
             });
-            
+
             if (scores.score > 0.1) {
                 suggestions.push({
                     tag,
@@ -1882,10 +1882,10 @@ app.get('/api/tags/suggest-smart', authenticateTokenMiddleware, (req, res) => {
                 });
             }
         });
-        
+
         // Sort by score and limit
         suggestions.sort((a, b) => b.score - a.score);
-        
+
         res.json({
             suggestions: suggestions.slice(0, parseInt(limit)),
             domain_info: {
@@ -1906,25 +1906,25 @@ app.get('/api/smart-collections/suggest', authenticateTokenMiddleware, (req, res
 
     try {
         let suggestions = [];
-        
+
         // Get tag clusters
         if (!type || type === 'tag_cluster') {
             const clusters = smartOrg.getTagClusters(db, req.user.id);
             suggestions = suggestions.concat(clusters.slice(0, 2));
         }
-        
+
         // Get activity-based collections
         if (!type || type === 'activity') {
             const activityCollections = smartOrg.getActivityCollections(db, req.user.id);
             suggestions = suggestions.concat(activityCollections.slice(0, 2));
         }
-        
+
         // Get domain-based collections
         if (!type || type === 'domain') {
             const domainCollections = smartOrg.getDomainCollections(db, req.user.id);
             suggestions = suggestions.concat(domainCollections.slice(0, 2));
         }
-        
+
         // Deduplicate by name and limit
         const seen = new Set();
         const unique = suggestions.filter(s => {
@@ -1932,7 +1932,7 @@ app.get('/api/smart-collections/suggest', authenticateTokenMiddleware, (req, res
             seen.add(s.name);
             return true;
         });
-        
+
         res.json({
             collections: unique.slice(0, parseInt(limit))
         });
@@ -1945,7 +1945,7 @@ app.get('/api/smart-collections/suggest', authenticateTokenMiddleware, (req, res
 // POST /api/smart-collections/create - Create a collection from suggestion
 app.post('/api/smart-collections/create', authenticateTokenMiddleware, validateCsrfTokenMiddleware, (req, res) => {
     const { name, type = 'tag_cluster', icon, color, tags, domain, filters } = req.body;
-    
+
     if (!name || !type) {
         return res.status(400).json({ error: 'Name and type are required' });
     }
@@ -1956,10 +1956,10 @@ app.post('/api/smart-collections/create', authenticateTokenMiddleware, validateC
 
     try {
         const id = uuidv4();
-        
+
         // Convert to filters object for smart_collections table
         let filterObj = {};
-        
+
         if (type === 'tag_cluster' && tags && tags.length) {
             filterObj = { tags };
         } else if (type === 'domain' && domain) {
@@ -1967,12 +1967,12 @@ app.post('/api/smart-collections/create', authenticateTokenMiddleware, validateC
         } else if (type === 'activity' && filters) {
             filterObj = filters;
         }
-        
+
         db.prepare(`
             INSERT INTO smart_collections (id, user_id, name, icon, color, filters)
             VALUES (?, ?, ?, ?, ?, ?)
         `).run(id, req.user.id, name, icon || 'filter', color || '#6366f1', JSON.stringify(filterObj));
-        
+
         res.json({
             id,
             name,
@@ -1990,7 +1990,7 @@ app.post('/api/smart-collections/create', authenticateTokenMiddleware, validateC
 // GET /api/smart-collections/domain-stats - Domain statistics
 app.get('/api/smart-collections/domain-stats', authenticateTokenMiddleware, (req, res) => {
     const { domain } = req.query;
-    
+
     if (!domain) {
         return res.status(400).json({ error: 'Domain parameter required' });
     }
@@ -1998,13 +1998,13 @@ app.get('/api/smart-collections/domain-stats', authenticateTokenMiddleware, (req
     try {
         const stats = smartOrg.getDomainStats(db, req.user.id, domain);
         const category = smartOrg.getDomainCategory(`https://${domain}`);
-        
+
         // Get recent bookmarks
         const recentBookmarks = db.prepare(`
             SELECT COUNT(*) as count FROM bookmarks
             WHERE user_id = ? AND url LIKE ? AND datetime(created_at) > datetime('now', '-7 days')
         `).get(req.user.id, `%${domain}%`).count;
-        
+
         // Get most clicked
         const mostClicked = db.prepare(`
             SELECT title, click_count FROM bookmarks
@@ -2012,7 +2012,7 @@ app.get('/api/smart-collections/domain-stats', authenticateTokenMiddleware, (req
             ORDER BY click_count DESC
             LIMIT 5
         `).all(req.user.id, `%${domain}%`);
-        
+
         res.json({
             domain: stats.domain,
             bookmark_count: stats.bookmarkCount,
@@ -2042,11 +2042,11 @@ app.get('/api/smart-insights', authenticateTokenMiddleware, (req, res) => {
         const totalBookmarks = db.prepare(
             'SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ?'
         ).get(req.user.id).count;
-        
+
         const totalTags = db.prepare(
             'SELECT COUNT(*) as count FROM tags WHERE user_id = ?'
         ).get(req.user.id).count;
-        
+
         // Top domains
         //     SELECT 
         //         REPLACE(REPLACE(url, 'https://', ''), 'http://', '') as full_domain,
@@ -2060,7 +2060,7 @@ app.get('/api/smart-insights', authenticateTokenMiddleware, (req, res) => {
         //     domain: row.full_domain ? row.full_domain.split('/')[0].replace(/^www\./, '') : 'unknown',
         //     count: row.count
         // }));
-        
+
         // Top tags
         // const topTags = db.prepare(`
         //     SELECT name, COUNT(bt.tag_id) as count
@@ -2071,37 +2071,37 @@ app.get('/api/smart-insights', authenticateTokenMiddleware, (req, res) => {
         //     ORDER BY count DESC
         //     LIMIT 5
         // `).all(req.user.id);
-        
+
         // Recent activity
         const thisWeek = db.prepare(
             'SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ?'
         ).get(req.user.id).count;
-        
+
         const thisMonth = db.prepare(
             'SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ?'
         ).get(req.user.id).count;
-        
+
         const lastAdded = db.prepare(
             'SELECT created_at FROM bookmarks WHERE user_id = ? ORDER BY created_at DESC LIMIT 1'
         ).get(req.user.id);
-        
+
         // Engagement
         const totalClicks = db.prepare(
             'SELECT COALESCE(SUM(click_count), 0) as total FROM bookmarks WHERE user_id = ?'
         ).get(req.user.id).total;
-        
+
         const unread = db.prepare(
             'SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND click_count = 0'
         ).get(req.user.id).count;
-        
+
         const frequentlyUsed = db.prepare(
             'SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND click_count > 5'
         ).get(req.user.id).count;
-        
+
         // Suggestions
         // const suggestedCollections = smartOrg.getActivityCollections(db, req.user.id).slice(0, 2);
         // const suggestedClusters = smartOrg.getTagClusters(db, req.user.id).slice(0, 2);
-        
+
         res.json({
             total_bookmarks: totalBookmarks,
             total_tags: totalTags,

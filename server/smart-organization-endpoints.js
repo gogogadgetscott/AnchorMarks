@@ -53,7 +53,7 @@
 
 app.get('/api/tags/suggest-smart', authenticateToken, (req, res) => {
   const { url, limit = 10, include_domain = true, include_activity = true, include_similar = true } = req.query;
-  
+
   if (!url) {
     return res.json({ suggestions: [], domain_info: {} });
   }
@@ -61,35 +61,35 @@ app.get('/api/tags/suggest-smart', authenticateToken, (req, res) => {
   try {
     const urlObj = new URL(url);
     const domain = urlObj.hostname.replace(/^www\./, '');
-    
+
     // Get domain category info
     const categoryInfo = smartOrg.getDomainCategory(url);
     const domainStats = smartOrg.getDomainStats(db, req.user.id, domain);
-    
+
     // Collect all possible tags to score
     const tagsToScore = new Set();
-    
+
     // Add domain category tags
     if (include_domain && categoryInfo.tags) {
       categoryInfo.tags.forEach(t => tagsToScore.add(t));
     }
-    
+
     // Add existing tags from user's bookmarks
     const userTags = db.prepare('SELECT DISTINCT name FROM tags WHERE user_id = ?').all(req.user.id);
     userTags.forEach(row => tagsToScore.add(row.name));
-    
+
     // Add tags from domain bookmarks
     const domainTags = db.prepare(`
       SELECT DISTINCT tags FROM bookmarks 
       WHERE user_id = ? AND url LIKE ?
     `).all(req.user.id, `%${domain}%`);
-    
+
     domainTags.forEach(row => {
       if (row.tags) {
         smartOrg.tokenizeText(row.tags).forEach(t => tagsToScore.add(t));
       }
     });
-    
+
     // Score all tags
     const suggestions = [];
     tagsToScore.forEach(tag => {
@@ -98,7 +98,7 @@ app.get('/api/tags/suggest-smart', authenticateToken, (req, res) => {
         activity: include_activity ? 0.40 : 0,
         similarity: include_similar ? 0.25 : 0
       });
-      
+
       if (scores.score > 0.1) {
         suggestions.push({
           tag,
@@ -108,10 +108,10 @@ app.get('/api/tags/suggest-smart', authenticateToken, (req, res) => {
         });
       }
     });
-    
+
     // Sort by score and limit
     suggestions.sort((a, b) => b.score - a.score);
-    
+
     res.json({
       suggestions: suggestions.slice(0, parseInt(limit)),
       domain_info: {
@@ -161,25 +161,25 @@ app.get('/api/smart-collections/suggest', authenticateToken, (req, res) => {
 
   try {
     let suggestions = [];
-    
+
     // Get tag clusters
     if (!type || type === 'tag_cluster') {
       const clusters = smartOrg.getTagClusters(db, req.user.id);
       suggestions = suggestions.concat(clusters.slice(0, 2));
     }
-    
+
     // Get activity-based collections
     if (!type || type === 'activity') {
       const activityCollections = smartOrg.getActivityCollections(db, req.user.id);
       suggestions = suggestions.concat(activityCollections.slice(0, 2));
     }
-    
+
     // Get domain-based collections
     if (!type || type === 'domain') {
       const domainCollections = smartOrg.getDomainCollections(db, req.user.id);
       suggestions = suggestions.concat(domainCollections.slice(0, 2));
     }
-    
+
     // Deduplicate by name and limit
     const seen = new Set();
     const unique = suggestions.filter(s => {
@@ -187,7 +187,7 @@ app.get('/api/smart-collections/suggest', authenticateToken, (req, res) => {
       seen.add(s.name);
       return true;
     });
-    
+
     res.json({
       collections: unique.slice(0, parseInt(limit))
     });
@@ -223,17 +223,17 @@ app.get('/api/smart-collections/suggest', authenticateToken, (req, res) => {
 
 app.post('/api/smart-collections/create', authenticateToken, (req, res) => {
   const { name, type = 'tag_cluster', icon, color, tags, domain, filters } = req.body;
-  
+
   if (!name || !type) {
     return res.status(400).json({ error: 'Name and type are required' });
   }
 
   try {
     const id = uuidv4();
-    
+
     // Convert to filters object for smart_collections table
     let filterObj = {};
-    
+
     if (type === 'tag_cluster' && tags && tags.length) {
       filterObj = { tags };
     } else if (type === 'domain' && domain) {
@@ -241,12 +241,12 @@ app.post('/api/smart-collections/create', authenticateToken, (req, res) => {
     } else if (type === 'activity' && filters) {
       filterObj = filters;
     }
-    
+
     db.prepare(`
       INSERT INTO smart_collections (id, user_id, name, icon, color, filters)
       VALUES (?, ?, ?, ?, ?, ?)
     `).run(id, req.user.id, name, icon || 'filter', color || '#6366f1', JSON.stringify(filterObj));
-    
+
     res.json({
       id,
       name,
@@ -286,7 +286,7 @@ app.post('/api/smart-collections/create', authenticateToken, (req, res) => {
 
 app.get('/api/smart-collections/domain-stats', authenticateToken, (req, res) => {
   const { domain } = req.query;
-  
+
   if (!domain) {
     return res.status(400).json({ error: 'Domain parameter required' });
   }
@@ -294,13 +294,13 @@ app.get('/api/smart-collections/domain-stats', authenticateToken, (req, res) => 
   try {
     const stats = smartOrg.getDomainStats(db, req.user.id, domain);
     const category = smartOrg.getDomainCategory(`https://${domain}`);
-    
+
     // Get recent bookmarks
     const recentBookmarks = db.prepare(`
       SELECT COUNT(*) as count FROM bookmarks
       WHERE user_id = ? AND url LIKE ? AND datetime(created_at) > datetime('now', '-7 days')
     `).get(req.user.id, `%${domain}%`).count;
-    
+
     // Get most clicked
     const mostClicked = db.prepare(`
       SELECT title, click_count FROM bookmarks
@@ -308,7 +308,7 @@ app.get('/api/smart-collections/domain-stats', authenticateToken, (req, res) => 
       ORDER BY click_count DESC
       LIMIT 5
     `).all(req.user.id, `%${domain}%`);
-    
+
     res.json({
       ...stats,
       category: category.category,
@@ -386,11 +386,11 @@ app.get('/api/smart-insights', authenticateToken, (req, res) => {
     const totalBookmarks = db.prepare(
       'SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ?'
     ).get(req.user.id).count;
-    
+
     const totalTags = db.prepare(
       'SELECT COUNT(*) as count FROM tags WHERE user_id = ?'
     ).get(req.user.id).count;
-    
+
     // Top domains
     const topDomains = db.prepare(`
       SELECT 
@@ -402,7 +402,7 @@ app.get('/api/smart-insights', authenticateToken, (req, res) => {
       ORDER BY count DESC
       LIMIT 5
     `).all(req.user.id);
-    
+
     // Top tags
     const topTags = db.prepare(`
       SELECT name, COUNT(bt.tag_id) as count
@@ -413,37 +413,37 @@ app.get('/api/smart-insights', authenticateToken, (req, res) => {
       ORDER BY count DESC
       LIMIT 5
     `).all(req.user.id);
-    
+
     // Recent activity
     const thisWeek = db.prepare(
       'SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND datetime(created_at) > datetime("now", "-7 days")'
     ).get(req.user.id).count;
-    
+
     const thisMonth = db.prepare(
       'SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND datetime(created_at) > datetime("now", "-30 days")'
     ).get(req.user.id).count;
-    
+
     const lastAdded = db.prepare(
       'SELECT created_at FROM bookmarks WHERE user_id = ? ORDER BY created_at DESC LIMIT 1'
     ).get(req.user.id);
-    
+
     // Engagement
     const totalClicks = db.prepare(
       'SELECT COALESCE(SUM(click_count), 0) as total FROM bookmarks WHERE user_id = ?'
     ).get(req.user.id).total;
-    
+
     const unread = db.prepare(
       'SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND click_count = 0'
     ).get(req.user.id).count;
-    
+
     const frequentlyUsed = db.prepare(
       'SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND click_count > 5'
     ).get(req.user.id).count;
-    
+
     // Suggestions
     const suggestedCollections = smartOrg.getActivityCollections(db, req.user.id).slice(0, 2);
     const suggestedClusters = smartOrg.getTagClusters(db, req.user.id).slice(0, 2);
-    
+
     res.json({
       total_bookmarks: totalBookmarks,
       total_tags: totalTags,

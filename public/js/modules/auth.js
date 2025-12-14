@@ -33,6 +33,7 @@ export async function login(email, password) {
         });
         state.setCsrfToken(data.csrfToken);
         state.setCurrentUser(data.user);
+        state.setIsAuthenticated(true);
         showMainApp();
         showToast('Welcome back!', 'success');
         return true;
@@ -51,6 +52,7 @@ export async function register(email, password) {
         });
         state.setCsrfToken(data.csrfToken);
         state.setCurrentUser(data.user);
+        state.setIsAuthenticated(true);
         showMainApp();
         showToast('Account created successfully!', 'success');
         return true;
@@ -65,6 +67,7 @@ export function logout() {
     api('/auth/logout', { method: 'POST' }).catch(() => { }).finally(() => {
         state.setCsrfToken(null);
         state.setCurrentUser(null);
+        state.setIsAuthenticated(false);
         showAuthScreen();
     });
 }
@@ -75,11 +78,13 @@ export async function checkAuth() {
         const data = await api('/auth/me');
         state.setCurrentUser(data.user);
         state.setCsrfToken(data.csrfToken);
+        state.setIsAuthenticated(true);
         return true;
     } catch (err) {
         console.error('Auth check failed:', err.message);
         state.setCsrfToken(null);
         state.setCurrentUser(null);
+        state.setIsAuthenticated(false);
         showAuthScreen();
         return false;
     }

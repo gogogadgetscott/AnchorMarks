@@ -50,7 +50,7 @@ describe('Smart Organization API', () => {
 
   beforeAll(async () => {
     agent = request.agent(app);
-    
+
     // Register and login (matches existing test pattern)
     const timestamp = Date.now();
     const registerRes = await agent
@@ -100,7 +100,7 @@ describe('Smart Organization API', () => {
           .post('/api/bookmarks')
           .set('X-CSRF-Token', csrfToken)
           .send(bookmark);
-        
+
         expect(res.status).toBe(200);
         expect(res.body).toHaveProperty('id');
       }
@@ -117,7 +117,7 @@ describe('Smart Organization API', () => {
       expect(res.body).toHaveProperty('suggestions');
       expect(res.body).toHaveProperty('domain_info');
       expect(Array.isArray(res.body.suggestions)).toBe(true);
-      
+
       if (res.body.suggestions.length > 0) {
         const suggestion = res.body.suggestions[0];
         expect(suggestion).toHaveProperty('tag');
@@ -138,10 +138,10 @@ describe('Smart Organization API', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.suggestions.length).toBeGreaterThan(0);
-      
+
       const tags = res.body.suggestions.map(s => s.tag);
       // StackOverflow should suggest help/learning related tags
-      const hasRelevantTag = tags.some(tag => 
+      const hasRelevantTag = tags.some(tag =>
         ['help', 'qa', 'community', 'learning'].includes(tag.toLowerCase())
       );
       expect(hasRelevantTag).toBe(true);
@@ -150,7 +150,7 @@ describe('Smart Organization API', () => {
     it('should handle custom weights', async () => {
       const res = await agent
         .get('/api/tags/suggest-smart')
-        .query({ 
+        .query({
           url: 'https://github.com/test/repo',
           limit: 5,
           domain_weight: 0.8,
@@ -329,13 +329,13 @@ describe('Smart Organization API', () => {
       const res = await agent.get('/api/smart-collections/tag-clusters');
 
       expect(res.status).toBe(200);
-      
+
       if (res.body.clusters && res.body.clusters.length > 0) {
         // Check if frontend-related tags are grouped
-        const frontendCluster = res.body.clusters.find(c => 
+        const frontendCluster = res.body.clusters.find(c =>
           c.tags && c.tags.some(t => ['javascript', 'frontend', 'react', 'vue'].includes(t))
         );
-        
+
         if (frontendCluster) {
           expect(frontendCluster.name).toBeTruthy();
         }
@@ -370,7 +370,7 @@ describe('Smart Organization API', () => {
       const res = await agent.get('/api/smart-insights');
 
       expect(res.status).toBe(200);
-      
+
       if (res.body.top_domains && res.body.top_domains.length > 0) {
         const domain = res.body.top_domains[0];
         expect(domain).toHaveProperty('domain');
@@ -383,7 +383,7 @@ describe('Smart Organization API', () => {
       const res = await agent.get('/api/smart-insights');
 
       expect(res.status).toBe(200);
-      
+
       if (res.body.top_tags && res.body.top_tags.length > 0) {
         const tag = res.body.top_tags[0];
         expect(tag).toHaveProperty('tag');
@@ -410,7 +410,7 @@ describe('Smart Organization API', () => {
   describe('Smart Organization Module Functions', () => {
     it('should recognize known domains', () => {
       const smartOrg = require('../smart-organization.js');
-      
+
       const githubInfo = smartOrg.getDomainCategory('https://github.com/test/repo');
       expect(githubInfo).toHaveProperty('category');
       expect(githubInfo).toHaveProperty('tags');
@@ -421,7 +421,7 @@ describe('Smart Organization API', () => {
 
     it('should handle unknown domains', () => {
       const smartOrg = require('../smart-organization.js');
-      
+
       const unknownInfo = smartOrg.getDomainCategory('https://unknown-domain-12345.com/page');
       expect(unknownInfo).toHaveProperty('category');
       expect(unknownInfo).toHaveProperty('tags');
@@ -430,7 +430,7 @@ describe('Smart Organization API', () => {
 
     it('should tokenize text correctly', () => {
       const smartOrg = require('../smart-organization.js');
-      
+
       const tokens = smartOrg.tokenizeText('This is a test of JavaScript and Node.js');
       expect(Array.isArray(tokens)).toBe(true);
       expect(tokens.length).toBeGreaterThan(0);
@@ -457,18 +457,18 @@ describe('Smart Organization API', () => {
       // Now request suggestions for a similar URL
       const res = await agent
         .get('/api/tags/suggest-smart')
-        .query({ 
+        .query({
           url: 'https://react-advanced.com/hooks-guide',
           limit: 10,
           activity_weight: 0.5
         });
 
       expect(res.status).toBe(200);
-      
+
       // Should suggest some of the commonly used tags
       if (res.body.suggestions && res.body.suggestions.length > 0) {
         const suggestedTags = res.body.suggestions.map(s => s.tag);
-        const hasCommonTag = suggestedTags.some(tag => 
+        const hasCommonTag = suggestedTags.some(tag =>
           ['react', 'hooks', 'tutorial'].includes(tag)
         );
         expect(hasCommonTag).toBe(true);
@@ -478,7 +478,7 @@ describe('Smart Organization API', () => {
     it('should combine multiple scoring sources', async () => {
       const res = await agent
         .get('/api/tags/suggest-smart')
-        .query({ 
+        .query({
           url: 'https://github.com/facebook/react/wiki',
           limit: 10,
           domain_weight: 0.35,
@@ -487,7 +487,7 @@ describe('Smart Organization API', () => {
         });
 
       expect(res.status).toBe(200);
-      
+
       // Should have suggestions from multiple sources
       if (res.body.suggestions && res.body.suggestions.length > 0) {
         const sources = [...new Set(res.body.suggestions.map(s => s.source))];

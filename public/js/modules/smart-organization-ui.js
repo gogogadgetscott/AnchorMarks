@@ -165,6 +165,10 @@ function renderSmartTagSuggestions(suggestions, domainInfo) {
 // ============== SMART COLLECTIONS ==============
 
 async function loadSmartCollections() {
+  // Don't load if not authenticated
+  const AM = getAPI();
+  if (!AM.isAuthenticated || !AM.isAuthenticated()) return;
+
   try {
     const response = await api('/smart-collections/suggest?limit=5');
 
@@ -267,6 +271,10 @@ async function createSmartCollectionFromSuggestion(collectionJson) {
 // ============== SMART INSIGHTS WIDGET ==============
 
 async function loadSmartInsights() {
+  // Don't load if not authenticated
+  const AM = getAPI();
+  if (!AM.isAuthenticated || !AM.isAuthenticated()) return;
+
   try {
     const insights = await api('/smart-insights');
     renderSmartInsights(insights);
