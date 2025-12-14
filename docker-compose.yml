@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   anchormarks:
     build: .
@@ -8,13 +6,14 @@ services:
     ports:
       - "${PORT:-3000}:${PORT:-3000}"
     volumes:
-      - anchormarks_data:/data
-      - anchormarks_favicons:/app/public/favicons
+      - ./server:/app/server
+      - ./public:/app/public
+      - ./data:/data
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-3000}
-      - HOST=0.0.0.0
-      - DB_PATH=/data/anchormarks.db
+      - HOST=${HOST:-0.0.0.0}
+      - DB_PATH=${DB_PATH:-/data/anchormarks.db}
       - JWT_SECRET=${JWT_SECRET:-change-this-to-a-secure-secret}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
     healthcheck:
@@ -23,11 +22,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.anchormarks.rule=Host(`bookmarks.yourdomain.com`)"
-      - "traefik.http.routers.anchormarks.tls.certresolver=letsencrypt"
-
-volumes:
-  anchormarks_data:
-  anchormarks_favicons:

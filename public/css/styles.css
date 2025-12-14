@@ -1588,6 +1588,7 @@ body.sidebar-collapsed .nav-section-header {
 
 .bookmarks-list .bookmark-card {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.5rem;
@@ -1595,6 +1596,7 @@ body.sidebar-collapsed .nav-section-header {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  height: auto;
 }
 
 .bookmarks-list .bookmark-header {
@@ -1658,12 +1660,14 @@ body.sidebar-collapsed .nav-section-header {
 
 .bookmarks-compact .bookmark-card {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
   border-radius: 0;
   border: none;
   background: var(--card-bg);
+  height: auto;
 }
 
 .bookmarks-compact .bookmark-card:hover {
@@ -2289,6 +2293,9 @@ body.sidebar-collapsed .nav-section-header {
 
 .toast.error {
   background: var(--danger);
+  cursor: pointer;
+  font-weight: 600;
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Context Menu */
@@ -3486,7 +3493,8 @@ body.sidebar-collapsed .nav-section-header {
   justify-content: space-between;
   padding: 1.5rem;
   border-bottom: 1px solid var(--border-color);
-  sticky: 0;
+  position: sticky;
+  top: 0;
   background: var(--modal-bg);
 }
 

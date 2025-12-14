@@ -1,132 +1,222 @@
-/**
- * AnchorMarks - Main Application Entry Point
- * 
- * This is the main entry point that imports all modules and initializes the application.
- * All functionality is split into separate modules in the ./modules/ directory.
- */
+// AnchorMarks - Frontend Application
 
-// Core Modules
-import * as state from './modules/state.js';
-import { api } from './modules/api.js';
-import { escapeHtml, getHostname, parseTagInput } from './modules/utils.js';
-import { 
-    initDom, 
-    dom, 
-    showToast, 
-    openModal, 
-    closeModals, 
-    resetForms,
-    addTagToInput,
-    updateActiveNav, 
-    updateCounts, 
-    updateBulkUI 
-} from './modules/ui.js';
+function migrateLocalStorageKeys() {
+    const oldPrefix = 'anchormarks_';
+    const newPrefix = 'anchormarks_';
+    const keysToMigrate = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(oldPrefix)) keysToMigrate.push(key);
+    }
+    keysToMigrate.forEach(oldKey => {
+        const suffix = oldKey.slice(oldPrefix.length);
+        const newKey = `${newPrefix}${suffix}`;
+        if (!localStorage.getItem(newKey)) {
+            localStorage.setItem(newKey, localStorage.getItem(oldKey));
+        }
+        localStorage.removeItem(oldKey);
+    });
+}
 
-// Feature Modules
-import { 
-    checkAuth, 
-    login, 
-    register, 
-    logout, 
-    showMainApp, 
-    showAuthScreen,
-    updateUserInfo,
-    regenerateApiKey,
-    copyApiKey 
-} from './modules/auth.js';
+migrateLocalStorageKeys();
 
-import { 
-    loadSettings, 
-    saveSettings, 
-    toggleTheme, 
-    toggleSidebar, 
-    toggleFavicons,
-    applyFaviconSetting,
-    setViewMode,
-    toggleSection 
-} from './modules/settings.js';
+const API_BASE = '/api';
+let authToken = null; // No longer using localStorage
+let csrfToken = null; // Will be set from server
+let currentUser = null;
+let bookmarks = [];
+let folders = [];
+let renderedBookmarks = [];
+let currentDashboardTab = null;
+let currentView = 'dashboard';
+let currentFolder = null;
+let viewMode = 'grid'; // Will be loaded from database
+let hideFavicons = false; // Will be loaded from database
+let hideSidebar = false; // Will be loaded from database
+let dashboardConfig = { mode: 'folder', tags: [], bookmarkSort: 'recently_added' }; // Will be loaded from database
+let widgetOrder = {}; // Will be loaded from database
+let dashboardWidgets = []; // Freeform positioned widgets with {id, type, x, y, w, h}
+let collapsedSections = []; // Will be loaded from database
+let filterConfig = { sort: 'recently_added', tags: [], tagSort: 'count_desc', tagMode: 'OR' };
+let selectedBookmarks = new Set();
+let lastSelectedIndex = null;
+let bulkMode = false;
+let commandPaletteOpen = false;
+let commandPaletteEntries = [];
+let commandPaletteActiveIndex = 0;
+let lastTagRenameAction = null;
+let isInitialLoad = true;
 
-import { 
-    loadBookmarks, 
-    renderBookmarks, 
-    createBookmark, 
-    updateBookmark, 
-    deleteBookmark,
-    toggleFavorite,
-    trackClick,
-    editBookmark,
-    filterByTag,
-    toggleBookmarkSelection,
-    clearSelections,
-    selectAllBookmarks
-} from './modules/bookmarks.js';
+// Lazy loading state
+const BOOKMARKS_PER_PAGE = 50;
+let displayedCount = BOOKMARKS_PER_PAGE;
+let isLoadingMore = false;
 
-import { 
-    loadFolders, 
-    renderFolders, 
-    createFolder, 
-    updateFolder, 
-    deleteFolder,
-    editFolder,
-    updateFolderSelect,
-    updateFolderParentSelect,
-    populateBulkMoveSelect,
-    navigateToFolderByIndex 
-} from './modules/folders.js';
+// DOM Elements
+const authScreen = document.getElementById('auth-screen');
+const mainApp = document.getElementById('main-app');
+const loginForm = document.getElementById('login-form');
+const registerForm = document.getElementById('register-form');
+const authTabs = document.querySelectorAll('.auth-tab');
+const bookmarksContainer = document.getElementById('bookmarks-container');
+const emptyState = document.getElementById('empty-state');
+const searchInput = document.getElementById('search-input');
+const viewTitle = document.getElementById('view-title');
+const viewCount = document.getElementById('view-count');
+const bulkBar = document.getElementById('bulk-bar');
+const bulkMoveSelect = document.getElementById('bulk-move-select');
+const bulkCount = document.getElementById('bulk-count');
+const commandPalette = document.getElementById('command-palette');
+const commandPaletteInput = document.getElementById('command-palette-input');
+const commandPaletteList = document.getElementById('command-palette-list');
+const bookmarkUrlInput = document.getElementById('bookmark-url');
+const bookmarkTagsInput = document.getElementById('bookmark-tags');
+const tagSuggestions = document.getElementById('tag-suggestions');
+const tagStatsList = document.getElementById('tag-stats-list');
+const tagRenameFrom = document.getElementById('tag-rename-from');
+const tagRenameTo = document.getElementById('tag-rename-to');
+const tagRenameBtn = document.getElementById('tag-rename-btn');
+const tagRenameUndoBtn = document.getElementById('tag-rename-undo-btn');
 
-import { renderDashboard, filterDashboardBookmarks } from './modules/dashboard.js';
+// API Helper
+async function api(endpoint, options = {}) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
 
-import { 
-    bulkDelete, 
-    bulkFavorite, 
-    bulkMove, 
-    bulkAddTags, 
-    bulkRemoveTags 
-} from './modules/bulk-ops.js';
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        credentials: 'include', // Include cookies in request
+        headers: { ...headers, ...options.headers }
+    });
 
-import { 
-    renderSidebarTags,
-    filterSidebarTags,
-    showAllTags,
-    clearAllFilters,
-    renderActiveFilters,
-    toggleFilterTag,
-    toggleTagMode,
-    removeTagFilter,
-    clearSearch,
-    renameTagAcross,
-    loadTagStats,
-    updateTagRenameUndoButton 
-} from './modules/search.js';
+    if (response.status === 401) {
+        logout();
+        throw new Error('Session expired');
+    }
 
-import { 
-    openCommandPalette, 
-    closeCommandPalette, 
-    renderCommandPaletteList,
-    updateCommandPaletteActive,
-    runActiveCommand,
-    openShortcutsPopup,
-    closeShortcutsPopup 
-} from './modules/commands.js';
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'API Error');
+    return data;
+}
 
-import { 
-    checkWelcomeTour, 
-    nextTourStep, 
-    skipTour 
-} from './modules/tour.js';
+// Auth Functions
+async function login(email, password) {
+    try {
+        const data = await api('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password })
+        });
+        csrfToken = data.csrfToken;
+        currentUser = data.user;
+        showMainApp();
+        showToast('Welcome back!', 'success');
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
 
-import { 
-    importHtml, 
-    exportJson, 
-    exportHtml, 
-    resetBookmarks 
-} from './modules/import-export.js';
+async function register(email, password) {
+    try {
+        const data = await api('/auth/register', {
+            method: 'POST',
+            body: JSON.stringify({ email, password })
+        });
+        csrfToken = data.csrfToken;
+        currentUser = data.user;
+        showMainApp();
+        showToast('Account created successfully!', 'success');
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
 
-import SmartOrg from './modules/smart-organization-ui.js';
+function logout() {
+    // Call logout API first (needs csrfToken), then clear state
+    api('/auth/logout', { method: 'POST' }).catch(() => {}).finally(() => {
+        csrfToken = null;
+        currentUser = null;
+        showAuthScreen();
+    });
+}
 
-// ============================================================
-// Application Initialization
-// ============================================================
+async function checkAuth() {
+    try {
+        const data = await api('/auth/me');
+        currentUser = data.user;
+        csrfToken = data.csrfToken;
+        await loadSettings(); // Load user settings from database
+        showMainApp();
+    } catch (err) {
+        // If token verification fails, show login
+        console.error('Auth check failed:', err.message);
+        csrfToken = null;
+        currentUser = null;
+        showAuthScreen();
+    }
+}
+
+// Settings API
+async function loadSettings() {
+    try {
+        const settings = await api('/settings');
+        viewMode = settings.view_mode || 'grid';
+        hideFavicons = settings.hide_favicons || false;
+        hideSidebar = settings.hide_sidebar || false;
+        dashboardConfig = {
+            mode: settings.dashboard_mode || 'folder',
+            tags: settings.dashboard_tags || [],
+            bookmarkSort: settings.dashboard_sort || 'recently_added'
+        };
+        widgetOrder = settings.widget_order || {};
+        dashboardWidgets = settings.dashboard_widgets || [];
+        collapsedSections = settings.collapsed_sections || [];
+        
+        // Apply theme
+        document.documentElement.setAttribute('data-theme', settings.theme || 'dark');
+        const darkToggle = document.getElementById('dark-mode-toggle');
+        if (darkToggle) darkToggle.checked = settings.theme === 'dark';
+        
+        // Apply sidebar collapsed state from localStorage (UI preference)
+        const sidebarCollapsed = localStorage.getItem('anchormarks_sidebar_collapsed') === 'true';
+        if (sidebarCollapsed) {
+            document.body.classList.add('sidebar-collapsed');
+            // Initialize popouts after a short delay to ensure DOM is ready
+            setTimeout(() => initSidebarPopouts(), 100);
+        }
+        
+        // Apply collapsed sections
+        collapsedSections.forEach(sectionId => {
+            const section = document.getElementById(sectionId);
+            if (section) section.classList.add('collapsed');
+        });
+    } catch (err) {
+        console.error('Failed to load settings:', err);
+    }
+}
+
+async function saveSettings(updates) {
+    try {
+        await api('/settings', {
+            method: 'PUT',
+            body: JSON.stringify(updates)
+        });
+    } catch (err) {
+        console.error('Failed to save settings:', err);
+    }
+}
+
+// UI State
+function showAuthScreen() {
+    closeModals(); // Close any open modals (settings, etc.)
+    authScreen.classList.remove('hidden');
+    mainApp.classList.add('hidden');
+}
+
+function showMainApp() {
+    authScreen.classList.add('hidden');
+    mainApp.classList.remove('hidden');
+    initializeApp();
+}
 
 async function initializeApp() {
     updateUserInfo();
@@ -229,21 +319,163 @@ async function loadDashboardSettings() {
     renderTagList();
 }
 
-// Tag Suggestions
-let tagSuggestTimeout;
-async function showTagSuggestions(url) {
-    const tagSuggestions = document.getElementById('tag-suggestions');
-    if (!tagSuggestions || !url) return;
-    
-    clearTimeout(tagSuggestTimeout);
-    tagSuggestTimeout = setTimeout(async () => {
-        try {
-            const suggestions = await api(`/tags/suggest?url=${encodeURIComponent(url)}`);
-            renderTagSuggestions(suggestions);
-        } catch (err) {
-            renderTagSuggestions([]);
+// Modals
+function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+}
+
+// ... (other functions)
+
+// Hook up listener
+// (This line must be replaced in the Event Listener section)
+
+function closeModals() {
+    document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
+    resetForms();
+}
+
+function resetForms() {
+    document.getElementById('bookmark-form').reset();
+    document.getElementById('folder-form').reset();
+    document.getElementById('bookmark-id').value = '';
+    document.getElementById('folder-id').value = '';
+    document.getElementById('bookmark-modal-title').textContent = 'Add Bookmark';
+    document.getElementById('folder-modal-title').textContent = 'New Folder';
+    document.querySelectorAll('.color-option').forEach((opt, i) => {
+        opt.classList.toggle('active', i === 0);
+    });
+    document.getElementById('folder-color').value = '#6366f1';
+    if (tagSuggestions) tagSuggestions.innerHTML = '';
+}
+
+// Import/Export
+async function importHtml(file) {
+    const html = await file.text();
+    try {
+        const result = await api('/import/html', {
+            method: 'POST',
+            body: JSON.stringify({ html })
+        });
+        await loadBookmarks();
+        showToast(`Imported ${result.imported} bookmarks!`, 'success');
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+async function exportJson() {
+    try {
+        const data = await api('/export');
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        downloadBlob(blob, 'anchormarks-bookmarks.json');
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+async function exportHtml() {
+    try {
+        const headers = {};
+        if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+        const response = await fetch(`${API_BASE}/export?format=html`, { headers });
+
+        if (response.status === 401) {
+            logout();
+            throw new Error('Session expired');
         }
-    }, 300);
+
+        if (!response.ok) throw new Error('Export failed');
+
+        const blob = await response.blob();
+        downloadBlob(blob, 'anchormarks-bookmarks.html');
+        showToast('Export successful', 'success');
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// API Key
+async function regenerateApiKey() {
+    if (!confirm('Regenerate API key? Old keys will stop working.')) return;
+
+    try {
+        const data = await api('/auth/regenerate-key', { method: 'POST' });
+        currentUser.api_key = data.api_key;
+        document.getElementById('api-key-value').textContent = data.api_key;
+        showToast('API key regenerated!', 'success');
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+function copyApiKey() {
+    navigator.clipboard.writeText(currentUser.api_key);
+    showToast('API key copied!', 'success');
+}
+
+// Reset Bookmarks
+async function resetBookmarks() {
+    if (!confirm('Reset all bookmarks? This will delete all your bookmarks and folders, and restore the example bookmarks. This cannot be undone!')) return;
+
+    try {
+        const data = await api('/settings/reset-bookmarks', { method: 'POST' });
+        currentFolder = null;
+        currentView = 'all';
+        viewTitle.textContent = 'Bookmarks';
+        await Promise.all([loadFolders(), loadBookmarks()]);
+        updateActiveNav();
+        closeModals();
+        showToast(`Bookmarks reset! ${data.bookmarks_created} example bookmarks created.`, 'success');
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+// Toast
+function showToast(message, type = '') {
+    const toast = document.getElementById('toast');
+    toast.querySelector('.toast-message').textContent = message;
+    toast.className = `toast ${type}`;
+    toast.classList.remove('hidden');
+
+    setTimeout(() => toast.classList.add('hidden'), 3000);
+}
+
+// Helpers
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function getHostname(url) {
+    try {
+        return new URL(url).hostname;
+    } catch {
+        return url;
+    }
+}
+
+function parseTagInput(value) {
+    if (!value) return [];
+    return value.split(',').map(t => t.trim()).filter(Boolean);
+}
+
+function addTagToInput(tag) {
+    if (!bookmarkTagsInput) return;
+    const current = new Set(parseTagInput(bookmarkTagsInput.value));
+    current.add(tag);
+    bookmarkTagsInput.value = Array.from(current).join(', ');
 }
 
 function renderTagSuggestions(list) {
