@@ -389,6 +389,11 @@ textarea {
   transition: all var(--transition-fast);
 }
 
+.btn-icon-sm {
+  width: 16px;
+  height: 16px;
+}
+
 .btn-icon:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
@@ -428,14 +433,12 @@ body.sidebar-collapsed .main-content {
   margin-left: 70px;
 }
 
+/* Hide text elements in collapsed sidebar */
 body.sidebar-collapsed .sidebar .logo-text,
-body.sidebar-collapsed .sidebar .sidebar-search input,
-body.sidebar-collapsed .sidebar .sidebar-search kbd,
-body.sidebar-collapsed .sidebar .nav-item span,
+body.sidebar-collapsed .sidebar .nav-item span:not(.collapsed-tooltip),
 body.sidebar-collapsed .sidebar .nav-section-header span,
 body.sidebar-collapsed .sidebar .user-info,
 body.sidebar-collapsed .sidebar .folder-actions,
-body.sidebar-collapsed .sidebar .btn-primary span,
 body.sidebar-collapsed .sidebar .tag-item span,
 body.sidebar-collapsed .sidebar .folder-name,
 body.sidebar-collapsed .sidebar .badge,
@@ -444,8 +447,22 @@ body.sidebar-collapsed .sidebar .chevron,
 body.sidebar-collapsed .sidebar .section-actions,
 body.sidebar-collapsed .sidebar .stats-bar,
 body.sidebar-collapsed .sidebar .sidebar-tags-search {
-  opacity: 0;
-  pointer-events: none;
+  display: none;
+}
+
+/* Hide entire search section when collapsed - it's not functional as icon-only */
+body.sidebar-collapsed .sidebar-search {
+  display: none;
+}
+
+/* Hide collapsible sections (Folders/Tags) when collapsed - not usable */
+body.sidebar-collapsed .nav-section.collapsible {
+  display: none;
+}
+
+/* Hide Active Filters section when collapsed */
+body.sidebar-collapsed .active-filters-section {
+  display: none;
 }
 
 body:not(.sidebar-collapsed) .sidebar-popout {
@@ -453,22 +470,87 @@ body:not(.sidebar-collapsed) .sidebar-popout {
 }
 
 body.sidebar-collapsed .sidebar-header {
-  padding: 0 1rem;
+  padding: 0;
   justify-content: center;
 }
 
-body.sidebar-collapsed .sidebar-search {
-  padding: 1rem;
-  justify-content: center;
-}
-
+/* Add Bookmark button - show only the icon */
 body.sidebar-collapsed .sidebar-actions {
-  padding: 0 0.75rem;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
 }
 
-body.sidebar-collapsed .nav-item {
-  padding: 0.5rem;
+body.sidebar-collapsed .sidebar-actions .btn-primary {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
   justify-content: center;
+}
+
+body.sidebar-collapsed .sidebar-actions .btn-primary svg {
+  margin: 0;
+}
+
+/* Hide "Add Bookmark" text */
+body.sidebar-collapsed .sidebar-actions .btn-primary {
+  font-size: 0;
+  gap: 0;
+}
+
+body.sidebar-collapsed .sidebar-actions .btn-primary svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Nav items - center icons with tooltip support */
+body.sidebar-collapsed .nav-item {
+  padding: 0.625rem;
+  justify-content: center;
+  margin: 2px 0.5rem;
+  position: relative;
+}
+
+body.sidebar-collapsed .nav-item svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Tooltip for collapsed nav items */
+body.sidebar-collapsed .nav-item::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-color);
+  z-index: 1100;
+}
+
+body.sidebar-collapsed .nav-item:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Main nav section padding adjustment */
+body.sidebar-collapsed .nav-section:not(.collapsible) {
+  padding: 0 0.25rem;
 }
 
 body.sidebar-collapsed .folder-item {
@@ -481,13 +563,34 @@ body.sidebar-collapsed .nav-section-header {
   justify-content: center;
 }
 
+/* User menu - show only avatar */
 body.sidebar-collapsed .user-menu {
-  padding: 0.75rem;
+  padding: 0.5rem;
   justify-content: center;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+body.sidebar-collapsed .user-menu .user-avatar {
+  width: 36px;
+  height: 36px;
+  font-size: 0.9rem;
+}
+
+/* Hide help link in collapsed state to save space */
+body.sidebar-collapsed .user-menu a[href="/help.html"] {
+  display: none;
+}
+
+/* Settings button in collapsed state */
+body.sidebar-collapsed .user-menu .btn-icon {
+  width: 32px;
+  height: 32px;
 }
 
 body.sidebar-collapsed .sidebar-nav {
   align-items: center;
+  overflow: hidden;
 }
 
 body.sidebar-collapsed .nav-section {
@@ -496,6 +599,7 @@ body.sidebar-collapsed .nav-section {
 
 body.sidebar-collapsed .sidebar-footer {
   align-items: center;
+  border-top: 1px solid var(--border-color);
 }
 
 /* Sidebar Popout for Collapsed State */
@@ -594,17 +698,19 @@ body.sidebar-collapsed .nav-section-header {
 }
 
 .sidebar-search {
-  padding: 1rem 1.5rem;
+  padding: 0 0 0.75rem 0;
   position: relative;
 }
 
 .sidebar-search svg {
   position: absolute;
-  left: calc(1.5rem + 0.5rem);
-  top: 50%;
-  transform: translateY(-50%);
+  left: 0.75rem;
+  top: 0;
+  bottom: 0;
+  margin: auto;
   width: 18px;
   height: 18px;
+  transform: translateY(-5px);
   color: var(--text-tertiary);
 }
 
@@ -616,6 +722,7 @@ body.sidebar-collapsed .nav-section-header {
   background: var(--bg-primary);
   color: var(--text-primary);
   font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 .sidebar-search input:focus {
@@ -625,19 +732,26 @@ body.sidebar-collapsed .nav-section-header {
 
 .sidebar-search kbd {
   position: absolute;
-  right: calc(1.5rem + 0.5rem);
-  top: 50%;
-  transform: translateY(-50%);
-  padding: 2px 6px;
+  right: 0.75rem;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+  height: 20px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.75rem;
+  line-height: 1;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   color: var(--text-tertiary);
+  transform: translateY(-5px);
 }
 
 .sidebar-actions {
-  padding: 0 1rem;
+  padding: 1rem 0.5rem 0 0.5rem;
   margin-bottom: 0.5rem;
 }
 
@@ -764,10 +878,28 @@ body.sidebar-collapsed .nav-section-header {
 }
 
 .nav-section-content {
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   transition: max-height 0.3s ease;
-  max-height: 500px;
+  max-height: 275px;
   padding: 0 0.5rem 0.5rem;
+}
+
+.nav-section-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.nav-section-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nav-section-content::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.nav-section-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
 }
 
 .nav-section.collapsed .nav-section-content {
@@ -792,6 +924,95 @@ body.sidebar-collapsed .nav-section-header {
 
 .sidebar-tags-search input::placeholder {
   color: var(--text-tertiary);
+}
+
+/* Sidebar Filter Section */
+.sidebar-filter-group {
+  margin-bottom: 0.75rem;
+}
+
+.sidebar-filter-group label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sidebar-filter-select {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.sidebar-filter-select:focus {
+  outline: none;
+  border-color: var(--primary-500);
+}
+
+.sidebar-active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.sidebar-active-filters:empty {
+  display: none;
+}
+
+.sidebar-active-filters .filter-chip {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+}
+
+/* Active Filters Wrapper (integrated into Filters section) */
+.sidebar-active-filters-wrapper {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.sidebar-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-filter-header label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sidebar-filter-header .btn-link {
+  font-size: 0.7rem;
+}
+
+.sidebar-active-filters-wrapper .filter-chips {
+  gap: 0.25rem;
+}
+
+.sidebar-active-filters-wrapper .folder-chip,
+.sidebar-active-filters-wrapper .tag-chip {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.sidebar-active-filters-wrapper .filter-chip {
+  font-size: 0.65rem;
+  padding: 2px 6px;
 }
 
 /* Show More Button */

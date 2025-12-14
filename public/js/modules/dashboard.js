@@ -5,7 +5,7 @@
 
 import * as state from './state.js';
 import { escapeHtml } from './utils.js';
-import { showToast, dom } from './ui.js';
+import { showToast, dom, updateCounts } from './ui.js';
 import { saveSettings } from './settings.js';
 
 // sortBookmarks is defined locally to avoid circular dependency with bookmarks.js
@@ -92,6 +92,15 @@ function renderFreeformWidgets() {
                         <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
                     </svg>
                 </div>
+                ${widget.type === 'folder' ?
+                `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>` :
+                `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                        <line x1="7" y1="7" x2="7.01" y2="7"/>
+                    </svg>`
+            }
                 <div class="widget-title">${escapeHtml(name)}</div>
                 <div class="widget-count">${count}</div>
                 <div class="widget-actions">
@@ -114,7 +123,7 @@ function renderFreeformWidgets() {
                         <a href="${b.url}" target="_blank" class="compact-item" data-action="track-click" data-id="${b.id}">
                             <div class="compact-favicon">
                                 ${!state.hideFavicons && b.favicon ? `<img src="${b.favicon}" alt="">` :
-                `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/></svg>`}
+                    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/></svg>`}
                             </div>
                             <span class="compact-text">${escapeHtml(b.title)}</span>
                         </a>
@@ -317,6 +326,7 @@ export function addDashboardWidget(type, id, x, y) {
     state.dashboardWidgets.push(newWidget);
     saveDashboardWidgets();
     renderDashboard();
+    updateCounts();
     showToast(`${type === 'folder' ? 'Folder' : 'Tag'} added to dashboard`, 'success');
 }
 
@@ -325,6 +335,7 @@ export function removeDashboardWidget(index) {
     state.dashboardWidgets.splice(index, 1);
     saveDashboardWidgets();
     renderDashboard();
+    updateCounts();
     showToast('Widget removed', 'success');
 }
 

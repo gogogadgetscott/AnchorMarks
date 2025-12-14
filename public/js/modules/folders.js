@@ -8,6 +8,7 @@ import { api } from './api.js';
 import { escapeHtml } from './utils.js';
 import { showToast, closeModals, openModal, updateActiveNav } from './ui.js';
 import { loadBookmarks } from './bookmarks.js';
+import { renderActiveFilters } from './search.js';
 
 // Load folders from server
 export async function loadFolders() {
@@ -86,6 +87,7 @@ export function renderFolders() {
             state.setCurrentFolder(item.dataset.folder);
             state.setCurrentView('folder');
             updateActiveNav();
+            renderActiveFilters();
             loadBookmarks();
 
             const folder = state.folders.find(f => f.id === state.currentFolder);
@@ -112,6 +114,7 @@ export function renderFolders() {
         }
     });
 }
+
 
 // Update folder select dropdown
 export function updateFolderSelect() {
@@ -226,6 +229,7 @@ export async function deleteFolder(id) {
             state.setCurrentView('all');
             const viewTitle = document.getElementById('view-title');
             if (viewTitle) viewTitle.textContent = 'Bookmarks';
+            renderActiveFilters();
         }
 
         renderFolders();
@@ -274,6 +278,7 @@ export function navigateToFolderByIndex(index) {
     if (viewTitle) viewTitle.textContent = folder.name;
 
     updateActiveNav();
+    renderActiveFilters();
     loadBookmarks();
 }
 

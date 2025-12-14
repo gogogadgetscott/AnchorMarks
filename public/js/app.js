@@ -300,6 +300,13 @@ async function initializeApp() {
     updateUserInfo();
     await Promise.all([loadFolders(), loadBookmarks()]);
     setViewMode(state.viewMode);
+
+    // Initialize sidebar filter controls with current state
+    const sidebarFilterSort = document.getElementById('sidebar-filter-sort');
+    if (sidebarFilterSort) sidebarFilterSort.value = state.filterConfig.sort || 'recently_added';
+
+    const sidebarTagSort = document.getElementById('sidebar-filter-tag-sort');
+    if (sidebarTagSort) sidebarTagSort.value = state.filterConfig.tagSort || 'count_desc';
 }
 
 // Keyboard handler
@@ -473,9 +480,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.nav-item[data-view]').forEach(item => {
         item.addEventListener('click', () => {
             state.setCurrentView(item.dataset.view);
-            state.setCurrentFolder(null);
+            // Don't clear current folder - treat it as a filter
             state.setDisplayedCount(state.BOOKMARKS_PER_PAGE);
             updateActiveNav();
+            renderActiveFilters();
             loadBookmarks();
             const viewTitle = document.getElementById('view-title');
             if (viewTitle) viewTitle.textContent = item.querySelector('span')?.textContent || '';
@@ -496,6 +504,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Filter controls
     document.getElementById('filter-sort')?.addEventListener('change', (e) => {
         state.filterConfig.sort = e.target.value;
+        // Sync with sidebar filter
+        const sidebarSort = document.getElementById('sidebar-filter-sort');
+        if (sidebarSort) sidebarSort.value = e.target.value;
         renderBookmarks();
     });
 
@@ -505,6 +516,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('filter-tag-search')?.addEventListener('input', () => {
         renderActiveFilters();
+    });
+
+    // Sidebar filter controls (integrated into main sidebar)
+    document.getElementById('sidebar-filter-sort')?.addEventListener('change', (e) => {
+        state.filterConfig.sort = e.target.value;
+        // Sync with original filter sidebar
+        const filterSort = document.getElementById('filter-sort');
+        if (filterSort) filterSort.value = e.target.value;
+        renderBookmarks();
+    });
+
+    document.getElementById('sidebar-filter-tag-sort')?.addEventListener('change', (e) => {
+        state.filterConfig.tagSort = e.target.value;
+        // Sync with original filter sidebar
+        const filterTagSort = document.getElementById('filter-tag-sort');
+        if (filterTagSort) filterTagSort.value = e.target.value;
+        renderSidebarTags();
     });
 
     // Bulk actions
@@ -806,6 +834,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             case 'delete-folder': e.stopPropagation(); if (id) deleteFolder(id); break;
             case 'remove-tag-filter': if (tag) removeTagFilter(tag); break;
             case 'clear-search': clearSearch(); break;
+            case 'clear-folder-filter':
+                state.setCurrentFolder(null);
+                state.setCurrentView('all');
+                updateActiveNav();
+                document.getElementById('view-title').textContent = 'Bookmarks';
+                renderActiveFilters();
+                loadBookmarks();
+                break;
             case 'toggle-filter-tag': e.stopPropagation(); if (tag) toggleFilterTag(tag); break;
             case 'toggle-tag-mode': e.stopPropagation(); toggleTagMode(); break;
             case 'load-dashboard-settings': loadDashboardSettings(); break;

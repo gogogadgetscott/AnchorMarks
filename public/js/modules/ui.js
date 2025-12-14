@@ -134,21 +134,120 @@ export function updateActiveNav() {
     } else {
         document.querySelector(`.nav-item[data-view="${state.currentView}"]`)?.classList.add('active');
     }
+
+    // Toggle sidebar sections visibility based on view
+    // Only hide Filters section in Dashboard (keep Folders/Tags for drag & drop)
+    const sectionsToToggle = ['filters-section'];
+    const isDashboard = state.currentView === 'dashboard';
+
+    // Ensure Folders/Tags are visible if they were hidden
+    ['folders-section', 'tags-section'].forEach(id => {
+        document.getElementById(id)?.classList.remove('hidden');
+    });
+
+    sectionsToToggle.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (isDashboard) el.classList.add('hidden');
+            else el.classList.remove('hidden');
+        }
+    });
 }
 
 // Update counts display
 export function updateCounts() {
-    const allCount = state.bookmarks.length;
-    const favCount = state.bookmarks.filter(b => b.is_favorite).length;
-    const viewCountVal = state.renderedBookmarks.length;
+    const hasFullData = !state.currentFolder && state.currentView !== 'favorites';
 
-    const allCountEl = document.getElementById('all-count');
+    // Elements
+    const bookmarkCountEl = document.getElementById('bookmark-count');
     const favCountEl = document.getElementById('fav-count');
+    const recentCountEl = document.getElementById('recent-count');
+    const dashboardCountEl = document.getElementById('dashboard-count');
     const viewCountEl = document.getElementById('view-count');
 
-    if (allCountEl) allCountEl.textContent = allCount;
-    if (favCountEl) favCountEl.textContent = favCount;
-    if (viewCountEl) viewCountEl.textContent = `${viewCountVal} bookmark${viewCountVal !== 1 ? 's' : ''}`;
+    // 1. Calculate Dashboard Count
+    let dashboardVal = 0;
+    if (state.currentView === 'dashboard' || hasFullData) {
+        const displayedIds = new Set();
+        state.dashboardWidgets.forEach(w => {
+            if (w.type === 'folder') {
+                state.bookmarks.filter(b => b.folder_id === w.id)
+                    .forEach(b => displayedIds.add(b.id));
+            } else if (w.type === 'tag') {
+                state.bookmarks.filter(b => b.tags && b.tags.split(',').map(t => t.trim()).includes(w.id))
+                    .forEach(b => displayedIds.add(b.id));
+            }
+        });
+        dashboardVal = displayedIds.size;
+    }
+
+    // 2. Calculate Recent Count
+    // Assuming 'Recent' shows top 20 or everything if less
+    let recentVal = 0;
+    if (state.currentView === 'recent') {
+        recentVal = state.renderedBookmarks.length;
+    } else if (hasFullData) {
+        recentVal = Math.min(state.bookmarks.length, 20);
+    }
+
+    // 3. Favorites Count
+    let favVal = 0;
+    if (state.currentView === 'favorites') {
+        favVal = state.bookmarks.length;
+    } else {
+        favVal = state.bookmarks.filter(b => b.is_favorite).length;
+    }
+
+    // 4. Bookmarks Count (Filtered)
+    let bookmarkVal = 0;
+    if (state.currentView === 'all' || state.currentView === 'folder') {
+        bookmarkVal = state.renderedBookmarks.length;
+    } else if (hasFullData) {
+        // Calculate expected filtered count
+        if (state.filterConfig.tags.length > 0) {
+            const tags = state.filterConfig.tags;
+            bookmarkVal = state.bookmarks.filter(b => {
+                if (!b.tags) return false;
+                const bTags = b.tags.split(',').map(t => t.trim());
+                if (state.filterConfig.tagMode === 'AND') {
+                    return tags.every(t => bTags.includes(t));
+                } else {
+                    return tags.some(t => bTags.includes(t));
+                }
+            }).length;
+        } else {
+            bookmarkVal = state.bookmarks.length;
+        }
+    }
+
+    // Update Badges
+    if (dashboardCountEl && (state.currentView === 'dashboard' || hasFullData)) {
+        dashboardCountEl.textContent = dashboardVal;
+    }
+
+    if (recentCountEl && (state.currentView === 'recent' || hasFullData)) {
+        recentCountEl.textContent = recentVal;
+    }
+
+    if (favCountEl) {
+        // Use logic: if we are in favorites view, use rendered count (effectively). 
+        // If not, use calculated favVal if hasFullData.
+        if (state.currentView === 'favorites' || hasFullData) {
+            favCountEl.textContent = favVal;
+        }
+    }
+
+    if (bookmarkCountEl) {
+        if (state.currentView === 'all' || state.currentView === 'folder' || hasFullData) {
+            bookmarkCountEl.textContent = bookmarkVal;
+        }
+    }
+
+    // Update View Count Label
+    let currentViewCount = state.renderedBookmarks.length;
+    if (state.currentView === 'dashboard') currentViewCount = dashboardVal;
+
+    if (viewCountEl) viewCountEl.textContent = `${currentViewCount} bookmark${currentViewCount !== 1 ? 's' : ''}`;
 
     updateStats();
 }
@@ -160,10 +259,12 @@ export function updateStats() {
     const statTags = document.getElementById('stat-tags');
     const foldersCount = document.getElementById('folders-count');
 
-    if (statBookmarks) statBookmarks.textContent = state.renderedBookmarks.length;
-    if (statFolders) statFolders.textContent = state.folders.length;
-    if (foldersCount) foldersCount.textContent = state.folders.length;
+    // Default to total system counts
+    let bCount = state.renderedBookmarks.length;
+    let fCount = state.folders.length;
+    let tCount = 0;
 
+    // Calculate tag count for current view
     const tagSet = new Set();
     state.renderedBookmarks.forEach(b => {
         if (b.tags) {
@@ -173,7 +274,32 @@ export function updateStats() {
             });
         }
     });
-    if (statTags) statTags.textContent = tagSet.size;
+    tCount = tagSet.size;
+
+    // Override for dashboard view
+    if (state.currentView === 'dashboard') {
+        fCount = state.dashboardWidgets.filter(w => w.type === 'folder').length;
+        tCount = state.dashboardWidgets.filter(w => w.type === 'tag').length;
+
+        const displayedIds = new Set();
+        state.dashboardWidgets.forEach(w => {
+            if (w.type === 'folder') {
+                state.bookmarks.filter(b => b.folder_id === w.id)
+                    .forEach(b => displayedIds.add(b.id));
+            } else if (w.type === 'tag') {
+                state.bookmarks.filter(b => b.tags && b.tags.split(',').map(t => t.trim()).includes(w.id))
+                    .forEach(b => displayedIds.add(b.id));
+            }
+        });
+        bCount = displayedIds.size;
+    }
+
+    if (statBookmarks) statBookmarks.textContent = bCount;
+    if (statFolders) statFolders.textContent = fCount;
+    if (statTags) statTags.textContent = tCount;
+
+    // Sidebar badge always shows total folders
+    if (foldersCount) foldersCount.textContent = state.folders.length;
 }
 
 // Get contextual empty state message

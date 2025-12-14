@@ -27,10 +27,23 @@ export function renderSidebarTags() {
         }
     });
 
-    // Build sorted tags array
+    // Build tags array
     const allTags = Object.keys(tagCounts)
-        .map(name => ({ name, count: tagCounts[name] }))
-        .sort((a, b) => b.count - a.count);
+        .map(name => ({ name, count: tagCounts[name] }));
+
+    // Sort based on filterConfig.tagSort
+    const sortMode = state.filterConfig.tagSort || 'count_desc';
+    allTags.sort((a, b) => {
+        switch (sortMode) {
+            case 'count_asc':
+                return a.count - b.count;
+            case 'name_asc':
+                return a.name.localeCompare(b.name);
+            case 'count_desc':
+            default:
+                return b.count - a.count;
+        }
+    });
 
     state.setAllSidebarTags(allTags);
 
@@ -166,7 +179,7 @@ export function clearAllFilters() {
 
     updateActiveNav();
     renderActiveFilters();
-    renderBookmarks();
+    loadBookmarks();
     renderSidebarTags();
 }
 
@@ -177,7 +190,14 @@ export function renderActiveFilters() {
     if (!section || !chipsContainer) return;
 
     const searchInput = document.getElementById('search-input');
-    const hasFilters = state.filterConfig.tags.length > 0 || (searchInput?.value.trim());
+
+    // Check if we have a folder selected
+    const currentFolder = state.currentFolder;
+    const folderName = currentFolder ? state.folders.find(f => f.id === currentFolder)?.name : null;
+
+    const hasFilters = state.filterConfig.tags.length > 0 ||
+        (searchInput?.value.trim()) ||
+        currentFolder;
 
     if (!hasFilters) {
         section.classList.add('hidden');
@@ -187,6 +207,23 @@ export function renderActiveFilters() {
     section.classList.remove('hidden');
 
     let html = '';
+
+    // Folder chip
+    if (currentFolder && folderName) {
+        html += `
+            <div class="filter-chip folder-chip">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                </svg>
+                <span>${escapeHtml(folderName)}</span>
+                <button data-action="clear-folder-filter" title="Remove">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+    }
 
     // Tag mode button
     if (state.filterConfig.tags.length > 0) {
@@ -204,6 +241,10 @@ export function renderActiveFilters() {
     state.filterConfig.tags.forEach(tag => {
         html += `
             <div class="filter-chip">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                  <line x1="7" y1="7" x2="7.01" y2="7" />
+                </svg>
                 <span>${escapeHtml(tag)}</span>
                 <button data-action="remove-tag-filter" data-tag="${escapeHtml(tag)}" title="Remove">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -217,7 +258,7 @@ export function renderActiveFilters() {
     // Search chip
     if (searchInput?.value.trim()) {
         html += `
-            <div class="filter-chip">
+            <div class="filter-chip tag-chip">
                 <span>Search: ${escapeHtml(searchInput.value)}</span>
                 <button data-action="clear-search" title="Remove">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

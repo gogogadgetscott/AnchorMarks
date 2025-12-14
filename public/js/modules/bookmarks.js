@@ -18,7 +18,7 @@ export async function loadBookmarks() {
         const params = new URLSearchParams();
 
         if (state.currentView === 'favorites') params.append('favorites', 'true');
-        if (state.currentFolder) params.append('folder_id', state.currentFolder);
+        if (state.currentFolder && state.currentView !== 'dashboard') params.append('folder_id', state.currentFolder);
 
         const sortOption = state.filterConfig.sort || state.dashboardConfig.bookmarkSort || 'recently_added';
         params.append('sort', sortOption);
