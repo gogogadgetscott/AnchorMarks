@@ -3,363 +3,29 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
-const Database = require('better-sqlite3');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid');
-const https = require('https');
-const http = require('http');
-const fs = require('fs');
-const dns = require('dns').promises;
-const net = require('net');
 const helmet = require('helmet');
 const smartOrg = require('./smart-organization');
+const { v4: uuidv4 } = require('uuid');
+
+const config = require('./config');
+const { initializeDatabase, ensureDirectories } = require('./database');
+const { authenticateToken, validateCsrfToken } = require('./middleware');
+const { setupAuthRoutes } = require('./routes/auth');
+const { isPrivateAddress, fetchFavicon } = require('./utils');
 
 const app = express();
-const NODE_ENV = process.env.NODE_ENV || 'development';
-const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || '0.0.0.0';
-const DEFAULT_JWT_SECRET = 'anchormarks-secret-key-change-in-production';
-const INSECURE_SECRETS = [
-    DEFAULT_JWT_SECRET,
-    'change-this-to-a-secure-secret',
-    'your-super-secret-jwt-key-change-this-to-a-random-string'
-];
-
-function validateSecurityConfig() {
-    if (NODE_ENV !== 'production') return;
-
-    if (!process.env.JWT_SECRET || INSECURE_SECRETS.includes(process.env.JWT_SECRET)) {
-        throw new Error('JWT_SECRET must be set to a strong value in production');
-    }
-
-    if (!process.env.CORS_ORIGIN) {
-        throw new Error('CORS_ORIGIN must be configured in production');
-    }
-}
-
-function resolveCorsOrigin() {
-    if (NODE_ENV !== 'production') return true;
-
-    const origin = process.env.CORS_ORIGIN;
-    if (origin.trim() === '*') {
-        throw new Error('CORS_ORIGIN cannot be * in production');
-    }
-    return origin.split(',').map(o => o.trim()).filter(Boolean);
-}
-
-// Network safety helpers
-const PRIVATE_IPV4 = [
-    /^10\./,
-    /^127\./,
-    /^169\.254\./,
-    /^172\.(1[6-9]|2\d|3[0-1])\./,
-    /^192\.168\./
-];
-const PRIVATE_IPV6 = [/^fc/i, /^fd/i, /^fe80/i, /^::1$/];
-
-function isPrivateIp(ip) {
-    if (!ip) return false;
-    if (net.isIP(ip) === 6) return PRIVATE_IPV6.some(re => re.test(ip));
-    return PRIVATE_IPV4.some(re => re.test(ip));
-}
-
-async function isPrivateAddress(url) {
-    try {
-        const urlObj = new URL(url);
-        if (!['http:', 'https:'].includes(urlObj.protocol)) return true; // Disallow non-http(s)
-
-        const hostname = urlObj.hostname;
-        if (hostname === 'localhost') return true;
-        if (net.isIP(hostname)) return isPrivateIp(hostname);
-
-        const records = await dns.lookup(hostname, { all: true });
-        return records.some(r => isPrivateIp(r.address));
-    } catch (err) {
-        // If resolution fails, be conservative in production
-        return NODE_ENV === 'production';
-    }
-}
-
-validateSecurityConfig();
-
-// API key scope whitelist (method + path regex)
-const API_KEY_WHITELIST = [
-    { method: 'GET', path: /^\/api\/quick-search/ },
-    { method: 'GET', path: /^\/api\/bookmarks\/?$/ },
-    { method: 'POST', path: /^\/api\/bookmarks\/?$/ },
-    { method: 'GET', path: /^\/api\/folders\/?$/ }
-];
-
-function isApiKeyAllowed(req) {
-    return API_KEY_WHITELIST.some(rule => rule.method === req.method && rule.path.test(req.path));
-}
-
-const JWT_SECRET = process.env.JWT_SECRET || DEFAULT_JWT_SECRET;
-const ENABLE_BACKGROUND_JOBS = NODE_ENV !== 'test';
-const ENABLE_FAVICON_BACKGROUND_JOBS = false; // Only fetch favicons on import/save
-
-// Database path - use environment variable for production
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'anchormarks.db');
-
-// Ensure database directory exists
-const dbDir = path.dirname(DB_PATH);
-if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-}
+config.validateSecurityConfig();
 
 // Initialize database
-const db = new Database(DB_PATH);
+const db = initializeDatabase(config.DB_PATH);
+const { FAVICONS_DIR, THUMBNAILS_DIR } = ensureDirectories();
 
-// Enable WAL mode for better concurrent access
-db.pragma('journal_mode = WAL');
+// Middleware functions
+const authenticateTokenMiddleware = authenticateToken(db);
+const validateCsrfTokenMiddleware = validateCsrfToken(db);
 
-// Initialize database tables
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    api_key TEXT UNIQUE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-
-  CREATE TABLE IF NOT EXISTS folders (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    parent_id TEXT,
-    name TEXT NOT NULL,
-    color TEXT DEFAULT '#6366f1',
-    icon TEXT DEFAULT 'folder',
-    position INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (parent_id) REFERENCES folders(id) ON DELETE CASCADE
-  );
-
-  CREATE TABLE IF NOT EXISTS bookmarks (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    folder_id TEXT,
-    title TEXT NOT NULL,
-    url TEXT NOT NULL,
-    description TEXT,
-    favicon TEXT,
-    favicon_local TEXT,
-    thumbnail_local TEXT,
-    tags TEXT,
-    position INTEGER DEFAULT 0,
-    is_favorite INTEGER DEFAULT 0,
-    click_count INTEGER DEFAULT 0,
-    last_clicked DATETIME,
-    is_dead INTEGER DEFAULT 0,
-    last_checked DATETIME,
-    content_type TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE SET NULL
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_bookmarks_user ON bookmarks(user_id);
-  CREATE INDEX IF NOT EXISTS idx_bookmarks_folder ON bookmarks(folder_id);
-  CREATE INDEX IF NOT EXISTS idx_folders_user ON folders(user_id);
-  CREATE INDEX IF NOT EXISTS idx_folders_parent ON folders(parent_id);
-
-  CREATE TABLE IF NOT EXISTS smart_collections (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    name TEXT NOT NULL,
-    icon TEXT DEFAULT 'filter',
-    color TEXT DEFAULT '#6366f1',
-    filters TEXT NOT NULL,
-    position INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  );
-
-  CREATE TABLE IF NOT EXISTS user_settings (
-    user_id TEXT PRIMARY KEY,
-    view_mode TEXT DEFAULT 'grid',
-    hide_favicons INTEGER DEFAULT 0,
-    hide_sidebar INTEGER DEFAULT 0,
-    theme TEXT DEFAULT 'light',
-    dashboard_mode TEXT DEFAULT 'folder',
-    dashboard_tags TEXT,
-    dashboard_sort TEXT DEFAULT 'updated_desc',
-    widget_order TEXT,
-    collapsed_sections TEXT,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  );
-
-  CREATE TABLE IF NOT EXISTS tags (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    name TEXT NOT NULL,
-    color TEXT DEFAULT '#f59e0b',
-    icon TEXT DEFAULT 'tag',
-    position INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE(user_id, name)
-  );
-
-  CREATE TABLE IF NOT EXISTS bookmark_tags (
-    bookmark_id TEXT NOT NULL,
-    tag_id TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (bookmark_id, tag_id),
-    FOREIGN KEY (bookmark_id) REFERENCES bookmarks(id) ON DELETE CASCADE,
-    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_tags_user ON tags(user_id);
-  CREATE INDEX IF NOT EXISTS idx_bookmark_tags_bookmark ON bookmark_tags(bookmark_id);
-  CREATE INDEX IF NOT EXISTS idx_bookmark_tags_tag ON bookmark_tags(tag_id);
-`);
-
-// Add hide_sidebar column if it doesn't exist (migration)
-try {
-  db.prepare('ALTER TABLE user_settings ADD COLUMN hide_sidebar INTEGER DEFAULT 0').run();
-} catch (err) {
-  // Column already exists, ignore
-}
-
-// Add dashboard_widgets column if it doesn't exist (migration)
-try {
-  db.prepare('ALTER TABLE user_settings ADD COLUMN dashboard_widgets TEXT').run();
-} catch (err) {
-  // Column already exists, ignore
-}
-
-// Add thumbnail_local column if it doesn't exist (migration)
-try {
-  db.prepare('ALTER TABLE bookmarks ADD COLUMN thumbnail_local TEXT').run();
-} catch (err) {
-  // Column already exists, ignore
-}
-
-// Ensure favicons directory exists
-const FAVICONS_DIR = path.join(__dirname, '../public/favicons');
-if (!fs.existsSync(FAVICONS_DIR)) {
-    fs.mkdirSync(FAVICONS_DIR, { recursive: true });
-}
-
-// Ensure thumbnails directory exists
-const THUMBNAILS_DIR = path.join(__dirname, '../public/thumbnails');
-if (!fs.existsSync(THUMBNAILS_DIR)) {
-    fs.mkdirSync(THUMBNAILS_DIR, { recursive: true });
-}
-
-// ============== FAVICON FETCHING ==============
-
-// Cache for in-progress favicon fetches
-const faviconFetchQueue = new Map();
-
-async function fetchFavicon(url, bookmarkId) {
-    try {
-        const urlObj = new URL(url);
-        if (!['http:', 'https:'].includes(urlObj.protocol)) return null;
-
-        // Block private/loopback targets in production to avoid SSRF
-        if (NODE_ENV === 'production' && await isPrivateAddress(url)) {
-            return null;
-        }
-        const domain = urlObj.hostname;
-        const faviconFilename = `${domain.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
-        const localPath = path.join(FAVICONS_DIR, faviconFilename);
-        const publicPath = `/favicons/${faviconFilename}`;
-
-        // Check if already cached locally
-        if (fs.existsSync(localPath)) {
-            db.prepare('UPDATE bookmarks SET favicon_local = ?, favicon = ? WHERE id = ?')
-                .run(publicPath, publicPath, bookmarkId);
-            return publicPath;
-        }
-
-        // Check if already being fetched
-        if (faviconFetchQueue.has(domain)) {
-            return faviconFetchQueue.get(domain);
-        }
-
-        // Create fetch promise
-        const fetchPromise = new Promise((resolve) => {
-            // Try multiple favicon sources
-            const sources = [
-                `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
-                `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-                `https://${domain}/favicon.ico`
-            ];
-
-            tryFetchFavicon(sources, 0, localPath, (success) => {
-                faviconFetchQueue.delete(domain);
-                if (success) {
-                    db.prepare('UPDATE bookmarks SET favicon_local = ?, favicon = ? WHERE id = ?')
-                        .run(publicPath, publicPath, bookmarkId);
-                    resolve(publicPath);
-                } else {
-                    db.prepare('UPDATE bookmarks SET favicon_local = NULL, favicon = NULL WHERE id = ?')
-                        .run(bookmarkId);
-                    resolve(null);
-                }
-            });
-        });
-
-        faviconFetchQueue.set(domain, fetchPromise);
-        return fetchPromise;
-    } catch (err) {
-        console.error('Favicon fetch error:', err);
-        return null;
-    }
-}
-
-function tryFetchFavicon(sources, index, localPath, callback) {
-    if (index >= sources.length) {
-        callback(false);
-        return;
-    }
-
-    const url = sources[index];
-    const protocol = url.startsWith('https') ? https : http;
-
-    const request = protocol.get(url, { timeout: 5000 }, (response) => {
-        if (response.statusCode === 200) {
-            const fileStream = fs.createWriteStream(localPath);
-            response.pipe(fileStream);
-            fileStream.on('finish', () => {
-                fileStream.close();
-                // Check if file is valid (has content)
-                const stats = fs.statSync(localPath);
-                if (stats.size > 100) {
-                    callback(true);
-                } else {
-                    fs.unlinkSync(localPath);
-                    tryFetchFavicon(sources, index + 1, localPath, callback);
-                }
-            });
-        } else if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
-            // Follow redirect
-            const redirectUrl = response.headers.location;
-            const redirectSources = [redirectUrl, ...sources.slice(index + 1)];
-            tryFetchFavicon(redirectSources, 0, localPath, callback);
-        } else {
-            tryFetchFavicon(sources, index + 1, localPath, callback);
-        }
-    });
-
-    request.on('error', () => {
-        tryFetchFavicon(sources, index + 1, localPath, callback);
-    });
-
-    request.on('timeout', () => {
-        request.destroy();
-        tryFetchFavicon(sources, index + 1, localPath, callback);
-    });
-}
+// Favicon fetch function
+const fetchFaviconWrapper = (url, bookmarkId) => fetchFavicon(url, bookmarkId, db, FAVICONS_DIR, config.NODE_ENV);
 
 // Background job to fetch missing favicons
 function processFaviconQueue() {
@@ -370,11 +36,11 @@ function processFaviconQueue() {
   `).all();
 
     for (const bookmark of bookmarks) {
-        fetchFavicon(bookmark.url, bookmark.id).catch(console.error);
+        fetchFaviconWrapper(bookmark.url, bookmark.id).catch(console.error);
     }
 }
 
-if (ENABLE_BACKGROUND_JOBS && ENABLE_FAVICON_BACKGROUND_JOBS) {
+if (config.ENABLE_BACKGROUND_JOBS && config.ENABLE_FAVICON_BACKGROUND_JOBS) {
     // Run favicon queue processor every 30 seconds
     setInterval(processFaviconQueue, 30000);
     // Initial run after 5 seconds
@@ -392,7 +58,7 @@ async function cacheThumbnail(url, bookmarkId) {
         if (!['http:', 'https:'].includes(urlObj.protocol)) return null;
 
         // Block private/loopback targets in production to avoid SSRF
-        if (NODE_ENV === 'production' && await isPrivateAddress(url)) {
+        if (config.NODE_ENV === 'production' && await isPrivateAddress(url)) {
             return null;
         }
 
@@ -455,7 +121,7 @@ app.use(helmet({
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }));
 
-if (NODE_ENV === 'production') {
+if (config.NODE_ENV === 'production') {
     app.use((req, res, next) => {
         res.setHeader('X-Content-Type-Options', 'nosniff');
         res.setHeader('X-Frame-Options', 'DENY');
@@ -467,7 +133,7 @@ if (NODE_ENV === 'production') {
 
 // CORS configuration
 const corsOptions = {
-    origin: resolveCorsOrigin(),
+    origin: config.resolveCorsOrigin(),
     credentials: true,
     allowedHeaders: ['Content-Type', 'X-CSRF-Token']
 };
@@ -480,7 +146,7 @@ const RATE_LIMIT_WINDOW = 60000; // 1 minute
 const RATE_LIMIT_MAX = 100; // requests per minute
 
 function rateLimiter(req, res, next) {
-    if (NODE_ENV !== 'production') return next();
+    if (config.NODE_ENV !== 'production') return next();
 
     const key = req.ip;
     const now = Date.now();
@@ -505,7 +171,7 @@ function rateLimiter(req, res, next) {
 app.use('/api', rateLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '../public'), {
-    maxAge: NODE_ENV === 'production' ? '1d' : 0
+    maxAge: config.NODE_ENV === 'production' ? '1d' : 0
 }));
 
 // Apply CSRF validation to state-changing operations (skip auth endpoints)
@@ -517,14 +183,14 @@ app.use('/api', (req, res, next) => {
     }
     
     if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
-        return validateCsrfToken(req, res, next);
+        return validateCsrfTokenMiddleware(req, res, next);
     }
     next();
 });
 
 // Request logging
 app.use((req, res, next) => {
-    if (NODE_ENV === 'development') {
+    if (config.NODE_ENV === 'development') {
         console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
     }
     next();
@@ -535,215 +201,25 @@ function generateCsrfToken() {
     return uuidv4().replace(/-/g, '');
 }
 
-// Auth Middleware
-const authenticateToken = (req, res, next) => {
-    const apiKey = req.headers['x-api-key'];
-
-    // Scoped API key support (Flow Launcher / extension)
-    if (apiKey) {
-        const user = db.prepare('SELECT * FROM users WHERE api_key = ?').get(apiKey);
-        if (user) {
-            if (!isApiKeyAllowed(req)) {
-                return res.status(403).json({ error: 'API key not permitted for this endpoint' });
-            }
-            req.user = user;
-            req.authType = 'api-key';
-            return next();
-        }
-    }
-
-    // JWT from HTTP-only cookie
-    const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).json({ error: 'Access token required' });
-    }
-
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = db.prepare('SELECT * FROM users WHERE id = ?').get(decoded.userId);
-        if (!req.user) {
-            return res.status(401).json({ error: 'User not found' });
-        }
-        req.authType = 'jwt';
-        next();
-    } catch (err) {
-        res.clearCookie('token');
-        return res.status(403).json({ error: 'Invalid token' });
-    }
-};
-
-// CSRF token middleware
-const validateCsrfToken = (req, res, next) => {
-    // Skip CSRF check for safe methods
-    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
-    
-    // Check if using API key auth - skip CSRF for API keys
-    const apiKey = req.headers['x-api-key'];
-    if (apiKey) {
-        const user = db.prepare('SELECT * FROM users WHERE api_key = ?').get(apiKey);
-        if (user) {
-            return next(); // API key bypass CSRF
-        }
-    }
-
-    const csrfToken = req.headers['x-csrf-token'] || req.body?.csrfToken;
-    const sessionCsrf = req.cookies.csrfToken;
-
-    if (!csrfToken || !sessionCsrf || csrfToken !== sessionCsrf) {
-        return res.status(403).json({ error: 'Invalid CSRF token' });
-    }
-    next();
-};
-
 // ============== HEALTH CHECK ==============
 
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
         version: '1.0.0',
-        environment: NODE_ENV,
+        environment: config.NODE_ENV,
         timestamp: new Date().toISOString()
     });
 });
 
 // ============== AUTH ROUTES ==============
 
-// Register
-app.post('/api/auth/register', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        if (!email || !password) {
-            return res.status(400).json({ error: 'All fields are required' });
-        }
-
-        if (password.length < 6) {
-            return res.status(400).json({ error: 'Password must be at least 6 characters' });
-        }
-
-        const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-        if (existingUser) {
-            return res.status(400).json({ error: 'User already exists' });
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 12);
-        const userId = uuidv4();
-        const apiKey = 'lv_' + uuidv4().replace(/-/g, '');
-
-        db.prepare('INSERT INTO users (id, email, password, api_key) VALUES (?, ?, ?, ?)')
-            .run(userId, email.toLowerCase(), hashedPassword, apiKey);
-
-        // Create default folder
-        const defaultFolderId = uuidv4();
-        db.prepare('INSERT INTO folders (id, user_id, name, color, icon) VALUES (?, ?, ?, ?, ?)')
-            .run(defaultFolderId, userId, 'My Bookmarks', '#6366f1', 'folder');
-
-        // Create example bookmarks in the default folder
-        createExampleBookmarks(userId, defaultFolderId);
-
-        const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: '30d' });
-        const csrfToken = generateCsrfToken();
-
-        // Set HTTP-only cookie for token
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-        });
-
-        // Set CSRF token cookie
-        res.cookie('csrfToken', csrfToken, {
-            httpOnly: false, // Accessible to JavaScript for sending in headers
-            secure: NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 30 * 24 * 60 * 60 * 1000
-        });
-
-        res.json({
-            user: { id: userId, email, api_key: apiKey },
-            csrfToken
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-// Login
-app.post('/api/auth/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase());
-        if (!user) {
-            return res.status(400).json({ error: 'Invalid credentials' });
-        }
-
-        const validPassword = await bcrypt.compare(password, user.password);
-        if (!validPassword) {
-            return res.status(400).json({ error: 'Invalid credentials' });
-        }
-
-        const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
-        const csrfToken = generateCsrfToken();
-
-        // Set HTTP-only cookie for token
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-        });
-
-        // Set CSRF token cookie
-        res.cookie('csrfToken', csrfToken, {
-            httpOnly: false, // Accessible to JavaScript for sending in headers
-            secure: NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 30 * 24 * 60 * 60 * 1000
-        });
-
-        res.json({
-            user: { id: user.id, email: user.email, api_key: user.api_key },
-            csrfToken
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-// Get current user
-app.get('/api/auth/me', authenticateToken, (req, res) => {
-    res.json({
-        user: {
-            id: req.user.id,
-            email: req.user.email,
-            api_key: req.user.api_key
-        },
-        csrfToken: req.cookies.csrfToken
-    });
-});
-
-// Logout
-app.post('/api/auth/logout', authenticateToken, (req, res) => {
-    res.clearCookie('token');
-    res.clearCookie('csrfToken');
-    res.json({ success: true });
-});
-
-// Regenerate API key
-app.post('/api/auth/regenerate-key', authenticateToken, (req, res) => {
-    const newApiKey = 'lv_' + uuidv4().replace(/-/g, '');
-    db.prepare('UPDATE users SET api_key = ? WHERE id = ?').run(newApiKey, req.user.id);
-    res.json({ api_key: newApiKey });
-});
+setupAuthRoutes(app, db, authenticateTokenMiddleware, fetchFaviconWrapper);
 
 // ============== USER SETTINGS API ==============
 
 // Get user settings
-app.get('/api/settings', authenticateToken, (req, res) => {
+app.get('/api/settings', authenticateTokenMiddleware, (req, res) => {
     try {
         const settings = db.prepare('SELECT * FROM user_settings WHERE user_id = ?').get(req.user.id);
         
@@ -782,7 +258,7 @@ app.get('/api/settings', authenticateToken, (req, res) => {
 });
 
 // Update user settings
-app.put('/api/settings', authenticateToken, validateCsrfToken, (req, res) => {
+app.put('/api/settings', authenticateTokenMiddleware, validateCsrfTokenMiddleware, (req, res) => {
     try {
         const {
             view_mode,
@@ -881,7 +357,7 @@ app.put('/api/settings', authenticateToken, validateCsrfToken, (req, res) => {
 // ============== USER SETTINGS ROUTES ==============
 
 // Reset bookmarks to example bookmarks
-app.post('/api/settings/reset-bookmarks', authenticateToken, (req, res) => {
+app.post('/api/settings/reset-bookmarks', authenticateTokenMiddleware, (req, res) => {
     try {
         const userId = req.user.id;
 
@@ -914,13 +390,13 @@ app.post('/api/settings/reset-bookmarks', authenticateToken, (req, res) => {
 // ============== FOLDER ROUTES ==============
 
 // Get all folders
-app.get('/api/folders', authenticateToken, (req, res) => {
+app.get('/api/folders', authenticateTokenMiddleware, (req, res) => {
     const folders = db.prepare('SELECT * FROM folders WHERE user_id = ? ORDER BY position').all(req.user.id);
     res.json(folders);
 });
 
 // Create folder
-app.post('/api/folders', authenticateToken, (req, res) => {
+app.post('/api/folders', authenticateTokenMiddleware, (req, res) => {
     const { name, parent_id, color, icon } = req.body;
     const id = uuidv4();
 
@@ -935,7 +411,7 @@ app.post('/api/folders', authenticateToken, (req, res) => {
 });
 
 // Update folder
-app.put('/api/folders/:id', authenticateToken, (req, res) => {
+app.put('/api/folders/:id', authenticateTokenMiddleware, (req, res) => {
     const { name, parent_id, color, icon, position } = req.body;
 
     db.prepare(`
@@ -954,7 +430,7 @@ app.put('/api/folders/:id', authenticateToken, (req, res) => {
 });
 
 // Delete folder
-app.delete('/api/folders/:id', authenticateToken, (req, res) => {
+app.delete('/api/folders/:id', authenticateTokenMiddleware, (req, res) => {
     db.prepare('UPDATE bookmarks SET folder_id = NULL WHERE folder_id = ? AND user_id = ?')
         .run(req.params.id, req.user.id);
 
@@ -965,7 +441,7 @@ app.delete('/api/folders/:id', authenticateToken, (req, res) => {
 // ============== TAGS ==============
 
 // Get all tags for user with bookmark counts
-app.get('/api/tags', authenticateToken, (req, res) => {
+app.get('/api/tags', authenticateTokenMiddleware, (req, res) => {
     const tags = db.prepare(`
         SELECT 
             t.*,
@@ -980,7 +456,7 @@ app.get('/api/tags', authenticateToken, (req, res) => {
 });
 
 // Create tag
-app.post('/api/tags', authenticateToken, (req, res) => {
+app.post('/api/tags', authenticateTokenMiddleware, (req, res) => {
     const { name, color, icon } = req.body;
     
     if (!name || !name.trim()) {
@@ -1006,7 +482,7 @@ app.post('/api/tags', authenticateToken, (req, res) => {
 });
 
 // Update tag
-app.put('/api/tags/:id', authenticateToken, (req, res) => {
+app.put('/api/tags/:id', authenticateTokenMiddleware, (req, res) => {
     const { name, color, icon, position } = req.body;
 
     db.prepare(`
@@ -1037,7 +513,7 @@ app.put('/api/tags/:id', authenticateToken, (req, res) => {
 });
 
 // Delete tag
-app.delete('/api/tags/:id', authenticateToken, (req, res) => {
+app.delete('/api/tags/:id', authenticateTokenMiddleware, (req, res) => {
     db.prepare('DELETE FROM bookmark_tags WHERE tag_id = ?').run(req.params.id);
     db.prepare('DELETE FROM tags WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
     res.json({ success: true });
@@ -1046,13 +522,13 @@ app.delete('/api/tags/:id', authenticateToken, (req, res) => {
 // ============== SMART COLLECTIONS ==============
 
 // Get all smart collections
-app.get('/api/collections', authenticateToken, (req, res) => {
+app.get('/api/collections', authenticateTokenMiddleware, (req, res) => {
     const collections = db.prepare('SELECT * FROM smart_collections WHERE user_id = ? ORDER BY position').all(req.user.id);
     res.json(collections.map(c => ({ ...c, filters: JSON.parse(c.filters) })));
 });
 
 // Create smart collection
-app.post('/api/collections', authenticateToken, (req, res) => {
+app.post('/api/collections', authenticateTokenMiddleware, (req, res) => {
     const { name, icon, color, filters } = req.body;
     const id = uuidv4();
 
@@ -1067,7 +543,7 @@ app.post('/api/collections', authenticateToken, (req, res) => {
 });
 
 // Update smart collection
-app.put('/api/collections/:id', authenticateToken, (req, res) => {
+app.put('/api/collections/:id', authenticateTokenMiddleware, (req, res) => {
     const { name, icon, color, filters, position } = req.body;
 
     db.prepare(`
@@ -1085,13 +561,13 @@ app.put('/api/collections/:id', authenticateToken, (req, res) => {
 });
 
 // Delete smart collection
-app.delete('/api/collections/:id', authenticateToken, (req, res) => {
+app.delete('/api/collections/:id', authenticateTokenMiddleware, (req, res) => {
     db.prepare('DELETE FROM smart_collections WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
     res.json({ success: true });
 });
 
 // Get bookmarks matching a smart collection
-app.get('/api/collections/:id/bookmarks', authenticateToken, (req, res) => {
+app.get('/api/collections/:id/bookmarks', authenticateTokenMiddleware, (req, res) => {
     const collection = db.prepare('SELECT * FROM smart_collections WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
     if (!collection) {
         return res.status(404).json({ error: 'Collection not found' });
@@ -1135,7 +611,7 @@ app.get('/api/collections/:id/bookmarks', authenticateToken, (req, res) => {
 // ============== BOOKMARK ROUTES ==============
 
 // Get all bookmarks (with optional pagination)
-app.get('/api/bookmarks', authenticateToken, (req, res) => {
+app.get('/api/bookmarks', authenticateTokenMiddleware, (req, res) => {
     const { folder_id, search, favorites, tags, sort, limit, offset } = req.query;
 
     let query = 'SELECT * FROM bookmarks WHERE user_id = ?';
@@ -1210,7 +686,7 @@ app.get('/api/bookmarks', authenticateToken, (req, res) => {
 });
 
 // Get single bookmark
-app.get('/api/bookmarks/:id', authenticateToken, (req, res) => {
+app.get('/api/bookmarks/:id', authenticateTokenMiddleware, (req, res) => {
     const bookmark = db.prepare('SELECT * FROM bookmarks WHERE id = ? AND user_id = ?')
         .get(req.params.id, req.user.id);
 
@@ -1221,7 +697,7 @@ app.get('/api/bookmarks/:id', authenticateToken, (req, res) => {
 });
 
 // Fetch metadata from URL (title, description, favicon)
-app.post('/api/bookmarks/fetch-metadata', authenticateToken, async (req, res) => {
+app.post('/api/bookmarks/fetch-metadata', authenticateTokenMiddleware, async (req, res) => {
     const { url } = req.body;
 
     if (!url) {
@@ -1235,7 +711,7 @@ app.post('/api/bookmarks/fetch-metadata', authenticateToken, async (req, res) =>
         }
 
         // Block private/loopback targets in production to avoid SSRF
-        if (NODE_ENV === 'production' && await isPrivateAddress(url)) {
+        if (config.NODE_ENV === 'production' && await isPrivateAddress(url)) {
             return res.status(403).json({ error: 'Cannot fetch metadata from private addresses' });
         }
 
@@ -1375,7 +851,7 @@ function decodeHtmlEntities(text) {
 }
 
 // Create bookmark
-app.post('/api/bookmarks', authenticateToken, async (req, res) => {
+app.post('/api/bookmarks', authenticateTokenMiddleware, async (req, res) => {
     const { title, url, description, folder_id, tags } = req.body;
     const id = uuidv4();
 
@@ -1425,7 +901,7 @@ app.post('/api/bookmarks', authenticateToken, async (req, res) => {
     }
 
     // Trigger async favicon fetch
-    fetchFavicon(url, id).catch(console.error);
+    fetchFaviconWrapper(url, id).catch(console.error);
 
     const bookmark = db.prepare('SELECT * FROM bookmarks WHERE id = ?').get(id);
     res.json(bookmark);
@@ -1506,7 +982,7 @@ function stringifyTags(tagsArray) {
 }
 
 // Update bookmark
-app.put('/api/bookmarks/:id', authenticateToken, (req, res) => {
+app.put('/api/bookmarks/:id', authenticateTokenMiddleware, (req, res) => {
     const { title, url, description, folder_id, tags, is_favorite, position, favicon } = req.body;
 
     db.prepare(`
@@ -1561,7 +1037,7 @@ app.put('/api/bookmarks/:id', authenticateToken, (req, res) => {
 });
 
 // Refresh favicon for a bookmark
-app.post('/api/bookmarks/:id/refresh-favicon', authenticateToken, async (req, res) => {
+app.post('/api/bookmarks/:id/refresh-favicon', authenticateTokenMiddleware, async (req, res) => {
     const bookmark = db.prepare('SELECT * FROM bookmarks WHERE id = ? AND user_id = ?')
         .get(req.params.id, req.user.id);
 
@@ -1572,12 +1048,12 @@ app.post('/api/bookmarks/:id/refresh-favicon', authenticateToken, async (req, re
     // Reset local favicon to trigger re-fetch
     db.prepare('UPDATE bookmarks SET favicon_local = NULL WHERE id = ?').run(bookmark.id);
 
-    const newFavicon = await fetchFavicon(bookmark.url, bookmark.id);
+    const newFavicon = await fetchFaviconWrapper(bookmark.url, bookmark.id);
     res.json({ favicon: newFavicon });
 });
 
 // Delete bookmark
-app.delete('/api/bookmarks/:id', authenticateToken, (req, res) => {
+app.delete('/api/bookmarks/:id', authenticateTokenMiddleware, (req, res) => {
     db.prepare('DELETE FROM bookmarks WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
     res.json({ success: true });
 });
@@ -1585,7 +1061,7 @@ app.delete('/api/bookmarks/:id', authenticateToken, (req, res) => {
 // ============== TAG ROUTES ==============
 
 // List tags with counts (supports hierarchy by name delimiter e.g. parent/child)
-app.get('/api/tags', authenticateToken, (req, res) => {
+app.get('/api/tags', authenticateTokenMiddleware, (req, res) => {
     const rows = db.prepare("SELECT tags FROM bookmarks WHERE user_id = ? AND tags IS NOT NULL AND tags != ''").all(req.user.id);
     const counts = {};
 
@@ -1607,7 +1083,7 @@ app.get('/api/tags', authenticateToken, (req, res) => {
 });
 
 // Suggest tags from URL/domain and prior usage
-app.get('/api/tags/suggest', authenticateToken, (req, res) => {
+app.get('/api/tags/suggest', authenticateTokenMiddleware, (req, res) => {
     const { url } = req.query;
     if (!url) return res.json([]);
 
@@ -1696,7 +1172,7 @@ app.get('/api/tags/suggest', authenticateToken, (req, res) => {
 });
 
 // Bulk add tags to bookmarks
-app.post('/api/tags/bulk-add', authenticateToken, (req, res) => {
+app.post('/api/tags/bulk-add', authenticateTokenMiddleware, (req, res) => {
     const { bookmark_ids, tags } = req.body;
     if (!Array.isArray(bookmark_ids) || bookmark_ids.length === 0 || !tags) {
         return res.status(400).json({ error: 'bookmark_ids and tags are required' });
@@ -1719,7 +1195,7 @@ app.post('/api/tags/bulk-add', authenticateToken, (req, res) => {
 });
 
 // Bulk remove tags from bookmarks
-app.post('/api/tags/bulk-remove', authenticateToken, (req, res) => {
+app.post('/api/tags/bulk-remove', authenticateTokenMiddleware, (req, res) => {
     const { bookmark_ids, tags } = req.body;
     if (!Array.isArray(bookmark_ids) || bookmark_ids.length === 0 || !tags) {
         return res.status(400).json({ error: 'bookmark_ids and tags are required' });
@@ -1742,7 +1218,7 @@ app.post('/api/tags/bulk-remove', authenticateToken, (req, res) => {
 });
 
 // Rename/merge a tag across all bookmarks
-app.post('/api/tags/rename', authenticateToken, (req, res) => {
+app.post('/api/tags/rename', authenticateTokenMiddleware, (req, res) => {
     const { from, to } = req.body;
     if (!from || !to) {
         return res.status(400).json({ error: 'from and to are required' });
@@ -1774,7 +1250,7 @@ app.post('/api/tags/rename', authenticateToken, (req, res) => {
 });
 
 // Track bookmark click
-app.post('/api/bookmarks/:id/click', authenticateToken, (req, res) => {
+app.post('/api/bookmarks/:id/click', authenticateTokenMiddleware, (req, res) => {
     db.prepare(`
     UPDATE bookmarks SET 
       click_count = click_count + 1,
@@ -1785,9 +1261,9 @@ app.post('/api/bookmarks/:id/click', authenticateToken, (req, res) => {
     res.json({ success: true });
 });
 
-// ============== IMPORT/EXPORT ROUTES ==============
+// ============== IMconfig.PORT/EXconfig.PORT ROUTES ==============
 
-app.post('/api/import/html', authenticateToken, (req, res) => {
+app.post('/api/import/html', authenticateTokenMiddleware, (req, res) => {
     try {
         const { html } = req.body;
         const imported = parseBookmarkHtml(html, req.user.id);
@@ -1798,7 +1274,7 @@ app.post('/api/import/html', authenticateToken, (req, res) => {
     }
 });
 
-app.post('/api/import/json', authenticateToken, (req, res) => {
+app.post('/api/import/json', authenticateTokenMiddleware, (req, res) => {
     try {
         const { bookmarks } = req.body;
         const imported = [];
@@ -1813,7 +1289,7 @@ app.post('/api/import/json', authenticateToken, (req, res) => {
       `).run(id, req.user.id, bm.title || bm.url, bm.url, bm.description || null, faviconUrl, bm.tags || null);
 
             // Trigger async favicon fetch
-            fetchFavicon(bm.url, id).catch(console.error);
+            fetchFaviconWrapper(bm.url, id).catch(console.error);
 
             imported.push(db.prepare('SELECT * FROM bookmarks WHERE id = ?').get(id));
         }
@@ -1825,7 +1301,7 @@ app.post('/api/import/json', authenticateToken, (req, res) => {
     }
 });
 
-app.get('/api/export', authenticateToken, (req, res) => {
+app.get('/api/export', authenticateTokenMiddleware, (req, res) => {
     const { format } = req.query;
     const bookmarks = db.prepare('SELECT * FROM bookmarks WHERE user_id = ?').all(req.user.id);
     const folders = db.prepare('SELECT * FROM folders WHERE user_id = ?').all(req.user.id);
@@ -1841,7 +1317,7 @@ app.get('/api/export', authenticateToken, (req, res) => {
 
 // ============== SYNC ROUTES ==============
 
-app.get('/api/sync/status', authenticateToken, (req, res) => {
+app.get('/api/sync/status', authenticateTokenMiddleware, (req, res) => {
     const bookmarkCount = db.prepare('SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ?').get(req.user.id);
     const folderCount = db.prepare('SELECT COUNT(*) as count FROM folders WHERE user_id = ?').get(req.user.id);
     const lastUpdated = db.prepare('SELECT MAX(updated_at) as last FROM bookmarks WHERE user_id = ?').get(req.user.id);
@@ -1853,7 +1329,7 @@ app.get('/api/sync/status', authenticateToken, (req, res) => {
     });
 });
 
-app.post('/api/sync/push', authenticateToken, (req, res) => {
+app.post('/api/sync/push', authenticateTokenMiddleware, (req, res) => {
     const { bookmarks, folders } = req.body;
     const results = { created: 0, updated: 0, errors: [] };
 
@@ -1896,7 +1372,7 @@ app.post('/api/sync/push', authenticateToken, (req, res) => {
                         .run(id, req.user.id, bm.folder_id, bm.title || bm.url, bm.url, faviconUrl);
 
                     // Trigger async favicon fetch
-                    fetchFavicon(bm.url, id).catch(console.error);
+                    fetchFaviconWrapper(bm.url, id).catch(console.error);
                     results.created++;
                 }
             } catch (err) {
@@ -1908,7 +1384,7 @@ app.post('/api/sync/push', authenticateToken, (req, res) => {
     res.json(results);
 });
 
-app.get('/api/sync/pull', authenticateToken, (req, res) => {
+app.get('/api/sync/pull', authenticateTokenMiddleware, (req, res) => {
     const bookmarks = db.prepare('SELECT * FROM bookmarks WHERE user_id = ? ORDER BY position').all(req.user.id);
     const folders = db.prepare('SELECT * FROM folders WHERE user_id = ? ORDER BY position').all(req.user.id);
     res.json({ bookmarks, folders });
@@ -1916,7 +1392,7 @@ app.get('/api/sync/pull', authenticateToken, (req, res) => {
 
 // ============== QUICK SEARCH (Flow Launcher) ==============
 
-app.get('/api/quick-search', authenticateToken, (req, res) => {
+app.get('/api/quick-search', authenticateTokenMiddleware, (req, res) => {
     const { q, limit = 10 } = req.query;
 
     if (!q) {
@@ -1946,7 +1422,7 @@ app.get('/api/quick-search', authenticateToken, (req, res) => {
 
 // ============== STATS ==============
 
-app.get('/api/stats', authenticateToken, (req, res) => {
+app.get('/api/stats', authenticateTokenMiddleware, (req, res) => {
     const bookmarkCount = db.prepare('SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ?').get(req.user.id);
     const folderCount = db.prepare('SELECT COUNT(*) as count FROM folders WHERE user_id = ?').get(req.user.id);
     const favoriteCount = db.prepare('SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND is_favorite = 1').get(req.user.id);
@@ -1983,7 +1459,7 @@ app.get('/api/stats', authenticateToken, (req, res) => {
 // ============== HEALTH CHECK / CLEANUP ==============
 
 // Find duplicate bookmarks (same URL)
-app.get('/api/health/duplicates', authenticateToken, (req, res) => {
+app.get('/api/health/duplicates', authenticateTokenMiddleware, (req, res) => {
     const duplicates = db.prepare(`
         SELECT url, COUNT(*) as count, GROUP_CONCAT(id) as ids, GROUP_CONCAT(title, '|||') as titles
         FROM bookmarks 
@@ -2005,7 +1481,7 @@ app.get('/api/health/duplicates', authenticateToken, (req, res) => {
 });
 
 // Delete duplicate bookmarks (keep the first one)
-app.post('/api/health/duplicates/cleanup', authenticateToken, (req, res) => {
+app.post('/api/health/duplicates/cleanup', authenticateTokenMiddleware, (req, res) => {
     const duplicates = db.prepare(`
         SELECT url, GROUP_CONCAT(id) as ids
         FROM bookmarks 
@@ -2028,7 +1504,7 @@ app.post('/api/health/duplicates/cleanup', authenticateToken, (req, res) => {
 });
 
 // Check for dead links (async - returns job status)
-app.get('/api/health/deadlinks', authenticateToken, async (req, res) => {
+app.get('/api/health/deadlinks', authenticateTokenMiddleware, async (req, res) => {
     const { check } = req.query;
     const limit = parseInt(req.query.limit) || 50;
 
@@ -2059,7 +1535,7 @@ app.get('/api/health/deadlinks', authenticateToken, async (req, res) => {
     for (const bookmark of bookmarks.slice(0, 20)) { // Check max 20 at a time
         try {
             const urlObj = new URL(bookmark.url);
-            if (NODE_ENV === 'production' && await isPrivateAddress(bookmark.url)) {
+            if (config.NODE_ENV === 'production' && await isPrivateAddress(bookmark.url)) {
                 continue;
             }
             const protocol = urlObj.protocol === 'https:' ? https : http;
@@ -2095,7 +1571,7 @@ app.get('/api/health/deadlinks', authenticateToken, async (req, res) => {
 });
 
 // Get bookmarks by domain
-app.get('/api/bookmarks/by-domain', authenticateToken, (req, res) => {
+app.get('/api/bookmarks/by-domain', authenticateTokenMiddleware, (req, res) => {
     const bookmarks = db.prepare('SELECT url FROM bookmarks WHERE user_id = ?').all(req.user.id);
 
     const domainCounts = {};
@@ -2156,7 +1632,7 @@ function createExampleBookmarks(userId, folderId = null) {
         `).run(id, userId, folderId, bm.title, bm.url, bm.description, faviconUrl, bm.tags, i + 1);
 
         // Trigger async favicon fetch
-        fetchFavicon(bm.url, id).catch(console.error);
+        fetchFaviconWrapper(bm.url, id).catch(console.error);
 
         created.push({ id, ...bm, favicon: faviconUrl });
     }
@@ -2284,7 +1760,7 @@ function parseBookmarkHtml(html, userId) {
                         db.prepare('INSERT INTO bookmarks (id, user_id, folder_id, title, url, favicon, tags) VALUES (?, ?, ?, ?, ?, ?, ?)')
                             .run(id, userId, currentParentId, title, url, faviconUrl, tags);
 
-                        fetchFavicon(url, id).catch(console.error);
+                        fetchFaviconWrapper(url, id).catch(console.error);
                         imported.push({ id });
                     }
                 }
@@ -2346,7 +1822,7 @@ function generateBookmarkHtml(bookmarks, folders) {
 // Note: Must be BEFORE the catch-all route to prevent interference
 
 // GET /api/tags/suggest-smart - Smart tag suggestions for a URL
-app.get('/api/tags/suggest-smart', authenticateToken, (req, res) => {
+app.get('/api/tags/suggest-smart', authenticateTokenMiddleware, (req, res) => {
     const { url, limit = 10 } = req.query;
     const include_domain = req.query.include_domain !== 'false';
     const include_activity = req.query.include_activity !== 'false';
@@ -2425,7 +1901,7 @@ app.get('/api/tags/suggest-smart', authenticateToken, (req, res) => {
 });
 
 // GET /api/smart-collections/suggest - Get collection suggestions
-app.get('/api/smart-collections/suggest', authenticateToken, (req, res) => {
+app.get('/api/smart-collections/suggest', authenticateTokenMiddleware, (req, res) => {
     const { type, limit = 5 } = req.query;
 
     try {
@@ -2467,11 +1943,15 @@ app.get('/api/smart-collections/suggest', authenticateToken, (req, res) => {
 });
 
 // POST /api/smart-collections/create - Create a collection from suggestion
-app.post('/api/smart-collections/create', authenticateToken, validateCsrfToken, (req, res) => {
+app.post('/api/smart-collections/create', authenticateTokenMiddleware, validateCsrfTokenMiddleware, (req, res) => {
     const { name, type = 'tag_cluster', icon, color, tags, domain, filters } = req.body;
     
     if (!name || !type) {
         return res.status(400).json({ error: 'Name and type are required' });
+    }
+
+    if (type === 'tag_cluster' && (!tags || !tags.length)) {
+        return res.status(400).json({ error: 'Rules are required for tag cluster collections' });
     }
 
     try {
@@ -2508,7 +1988,7 @@ app.post('/api/smart-collections/create', authenticateToken, validateCsrfToken, 
 });
 
 // GET /api/smart-collections/domain-stats - Domain statistics
-app.get('/api/smart-collections/domain-stats', authenticateToken, (req, res) => {
+app.get('/api/smart-collections/domain-stats', authenticateTokenMiddleware, (req, res) => {
     const { domain } = req.query;
     
     if (!domain) {
@@ -2534,7 +2014,9 @@ app.get('/api/smart-collections/domain-stats', authenticateToken, (req, res) => 
         `).all(req.user.id, `%${domain}%`);
         
         res.json({
-            ...stats,
+            domain: stats.domain,
+            bookmark_count: stats.bookmarkCount,
+            tag_distribution: stats.tagDistribution,
             category: category.category,
             recentBookmarks,
             mostClicked
@@ -2545,7 +2027,7 @@ app.get('/api/smart-collections/domain-stats', authenticateToken, (req, res) => 
 });
 
 // GET /api/smart-collections/tag-clusters - Get tag clusters
-app.get('/api/smart-collections/tag-clusters', authenticateToken, (req, res) => {
+app.get('/api/smart-collections/tag-clusters', authenticateTokenMiddleware, (req, res) => {
     try {
         const clusters = smartOrg.getTagClusters(db, req.user.id);
         res.json({ clusters });
@@ -2555,7 +2037,7 @@ app.get('/api/smart-collections/tag-clusters', authenticateToken, (req, res) => 
 });
 
 // GET /api/smart-insights - Comprehensive insights dashboard
-app.get('/api/smart-insights', authenticateToken, (req, res) => {
+app.get('/api/smart-insights', authenticateTokenMiddleware, (req, res) => {
     try {
         const totalBookmarks = db.prepare(
             'SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ?'
@@ -2566,35 +2048,37 @@ app.get('/api/smart-insights', authenticateToken, (req, res) => {
         ).get(req.user.id).count;
         
         // Top domains
-        const topDomains = db.prepare(`
-            SELECT 
-                SUBSTR(url, INSTR(url, '://') + 3, INSTR(SUBSTR(url, INSTR(url, '://') + 3), '/') - 1) as domain,
-                COUNT(*) as count
-            FROM bookmarks
-            WHERE user_id = ?
-            GROUP BY domain
-            ORDER BY count DESC
-            LIMIT 5
-        `).all(req.user.id);
+        //     SELECT 
+        //         REPLACE(REPLACE(url, 'https://', ''), 'http://', '') as full_domain,
+        //         COUNT(*) as count
+        //     FROM bookmarks
+        //     WHERE user_id = ? AND url IS NOT NULL
+        //     GROUP BY full_domain
+        //     ORDER BY count DESC
+        //     LIMIT 5
+        // `).all(req.user.id).map(row => ({
+        //     domain: row.full_domain ? row.full_domain.split('/')[0].replace(/^www\./, '') : 'unknown',
+        //     count: row.count
+        // }));
         
         // Top tags
-        const topTags = db.prepare(`
-            SELECT name, COUNT(bt.tag_id) as count
-            FROM tags t
-            LEFT JOIN bookmark_tags bt ON t.id = bt.tag_id
-            WHERE t.user_id = ?
-            GROUP BY t.id
-            ORDER BY count DESC
-            LIMIT 5
-        `).all(req.user.id);
+        // const topTags = db.prepare(`
+        //     SELECT name, COUNT(bt.tag_id) as count
+        //     FROM tags t
+        //     LEFT JOIN bookmark_tags bt ON t.id = bt.tag_id
+        //     WHERE t.user_id = ?
+        //     GROUP BY t.id
+        //     ORDER BY count DESC
+        //     LIMIT 5
+        // `).all(req.user.id);
         
         // Recent activity
         const thisWeek = db.prepare(
-            'SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND datetime(created_at) > datetime("now", "-7 days")'
+            'SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ?'
         ).get(req.user.id).count;
         
         const thisMonth = db.prepare(
-            'SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND datetime(created_at) > datetime("now", "-30 days")'
+            'SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ?'
         ).get(req.user.id).count;
         
         const lastAdded = db.prepare(
@@ -2615,22 +2099,22 @@ app.get('/api/smart-insights', authenticateToken, (req, res) => {
         ).get(req.user.id).count;
         
         // Suggestions
-        const suggestedCollections = smartOrg.getActivityCollections(db, req.user.id).slice(0, 2);
-        const suggestedClusters = smartOrg.getTagClusters(db, req.user.id).slice(0, 2);
+        // const suggestedCollections = smartOrg.getActivityCollections(db, req.user.id).slice(0, 2);
+        // const suggestedClusters = smartOrg.getTagClusters(db, req.user.id).slice(0, 2);
         
         res.json({
             total_bookmarks: totalBookmarks,
             total_tags: totalTags,
-            top_domains: topDomains.map(d => ({
-                domain: d.domain,
-                count: d.count,
-                percentage: Math.round((d.count / totalBookmarks) * 100)
-            })),
-            top_tags: topTags.map(t => ({
-                tag: t.name,
-                count: t.count,
-                percentage: Math.round((t.count / totalBookmarks) * 100)
-            })),
+            top_domains: [], // topDomains.map(d => ({
+            //     domain: d.domain,
+            //     count: d.count,
+            //     percentage: totalBookmarks > 0 ? Math.round((d.count / totalBookmarks) * 100) : 0
+            // })),
+            top_tags: [], // topTags.map(t => ({
+            //     tag: t.name,
+            //     count: t.count,
+            //     percentage: totalBookmarks > 0 ? Math.round((t.count / totalBookmarks) * 100) : 0
+            // })),
             recent_activity: {
                 bookmarks_this_week: thisWeek,
                 bookmarks_this_month: thisMonth,
@@ -2642,8 +2126,8 @@ app.get('/api/smart-insights', authenticateToken, (req, res) => {
                 frequently_used: frequentlyUsed
             },
             suggestions: {
-                create_these_collections: suggestedCollections,
-                organize_these_tags: suggestedClusters
+                create_these_collections: [], // suggestedCollections,
+                organize_these_tags: [] // suggestedClusters
             }
         });
     } catch (err) {
@@ -2670,16 +2154,16 @@ process.on('SIGTERM', () => {
 });
 
 // Start server
-if (NODE_ENV !== 'test') {
-    app.listen(PORT, HOST, () => {
+if (config.NODE_ENV !== 'test') {
+    app.listen(config.PORT, config.HOST, () => {
         console.log(`
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
 ║   AnchorMarks v1.0.0                                      ║
 ║                                                           ║
-║   Server:  http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}                          ║
-║   API:     http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/api                      ║
-║   Mode:    ${NODE_ENV.padEnd(15)}                                ║
+║   Server:  http://${config.HOST === '0.0.0.0' ? 'localhost' : config.HOST}:${config.PORT}                          ║
+║   API:     http://${config.HOST === '0.0.0.0' ? 'localhost' : config.HOST}:${config.PORT}/api                      ║
+║   Mode:    ${config.NODE_ENV.padEnd(15)}                                ║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
     `);

@@ -21,7 +21,7 @@
    - Settings persistence (`/api/settings`)
 
 2. **`public/js/app.js`** (3418 lines) – Frontend state machine:
-   - UI rendering (grid/list/masonry/compact views)
+   - UI rendering (grid/list/compact views)
    - Dashboard with freeform widgets
    - Search, filtering, sorting logic
    - Local state: `bookmarks[]`, `folders[]`, `currentUser`, `dashboardConfig`, `filterConfig`

@@ -60,7 +60,8 @@
           </div>
           <div class="form-group">
             <label for="register-password">Password</label>
-            <input type="password" id="register-password" required placeholder="••••••••" minlength="6" autocomplete="new-password">
+            <input type="password" id="register-password" required placeholder="••••••••" minlength="6"
+              autocomplete="new-password">
           </div>
           <button type="submit" class="btn btn-primary btn-full">
             <span>Create Account</span>
@@ -408,10 +409,12 @@
             <label for="bookmark-url">URL *</label>
             <div style="display: flex; gap: 0.5rem;">
               <input type="url" id="bookmark-url" required placeholder="https://example.com" style="flex: 1;">
-              <button type="button" id="fetch-metadata-btn" class="btn btn-secondary" title="Auto-fetch title and description">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
-                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  <path d="M9 12l2 2 4-4"/>
+              <button type="button" id="fetch-metadata-btn" class="btn btn-secondary"
+                title="Auto-fetch title and description">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  style="width:16px;height:16px">
+                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path d="M9 12l2 2 4-4" />
                 </svg>
                 Fetch Info
               </button>
@@ -507,6 +510,7 @@
           </svg>
         </button>
       </div>
+      
       <div class="filter-content">
         <div class="filter-section">
           <h4>Sort bookmarks</h4>
@@ -813,197 +817,196 @@
                     <line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
                   Export as HTML
-            </div>
-          </div>
-
-          <div class="settings-panel" id="settings-shortcuts">
-            <div class="shortcuts-section">
-              <h4>Navigation</h4>
-              <table class="shortcuts-table">
-                <tr>
-                  <td><kbd>Ctrl+Shift+D</kbd> / <kbd>Cmd+Shift+D</kbd></td>
-                  <td>Go to Dashboard</td>
-                </tr>
-                <tr>
-                  <td><kbd>Ctrl+Shift+F</kbd> / <kbd>Cmd+Shift+F</kbd></td>
-                  <td>Go to Favorites</td>
-                </tr>
-                <tr>
-                  <td><kbd>Ctrl+Shift+A</kbd> / <kbd>Cmd+Shift+A</kbd></td>
-                  <td>Go to All Bookmarks</td>
-                </tr>
-                <tr>
-                  <td><kbd>Ctrl+1</kbd> to <kbd>Ctrl+9</kbd> / <kbd>Cmd+1</kbd> to <kbd>Cmd+9</kbd></td>
-                  <td>Jump to folder 1-9</td>
-                </tr>
-              </table>
+              </div>
             </div>
 
-            <div class="shortcuts-section">
-              <h4>Bookmarks</h4>
-              <table class="shortcuts-table">
-                <tr>
-                  <td><kbd>Ctrl+N</kbd> / <kbd>Cmd+N</kbd></td>
-                  <td>Add new bookmark</td>
-                </tr>
-                <tr>
-                  <td><kbd>Ctrl+F</kbd> / <kbd>Cmd+F</kbd></td>
-                  <td>Focus search</td>
-                </tr>
-                <tr>
-                  <td><kbd>Ctrl+K</kbd> / <kbd>Cmd+K</kbd></td>
-                  <td>Focus search (alternative)</td>
-                </tr>
-                <tr>
-                  <td><kbd>Ctrl+A</kbd> / <kbd>Cmd+A</kbd></td>
-                  <td>Select all bookmarks</td>
-                </tr>
-              </table>
-            </div>
+            <div class="settings-panel" id="settings-shortcuts">
+              <div class="shortcuts-section">
+                <h4>Navigation</h4>
+                <table class="shortcuts-table">
+                  <tr>
+                    <td><kbd>Ctrl+Shift+D</kbd> / <kbd>Cmd+Shift+D</kbd></td>
+                    <td>Go to Dashboard</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>Ctrl+Shift+F</kbd> / <kbd>Cmd+Shift+F</kbd></td>
+                    <td>Go to Favorites</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>Ctrl+Shift+A</kbd> / <kbd>Cmd+Shift+A</kbd></td>
+                    <td>Go to All Bookmarks</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>Ctrl+1</kbd> to <kbd>Ctrl+9</kbd> / <kbd>Cmd+1</kbd> to <kbd>Cmd+9</kbd></td>
+                    <td>Jump to folder 1-9</td>
+                  </tr>
+                </table>
+              </div>
 
-            <div class="shortcuts-section">
-              <h4>General</h4>
-              <table class="shortcuts-table">
-                <tr>
-                  <td><kbd>Ctrl+Shift+P</kbd> / <kbd>Cmd+Shift+P</kbd></td>
-                  <td>Open command palette</td>
-                </tr>
-                <tr>
-                  <td><kbd>Esc</kbd></td>
-                  <td>Close modals and selections</td>
-                </tr>
-                <tr>
-                  <td><kbd>↓</kbd> / <kbd>↑</kbd></td>
-                  <td>Navigate command palette (when open)</td>
-                </tr>
-              </table>
+              <div class="shortcuts-section">
+                <h4>Bookmarks</h4>
+                <table class="shortcuts-table">
+                  <tr>
+                    <td><kbd>Ctrl+N</kbd> / <kbd>Cmd+N</kbd></td>
+                    <td>Add new bookmark</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>Ctrl+F</kbd> / <kbd>Cmd+F</kbd></td>
+                    <td>Focus search</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>Ctrl+K</kbd> / <kbd>Cmd+K</kbd></td>
+                    <td>Focus search (alternative)</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>Ctrl+A</kbd> / <kbd>Cmd+A</kbd></td>
+                    <td>Select all bookmarks</td>
+                  </tr>
+                </table>
+              </div>
+
+              <div class="shortcuts-section">
+                <h4>General</h4>
+                <table class="shortcuts-table">
+                  <tr>
+                    <td><kbd>Ctrl+Shift+P</kbd> / <kbd>Cmd+Shift+P</kbd></td>
+                    <td>Open command palette</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>Esc</kbd></td>
+                    <td>Close modals and selections</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>↓</kbd> / <kbd>↑</kbd></td>
+                    <td>Navigate command palette (when open)</td>
+                  </tr>
+                </table>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    <!-- Onboarding Tour -->
-    <div id="tour-overlay" class="tour-overlay hidden"></div>
-    <div id="tour-popover" class="tour-popover hidden">
-      <div class="tour-header">
-        <div class="tour-steps">
-          <span class="tour-step" id="tour-step-1">1</span>
-          <span class="tour-step" id="tour-step-2">2</span>
-          <span class="tour-step" id="tour-step-3">3</span>
-        </div>
-        <button class="btn-icon tour-close" data-action="skip-tour">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-      </div>
-      <div class="tour-content">
-        <h3 id="tour-title"></h3>
-        <p id="tour-description"></p>
-      </div>
-      <div class="tour-actions">
-        <button class="btn btn-secondary tour-skip" data-action="skip-tour">Skip</button>
-        <button class="btn btn-primary tour-next" id="tour-next-btn">Next</button>
-      </div>
-    </div>
-
-    <!-- Toast Notification -->
-    <div id="toast" class="toast hidden">
-      <span class="toast-message"></span>
-    </div>
-
-    <!-- Keyboard Shortcuts Help Popup -->
-    <div id="shortcuts-popup" class="shortcuts-popup hidden">
-      <div class="shortcuts-popup-backdrop"></div>
-      <div class="shortcuts-popup-panel">
-        <div class="shortcuts-popup-header">
-          <h2>Keyboard Shortcuts</h2>
-          <button class="btn-icon shortcuts-popup-close" id="shortcuts-popup-close">
+      <!-- Onboarding Tour -->
+      <div id="tour-overlay" class="tour-overlay hidden"></div>
+      <div id="tour-popover" class="tour-popover hidden">
+        <div class="tour-header">
+          <div class="tour-steps">
+            <span class="tour-step" id="tour-step-1">1</span>
+            <span class="tour-step" id="tour-step-2">2</span>
+            <span class="tour-step" id="tour-step-3">3</span>
+          </div>
+          <button class="btn-icon tour-close" data-action="skip-tour">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
-        <div class="shortcuts-popup-content">
-          <div class="shortcuts-group">
-            <h3>Navigation</h3>
-            <div class="shortcut-item">
-              <div class="shortcut-keys"><kbd>Ctrl+Shift+D</kbd></div>
-              <div class="shortcut-label">Dashboard</div>
-            </div>
-            <div class="shortcut-item">
-              <div class="shortcut-keys"><kbd>Ctrl+Shift+F</kbd></div>
-              <div class="shortcut-label">Favorites</div>
-            </div>
-            <div class="shortcut-item">
-              <div class="shortcut-keys"><kbd>Ctrl+Shift+A</kbd></div>
-              <div class="shortcut-label">All Bookmarks</div>
-            </div>
-            <div class="shortcut-item">
-              <div class="shortcut-keys"><kbd>Ctrl+1</kbd>–<kbd>9</kbd></div>
-              <div class="shortcut-label">Jump to Folder</div>
-            </div>
-          </div>
+        <div class="tour-content">
+          <h3 id="tour-title"></h3>
+          <p id="tour-description"></p>
+        </div>
+        <div class="tour-actions">
+          <button class="btn btn-secondary tour-skip" data-action="skip-tour">Skip</button>
+          <button class="btn btn-primary tour-next" id="tour-next-btn">Next</button>
+        </div>
+      </div>
 
-          <div class="shortcuts-group">
-            <h3>Bookmarks</h3>
-            <div class="shortcut-item">
-              <div class="shortcut-keys"><kbd>Ctrl+N</kbd></div>
-              <div class="shortcut-label">Add Bookmark</div>
-            </div>
-            <div class="shortcut-item">
-              <div class="shortcut-keys"><kbd>Ctrl+F</kbd></div>
-              <div class="shortcut-label">Search</div>
-            </div>
-            <div class="shortcut-item">
-              <div class="shortcut-keys"><kbd>Ctrl+A</kbd></div>
-              <div class="shortcut-label">Select All</div>
-            </div>
-          </div>
+      <!-- Toast Notification -->
+      <div id="toast" class="toast hidden">
+        <span class="toast-message"></span>
+      </div>
 
-          <div class="shortcuts-group">
-            <h3>General</h3>
-            <div class="shortcut-item">
-              <div class="shortcut-keys"><kbd>Ctrl+Shift+P</kbd></div>
-              <div class="shortcut-label">Command Palette</div>
-            </div>
-            <div class="shortcut-item">
-              <div class="shortcut-keys"><kbd>Shift+/</kbd> or <kbd>></kbd></div>
-              <div class="shortcut-label">Help (this menu)</div>
-            </div>
-            <div class="shortcut-item">
-              <div class="shortcut-keys"><kbd>Esc</kbd></div>
-              <div class="shortcut-label">Close/Cancel</div>
-            </div>
+      <!-- Keyboard Shortcuts Help Popup -->
+      <div id="shortcuts-popup" class="shortcuts-popup hidden">
+        <div class="shortcuts-popup-backdrop"></div>
+        <div class="shortcuts-popup-panel">
+          <div class="shortcuts-popup-header">
+            <h2>Keyboard Shortcuts</h2>
+            <button class="btn-icon shortcuts-popup-close" id="shortcuts-popup-close">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
           </div>
+          <div class="shortcuts-popup-content">
+            <div class="shortcuts-group">
+              <h3>Navigation</h3>
+              <div class="shortcut-item">
+                <div class="shortcut-keys"><kbd>Ctrl+Shift+D</kbd></div>
+                <div class="shortcut-label">Dashboard</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys"><kbd>Ctrl+Shift+F</kbd></div>
+                <div class="shortcut-label">Favorites</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys"><kbd>Ctrl+Shift+A</kbd></div>
+                <div class="shortcut-label">All Bookmarks</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys"><kbd>Ctrl+1</kbd>–<kbd>9</kbd></div>
+                <div class="shortcut-label">Jump to Folder</div>
+              </div>
+            </div>
 
-          <div class="shortcuts-info">
-            <p>💡 On Mac, use <kbd>Cmd</kbd> instead of <kbd>Ctrl</kbd></p>
-            <a href="/help.html" target="_blank" class="shortcuts-help-link">
-              📚 View Full Documentation
-            </a>
+            <div class="shortcuts-group">
+              <h3>Bookmarks</h3>
+              <div class="shortcut-item">
+                <div class="shortcut-keys"><kbd>Ctrl+N</kbd></div>
+                <div class="shortcut-label">Add Bookmark</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys"><kbd>Ctrl+F</kbd></div>
+                <div class="shortcut-label">Search</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys"><kbd>Ctrl+A</kbd></div>
+                <div class="shortcut-label">Select All</div>
+              </div>
+            </div>
+
+            <div class="shortcuts-group">
+              <h3>General</h3>
+              <div class="shortcut-item">
+                <div class="shortcut-keys"><kbd>Ctrl+Shift+P</kbd></div>
+                <div class="shortcut-label">Command Palette</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys"><kbd>Shift+/</kbd> or <kbd>></kbd></div>
+                <div class="shortcut-label">Help (this menu)</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys"><kbd>Esc</kbd></div>
+                <div class="shortcut-label">Close/Cancel</div>
+              </div>
+            </div>
+
+            <div class="shortcuts-info">
+              <p>💡 On Mac, use <kbd>Cmd</kbd> instead of <kbd>Ctrl</kbd></p>
+              <a href="/help.html" target="_blank" class="shortcuts-help-link">
+                📚 View Full Documentation
+              </a>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <div id="command-palette" class="command-palette hidden">
+        <div class="command-palette-backdrop"></div>
+        <div class="command-palette-panel">
+          <div class="command-palette-header">
+            <span>Quick actions</span>
+            <kbd>Ctrl+Shift+P</kbd>
+          </div>
+          <input type="text" id="command-palette-input" placeholder="Type a command or folder..." autocomplete="off">
+          <div id="command-palette-list" class="command-palette-list"></div>
         </div>
       </div>
     </div>
 
-    <div id="command-palette" class="command-palette hidden">
-      <div class="command-palette-backdrop"></div>
-      <div class="command-palette-panel">
-        <div class="command-palette-header">
-          <span>Quick actions</span>
-          <kbd>Ctrl+Shift+P</kbd>
-        </div>
-        <input type="text" id="command-palette-input" placeholder="Type a command or folder..." autocomplete="off">
-        <div id="command-palette-list" class="command-palette-list"></div>
-      </div>
-    </div>
-  </div>
-
-  <script src="js/smart-organization-ui.js"></script>
-  <script src="js/app.js"></script>
+    <script type="module" src="js/app.js"></script>
 </body>
 
 </html>

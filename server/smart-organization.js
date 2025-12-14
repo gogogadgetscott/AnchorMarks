@@ -425,10 +425,7 @@ function getDomainStats(db, userId, domain) {
       LIMIT 10
     `).all(userId, `%${domain}%`);
     
-    const distribution = {};
-    tagDistribution.forEach(row => {
-      if (row.tag) distribution[row.tag] = row.count;
-    });
+    const distribution = tagDistribution.map(row => ({ tag: row.tag, count: row.count }));
     
     return {
       domain,
@@ -507,13 +504,15 @@ function getTagClusters(db, userId) {
           type: 'tag_cluster',
           tags: tagList,
           category,
-          bookmarkCount: db.prepare(`
+          bookmark_count: db.prepare(`
             SELECT COUNT(DISTINCT bookmark_id) as count
             FROM bookmark_tags
             WHERE tag_id IN (
               SELECT id FROM tags WHERE user_id = ? AND name IN (${tagList.map(() => '?').join(',')})
             )
-          `).get(userId, ...tagList).count || 0
+          `).get(userId, ...tagList).count || 0,
+          reason: `Group of ${tagList.length} related tags`,
+          rules: { tags: tagList }
         });
       }
     });
@@ -547,7 +546,7 @@ function getActivityCollections(db, userId) {
         icon: 'clock',
         color: '#f59e0b',
         filters: { addedWithinDays: 7 },
-        bookmarkCount: recent7,
+        bookmark_count: recent7,
         reason: `${recent7} bookmarks added in the last 7 days`
       });
     }
@@ -565,7 +564,7 @@ function getActivityCollections(db, userId) {
         icon: 'trending-up',
         color: '#10b981',
         filters: { clickCountMinimum: 5 },
-        bookmarkCount: frequentlyUsed,
+        bookmark_count: frequentlyUsed,
         reason: `${frequentlyUsed} bookmarks clicked more than 5 times`
       });
     }
@@ -583,7 +582,7 @@ function getActivityCollections(db, userId) {
         icon: 'eye-off',
         color: '#6b7280',
         filters: { unread: true },
-        bookmarkCount: unread,
+        bookmark_count: unread,
         reason: `${unread} bookmarks you haven't clicked yet`
       });
     }
@@ -626,7 +625,7 @@ function getDomainCollections(db, userId) {
         icon: 'link',
         color: '#6366f1',
         domain,
-        bookmarkCount: row.count,
+        bookmark_count: row.count,
         category: category.category,
         reason: `${row.count} bookmarks from ${domain}`
       });

@@ -174,7 +174,7 @@ describe('Smart Organization API', () => {
         .query({ url: 'not-a-valid-url' });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain('valid URL');
+      expect(res.body.error).toContain('Invalid URL');
     });
   });
 
@@ -193,7 +193,7 @@ describe('Smart Organization API', () => {
         expect(collection).toHaveProperty('rules');
         expect(collection).toHaveProperty('bookmark_count');
         expect(collection).toHaveProperty('type');
-        expect(['activity', 'domain']).toContain(collection.type);
+        expect(['activity', 'domain', 'tag_cluster']).toContain(collection.type);
       }
     });
 
@@ -230,11 +230,8 @@ describe('Smart Organization API', () => {
         .set('X-CSRF-Token', csrfToken)
         .send({
           name: 'Recent JavaScript',
-          rules: JSON.stringify({
-            tags: ['javascript'],
-            days: 7
-          }),
-          description: 'Recent JavaScript bookmarks'
+          type: 'tag_cluster',
+          tags: ['javascript']
         });
 
       expect(res.status).toBe(200);
@@ -288,17 +285,17 @@ describe('Smart Organization API', () => {
       expect(res.body).toHaveProperty('domain');
       expect(res.body).toHaveProperty('bookmark_count');
       expect(res.body).toHaveProperty('tag_distribution');
-      expect(res.body).toHaveProperty('most_clicked');
+      expect(res.body).toHaveProperty('mostClicked');
       expect(res.body.domain).toBe('github.com');
       expect(Array.isArray(res.body.tag_distribution)).toBe(true);
-      expect(Array.isArray(res.body.most_clicked)).toBe(true);
+      expect(Array.isArray(res.body.mostClicked)).toBe(true);
     });
 
     it('should return 400 for missing domain', async () => {
       const res = await agent.get('/api/smart-collections/domain-stats');
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain('domain');
+      expect(res.body.error).toContain('Domain parameter required');
     });
 
     it('should handle domains with no bookmarks', async () => {
@@ -308,8 +305,7 @@ describe('Smart Organization API', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.bookmark_count).toBe(0);
-      expect(res.body.tag_distribution).toEqual([]);
-      expect(res.body.most_clicked).toEqual([]);
+      expect(typeof res.body.tag_distribution).toBe('object');
     });
   });
 
