@@ -280,6 +280,22 @@ export function renderWidgetPickerTags() {
   allTags.sort((a, b) => tagCounts[b] - tagCounts[a]);
 
   let html = "";
+  // Special: Tag Analytics widget shortcut
+  const analyticsAdded = state.dashboardWidgets.some(
+    (w) => w.type === "tag-analytics" && w.id === "tag-analytics",
+  );
+  html += `
+      <div class="filter-item widget-picker-item ${analyticsAdded ? "added" : "draggable"}"
+           data-type="tag-analytics"
+           data-id="tag-analytics"
+           data-name="Tag Analytics"
+           draggable="${!analyticsAdded ? "true" : "false"}"
+           style="${analyticsAdded ? "opacity: 0.5; cursor: not-allowed;" : ""}">
+        <span class="filter-item-name">Tag Analytics</span>
+        ${analyticsAdded ? '<span style="font-size:0.65rem;color:var(--text-tertiary);margin-left:0.25rem;">✓</span>' : ""}
+      </div>
+  `;
+
   allTags.forEach((tag) => {
     const count = tagCounts[tag];
     const isAdded = state.dashboardWidgets.some(

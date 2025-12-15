@@ -49,6 +49,7 @@ import {
   setTheme,
   applyFaviconSetting,
   toggleFavicons,
+  toggleAiSuggestions,
   toggleSidebar,
   toggleSection,
   toggleIncludeChildBookmarks,
@@ -138,7 +139,7 @@ import {
 } from "./modules/commands.js";
 
 // Import filters
-import { initFilterDropdown, toggleFilterDropdown } from "./modules/filters.js";
+import { initFilterDropdown, toggleFilterDropdown, updateFilterButtonVisibility } from "./modules/filters.js";
 
 // Import tag input
 import { initTagInput, loadTagsFromInput } from "./modules/tag-input.js";
@@ -228,6 +229,8 @@ async function initializeApp() {
   updateUserInfo();
   await Promise.all([loadFolders(), loadBookmarks()]);
   setViewMode(state.viewMode);
+  initFilterDropdown();
+  updateFilterButtonVisibility();
 
   // Initialize sidebar filter controls with current state
   const settingsTagSort = document.getElementById("settings-tag-sort");
@@ -447,6 +450,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       state.setDisplayedCount(state.BOOKMARKS_PER_PAGE);
       updateActiveNav();
       renderActiveFilters();
+      updateFilterButtonVisibility();
 
       if (item.dataset.view === "dashboard") {
         renderDashboard();
@@ -612,6 +616,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       createBookmark(data);
     }
   });
+
+  document
+    .getElementById("bookmark-new-folder-btn")
+    ?.addEventListener("click", async () => {
+      const name = prompt("New folder name:");
+      const trimmed = name ? name.trim() : "";
+      if (!trimmed) return;
+
+      const folder = await createFolder(
+        { name: trimmed, color: "#6366f1", parent_id: null },
+        { closeModal: false },
+      );
+
+      if (folder?.id) {
+        document.getElementById("bookmark-folder").value = folder.id;
+      }
+    });
 
   // Fetch Metadata Button
   document
@@ -793,6 +814,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   document
     .getElementById("hide-favicons-toggle")
     ?.addEventListener("change", toggleFavicons);
+  document
+    .getElementById("ai-suggestions-toggle")
+    ?.addEventListener("change", toggleAiSuggestions);
   document
     .getElementById("include-children-toggle")
     ?.addEventListener("change", toggleIncludeChildBookmarks);
@@ -1152,6 +1176,9 @@ window.AnchorMarks = {
   },
   get hideFavicons() {
     return state.hideFavicons;
+  },
+  get aiSuggestionsEnabled() {
+    return state.aiSuggestionsEnabled;
   },
   get dashboardConfig() {
     return state.dashboardConfig;

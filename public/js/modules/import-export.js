@@ -13,6 +13,7 @@ import { loadFolders } from "./folders.js";
 // Import HTML bookmarks file
 export async function importHtml(file) {
   const html = await file.text();
+  setImportProgress("start");
   try {
     const result = await api("/import/html", {
       method: "POST",
@@ -28,8 +29,12 @@ export async function importHtml(file) {
     await renderSidebarTags();
 
     showToast(`Imported ${result.imported} bookmarks!`, "success");
+    setImportProgress("success", `${result.imported} bookmarks imported.`);
   } catch (err) {
     showToast(err.message, "error");
+    setImportProgress("error", err.message);
+  } finally {
+    setImportProgress("idle");
   }
 }
 
@@ -106,3 +111,40 @@ export default {
   exportHtml,
   resetBookmarks,
 };
+
+function setImportProgress(state, message = "") {
+  const statusEl = document.getElementById("import-html-progress");
+  const btn = document.getElementById("import-html-btn");
+  if (!statusEl || !btn) return;
+
+  const setStatus = (content) => {
+    statusEl.innerHTML = content;
+  };
+
+  switch (state) {
+    case "start": {
+      btn.disabled = true;
+      btn.setAttribute("aria-busy", "true");
+      setStatus(
+        `<span class="spinner" aria-hidden="true"></span><span>Importing bookmarks...</span>`,
+      );
+      break;
+    }
+    case "success": {
+      setStatus(`<span class="success-dot" aria-hidden="true"></span><span>${message || "Import complete"}</span>`);
+      break;
+    }
+    case "error": {
+      setStatus(`<span class="error-dot" aria-hidden="true"></span><span>${message || "Import failed"}</span>`);
+      break;
+    }
+    case "idle": {
+      btn.disabled = false;
+      btn.removeAttribute("aria-busy");
+      break;
+    }
+    default: {
+      setStatus("");
+    }
+  }
+}

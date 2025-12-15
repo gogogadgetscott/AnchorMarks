@@ -16,6 +16,7 @@ import {
   updateBulkUI,
   updateActiveNav,
 } from "./ui.js";
+import { updateFilterButtonVisibility } from "./filters.js";
 
 // Note: renderDashboard, renderSidebarTags, and checkWelcomeTour are loaded dynamically
 // to avoid circular dependencies
@@ -109,6 +110,8 @@ export async function loadBookmarks() {
 
 // Render bookmarks list
 export function renderBookmarks() {
+  updateFilterButtonVisibility();
+  
   const container =
     dom.bookmarksContainer || document.getElementById("bookmarks-container");
   const emptyState = dom.emptyState || document.getElementById("empty-state");

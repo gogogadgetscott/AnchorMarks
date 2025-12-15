@@ -5,19 +5,6 @@
 
 const { v4: uuidv4 } = require("uuid");
 
-let hasColorOverrideColumn; // cached flag to avoid repeated PRAGMA checks
-
-function ensureBookmarkTagsSchema(db) {
-  if (hasColorOverrideColumn !== undefined) return hasColorOverrideColumn;
-  try {
-    const cols = db.prepare("PRAGMA table_info(bookmark_tags)").all();
-    hasColorOverrideColumn = cols.some((c) => c.name === "color_override");
-  } catch (err) {
-    hasColorOverrideColumn = false;
-  }
-  return hasColorOverrideColumn;
-}
-
 /**
  * Parse tag string (comma-separated) and ensure all tags exist
  * @param {object} db - Database instance
@@ -77,27 +64,17 @@ function ensureTagsExist(db, userId, tagsInput, options = {}) {
  */
 function updateBookmarkTags(db, bookmarkId, tagIds, options = {}) {
   const colorOverridesByTagId = options.colorOverridesByTagId || {};
-  const allowColorOverride = ensureBookmarkTagsSchema(db);
   // Delete existing relationships
   db.prepare("DELETE FROM bookmark_tags WHERE bookmark_id = ?").run(bookmarkId);
 
   // Create new relationships
   if (tagIds && tagIds.length > 0) {
-    if (allowColorOverride) {
-      const stmt = db.prepare(
-        "INSERT INTO bookmark_tags (bookmark_id, tag_id, color_override) VALUES (?, ?, ?)",
-      );
-      for (const tagId of tagIds) {
-        const override = colorOverridesByTagId[tagId] || null;
-        stmt.run(bookmarkId, tagId, override);
-      }
-    } else {
-      const stmt = db.prepare(
-        "INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)",
-      );
-      for (const tagId of tagIds) {
-        stmt.run(bookmarkId, tagId);
-      }
+    const stmt = db.prepare(
+      "INSERT INTO bookmark_tags (bookmark_id, tag_id, color_override) VALUES (?, ?, ?)",
+    );
+    for (const tagId of tagIds) {
+      const override = colorOverridesByTagId[tagId] || null;
+      stmt.run(bookmarkId, tagId, override);
     }
   }
 }

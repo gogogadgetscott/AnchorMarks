@@ -12,6 +12,24 @@ import { renderActiveFilters } from "./search.js";
 
 let filterDropdownPinned = false;
 
+// Show/hide filter button based on current view
+export function updateFilterButtonVisibility() {
+  const filterBtn = document.getElementById("filter-dropdown-btn");
+  if (!filterBtn) return;
+  
+  const bookmarksViews = ["all", "folder", "collection"];
+  if (bookmarksViews.includes(state.currentView)) {
+    filterBtn.style.display = "";
+    // If filter was pinned, restore it when coming back to bookmarks view
+    if (filterDropdownPinned && !document.getElementById("filter-dropdown")) {
+      showFilterDropdown();
+    }
+  } else {
+    filterBtn.style.display = "none";
+    closeFilterDropdown();
+  }
+}
+
 // Initialize filter dropdown
 export function initFilterDropdown() {
   const headerRight = document.querySelector(".header-right");
@@ -48,6 +66,14 @@ export function initFilterDropdown() {
 // Toggle filter dropdown
 export function toggleFilterDropdown() {
   console.log("toggleFilterDropdown called");
+  
+  // Only allow filter dropdown in bookmarks views
+  const bookmarksViews = ["all", "folder", "collection"];
+  if (!bookmarksViews.includes(state.currentView)) {
+    console.log("Filter dropdown only available in bookmarks view. Current view:", state.currentView);
+    return;
+  }
+  
   const existing = document.getElementById("filter-dropdown");
   console.log("Existing dropdown:", existing);
   if (existing) {
@@ -61,6 +87,15 @@ export function toggleFilterDropdown() {
 // Show filter dropdown
 export async function showFilterDropdown() {
   console.log("showFilterDropdown started");
+  
+  // Only show filter dropdown in bookmarks view (all, folder, collection)
+  // Hide for dashboard, favorites, recent
+  const bookmarksViews = ["all", "folder", "collection"];
+  if (!bookmarksViews.includes(state.currentView)) {
+    console.log("Filter dropdown only available in bookmarks view. Current view:", state.currentView);
+    return;
+  }
+  
   try {
     // Remove existing
     document.getElementById("filter-dropdown")?.remove();
@@ -74,8 +109,9 @@ export async function showFilterDropdown() {
                 <span class="filter-dropdown-title">Filter Library</span>
                 <div class="filter-dropdown-actions">
                     <button class="btn-icon" id="filter-pin-btn" title="${filterDropdownPinned ? "Unpin" : "Pin"}">
-                        <svg viewBox="0 0 24 24" fill="${filterDropdownPinned ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
-                            <path d="M12 2v3m0 14v3m-3-3h6m-6-3l.75-7.5a1.5 1.5 0 0 1 3 0L13.5 13M9 16h6"/>
+                        <svg width="14" height="14" viewBox="0 0 24 24"
+                             xmlns="http://www.w3.org/2000/svg" fill="${filterDropdownPinned ? "currentColor" : "none"}" stroke="currentColor" stroke-width="1.5">
+                          <path d="M7 2h10v2.5c0 .9-.4 1.7-1 2.3l-1 1v4.2l1.3.8c1.2.7 2.2 2 2.2 3.5 0 .4-.3.7-.7.7H13v5c0 .6-.4 1-1 1s-1-.4-1-1v-5H6.2c-.4 0-.7-.3-.7-.7 0-1.5 1-2.8 2.2-3.5l1.3-.8V7.8l-1-1C7.4 6 7 5.2 7 4.5V2z"/>
                         </svg>
                     </button>
                     <button class="btn-icon" id="filter-close-btn" title="Close">
@@ -345,6 +381,7 @@ async function renderFoldersInDropdown() {
       renderDropdownActiveFilters();
       renderActiveFilters();
       await renderFoldersInDropdown(); // Re-render to update active state
+      watchViewChanges(); // Close dropdown if not pinned
     });
   });
 }
@@ -402,6 +439,7 @@ async function renderCollectionsInDropdown() {
       renderDropdownActiveFilters();
       renderActiveFilters();
       await renderCollectionsInDropdown();
+      watchViewChanges(); // Close dropdown if not pinned
     });
   });
 }
@@ -600,6 +638,17 @@ export function closeFilterDropdown() {
   }
 }
 
+// Watch for view changes and close dropdown if not in bookmarks view
+export function watchViewChanges() {
+  // This function is called after view changes
+  // Only keep dropdown open if in bookmarks view (all, folder, collection)
+  const bookmarksViews = ["all", "folder", "collection"];
+  if (!bookmarksViews.includes(state.currentView)) {
+    closeFilterDropdown();
+  }
+  updateFilterButtonVisibility();
+}
+
 // Apply filters to bookmarks
 async function applyFilters() {
   const { loadBookmarks } = await import("./bookmarks.js");
@@ -644,6 +693,7 @@ async function clearAllFilters() {
   await renderCollectionsInDropdown();
 
   showToast("All filters cleared", "success");
+  watchViewChanges(); // Close dropdown if not pinned
 }
 
 // Render active filters in dropdown
@@ -755,6 +805,7 @@ function renderDropdownActiveFilters() {
       renderFoldersInDropdown();
       renderTagsInDropdown();
       renderCollectionsInDropdown();
+      watchViewChanges(); // Close dropdown if not pinned
     });
   });
 }

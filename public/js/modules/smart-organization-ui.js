@@ -86,6 +86,22 @@ async function showSmartTagSuggestions(url) {
       } else {
         renderTagSuggestions([]);
       }
+
+      // Try AI suggestions (optional)
+      const AM = getAPI();
+      const aiAllowed = AM.aiSuggestionsEnabled !== false;
+      if (aiAllowed) {
+        try {
+          const ai = await api(
+            `/tags/suggest-ai?url=${encodeURIComponent(url)}&limit=6`,
+          );
+          if (ai && ai.suggestions && ai.suggestions.length) {
+            appendAISuggestions(ai.suggestions);
+          }
+        } catch (aiErr) {
+          // Ignore if not configured or failed
+        }
+      }
     } catch (err) {
       console.error("Smart tag suggestions failed:", err);
       renderTagSuggestions([]);
@@ -174,6 +190,42 @@ function renderSmartTagSuggestions(suggestions, domainInfo) {
     `;
     tagSuggestions.appendChild(infoEl);
   }
+}
+
+function appendAISuggestions(suggestions) {
+  const tagSuggestions = document.getElementById("tag-suggestions");
+  if (!tagSuggestions || !suggestions || !suggestions.length) return;
+
+  const header = document.createElement("div");
+  header.className = "text-tertiary";
+  header.style.cssText = "font-size:0.8rem; margin-top:8px;";
+  header.textContent = "🤖 AI Suggestions";
+  tagSuggestions.appendChild(header);
+
+  const html = suggestions
+    .map((sugg) => {
+      const name = typeof sugg === "string" ? sugg : sugg.tag;
+      return `
+        <div class="smart-tag-suggestion" data-tag="${escapeHtml(name)}" title="AI-generated">
+          <button type="button" class="tag-suggestion-btn">
+            <span class="source-icon">🤖</span>
+            <span class="tag-name">${escapeHtml(name)}</span>
+          </button>
+        </div>
+      `;
+    })
+    .join("");
+
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = html;
+  tagSuggestions.appendChild(wrapper);
+
+  wrapper.querySelectorAll(".tag-suggestion-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tag = btn.closest(".smart-tag-suggestion").dataset.tag;
+      addTagToInput(tag);
+    });
+  });
 }
 
 // ============== SMART COLLECTIONS ==============

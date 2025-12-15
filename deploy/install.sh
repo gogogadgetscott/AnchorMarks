@@ -8,7 +8,7 @@ echo "🔗 AnchorMarks Deployment Script"
 echo "==============================="
 
 # Configuration
-APP_DIR="./"
+APP_DIR="."
 APP_USER="user"
 NODE_VERSION="20"
 
@@ -27,8 +27,8 @@ useradd -r -s /bin/false $APP_USER || true
 
 echo "📁 Setting up application directory..."
 mkdir -p $APP_DIR
-mkdir -p $APP_DIRpublic/favicons
-mkdir -p $APP_DIRdata
+mkdir -p $APP_DIR/public/favicons
+mkdir -p $APP_DIR/data
 
 echo "📋 Copying application files..."
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -50,21 +50,21 @@ cd $APP_DIR
 npm ci --only=production
 
 echo "🔐 Setting up environment..."
-if [ ! -f $APP_DIR.env ]; then
+if [ ! -f $APP_DIR/.env ]; then
   JWT_SECRET=$(openssl rand -base64 32)
-  cat > $APP_DIR.env << EOF
+  cat > $APP_DIR/.env << EOF
 NODE_ENV=production
 PORT=3000
 HOST=127.0.0.1
 JWT_SECRET=$JWT_SECRET
-DB_PATH=$APP_DIRdata/anchormarks.db
+DB_PATH=$APP_DIR/data/anchormarks.db
 EOF
   echo "✅ Generated .env file with secure JWT secret"
 fi
 
 echo "👤 Setting permissions..."
 chown -R $APP_USER:$APP_USER $APP_DIR
-chmod 600 $APP_DIR.env
+chmod 600 $APP_DIR/.env
 
 echo "🚀 Setting up systemd service..."
 cp "$SCRIPT_DIR/anchormarks.service" /etc/systemd/system/

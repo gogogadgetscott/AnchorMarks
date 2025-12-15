@@ -586,6 +586,12 @@
                   >
                 </li>
                 <li>
+                  <a href="#tag-analytics"
+                    ><span class="nav-icon" aria-hidden="true">🏷️</span
+                    ><span class="nav-text">Tag Analytics</span></a
+                  >
+                </li>
+                <li>
                   <a href="#advanced"
                     ><span class="nav-icon" aria-hidden="true">⚙️</span
                     ><span class="nav-text">Advanced Features</span></a
@@ -818,6 +824,11 @@
               <li>
                 Create folders from the sidebar and optionally pick a parent
                 folder.
+              </li>
+              <li>
+                <strong>Quick folder creation:</strong> when adding or editing a bookmark, 
+                click the <strong>"+ New Folder"</strong> button next to the folder dropdown 
+                to create a folder on the fly without closing the bookmark modal.
               </li>
               <li>
                 <strong>Folder color:</strong> when creating/editing a folder,
@@ -1115,6 +1126,59 @@
                 <strong>Filter:</strong> Use the search box in each widget to
                 filter bookmarks within that widget.
               </li>
+            </ul>
+
+            <h3 class="help-anchor" id="tag-analytics">
+              <span class="section-icon" aria-hidden="true">🏷️</span>Tag Analytics
+            </h3>
+            <p>
+              The <strong>Tag Analytics</strong> widget helps you understand how your tags are used across bookmarks and which tags commonly occur together.
+              Add it from the <em>Tags</em> section of the widget picker. It appears with controls for selecting a metric and a result limit.
+            </p>
+            <h4>Controls &amp; Metrics</h4>
+            <ul>
+              <li><strong>Metric:</strong> Choose what to rank by:
+                <ul>
+                  <li><strong>Usage</strong> (blue) — number of bookmarks using a tag.</li>
+                  <li><strong>Clicks</strong> (orange) — total clicks of bookmarks using a tag.</li>
+                  <li><strong>Favorites</strong> (yellow) — number of bookmarks marked favorite using a tag.</li>
+                </ul>
+              </li>
+              <li><strong>Top N:</strong> Limits how many tags and pairs are shown (10–50).</li>
+              <li><strong>Pairs Sort:</strong> Sort co-occurrence pairs by:
+                <ul>
+                  <li><strong>Count</strong> — most frequently co-occurring first.</li>
+                  <li><strong>A→Z</strong> — alphabetical order by pair names.</li>
+                </ul>
+              </li>
+              <li><strong>Theme Colors:</strong> Click the color inputs (Usage, Clicks, Favorites, Pairs) to customize the widget's color scheme. Changes apply to the legend and metric values immediately.</li>
+              <li><strong>Export:</strong> Download analytics data:
+                <ul>
+                  <li><strong>JSON</strong> — Full raw payload (tags and co-occurrence arrays).</li>
+                  <li><strong>Tags CSV</strong> — Tag name and count per tag.</li>
+                  <li><strong>Pairs CSV</strong> — Co-occurrence pairs with counts.</li>
+                </ul>
+              </li>
+            </ul>
+            <h4>Reading the Widget</h4>
+            <ul>
+              <li><strong>Top Tags:</strong> Left column lists tag names; right column shows the metric value, color-coded by the selected metric.</li>
+              <li><strong>Top Co-occurrence:</strong> Shows tag pairs that appear together most often; counts are colored per the Pairs theme color.</li>
+              <li><strong>Legend:</strong> A mini legend below the controls indicates the current color for Usage, Clicks, Favorites, and Pairs; updates when you change theme colors.</li>
+            </ul>
+            <h4>Customization</h4>
+            <ul>
+              <li><strong>Per-Widget Colors:</strong> Each widget instance can have its own color scheme. Adjust colors to match your workflow or distinguish multiple analytics widgets.</li>
+              <li><strong>Persistent Settings:</strong> Metric, limit, pair sort, and theme colors are saved to your account for each widget.</li>
+            </ul>
+            <h4>Tips &amp; Use Cases</h4>
+            <ul>
+              <li>Use <em>Usage</em> to find broadly applied organizational tags; identify core categories.</li>
+              <li>Switch to <em>Clicks</em> to surface high-engagement tags; recognize frequently visited resource types.</li>
+              <li>Try <em>Favorites</em> to see tags tied to saved must-see links; spot your most valued content themes.</li>
+              <li>Use co-occurrence to discover which tags go together; ideal for creating composite tags or smart collections.</li>
+              <li>Export to CSV for spreadsheet analysis or reporting; use JSON for integration with other tools.</li>
+              <li>Customize colors to create distinct analytics widgets for different purposes (e.g., red for high-priority tags, green for low-traffic).</li>
             </ul>
 
             <h4>Layout Settings</h4>

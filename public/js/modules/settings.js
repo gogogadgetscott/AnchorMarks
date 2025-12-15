@@ -13,6 +13,7 @@ export async function loadSettings() {
     state.setViewMode(settings.view_mode || "grid");
     state.setHideFavicons(settings.hide_favicons || false);
     state.setHideSidebar(settings.hide_sidebar || false);
+    state.setAiSuggestionsEnabled(settings.ai_suggestions_enabled !== false);
     state.setIncludeChildBookmarks(settings.include_child_bookmarks === 1);
     state.setSnapToGrid(settings.snap_to_grid !== false);
     state.setDashboardConfig({
@@ -96,6 +97,9 @@ export function applyFaviconSetting() {
   const toggle = document.getElementById("hide-favicons-toggle");
   if (toggle) toggle.checked = state.hideFavicons;
 
+  const aiToggle = document.getElementById("ai-suggestions-toggle");
+  if (aiToggle) aiToggle.checked = state.aiSuggestionsEnabled;
+
   const childToggle = document.getElementById("include-children-toggle");
   if (childToggle) childToggle.checked = state.includeChildBookmarks;
 }
@@ -106,6 +110,14 @@ export function toggleFavicons() {
   const newValue = toggle?.checked || false;
   state.setHideFavicons(newValue);
   saveSettings({ hide_favicons: newValue });
+}
+
+// Toggle AI suggestions
+export function toggleAiSuggestions() {
+  const toggle = document.getElementById("ai-suggestions-toggle");
+  const newValue = toggle?.checked !== false;
+  state.setAiSuggestionsEnabled(newValue);
+  saveSettings({ ai_suggestions_enabled: newValue ? 1 : 0 });
 }
 
 // Toggle child bookmarks
@@ -181,6 +193,7 @@ export default {
   setTheme,
   applyFaviconSetting,
   toggleFavicons,
+  toggleAiSuggestions,
   toggleSidebar,
   setViewMode,
   toggleSection,

@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config({ quiet: true });
 const path = require("path");
 
 const NODE_ENV = process.env.NODE_ENV || "development";
@@ -44,6 +44,12 @@ const DB_PATH = process.env.DB_PATH || path.join(__dirname, "anchormarks.db");
 const ENABLE_BACKGROUND_JOBS = NODE_ENV !== "test";
 const ENABLE_FAVICON_BACKGROUND_JOBS = false; // Only fetch favicons on import/save
 
+// Optional AI tag suggestion configuration
+const AI_PROVIDER = (process.env.AI_PROVIDER || "none").toLowerCase();
+const AI_MODEL = process.env.AI_MODEL || null;
+const AI_API_URL = process.env.AI_API_URL || null; // e.g., https://api.openai.com/v1
+const AI_API_KEY = process.env.AI_API_KEY || null;
+
 // API key scope whitelist (method + path regex)
 const API_KEY_WHITELIST = [
   { method: "GET", path: /^\/api\/quick-search/ },
@@ -58,6 +64,15 @@ function isApiKeyAllowed(req) {
   );
 }
 
+function getAIConfig() {
+  return {
+    provider: AI_PROVIDER,
+    model: AI_MODEL,
+    apiUrl: AI_API_URL,
+    apiKey: AI_API_KEY,
+  };
+}
+
 module.exports = {
   NODE_ENV,
   PORT,
@@ -69,4 +84,5 @@ module.exports = {
   validateSecurityConfig,
   resolveCorsOrigin,
   isApiKeyAllowed,
+  getAIConfig,
 };

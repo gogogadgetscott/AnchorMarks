@@ -26,6 +26,7 @@ export let currentCollection = null;
 export let viewMode = "grid";
 export let hideFavicons = false;
 export let hideSidebar = false;
+export let aiSuggestionsEnabled = true;
 export let includeChildBookmarks = false;
 export let snapToGrid = true;
 
@@ -224,6 +225,9 @@ export function setHideFavicons(val) {
 }
 export function setHideSidebar(val) {
   hideSidebar = val;
+}
+export function setAiSuggestionsEnabled(val) {
+  aiSuggestionsEnabled = val;
 }
 export function setIncludeChildBookmarks(val) {
   includeChildBookmarks = val;

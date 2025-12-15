@@ -86,8 +86,9 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
   app.post("/api/auth/register", async (req, res) => {
     try {
       const { email, password } = req.body;
+      const normalizedEmail = (email || "").trim().toLowerCase();
 
-      if (!email || !password) {
+      if (!normalizedEmail || !password) {
         return res.status(400).json({ error: "All fields are required" });
       }
 
@@ -99,7 +100,7 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
 
       const existingUser = db
         .prepare("SELECT * FROM users WHERE email = ?")
-        .get(email);
+        .get(normalizedEmail);
       if (existingUser) {
         return res.status(400).json({ error: "User already exists" });
       }
@@ -110,7 +111,7 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
 
       db.prepare(
         "INSERT INTO users (id, email, password, api_key) VALUES (?, ?, ?, ?)",
-      ).run(userId, email.toLowerCase(), hashedPassword, apiKey);
+      ).run(userId, normalizedEmail, hashedPassword, apiKey);
 
       // Create default folder
       const defaultFolderId = uuidv4();
@@ -154,10 +155,11 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
+      const normalizedEmail = (email || "").trim().toLowerCase();
 
       const user = db
         .prepare("SELECT * FROM users WHERE email = ?")
-        .get(email.toLowerCase());
+        .get(normalizedEmail);
       if (!user) {
         return res.status(400).json({ error: "Invalid credentials" });
       }

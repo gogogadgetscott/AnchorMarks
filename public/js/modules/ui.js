@@ -83,6 +83,17 @@ export function openModal(id) {
 export function closeModals() {
   document.querySelectorAll(".modal").forEach((m) => m.classList.add("hidden"));
   resetForms();
+
+  // Clear import progress if settings modal was open
+  const importProgress = document.getElementById("import-html-progress");
+  if (importProgress) {
+    importProgress.innerHTML = "";
+  }
+  const importBtn = document.getElementById("import-html-btn");
+  if (importBtn) {
+    importBtn.disabled = false;
+    importBtn.removeAttribute("aria-busy");
+  }
 }
 
 // Reset forms

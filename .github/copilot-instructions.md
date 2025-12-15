@@ -100,9 +100,10 @@ npm run test:coverage      # Coverage report
 - Use isolated test database (`DB_PATH=anchormarks-test.db`)
 - Clean up test DB files in `afterAll` hook
 
-### Syntax Validation
+### Syntax Validation & Linting
 
 ```bash
+npm run lint               # Run ESLint to check code style
 node --check server/index.js
 node --check public/js/app.js
 ```
@@ -216,6 +217,8 @@ if (!isSafe && NODE_ENV === "production") {
 4. **Plan changes** – List files to touch, functions to add/modify
 5. **Update PROGRESS.md** – Document task, files, and summary after completion
 6. **Test thoroughly** – Add tests for new endpoints; run `npm test` + `npm run dev` + manual UI testing
+7. **Run `npm run lint`** – Validate code style before committing
+8. **Update help documentation** – After adding new features or making changes, update [help.html](public/help.html) to reflect the changes
 
 ## Common Pitfalls
 

@@ -5,10 +5,8 @@ const cookieParser = require("cookie-parser");
 const path = require("path");
 const http = require("http");
 const https = require("https");
-const fs = require("fs");
 const helmet = require("helmet");
 const smartOrg = require("./smart-organization");
-const aiTags = require("./ai-tags");
 const { v4: uuidv4 } = require("uuid");
 
 const config = require("./config");
@@ -275,7 +273,6 @@ app.get("/api/settings", authenticateTokenMiddleware, (req, res) => {
         view_mode: "grid",
         hide_favicons: false,
         hide_sidebar: false,
-        ai_suggestions_enabled: true,
         theme: "dark",
         dashboard_mode: "folder",
         dashboard_tags: [],
@@ -290,7 +287,6 @@ app.get("/api/settings", authenticateTokenMiddleware, (req, res) => {
       view_mode: settings.view_mode || "grid",
       hide_favicons: settings.hide_favicons === 1,
       hide_sidebar: settings.hide_sidebar === 1,
-      ai_suggestions_enabled: settings.ai_suggestions_enabled !== 0,
       theme: settings.theme || "dark",
       dashboard_mode: settings.dashboard_mode || "folder",
       dashboard_tags: settings.dashboard_tags
@@ -319,50 +315,6 @@ app.get("/api/settings", authenticateTokenMiddleware, (req, res) => {
   }
 });
 
-// GET /api/tags/suggest-ai - AI-powered tag suggestions for a URL
-app.get("/api/tags/suggest-ai", authenticateTokenMiddleware, async (req, res) => {
-  const { url, limit = 10 } = req.query;
-  if (!url) {
-    return res.status(400).json({ error: "URL parameter required" });
-  }
-
-  let urlObj;
-  try {
-    urlObj = new URL(url);
-  } catch (e) {
-    return res.status(400).json({ error: "Invalid URL" });
-  }
-
-  try {
-    const userTags = db
-      .prepare("SELECT DISTINCT name FROM tags WHERE user_id = ?")
-      .all(req.user.id)
-      .map((row) => row.name);
-
-    const aiConfig = config.getAIConfig ? config.getAIConfig() : { provider: "none" };
-    const suggestions = await aiTags.suggestTagsAI(
-      { url, title: null, limit: parseInt(limit), userTags },
-      aiConfig,
-    );
-
-    res.json({
-      suggestions,
-      info: { provider: aiConfig.provider, model: aiConfig.model || null },
-    });
-  } catch (err) {
-    if (
-      err &&
-      (err.code === "AI_NOT_CONFIGURED" ||
-        err.code === "AI_KEY_MISSING" ||
-        err.code === "AI_UNSUPPORTED")
-    ) {
-      return res.status(501).json({ error: err.message });
-    }
-    console.error("AI tag suggestions error:", err);
-    return res.status(500).json({ error: "Failed to get AI suggestions" });
-  }
-});
-
 // Update user settings
 app.put(
   "/api/settings",
@@ -374,7 +326,6 @@ app.put(
         view_mode,
         hide_favicons,
         hide_sidebar,
-        ai_suggestions_enabled,
         theme,
         dashboard_mode,
         dashboard_tags,
@@ -405,10 +356,6 @@ app.put(
         if (hide_sidebar !== undefined) {
           updates.push("hide_sidebar = ?");
           values.push(hide_sidebar ? 1 : 0);
-        }
-        if (ai_suggestions_enabled !== undefined) {
-          updates.push("ai_suggestions_enabled = ?");
-          values.push(ai_suggestions_enabled ? 1 : 0);
         }
         if (theme !== undefined) {
           updates.push("theme = ?");
@@ -463,10 +410,10 @@ app.put(
         db.prepare(
           `
                 INSERT INTO user_settings (
-                    user_id, view_mode, hide_favicons, hide_sidebar, ai_suggestions_enabled, theme, dashboard_mode,
+                    user_id, view_mode, hide_favicons, hide_sidebar, theme, dashboard_mode,
                     dashboard_tags, dashboard_sort, widget_order, dashboard_widgets, collapsed_sections, include_child_bookmarks
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             `,
         ).run(
@@ -474,11 +421,6 @@ app.put(
           view_mode || "grid",
           hide_favicons || 0,
           hide_sidebar || 0,
-          ai_suggestions_enabled !== undefined && ai_suggestions_enabled !== null
-            ? ai_suggestions_enabled
-              ? 1
-              : 0
-            : 1,
           theme || "light",
           dashboard_mode || "folder",
           dashboard_tags ? JSON.stringify(dashboard_tags) : null,
@@ -802,29 +744,59 @@ app.post(
 
 // ============== FOLDER ROUTES ==============
 
-// Get all folders with bookmark counts
+// Get all folders with counts
 app.get("/api/folders", authenticateTokenMiddleware, (req, res) => {
-  try {
-    const folders = db
-      .prepare(
-        `
+  const bookmarks = db
+    .prepare(
+      `
     SELECT 
-      f.*, 
-      COUNT(b.id) AS bookmark_count
-    FROM folders f
-    LEFT JOIN bookmarks b ON b.folder_id = f.id AND b.user_id = f.user_id
-    WHERE f.user_id = ?
-    GROUP BY f.id
-    ORDER BY f.position
+      b., 
+      COALESCE(tags_joined.tags, '') as tags,
+      COALESCE(tags_joined.tags_detailed, '[]') as tags_detailed
+    FROM bookmarks b
+    LEFT JOIN (
+      SELECT bt.bookmark_id,
+             GROUP_CONCAT(t.name, ', ') as tags,
+             json_group_array(
+               json_object(
+                 'name', t.name,
+                 'tag_id', t.id,
+                 'color', t.color,
+                 'color_override', bt.color_override
+               )
+             ) as tags_detailed
+      FROM bookmark_tags bt
+      JOIN tags t ON t.id = bt.tag_id
+      WHERE t.user_id = ?
+      GROUP BY bt.bookmark_id
+    ) tags_joined ON tags_joined.bookmark_id = b.id
+    WHERE b.user_id = ?
   `,
-      )
-      .all(req.user.id);
+    )
+    .all(req.user.id, req.user.id);
+  bookmarks.forEach((b) => {
+    b.tags_detailed = parseTagsDetailed(b.tags_detailed);
+  });
 
-    return res.json(folders);
-  } catch (err) {
-    console.error("Error fetching folders:", err);
-    return res.status(500).json({ error: "Failed to fetch folders" });
-  }
+  const maxPos = db
+    .prepare("SELECT MAX(position) as max FROM folders WHERE user_id = ?")
+    .get(req.user.id);
+  const position = (maxPos.max || 0) + 1;
+
+  db.prepare(
+    "INSERT INTO folders (id, user_id, parent_id, name, color, icon, position) VALUES (?, ?, ?, ?, ?, ?, ?)",
+  ).run(
+    id,
+    req.user.id,
+    parent_id || null,
+    name,
+    color || "#6366f1",
+    icon || "folder",
+    position,
+  );
+
+  const folder = db.prepare("SELECT * FROM folders WHERE id = ?").get(id);
+  res.json(folder);
 });
 
 // Update folder
@@ -1931,47 +1903,6 @@ app.get("/api/tags/suggest", authenticateTokenMiddleware, (req, res) => {
   }
 });
 
-// Tag analytics and co-occurrence
-app.get("/api/tags/analytics", authenticateTokenMiddleware, (req, res) => {
-  try {
-    const tags = db
-      .prepare(
-        `
-      SELECT t.name, COUNT(bt.tag_id) as count
-      FROM tags t
-      LEFT JOIN bookmark_tags bt ON bt.tag_id = t.id
-      WHERE t.user_id = ?
-      GROUP BY t.id
-      ORDER BY count DESC
-    `,
-      )
-      .all(req.user.id);
-
-    const cooccurrence = db
-      .prepare(
-        `
-      SELECT 
-        t1.name AS tag_name_a,
-        t2.name AS tag_name_b,
-        COUNT(*) AS count
-      FROM bookmark_tags bt1
-      JOIN bookmark_tags bt2 ON bt1.bookmark_id = bt2.bookmark_id AND bt1.tag_id < bt2.tag_id
-      JOIN tags t1 ON t1.id = bt1.tag_id
-      JOIN tags t2 ON t2.id = bt2.tag_id
-      WHERE t1.user_id = ? AND t2.user_id = ?
-      GROUP BY bt1.tag_id, bt2.tag_id
-      ORDER BY count DESC
-    `,
-      )
-      .all(req.user.id, req.user.id);
-
-    res.json({ success: true, tags, cooccurrence });
-  } catch (err) {
-    console.error("Tag analytics error:", err);
-    res.status(500).json({ error: "Failed to compute tag analytics" });
-  }
-});
-
 // Bulk add tags to bookmarks
 app.post("/api/tags/bulk-add", authenticateTokenMiddleware, (req, res) => {
   const { bookmark_ids, tags } = req.body;
@@ -2129,80 +2060,12 @@ app.post("/api/import/html", authenticateTokenMiddleware, (req, res) => {
 
 app.post("/api/import/json", authenticateTokenMiddleware, (req, res) => {
   try {
-    const { bookmarks = [], folders = [] } = req.body;
+    const { bookmarks } = req.body;
     const imported = [];
-
-    // Map source folder IDs to newly created (or matched) folder IDs
-    const folderIdMap = new Map();
-
-    // Helper to create/match folder respecting parent mapping
-    const ensureFolder = (folder) => {
-      if (folderIdMap.has(folder.id)) return folderIdMap.get(folder.id);
-
-      const mappedParent = folder.parent_id
-        ? folderIdMap.get(folder.parent_id) || null
-        : null;
-
-      // Reuse existing folder with same name under same parent when present
-      const existing = db
-        .prepare(
-          "SELECT id FROM folders WHERE user_id = ? AND name = ? AND (parent_id = ? OR (? IS NULL AND parent_id IS NULL))",
-        )
-        .get(req.user.id, folder.name, mappedParent, mappedParent);
-
-      if (existing) {
-        folderIdMap.set(folder.id, existing.id);
-        return existing.id;
-      }
-
-      const maxPos = db
-        .prepare(
-          "SELECT MAX(position) as max FROM folders WHERE user_id = ? AND (parent_id = ? OR (? IS NULL AND parent_id IS NULL))",
-        )
-        .get(req.user.id, mappedParent, mappedParent);
-      const position = (maxPos.max || 0) + 1;
-
-      const newId = uuidv4();
-      db.prepare(
-        "INSERT INTO folders (id, user_id, parent_id, name, color, icon, position) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      ).run(
-        newId,
-        req.user.id,
-        mappedParent,
-        folder.name || "Imported",
-        folder.color || "#6366f1",
-        folder.icon || "folder",
-        position,
-      );
-
-      folderIdMap.set(folder.id, newId);
-      return newId;
-    };
-
-    // Insert folders in a dependency-safe order (parent before child when possible)
-    const pending = [...folders];
-    let guard = 0;
-    while (pending.length && guard < 1000) {
-      const next = pending.shift();
-      const parentMapped = next.parent_id
-        ? folderIdMap.get(next.parent_id)
-        : null;
-      if (next.parent_id && next.parent_id !== null && parentMapped === undefined) {
-        // Parent not processed yet; retry later
-        pending.push(next);
-      } else {
-        ensureFolder(next);
-      }
-      guard++;
-    }
 
     for (const bm of bookmarks) {
       const id = uuidv4();
       const faviconUrl = null;
-
-      const mappedFolder = bm.folder_id
-        ? folderIdMap.get(bm.folder_id) || null
-        : null;
 
       db.prepare(
         `
@@ -2212,7 +2075,7 @@ app.post("/api/import/json", authenticateTokenMiddleware, (req, res) => {
       ).run(
         id,
         req.user.id,
-        mappedFolder,
+        bm.folder_id || null,
         bm.title || bm.url,
         bm.url,
         bm.description || null,

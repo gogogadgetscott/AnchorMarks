@@ -8,6 +8,7 @@ import { escapeHtml } from "./utils.js";
 import { showToast, dom, updateCounts, openModal, closeModals } from "./ui.js";
 import { saveSettings } from "./settings.js";
 import { api } from "./api.js";
+import { updateFilterButtonVisibility } from "./filters.js";
 
 // Grid size for snap-to-grid feature
 const GRID_SIZE = 20;
@@ -284,6 +285,8 @@ function sortBookmarks(list) {
 
 // Render dashboard
 export function renderDashboard() {
+  updateFilterButtonVisibility();
+  
   const container =
     dom.bookmarksContainer || document.getElementById("bookmarks-container");
   const emptyState = dom.emptyState || document.getElementById("empty-state");
@@ -321,6 +324,208 @@ export function renderDashboard() {
 
   container.innerHTML = dashboardHtml;
   initDashboardDragDrop();
+  initTagAnalyticsWidgets();
+}
+
+// Initialize Tag Analytics widgets
+export async function initTagAnalyticsWidgets() {
+  try {
+    const widgets = document.querySelectorAll(
+      '.dashboard-widget-freeform[data-widget-type="tag-analytics"] .tag-analytics',
+    );
+    if (!widgets || widgets.length === 0) return;
+
+    const res = await api("/tags/analytics");
+    const { tags = [], cooccurrence = [] } = res?.success ? res : { tags: [], cooccurrence: [] };
+
+    widgets.forEach((root) => {
+      const indexAttr = root.getAttribute("data-analytics-widget");
+      const idx = parseInt(indexAttr);
+      const widgetCfg = state.dashboardWidgets[idx] || {};
+      const settings = widgetCfg.settings || { metric: "count", limit: 20, pairSort: "count", colors: { usage: "#6366f1", clicks: "#f97316", favorites: "#eab308", pairs: "#6b7280" } };
+      const metric = settings.metric || "count";
+      const limit = settings.limit || 20;
+      const pairSort = settings.pairSort || "count";
+      const colors = settings.colors || { usage: "#6366f1", clicks: "#f97316", favorites: "#eab308", pairs: "#6b7280" };
+
+      const metricSel = root.querySelector(".tag-analytics-metric");
+      const limitSel = root.querySelector(".tag-analytics-limit");
+      const pairSortSel = root.querySelector(".tag-analytics-pairsort");
+      const colorUsage = root.querySelector(".tag-analytics-color-usage");
+      const colorClicks = root.querySelector(".tag-analytics-color-clicks");
+      const colorFavorites = root.querySelector(".tag-analytics-color-favorites");
+      const colorPairs = root.querySelector(".tag-analytics-color-pairs");
+      const legendUsage = root.querySelector(".legend-usage");
+      const legendClicks = root.querySelector(".legend-clicks");
+      const legendFavorites = root.querySelector(".legend-favorites");
+      const legendPairs = root.querySelector(".legend-pairs");
+
+      if (metricSel) metricSel.value = metric;
+      if (limitSel) limitSel.value = String(limit);
+      if (pairSortSel) pairSortSel.value = pairSort;
+      if (colorUsage) colorUsage.value = colors.usage;
+      if (colorClicks) colorClicks.value = colors.clicks;
+      if (colorFavorites) colorFavorites.value = colors.favorites;
+      if (colorPairs) colorPairs.value = colors.pairs;
+      if (legendUsage) legendUsage.style.backgroundColor = colors.usage;
+      if (legendClicks) legendClicks.style.backgroundColor = colors.clicks;
+      if (legendFavorites) legendFavorites.style.backgroundColor = colors.favorites;
+      if (legendPairs) legendPairs.style.backgroundColor = colors.pairs;
+
+      const topTagsEl = root.querySelector(".tag-analytics-top-tags");
+      const coocEl = root.querySelector(".tag-analytics-cooccurrence");
+      if (topTagsEl) {
+        const sortedTags = [...tags].sort((a, b) => (b[metric] || 0) - (a[metric] || 0));
+        const topTags = sortedTags.slice(0, limit);
+        const metricColor = metric === "count" ? colors.usage : metric === "click_count_sum" ? colors.clicks : colors.favorites;
+        topTagsEl.innerHTML = topTags
+          .map(
+            (t) => `
+              <div class="tag-name" title="${escapeHtml(t.name)}">${escapeHtml(t.name)}</div>
+              <div class="tag-count" style="text-align:right;color:${metricColor}">${t[metric] || 0}</div>
+            `,
+          )
+          .join("");
+      }
+      if (coocEl) {
+        const sortedPairs = [...cooccurrence].sort((a, b) => {
+          if (pairSort === "alpha") {
+            const na = (a.tag_name_a + " + " + a.tag_name_b).toLowerCase();
+            const nb = (b.tag_name_a + " + " + b.tag_name_b).toLowerCase();
+            return na.localeCompare(nb);
+          }
+          return (b.count || 0) - (a.count || 0);
+        });
+        const pairs = sortedPairs.slice(0, limit);
+        coocEl.innerHTML = pairs
+          .map(
+            (p) => `
+              <div class="pair-name" title="${escapeHtml(p.tag_name_a)} + ${escapeHtml(p.tag_name_b)}">${escapeHtml(p.tag_name_a)} + ${escapeHtml(p.tag_name_b)}</div>
+              <div class="pair-count" style="text-align:right;color:${colors.pairs}">${p.count}</div>
+            `,
+          )
+          .join("");
+      }
+
+      // Listeners
+      if (metricSel) {
+        metricSel.addEventListener("change", (e) => {
+          const val = e.target.value;
+          if (!state.dashboardWidgets[idx].settings) state.dashboardWidgets[idx].settings = {};
+          state.dashboardWidgets[idx].settings.metric = val;
+          saveSettings({ dashboard_widgets: state.dashboardWidgets });
+          initTagAnalyticsWidgets();
+        });
+      }
+      if (limitSel) {
+        limitSel.addEventListener("change", (e) => {
+          const val = parseInt(e.target.value);
+          if (!state.dashboardWidgets[idx].settings) state.dashboardWidgets[idx].settings = {};
+          state.dashboardWidgets[idx].settings.limit = val;
+          saveSettings({ dashboard_widgets: state.dashboardWidgets });
+          initTagAnalyticsWidgets();
+        });
+      }
+      if (pairSortSel) {
+        pairSortSel.addEventListener("change", (e) => {
+          const val = e.target.value;
+          if (!state.dashboardWidgets[idx].settings) state.dashboardWidgets[idx].settings = {};
+          state.dashboardWidgets[idx].settings.pairSort = val;
+          saveSettings({ dashboard_widgets: state.dashboardWidgets });
+          initTagAnalyticsWidgets();
+        });
+      }
+
+      function ensureColors() {
+        if (!state.dashboardWidgets[idx].settings) state.dashboardWidgets[idx].settings = {};
+        if (!state.dashboardWidgets[idx].settings.colors) state.dashboardWidgets[idx].settings.colors = {};
+      }
+      if (colorUsage) {
+        colorUsage.addEventListener("change", (e) => {
+          ensureColors();
+          state.dashboardWidgets[idx].settings.colors.usage = e.target.value;
+          saveSettings({ dashboard_widgets: state.dashboardWidgets });
+          initTagAnalyticsWidgets();
+        });
+      }
+      if (colorClicks) {
+        colorClicks.addEventListener("change", (e) => {
+          ensureColors();
+          state.dashboardWidgets[idx].settings.colors.clicks = e.target.value;
+          saveSettings({ dashboard_widgets: state.dashboardWidgets });
+          initTagAnalyticsWidgets();
+        });
+      }
+      if (colorFavorites) {
+        colorFavorites.addEventListener("change", (e) => {
+          ensureColors();
+          state.dashboardWidgets[idx].settings.colors.favorites = e.target.value;
+          saveSettings({ dashboard_widgets: state.dashboardWidgets });
+          initTagAnalyticsWidgets();
+        });
+      }
+      if (colorPairs) {
+        colorPairs.addEventListener("change", (e) => {
+          ensureColors();
+          state.dashboardWidgets[idx].settings.colors.pairs = e.target.value;
+          saveSettings({ dashboard_widgets: state.dashboardWidgets });
+          initTagAnalyticsWidgets();
+        });
+      }
+
+      // Export helpers
+      function download(name, mime, text) {
+        const blob = new Blob([text], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+      function toCSV(rows, columns) {
+        const header = columns.join(",");
+        const body = rows
+          .map((r) =>
+            columns
+              .map((c) => {
+                const v = r[c] != null ? String(r[c]) : "";
+                const escaped = v.replace(/"/g, '""');
+                return `"${escaped}"`;
+              })
+              .join(","),
+          )
+          .join("\n");
+        return `${header}\n${body}`;
+      }
+
+      const btnJson = root.querySelector(".tag-analytics-export-json");
+      const btnTagsCsv = root.querySelector(".tag-analytics-export-tags-csv");
+      const btnPairsCsv = root.querySelector(".tag-analytics-export-pairs-csv");
+      if (btnJson) {
+        btnJson.addEventListener("click", () => {
+          const payload = JSON.stringify({ tags, cooccurrence }, null, 2);
+          download("tag-analytics.json", "application/json", payload);
+        });
+      }
+      if (btnTagsCsv) {
+        btnTagsCsv.addEventListener("click", () => {
+          const csv = toCSV(tags, ["name", "count"]);
+          download("tag-analytics-tags.csv", "text/csv", csv);
+        });
+      }
+      if (btnPairsCsv) {
+        btnPairsCsv.addEventListener("click", () => {
+          const csv = toCSV(cooccurrence, ["tag_name_a", "tag_name_b", "count"]);
+          download("tag-analytics-pairs.csv", "text/csv", csv);
+        });
+      }
+    });
+  } catch (err) {
+    console.error("Failed to load tag analytics", err);
+  }
 }
 
 // Render freeform widgets
@@ -376,6 +581,78 @@ function renderFreeformWidgets() {
                 </div>
             </div>
             <div class="widget-body">
+              ${
+                widget.type === "tag-analytics"
+                  ? `
+                <div class="tag-analytics" data-analytics-widget="${index}">
+                  <div class="tag-analytics-controls" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;">
+                    <label style="display:flex;align-items:center;gap:0.25rem;">
+                      <span style="font-size:0.75rem;color:var(--text-tertiary)">Metric</span>
+                      <select class="tag-analytics-metric">
+                        <option value="count">Usage</option>
+                        <option value="click_count_sum">Clicks</option>
+                        <option value="favorites_count">Favorites</option>
+                      </select>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.25rem;">
+                      <span style="font-size:0.75rem;color:var(--text-tertiary)">Top N</span>
+                      <select class="tag-analytics-limit">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="30">30</option>
+                        <option value="50">50</option>
+                      </select>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.25rem;">
+                      <span style="font-size:0.75rem;color:var(--text-tertiary)">Pairs Sort</span>
+                      <select class="tag-analytics-pairsort">
+                        <option value="count" selected>Count</option>
+                        <option value="alpha">A→Z</option>
+                      </select>
+                    </label>
+                    <div class="tag-analytics-exports" style="margin-left:auto;display:flex;gap:0.25rem;">
+                      <button class="btn btn-sm tag-analytics-export-json" title="Export JSON">JSON</button>
+                      <button class="btn btn-sm tag-analytics-export-tags-csv" title="Export Tags CSV">Tags CSV</button>
+                      <button class="btn btn-sm tag-analytics-export-pairs-csv" title="Export Pairs CSV">Pairs CSV</button>
+                    </div>
+                  </div>
+                  <div class="tag-analytics-colors" style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;">
+                    <label style="display:flex;align-items:center;gap:0.25rem;">
+                      <span style="font-size:0.75rem;color:var(--text-tertiary)">Usage</span>
+                      <input type="color" class="tag-analytics-color-usage" style="width:24px;height:20px;border:none;cursor:pointer;" />
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.25rem;">
+                      <span style="font-size:0.75rem;color:var(--text-tertiary)">Clicks</span>
+                      <input type="color" class="tag-analytics-color-clicks" style="width:24px;height:20px;border:none;cursor:pointer;" />
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.25rem;">
+                      <span style="font-size:0.75rem;color:var(--text-tertiary)">Favorites</span>
+                      <input type="color" class="tag-analytics-color-favorites" style="width:24px;height:20px;border:none;cursor:pointer;" />
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.25rem;">
+                      <span style="font-size:0.75rem;color:var(--text-tertiary)">Pairs</span>
+                      <input type="color" class="tag-analytics-color-pairs" style="width:24px;height:20px;border:none;cursor:pointer;" />
+                    </label>
+                  </div>
+                  <div class="tag-analytics-legend" style="display:flex;gap:0.75rem;align-items:center;margin-bottom:0.5rem;">
+                    <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-usage" style="display:inline-block;width:10px;height:10px;background:#6366f1;border-radius:2px"></span>Usage</span>
+                    <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-clicks" style="display:inline-block;width:10px;height:10px;background:#f97316;border-radius:2px"></span>Clicks</span>
+                    <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-favorites" style="display:inline-block;width:10px;height:10px;background:#eab308;border-radius:2px"></span>Favorites</span>
+                    <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-pairs" style="display:inline-block;width:10px;height:10px;background:#6b7280;border-radius:2px"></span>Pairs</span>
+                  </div>
+                  <div class="tag-analytics-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                    <div class="tag-analytics-col">
+                      <div class="tag-analytics-col-title" style="font-weight:600;margin-bottom:0.25rem;">Top Tags</div>
+                      <div class="tag-analytics-list tag-analytics-top-tags" style="display:grid;grid-template-columns:1fr auto;gap:0.25rem"></div>
+                    </div>
+                    <div class="tag-analytics-col">
+                      <div class="tag-analytics-col-title" style="font-weight:600;margin-bottom:0.25rem;">Top Co-occurrence</div>
+                      <div class="tag-analytics-list tag-analytics-cooccurrence" style="display:grid;grid-template-columns:1fr auto;gap:0.25rem"></div>
+                    </div>
+                  </div>
+                </div>
+                `
+                  : `
                 <div class="compact-list">
                     ${sortedBookmarks
                       .slice(0, 50)
@@ -396,6 +673,8 @@ function renderFreeformWidgets() {
                       .join("")}
                     ${sortedBookmarks.length > 50 ? `<div style="padding:0.5rem;font-size:0.75rem;color:var(--text-tertiary);text-align:center">+${sortedBookmarks.length - 50} more</div>` : ""}
                 </div>
+                `
+              }
             </div>
             <div class="widget-resize-handle" title="Drag to resize"></div>
         </div>
@@ -454,6 +733,13 @@ function getWidgetData(widget) {
       color: "#10b981",
       bookmarks: tagBookmarks,
       count: tagBookmarks.length,
+    };
+  } else if (widget.type === "tag-analytics") {
+    return {
+      name: "Tag Analytics",
+      color: "#6b7280",
+      bookmarks: [],
+      count: "",
     };
   }
   return null;
@@ -639,6 +925,18 @@ export function addDashboardWidget(type, id, x, y) {
     w: 320,
     h: 400,
   };
+
+  if (type === "tag-analytics") {
+    newWidget.settings = {
+      metric: "count",
+      limit: 20,
+      pairSort: "count",
+      colors: { usage: "#6366f1", clicks: "#f97316", favorites: "#eab308", pairs: "#6b7280" },
+    };
+  }
+
+  // Preserve for other types
+  // (rest of function continues)
 
   state.dashboardWidgets.push(newWidget);
   saveDashboardWidgets();

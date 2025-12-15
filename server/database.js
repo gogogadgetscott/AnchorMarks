@@ -85,6 +85,7 @@ function initializeDatabase(DB_PATH) {
         view_mode TEXT DEFAULT 'grid',
         hide_favicons INTEGER DEFAULT 0,
         hide_sidebar INTEGER DEFAULT 0,
+        ai_suggestions_enabled INTEGER DEFAULT 1,
         theme TEXT DEFAULT 'light',
         dashboard_mode TEXT DEFAULT 'folder',
         dashboard_tags TEXT,
@@ -147,6 +148,19 @@ function initializeDatabase(DB_PATH) {
 
       CREATE INDEX IF NOT EXISTS idx_bookmark_views_user ON bookmark_views(user_id);
     `);
+
+  // Migration: add ai_suggestions_enabled to user_settings if missing
+  try {
+    const cols = db.prepare("PRAGMA table_info(user_settings)").all();
+    const hasAiEnabled = cols.some((c) => c.name === "ai_suggestions_enabled");
+    if (!hasAiEnabled) {
+      db.exec(
+        "ALTER TABLE user_settings ADD COLUMN ai_suggestions_enabled INTEGER DEFAULT 1",
+      );
+    }
+  } catch (err) {
+    console.error("Failed to migrate user_settings for AI toggle:", err);
+  }
 
   // Migration: drop legacy bookmarks.tags column by table rebuild if present
   try {

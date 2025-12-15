@@ -219,7 +219,9 @@ export function populateBulkMoveSelect() {
 }
 
 // Create folder
-export async function createFolder(data) {
+export async function createFolder(data, options = {}) {
+  const { closeModal = true } = options;
+
   try {
     const folder = await api("/folders", {
       method: "POST",
@@ -228,10 +230,12 @@ export async function createFolder(data) {
     state.folders.push(folder);
     renderFolders();
     updateFolderSelect();
-    closeModals();
+    if (closeModal) closeModals();
     showToast("Folder created!", "success");
+    return folder;
   } catch (err) {
     showToast(err.message, "error");
+    return null;
   }
 }
 
