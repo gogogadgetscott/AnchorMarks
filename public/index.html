@@ -848,13 +848,17 @@
           <div class="settings-panel active" id="settings-general">
             <div class="setting-item">
               <div class="setting-info">
-                <h4>Dark Mode</h4>
-                <p>Switch between light and dark themes</p>
+                <h4>Theme</h4>
+                <p>Choose your preferred color theme</p>
               </div>
-              <label class="toggle">
-                <input type="checkbox" id="dark-mode-toggle">
-                <span class="toggle-slider"></span>
-              </label>
+              <select id="theme-select"
+                style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-primary); color: var(--text-primary);">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+                <option value="ocean">Ocean</option>
+                <option value="sunset">Sunset</option>
+                <option value="midnight">Midnight</option>
+              </select>
             </div>
             <div class="setting-item">
               <div class="setting-info">

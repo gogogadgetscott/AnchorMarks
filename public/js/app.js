@@ -46,7 +46,7 @@ import {
 import {
     loadSettings,
     saveSettings,
-    toggleTheme,
+    setTheme,
     applyFaviconSetting,
     toggleFavicons,
     toggleSidebar,
@@ -458,6 +458,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize DOM references
     initDom();
 
+    // Initial theme load from localStorage (for immediate visual feedback)
+    const savedTheme = localStorage.getItem('anchormarks_theme');
+    if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const themeSelect = document.getElementById('theme-select');
+        if (themeSelect) themeSelect.value = savedTheme;
+    }
+
     // Check authentication
     const isAuthed = await checkAuth();
     if (isAuthed) {
@@ -790,7 +798,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    document.getElementById('dark-mode-toggle')?.addEventListener('change', toggleTheme);
+    document.getElementById('theme-select')?.addEventListener('change', (e) => setTheme(e.target.value));
     document.getElementById('hide-favicons-toggle')?.addEventListener('change', toggleFavicons);
     document.getElementById('include-children-toggle')?.addEventListener('change', toggleIncludeChildBookmarks);
     document.getElementById('toggle-sidebar-btn')?.addEventListener('click', toggleSidebar);

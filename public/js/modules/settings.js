@@ -30,9 +30,10 @@ export async function loadSettings() {
         }
 
         // Apply theme
-        document.documentElement.setAttribute('data-theme', settings.theme || 'dark');
-        const darkToggle = document.getElementById('dark-mode-toggle');
-        if (darkToggle) darkToggle.checked = settings.theme === 'dark';
+        // Apply theme
+        const theme = settings.theme || localStorage.getItem('anchormarks_theme') || 'dark';
+        setTheme(theme, false); // false = don't save to server again since we just loaded it
+
 
         // Apply sidebar collapsed state from localStorage
         const sidebarCollapsed = localStorage.getItem('anchormarks_sidebar_collapsed') === 'true';
@@ -67,12 +68,18 @@ export function applyTheme() {
     // Theme is applied when settings are loaded
 }
 
-// Toggle theme
-export function toggleTheme() {
-    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const newTheme = dark ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    saveSettings({ theme: newTheme });
+// Set theme
+export function setTheme(themeName, save = true) {
+    if (!themeName) return;
+    document.documentElement.setAttribute('data-theme', themeName);
+    localStorage.setItem('anchormarks_theme', themeName);
+
+    const themeSelect = document.getElementById('theme-select');
+    if (themeSelect) themeSelect.value = themeName;
+
+    if (save) {
+        saveSettings({ theme: themeName });
+    }
 }
 
 // Apply favicon setting
@@ -160,7 +167,7 @@ export default {
     loadSettings,
     saveSettings,
     applyTheme,
-    toggleTheme,
+    setTheme,
     applyFaviconSetting,
     toggleFavicons,
     toggleSidebar,
