@@ -47,7 +47,6 @@ export async function initDashboardViews() {
     headerActions.insertBefore(btn, headerActions.firstChild);
   }
 
-
   // Initial load
   await loadViews();
 }
@@ -308,10 +307,11 @@ export function renderDashboard() {
   const dashboardHtml = `
         <div class="dashboard-freeform-container" id="dashboard-drop-zone">
             <div class="dashboard-help-text">
-                ${state.dashboardWidgets.length === 0
-      ? "<p>Drag folders or tags from the sidebar to create widgets</p>"
-      : ""
-    }
+                ${
+                  state.dashboardWidgets.length === 0
+                    ? "<p>Drag folders or tags from the sidebar to create widgets</p>"
+                    : ""
+                }
             </div>
             <div class="dashboard-widgets-container" id="dashboard-widgets-freeform">
                 ${renderFreeformWidgets()}
@@ -349,15 +349,16 @@ function renderFreeformWidgets() {
                         <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
                     </svg>
                 </div>
-                ${widget.type === "folder"
-        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px">
+                ${
+                  widget.type === "folder"
+                    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px">
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
                     </svg>`
-        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px">
+                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px">
                         <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
                         <line x1="7" y1="7" x2="7.01" y2="7"/>
                     </svg>`
-      }
+                }
                 <div class="widget-title">${escapeHtml(name)}</div>
                 <div class="widget-count">${count}</div>
                 <div class="widget-actions">
@@ -377,21 +378,22 @@ function renderFreeformWidgets() {
             <div class="widget-body">
                 <div class="compact-list">
                     ${sortedBookmarks
-        .slice(0, 50)
-        .map(
-          (b) => `
+                      .slice(0, 50)
+                      .map(
+                        (b) => `
                         <a href="${b.url}" target="_blank" class="compact-item" data-action="track-click" data-id="${b.id}">
                             <div class="compact-favicon">
-                                ${!state.hideFavicons && b.favicon
-              ? `<img src="${b.favicon}" alt="">`
-              : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/></svg>`
-            }
+                                ${
+                                  !state.hideFavicons && b.favicon
+                                    ? `<img src="${b.favicon}" alt="">`
+                                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/></svg>`
+                                }
                             </div>
                             <span class="compact-text">${escapeHtml(b.title)}</span>
                         </a>
                     `,
-        )
-        .join("")}
+                      )
+                      .join("")}
                     ${sortedBookmarks.length > 50 ? `<div style="padding:0.5rem;font-size:0.75rem;color:var(--text-tertiary);text-align:center">+${sortedBookmarks.length - 50} more</div>` : ""}
                 </div>
             </div>
@@ -479,7 +481,9 @@ export function initDashboardDragDrop() {
     e.preventDefault();
     dropZone.classList.remove("drag-over");
 
-    console.log("Drop event fired", { draggedSidebarItem: state.draggedSidebarItem });
+    console.log("Drop event fired", {
+      draggedSidebarItem: state.draggedSidebarItem,
+    });
 
     const rect = dropZone.getBoundingClientRect();
     const x = e.clientX - rect.left + dropZone.scrollLeft;
@@ -683,8 +687,8 @@ function showWidgetColorPicker(index, button) {
   picker.innerHTML = `
         <div class="color-picker-grid">
             ${colors
-      .map(
-        (c) => `
+              .map(
+                (c) => `
                 <button class="color-picker-option" 
                         data-color="${c.value}" 
                         title="${c.name}"
@@ -692,8 +696,8 @@ function showWidgetColorPicker(index, button) {
                     ${widget.color === c.value ? '<span class="color-check">✓</span>' : ""}
                 </button>
             `,
-      )
-      .join("")}
+              )
+              .join("")}
         </div>
     `;
 
@@ -801,13 +805,13 @@ export function showLayoutSettings() {
               </svg>
               Auto Position Widgets
             </button>
-            <button class="btn btn-outline btn-full ${state.snapToGrid ? 'active' : ''}" id="snap-to-grid-toggle-btn">
+            <button class="btn btn-outline btn-full ${state.snapToGrid ? "active" : ""}" id="snap-to-grid-toggle-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;margin-right:0.5rem">
                 <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
                 <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
                 <line x1="3" y1="12" x2="21" y2="12" stroke-dasharray="2,2"/><line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2,2"/>
               </svg>
-              Snap to Grid ${state.snapToGrid ? '(ON)' : '(OFF)'}
+              Snap to Grid ${state.snapToGrid ? "(ON)" : "(OFF)"}
             </button>
             <button class="btn btn-outline btn-full" id="clear-dashboard-btn" style="color: var(--danger-600); border-color: var(--danger-600);">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;margin-right:0.5rem">
@@ -826,7 +830,7 @@ export function showLayoutSettings() {
           </p>
           <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
             <div style="font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; margin-bottom: 0.5rem;">Statistics</div>
-            <div style="font-size: 0.875rem;"><strong>${state.dashboardWidgets.length}</strong> widget${state.dashboardWidgets.length !== 1 ? 's' : ''} on dashboard</div>
+            <div style="font-size: 0.875rem;"><strong>${state.dashboardWidgets.length}</strong> widget${state.dashboardWidgets.length !== 1 ? "s" : ""} on dashboard</div>
           </div>
         </div>
       </div>
@@ -905,7 +909,7 @@ function attachLayoutSettingsListeners() {
       await saveSettings({ snap_to_grid: state.snapToGrid });
       showToast(
         `Snap to grid ${state.snapToGrid ? "enabled" : "disabled"}`,
-        "success"
+        "success",
       );
       // Re-render dropdown to update button state
       closeLayoutSettings();
@@ -948,7 +952,10 @@ export function autoPositionWidgets() {
 
   saveDashboardWidgets();
   renderDashboard();
-  showToast(`${state.dashboardWidgets.length} widget${state.dashboardWidgets.length !== 1 ? 's' : ''} positioned`, "success");
+  showToast(
+    `${state.dashboardWidgets.length} widget${state.dashboardWidgets.length !== 1 ? "s" : ""} positioned`,
+    "success",
+  );
   closeLayoutSettings();
 }
 
@@ -961,7 +968,11 @@ function confirmClearDashboard() {
     return;
   }
 
-  if (confirm(`Are you sure you want to remove all ${count} widget${count !== 1 ? 's' : ''} from the dashboard? This cannot be undone.`)) {
+  if (
+    confirm(
+      `Are you sure you want to remove all ${count} widget${count !== 1 ? "s" : ""} from the dashboard? This cannot be undone.`,
+    )
+  ) {
     clearDashboard();
   }
 }
@@ -977,7 +988,10 @@ export function clearDashboard() {
   renderDashboard();
   updateCounts();
 
-  showToast(`Cleared ${count} widget${count !== 1 ? 's' : ''} from dashboard`, "success");
+  showToast(
+    `Cleared ${count} widget${count !== 1 ? "s" : ""} from dashboard`,
+    "success",
+  );
   closeLayoutSettings();
 }
 

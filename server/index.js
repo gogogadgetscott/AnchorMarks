@@ -2305,7 +2305,7 @@ app.get("/api/bookmarks/by-domain", authenticateTokenMiddleware, (req, res) => {
     try {
       const domain = new URL(b.url).hostname.replace("www.", "");
       domainCounts[domain] = (domainCounts[domain] || 0) + 1;
-    } catch (e) { }
+    } catch (e) {}
   });
 
   const sorted = Object.entries(domainCounts)

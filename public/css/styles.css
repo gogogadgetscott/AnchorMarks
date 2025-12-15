@@ -196,10 +196,12 @@ textarea {
 .bg-gradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg,
-      var(--primary-600) 0%,
-      #8b5cf6 50%,
-      #ec4899 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-600) 0%,
+    #8b5cf6 50%,
+    #ec4899 100%
+  );
   opacity: 0.1;
 }
 
@@ -873,8 +875,6 @@ body.sidebar-collapsed .nav-section-header {
   border-radius: var(--radius-sm);
   pointer-events: none;
 }
-
-
 
 .sidebar-actions {
   padding: 1rem 0.5rem 0 0.5rem;
@@ -1869,17 +1869,30 @@ body.sidebar-collapsed .nav-section-header {
   padding: 0.25rem 0.625rem;
   font-size: 0.6875rem;
   font-weight: 500;
-  background: color-mix(in srgb, var(--tag-color, var(--primary-500)) 15%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--tag-color, var(--primary-500)) 15%,
+    transparent
+  );
   color: var(--tag-color, var(--primary-700));
   border-radius: var(--radius-full);
-  border: 1px solid color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
   transition: all var(--transition-fast);
   cursor: pointer;
 }
 
 .tag:hover {
-  background: color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
-  border-color: color-mix(in srgb, var(--tag-color, var(--primary-500)) 35%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--tag-color, var(--primary-500)) 25%,
+    transparent
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--tag-color, var(--primary-500)) 35%,
+    transparent
+  );
 }
 
 [data-theme="dark"] .tag {
@@ -2271,7 +2284,6 @@ body.sidebar-collapsed .nav-section-header {
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -2591,9 +2603,14 @@ body.sidebar-collapsed .nav-section-header {
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
   font-weight: 500;
-  background: color-mix(in srgb, var(--tag-color, var(--primary-500)) 15%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--tag-color, var(--primary-500)) 15%,
+    transparent
+  );
   color: var(--tag-color, var(--primary-700));
-  border: 1px solid color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
   border-radius: var(--radius-full);
   transition: all 0.2s;
 }
@@ -2802,11 +2819,11 @@ body.sidebar-collapsed .nav-section-header {
   box-shadow: var(--shadow-sm);
 }
 
-.toggle input:checked+.toggle-slider {
+.toggle input:checked + .toggle-slider {
   background: var(--primary-500);
 }
 
-.toggle input:checked+.toggle-slider::before {
+.toggle input:checked + .toggle-slider::before {
   transform: translateX(20px);
 }
 
@@ -2820,7 +2837,7 @@ body.sidebar-collapsed .nav-section-header {
   margin-bottom: 0.5rem;
 }
 
-.api-section>p {
+.api-section > p {
   font-size: 0.875rem;
   color: var(--text-secondary);
   margin-bottom: 1rem;
@@ -2873,7 +2890,6 @@ body.sidebar-collapsed .nav-section-header {
   background: rgba(34, 197, 94, 0.1);
   color: #22c55e;
 }
-
 
 /* Widget Sidebar */
 .widget-sidebar {
@@ -3141,7 +3157,6 @@ body.dragging-widget .widget-sidebar-overlay {
   pointer-events: none;
 }
 
-
 .method.post {
   background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
@@ -3174,7 +3189,7 @@ body.dragging-widget .widget-sidebar-overlay {
   margin-bottom: 0.5rem;
 }
 
-.sync-info>p {
+.sync-info > p {
   color: var(--text-secondary);
   margin-bottom: 1.5rem;
 }
@@ -3196,7 +3211,7 @@ body.dragging-widget .widget-sidebar-overlay {
   margin-bottom: 0.5rem;
 }
 
-.import-section>p {
+.import-section > p {
   font-size: 0.875rem;
   color: var(--text-secondary);
   margin-bottom: 1rem;
@@ -4102,9 +4117,11 @@ body.dragging-widget .widget-sidebar-overlay {
   width: 16px;
   height: 16px;
   cursor: nwse-resize;
-  background: linear-gradient(135deg,
-      transparent 50%,
-      var(--text-tertiary) 50%);
+  background: linear-gradient(
+    135deg,
+    transparent 50%,
+    var(--text-tertiary) 50%
+  );
   opacity: 0.3;
   transition: opacity var(--transition-fast);
 }

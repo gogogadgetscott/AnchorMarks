@@ -13,36 +13,36 @@ const { v4: uuidv4 } = require("uuid");
  * @returns {Array} Array of tag IDs
  */
 function ensureTagsExist(db, userId, tagsString) {
-    if (!tagsString || tagsString.trim() === "") {
-        return [];
+  if (!tagsString || tagsString.trim() === "") {
+    return [];
+  }
+
+  const tagNames = tagsString
+    .split(",")
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+
+  const tagIds = [];
+
+  for (const tagName of tagNames) {
+    // Check if tag exists
+    let tag = db
+      .prepare("SELECT id FROM tags WHERE user_id = ? AND name = ?")
+      .get(userId, tagName);
+
+    if (!tag) {
+      // Create new tag
+      const tagId = uuidv4();
+      db.prepare(
+        "INSERT INTO tags (id, user_id, name, color, icon) VALUES (?, ?, ?, ?, ?)",
+      ).run(tagId, userId, tagName, "#f59e0b", "tag");
+      tagIds.push(tagId);
+    } else {
+      tagIds.push(tag.id);
     }
+  }
 
-    const tagNames = tagsString
-        .split(",")
-        .map((t) => t.trim())
-        .filter((t) => t.length > 0);
-
-    const tagIds = [];
-
-    for (const tagName of tagNames) {
-        // Check if tag exists
-        let tag = db
-            .prepare("SELECT id FROM tags WHERE user_id = ? AND name = ?")
-            .get(userId, tagName);
-
-        if (!tag) {
-            // Create new tag
-            const tagId = uuidv4();
-            db.prepare(
-                "INSERT INTO tags (id, user_id, name, color, icon) VALUES (?, ?, ?, ?, ?)",
-            ).run(tagId, userId, tagName, "#f59e0b", "tag");
-            tagIds.push(tagId);
-        } else {
-            tagIds.push(tag.id);
-        }
-    }
-
-    return tagIds;
+  return tagIds;
 }
 
 /**
@@ -52,18 +52,18 @@ function ensureTagsExist(db, userId, tagsString) {
  * @param {Array} tagIds - Array of tag IDs
  */
 function updateBookmarkTags(db, bookmarkId, tagIds) {
-    // Delete existing relationships
-    db.prepare("DELETE FROM bookmark_tags WHERE bookmark_id = ?").run(bookmarkId);
+  // Delete existing relationships
+  db.prepare("DELETE FROM bookmark_tags WHERE bookmark_id = ?").run(bookmarkId);
 
-    // Create new relationships
-    if (tagIds && tagIds.length > 0) {
-        const stmt = db.prepare(
-            "INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)",
-        );
-        for (const tagId of tagIds) {
-            stmt.run(bookmarkId, tagId);
-        }
+  // Create new relationships
+  if (tagIds && tagIds.length > 0) {
+    const stmt = db.prepare(
+      "INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)",
+    );
+    for (const tagId of tagIds) {
+      stmt.run(bookmarkId, tagId);
     }
+  }
 }
 
 /**
@@ -73,19 +73,19 @@ function updateBookmarkTags(db, bookmarkId, tagIds) {
  * @returns {string} Comma-separated tag names
  */
 function getBookmarkTagsString(db, bookmarkId) {
-    const tags = db
-        .prepare(
-            `
+  const tags = db
+    .prepare(
+      `
     SELECT t.name
     FROM tags t
     JOIN bookmark_tags bt ON t.id = bt.tag_id
     WHERE bt.bookmark_id = ?
     ORDER BY t.name
   `,
-        )
-        .all(bookmarkId);
+    )
+    .all(bookmarkId);
 
-    return tags.map((t) => t.name).join(", ");
+  return tags.map((t) => t.name).join(", ");
 }
 
 /**
@@ -95,9 +95,9 @@ function getBookmarkTagsString(db, bookmarkId) {
  * @returns {Array} Array of tags with metadata
  */
 function getUserTags(db, userId) {
-    return db
-        .prepare(
-            `
+  return db
+    .prepare(
+      `
     SELECT 
       t.*,
       COUNT(bt.bookmark_id) as count,
@@ -112,8 +112,8 @@ function getUserTags(db, userId) {
     GROUP BY t.id
     ORDER BY t.position, t.name
   `,
-        )
-        .all(userId);
+    )
+    .all(userId);
 }
 
 /**
@@ -122,17 +122,17 @@ function getUserTags(db, userId) {
  * @param {string} bookmarkId - Bookmark ID
  */
 function syncBookmarkTagsText(db, bookmarkId) {
-    const tagsString = getBookmarkTagsString(db, bookmarkId);
-    db.prepare("UPDATE bookmarks SET tags = ? WHERE id = ?").run(
-        tagsString,
-        bookmarkId,
-    );
+  const tagsString = getBookmarkTagsString(db, bookmarkId);
+  db.prepare("UPDATE bookmarks SET tags = ? WHERE id = ?").run(
+    tagsString,
+    bookmarkId,
+  );
 }
 
 module.exports = {
-    ensureTagsExist,
-    updateBookmarkTags,
-    getBookmarkTagsString,
-    getUserTags,
-    syncBookmarkTagsText,
+  ensureTagsExist,
+  updateBookmarkTags,
+  getBookmarkTagsString,
+  getUserTags,
+  syncBookmarkTagsText,
 };

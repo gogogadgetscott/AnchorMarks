@@ -86,4 +86,3 @@ MIT License - use, modify, and distribute freely.
 ---
 
 **[View full documentation in Help →](public/help.html)**
-

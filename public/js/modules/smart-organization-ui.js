@@ -479,7 +479,6 @@ export function init() {
     loadSmartCollections();
     loadSmartInsights();
   }, 1000);
-
 }
 
 // Named exports

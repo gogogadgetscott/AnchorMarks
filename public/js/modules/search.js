@@ -607,7 +607,11 @@ export function openTagModal(tag) {
     return;
   }
   if (!tagIdInput || !tagNameInput || !tagColorInput) {
-    console.error("Tag form inputs not found", { tagIdInput, tagNameInput, tagColorInput });
+    console.error("Tag form inputs not found", {
+      tagIdInput,
+      tagNameInput,
+      tagColorInput,
+    });
     return;
   }
 
@@ -692,7 +696,7 @@ export async function createNewTag(name, color) {
       method: "POST",
       body: JSON.stringify({
         name: name.trim(),
-        color: color || "#f59e0b"
+        color: color || "#f59e0b",
       }),
     });
 

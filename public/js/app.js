@@ -143,7 +143,6 @@ import { initFilterDropdown, toggleFilterDropdown } from "./modules/filters.js";
 // Import tag input
 import { initTagInput, loadTagsFromInput } from "./modules/tag-input.js";
 
-
 // Import tour
 import {
   checkWelcomeTour,
@@ -160,7 +159,6 @@ import {
   toggleWidgetPicker,
   openWidgetPicker,
 } from "./modules/widget-picker.js";
-
 
 // Set view mode
 function setViewMode(mode) {
@@ -224,8 +222,6 @@ async function resetBookmarks() {
     showToast(err.message, "error");
   }
 }
-
-
 
 // Initialize application
 async function initializeApp() {
@@ -566,30 +562,29 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Add Bookmark buttons
-  document
-    .getElementById("add-bookmark-btn")
-    ?.addEventListener("click", () => {
-      document.getElementById("bookmark-modal-title").textContent = "Add Bookmark";
-      document.getElementById("bookmark-form").reset();
-      loadTagsFromInput(""); // Clear tags
-      openModal("bookmark-modal");
-    });
+  document.getElementById("add-bookmark-btn")?.addEventListener("click", () => {
+    document.getElementById("bookmark-modal-title").textContent =
+      "Add Bookmark";
+    document.getElementById("bookmark-form").reset();
+    loadTagsFromInput(""); // Clear tags
+    openModal("bookmark-modal");
+  });
   document
     .getElementById("sidebar-add-bookmark-btn")
     ?.addEventListener("click", () => {
-      document.getElementById("bookmark-modal-title").textContent = "Add Bookmark";
+      document.getElementById("bookmark-modal-title").textContent =
+        "Add Bookmark";
       document.getElementById("bookmark-form").reset();
       loadTagsFromInput(""); // Clear tags
       openModal("bookmark-modal");
     });
-  document
-    .getElementById("empty-add-btn")
-    ?.addEventListener("click", () => {
-      document.getElementById("bookmark-modal-title").textContent = "Add Bookmark";
-      document.getElementById("bookmark-form").reset();
-      loadTagsFromInput(""); // Clear tags
-      openModal("bookmark-modal");
-    });
+  document.getElementById("empty-add-btn")?.addEventListener("click", () => {
+    document.getElementById("bookmark-modal-title").textContent =
+      "Add Bookmark";
+    document.getElementById("bookmark-form").reset();
+    loadTagsFromInput(""); // Clear tags
+    openModal("bookmark-modal");
+  });
 
   // Bookmark Form
   document.getElementById("bookmark-form")?.addEventListener("submit", (e) => {
@@ -742,14 +737,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       openWidgetPicker();
     });
 
-
   document
     .getElementById("dashboard-layout-btn")
     ?.addEventListener("click", () => {
       toggleLayoutSettings();
     });
-
-
 
   // Bookmarks-specific controls
   const filterBtn = document.getElementById("bookmarks-filter-btn");
@@ -786,7 +778,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       document
         .getElementById(`settings-${tab.dataset.settingsTab}`)
         ?.classList.add("active");
-
 
       if (tab.dataset.settingsTab === "tags") loadTagStats();
     });
@@ -943,14 +934,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
   // Enter key support for new tag input
-  document
-    .getElementById("new-tag-name")
-    ?.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        document.getElementById("add-new-tag-btn")?.click();
-      }
-    });
+  document.getElementById("new-tag-name")?.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      document.getElementById("add-new-tag-btn")?.click();
+    }
+  });
 
   // Sidebar tag search
   document
@@ -974,7 +963,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Note: Tag suggestions from URL are handled by SmartOrg.init()
-
 
   // Modal Close
   document
