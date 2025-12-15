@@ -1603,6 +1603,49 @@
                   </button>
                 </div>
               </div>
+              <div class="import-section">
+                <h4>Dashboard Views</h4>
+                <p>Export or import your saved dashboard layouts</p>
+                <div class="export-options">
+                  <button class="btn btn-secondary" id="export-dashboard-views-btn">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Export Dashboard Views
+                  </button>
+                  <input
+                    type="file"
+                    id="import-dashboard-views-file"
+                    accept=".json"
+                    hidden
+                  />
+                  <button class="btn btn-secondary" id="import-dashboard-views-btn">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    Import Dashboard Views
+                  </button>
+                  <div
+                    id="import-dashboard-views-progress"
+                    class="import-progress"
+                    aria-live="polite"
+                  ></div>
+                </div>
+              </div>
             </div>
 
             <div class="settings-panel" id="settings-tags">
@@ -1611,6 +1654,13 @@
                   <h4>Tag Overview</h4>
                   <p>See your tags, counts, and nested paths</p>
                 </div>
+                <input
+                  type="text"
+                  id="tag-search-input"
+                  class="form-input"
+                  placeholder="Search tags..."
+                  style="margin-bottom: 10px"
+                />
                 <div id="tag-stats-list" class="tag-stats-list"></div>
 
                 <div class="setting-item" style="margin-top: 1.5rem">

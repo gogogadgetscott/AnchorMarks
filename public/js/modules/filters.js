@@ -172,12 +172,26 @@ export async function showFilterDropdown() {
                     <!-- Folders Section -->
                     <div class="filter-column">
                         <h4>Folders</h4>
+                        <input
+                            type="text"
+                            id="filter-folders-search"
+                            class="form-input"
+                            placeholder="Search folders..."
+                            style="margin-bottom: 0.5rem; font-size: 0.875rem; padding: 0.4rem 0.6rem;"
+                        />
                         <div class="filter-grid" id="filter-folders-container"></div>
                     </div>
                     
                     <!-- Tags Section -->
                     <div class="filter-column">
                         <h4>Tags</h4>
+                        <input
+                            type="text"
+                            id="filter-tags-search"
+                            class="form-input"
+                            placeholder="Search tags..."
+                            style="margin-bottom: 0.5rem; font-size: 0.875rem; padding: 0.4rem 0.6rem;"
+                        />
                         <div class="filter-grid" id="filter-tags-container"></div>
                     </div>
 
@@ -295,6 +309,150 @@ export async function showFilterDropdown() {
   }
 }
 
+// Filter folders based on search term
+function filterFoldersInDropdown(searchTerm) {
+  const container = document.getElementById("filter-folders-container");
+  if (!container || !container._allFolders) return;
+
+  const term = searchTerm.toLowerCase().trim();
+  
+  if (!term) {
+    container.innerHTML = container._originalHTML;
+    attachFolderClickHandlers();
+    return;
+  }
+
+  const filtered = container._allFolders.filter((folder) => {
+    return folder.name.toLowerCase().includes(term);
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.875rem;padding:1rem;">No folders found</p>';
+    return;
+  }
+
+  let html = "";
+  filtered.forEach((folder) => {
+    const count = getFolderBookmarkCount(folder.id);
+    const isActive = state.currentFolder === folder.id;
+    const color = folder.color || "#6366f1";
+
+    html += `
+      <div class="filter-item ${isActive ? "active" : ""}" data-folder-id="${folder.id}">
+          <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
+              <span class="folder-color" style="background:${color}"></span>
+              <span class="filter-item-name">${escapeHtml(folder.name)}</span>
+          </div>
+          <span class="filter-item-count">${count}</span>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+  attachFolderClickHandlers();
+}
+
+// Filter tags based on search term
+function filterTagsInDropdown(searchTerm) {
+  const container = document.getElementById("filter-tags-container");
+  if (!container || !container._allTags) return;
+
+  const term = searchTerm.toLowerCase().trim();
+  
+  if (!term) {
+    container.innerHTML = container._originalHTML;
+    attachTagClickHandlers();
+    return;
+  }
+
+  const filtered = container._allTags.filter((tag) => {
+    return tag.name.toLowerCase().includes(term);
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.875rem;padding:1rem;">No tags found</p>';
+    return;
+  }
+
+  let html = "";
+  filtered.forEach((tag) => {
+    const isActive = state.filterConfig.tags.includes(tag.name);
+
+    html += `
+      <div class="filter-item ${isActive ? "active" : ""}" data-tag="${escapeHtml(tag.name)}">
+          <span class="filter-item-name">${escapeHtml(tag.name)}</span>
+          <span class="filter-item-count">${tag.count}</span>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+  attachTagClickHandlers();
+}
+
+// Attach folder click handlers
+function attachFolderClickHandlers() {
+  const container = document.getElementById("filter-folders-container");
+  if (!container) return;
+
+  container.querySelectorAll(".filter-item").forEach((item) => {
+    item.addEventListener("click", async () => {
+      const folderId = item.dataset.folderId;
+
+      state.setCurrentCollection(null);
+
+      if (folderId === "all") {
+        state.setCurrentView("all");
+        state.setCurrentFolder(null);
+      } else if (folderId === "null") {
+        state.setCurrentView("folder");
+        state.setCurrentFolder(null);
+      } else {
+        state.setCurrentView("folder");
+        state.setCurrentFolder(folderId);
+      }
+
+      await applyFilters();
+      renderDropdownActiveFilters();
+      renderActiveFilters();
+      updateFilterButtonText();
+      await renderFoldersInDropdown();
+      watchViewChanges();
+    });
+  });
+}
+
+// Attach tag click handlers
+function attachTagClickHandlers() {
+  const container = document.getElementById("filter-tags-container");
+  if (!container) return;
+
+  container.querySelectorAll(".filter-item").forEach((item) => {
+    item.addEventListener("click", async () => {
+      const tagName = item.dataset.tag;
+      const currentTags = [...state.filterConfig.tags];
+
+      if (currentTags.includes(tagName)) {
+        const index = currentTags.indexOf(tagName);
+        currentTags.splice(index, 1);
+      } else {
+        currentTags.push(tagName);
+      }
+
+      state.setFilterConfig({
+        ...state.filterConfig,
+        tags: currentTags,
+      });
+
+      await applyFilters();
+      renderDropdownActiveFilters();
+      renderActiveFilters();
+      updateFilterButtonText();
+      await renderTagsInDropdown();
+    });
+  });
+}
+
 // Helper: Get all descendant folder IDs
 function getAllDescendantFolderIds(folderId) {
   const descendants = [];
@@ -404,33 +562,16 @@ async function renderFoldersInDropdown() {
     html ||
     '<p style="color:var(--text-tertiary);font-size:0.875rem;padding:1rem;">No folders</p>';
 
+  // Store original data for filtering
+  container._allFolders = [
+    { id: "all", name: "All Bookmarks" },
+    ...(noFolderCount > 0 ? [{ id: "null", name: "No Folder" }] : []),
+    ...state.folders,
+  ];
+  container._originalHTML = container.innerHTML;
+
   // Attach click handlers
-  container.querySelectorAll(".filter-item").forEach((item) => {
-    item.addEventListener("click", async () => {
-      const folderId = item.dataset.folderId;
-
-      // Switching to folder-based browsing clears any active collection
-      state.setCurrentCollection(null);
-
-      if (folderId === "all") {
-        state.setCurrentView("all");
-        state.setCurrentFolder(null);
-      } else if (folderId === "null") {
-        state.setCurrentView("folder");
-        state.setCurrentFolder(null);
-      } else {
-        state.setCurrentView("folder");
-        state.setCurrentFolder(folderId);
-      }
-
-      await applyFilters();
-      renderDropdownActiveFilters();
-      renderActiveFilters();
-      updateFilterButtonText();
-      await renderFoldersInDropdown(); // Re-render to update active state
-      watchViewChanges(); // Close dropdown if not pinned
-    });
-  });
+  attachFolderClickHandlers();
 }
 
 // Render smart collections in dropdown
@@ -547,33 +688,12 @@ async function renderTagsInDropdown() {
 
   container.innerHTML = html;
 
+  // Store original data for filtering
+  container._allTags = tags;
+  container._originalHTML = container.innerHTML;
+
   // Attach click handlers
-  container.querySelectorAll(".filter-item").forEach((item) => {
-    item.addEventListener("click", async () => {
-      const tagName = item.dataset.tag;
-      const currentTags = [...state.filterConfig.tags];
-
-      if (currentTags.includes(tagName)) {
-        // Remove tag
-        const index = currentTags.indexOf(tagName);
-        currentTags.splice(index, 1);
-      } else {
-        // Add tag
-        currentTags.push(tagName);
-      }
-
-      state.setFilterConfig({
-        ...state.filterConfig,
-        tags: currentTags,
-      });
-
-      await applyFilters();
-      renderDropdownActiveFilters();
-      renderActiveFilters();
-      updateFilterButtonText();
-      await renderTagsInDropdown(); // Re-render to update active state
-    });
-  });
+  attachTagClickHandlers();
 }
 
 // Attach event listeners to dropdown elements
@@ -641,6 +761,22 @@ function attachFilterDropdownListeners() {
         tagMode: tagModeSelect.value,
       });
       applyFilters();
+    });
+  }
+
+  // Folder search input
+  const folderSearchInput = document.getElementById("filter-folders-search");
+  if (folderSearchInput) {
+    folderSearchInput.addEventListener("input", (e) => {
+      filterFoldersInDropdown(e.target.value);
+    });
+  }
+
+  // Tag search input
+  const tagSearchInput = document.getElementById("filter-tags-search");
+  if (tagSearchInput) {
+    tagSearchInput.addEventListener("input", (e) => {
+      filterTagsInDropdown(e.target.value);
     });
   }
 

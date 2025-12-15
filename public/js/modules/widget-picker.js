@@ -51,12 +51,14 @@ export function openWidgetPicker() {
         <!-- Folders Section -->
         <div class="filter-column">
           <h4>📁 Folders</h4>
+          <input type="text" id="widget-folders-search" placeholder="Search folders..." style="margin-bottom: 0.5rem; font-size: 0.875rem; padding: 0.4rem 0.6rem;" />
           <div class="filter-grid" id="widget-folders-container"></div>
         </div>
         
         <!-- Tags Section -->
         <div class="filter-column">
           <h4>🏷️ Tags</h4>
+          <input type="text" id="widget-tags-search" placeholder="Search tags..." style="margin-bottom: 0.5rem; font-size: 0.875rem; padding: 0.4rem 0.6rem;" />
           <div class="filter-grid" id="widget-tags-container"></div>
         </div>
       </div>
@@ -96,6 +98,213 @@ export function closeWidgetPicker() {
     dropdown.remove();
     document.removeEventListener("click", handleWidgetPickerClickOutside);
   }
+}
+
+// Filter folders in widget picker based on search term
+function filterWidgetPickerFolders(searchTerm) {
+  const container = document.getElementById("widget-folders-container");
+  if (!container || !container._allFolders) return;
+
+  const term = searchTerm.toLowerCase().trim();
+  
+  if (!term) {
+    container.innerHTML = container._originalHTML;
+    attachWidgetFolderListeners();
+    return;
+  }
+
+  const filtered = container._allFolders.filter((folder) => {
+    return folder.name.toLowerCase().includes(term);
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.875rem;padding:1rem;">No folders found</p>';
+    return;
+  }
+
+  let html = "";
+  filtered.forEach((folder) => {
+    const bookmarkCount = state.bookmarks.filter(
+      (b) => b.folder_id === folder.id,
+    ).length;
+    const isAdded = state.dashboardWidgets.some(
+      (w) => w.type === "folder" && w.id === folder.id,
+    );
+
+    html += `
+      <div class="filter-item widget-picker-item ${isAdded ? "added" : "draggable"}"
+           data-type="folder"
+           data-id="${folder.id}"
+           data-name="${escapeHtml(folder.name)}"
+           draggable="${!isAdded ? "true" : "false"}"
+           style="${isAdded ? "opacity: 0.5; cursor: not-allowed;" : ""}">
+        <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
+          <span class="folder-color" style="background:${folder.color || "#6366f1"}"></span>
+          <span class="filter-item-name">${escapeHtml(folder.name)}</span>
+        </div>
+        <span class="filter-item-count">${bookmarkCount}</span>
+        ${isAdded ? '<span style="font-size:0.65rem;color:var(--text-tertiary);margin-left:0.25rem;">✓</span>' : ""}
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+  attachWidgetFolderListeners();
+}
+
+// Filter tags in widget picker based on search term
+function filterWidgetPickerTags(searchTerm) {
+  const container = document.getElementById("widget-tags-container");
+  if (!container || !container._allTags) return;
+
+  const term = searchTerm.toLowerCase().trim();
+  
+  if (!term) {
+    container.innerHTML = container._originalHTML;
+    attachWidgetTagListeners();
+    return;
+  }
+
+  const filtered = container._allTags.filter((item) => {
+    return item.name.toLowerCase().includes(term);
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.875rem;padding:1rem;">No tags found</p>';
+    return;
+  }
+
+  let html = "";
+  filtered.forEach((item) => {
+    if (item.type === "tag-analytics") {
+      const analyticsAdded = state.dashboardWidgets.some(
+        (w) => w.type === "tag-analytics" && w.id === "tag-analytics",
+      );
+      html += `
+        <div class="filter-item widget-picker-item ${analyticsAdded ? "added" : "draggable"}"
+             data-type="tag-analytics"
+             data-id="tag-analytics"
+             data-name="Tag Analytics"
+             draggable="${!analyticsAdded ? "true" : "false"}"
+             style="${analyticsAdded ? "opacity: 0.5; cursor: not-allowed;" : ""}">
+          <span class="filter-item-name">Tag Analytics</span>
+          ${analyticsAdded ? '<span style="font-size:0.65rem;color:var(--text-tertiary);margin-left:0.25rem;">✓</span>' : ""}
+        </div>
+      `;
+    } else {
+      const isAdded = state.dashboardWidgets.some(
+        (w) => w.type === "tag" && w.id === item.name,
+      );
+
+      html += `
+        <div class="filter-item widget-picker-item ${isAdded ? "added" : "draggable"}"
+             data-type="tag"
+             data-id="${escapeHtml(item.name)}"
+             data-name="${escapeHtml(item.name)}"
+             draggable="${!isAdded ? "true" : "false"}"
+             style="${isAdded ? "opacity: 0.5; cursor: not-allowed;" : ""}">
+          <span class="filter-item-name">${escapeHtml(item.name)}</span>
+          <span class="filter-item-count">${item.count}</span>
+          ${isAdded ? '<span style="font-size:0.65rem;color:var(--text-tertiary);margin-left:0.25rem;">✓</span>' : ""}
+        </div>
+      `;
+    }
+  });
+
+  container.innerHTML = html;
+  attachWidgetTagListeners();
+}
+
+// Attach event listeners to widget folder items
+function attachWidgetFolderListeners() {
+  const container = document.getElementById("widget-folders-container");
+  if (!container) return;
+
+  container.querySelectorAll(".widget-picker-item").forEach((item) => {
+    const type = item.dataset.type;
+    const id = item.dataset.id;
+    const isAdded = item.classList.contains("added");
+
+    if (isAdded) return;
+
+    // Click to add
+    item.addEventListener("click", () => {
+      const dropZone = document.getElementById("dashboard-drop-zone");
+      const rect = dropZone ? dropZone.getBoundingClientRect() : null;
+      const x = rect ? rect.width / 2 - 160 : 100;
+      const y = rect ? 50 + dropZone.scrollTop : 50;
+
+      addDashboardWidget(type, id, x, y);
+
+      if (!widgetDropdownPinned) {
+        closeWidgetPicker();
+      } else {
+        // Re-render to update state
+        renderWidgetPickerFolders();
+        renderWidgetPickerTags();
+      }
+    });
+
+    // Drag and drop
+    item.addEventListener("dragstart", (e) => {
+      state.setDraggedSidebarItem({ type, id });
+      e.dataTransfer.effectAllowed = "copy";
+      e.dataTransfer.setData("text/plain", JSON.stringify({ type, id }));
+      item.style.opacity = "0.5";
+      document.body.classList.add("dragging-widget");
+    });
+
+    item.addEventListener("dragend", (e) => {
+      item.style.opacity = "1";
+      document.body.classList.remove("dragging-widget");
+    });
+  });
+}
+
+// Attach event listeners to widget tag items
+function attachWidgetTagListeners() {
+  const container = document.getElementById("widget-tags-container");
+  if (!container) return;
+
+  container.querySelectorAll(".widget-picker-item").forEach((item) => {
+    const type = item.dataset.type;
+    const id = item.dataset.id;
+    const isAdded = item.classList.contains("added");
+
+    if (isAdded) return;
+
+    // Click to add
+    item.addEventListener("click", () => {
+      const dropZone = document.getElementById("dashboard-drop-zone");
+      const rect = dropZone ? dropZone.getBoundingClientRect() : null;
+      const x = rect ? rect.width / 2 - 160 : 100;
+      const y = rect ? 50 + dropZone.scrollTop : 50;
+
+      addDashboardWidget(type, id, x, y);
+
+      if (!widgetDropdownPinned) {
+        closeWidgetPicker();
+      } else {
+        // Re-render to update state
+        renderWidgetPickerFolders();
+        renderWidgetPickerTags();
+      }
+    });
+
+    // Drag and drop
+    item.addEventListener("dragstart", (e) => {
+      state.setDraggedSidebarItem({ type, id });
+      e.dataTransfer.effectAllowed = "copy";
+      e.dataTransfer.setData("text/plain", JSON.stringify({ type, id }));
+      item.style.opacity = "0.5";
+      document.body.classList.add("dragging-widget");
+    });
+
+    item.addEventListener("dragend", (e) => {
+      item.style.opacity = "1";
+      document.body.classList.remove("dragging-widget");
+    });
+  });
 }
 
 // Toggle pin state
@@ -160,6 +369,22 @@ function attachWidgetPickerListeners() {
       closeWidgetPicker();
     });
   }
+
+  // Folder search input
+  const folderSearchInput = document.getElementById("widget-folders-search");
+  if (folderSearchInput) {
+    folderSearchInput.addEventListener("input", (e) => {
+      filterWidgetPickerFolders(e.target.value);
+    });
+  }
+
+  // Tag search input
+  const tagSearchInput = document.getElementById("widget-tags-search");
+  if (tagSearchInput) {
+    tagSearchInput.addEventListener("input", (e) => {
+      filterWidgetPickerTags(e.target.value);
+    });
+  }
 }
 
 // Render folders in widget picker
@@ -208,46 +433,12 @@ export function renderWidgetPickerFolders() {
 
   container.innerHTML = html;
 
+  // Store original data for filtering
+  container._allFolders = folders;
+  container._originalHTML = container.innerHTML;
+
   // Attach listeners to items
-  container.querySelectorAll(".widget-picker-item").forEach((item) => {
-    const type = item.dataset.type;
-    const id = item.dataset.id;
-    const isAdded = item.classList.contains("added");
-
-    if (isAdded) return;
-
-    // Click to add
-    item.addEventListener("click", () => {
-      const dropZone = document.getElementById("dashboard-drop-zone");
-      const rect = dropZone ? dropZone.getBoundingClientRect() : null;
-      const x = rect ? rect.width / 2 - 160 : 100;
-      const y = rect ? 50 + dropZone.scrollTop : 50;
-
-      addDashboardWidget(type, id, x, y);
-
-      if (!widgetDropdownPinned) {
-        closeWidgetPicker();
-      } else {
-        // Re-render to update state
-        renderWidgetPickerFolders();
-        renderWidgetPickerTags();
-      }
-    });
-
-    // Drag and drop
-    item.addEventListener("dragstart", (e) => {
-      state.setDraggedSidebarItem({ type, id });
-      e.dataTransfer.effectAllowed = "copy";
-      e.dataTransfer.setData("text/plain", JSON.stringify({ type, id }));
-      item.style.opacity = "0.5";
-      document.body.classList.add("dragging-widget");
-    });
-
-    item.addEventListener("dragend", (e) => {
-      item.style.opacity = "1";
-      document.body.classList.remove("dragging-widget");
-    });
-  });
+  attachWidgetFolderListeners();
 }
 
 // Render tags in widget picker
@@ -318,46 +509,16 @@ export function renderWidgetPickerTags() {
 
   container.innerHTML = html;
 
+  // Store original data for filtering (include Tag Analytics as special item)
+  const tagsWithAnalytics = [
+    { type: "tag-analytics", name: "Tag Analytics", count: 0 },
+    ...allTags.map(tag => ({ name: tag, count: tagCounts[tag] }))
+  ];
+  container._allTags = tagsWithAnalytics;
+  container._originalHTML = container.innerHTML;
+
   // Attach listeners to items
-  container.querySelectorAll(".widget-picker-item").forEach((item) => {
-    const type = item.dataset.type;
-    const id = item.dataset.id;
-    const isAdded = item.classList.contains("added");
-
-    if (isAdded) return;
-
-    // Click to add
-    item.addEventListener("click", () => {
-      const dropZone = document.getElementById("dashboard-drop-zone");
-      const rect = dropZone ? dropZone.getBoundingClientRect() : null;
-      const x = rect ? rect.width / 2 - 160 : 100;
-      const y = rect ? 50 + dropZone.scrollTop : 50;
-
-      addDashboardWidget(type, id, x, y);
-
-      if (!widgetDropdownPinned) {
-        closeWidgetPicker();
-      } else {
-        // Re-render to update state
-        renderWidgetPickerFolders();
-        renderWidgetPickerTags();
-      }
-    });
-
-    // Drag and drop
-    item.addEventListener("dragstart", (e) => {
-      state.setDraggedSidebarItem({ type, id });
-      e.dataTransfer.effectAllowed = "copy";
-      e.dataTransfer.setData("text/plain", JSON.stringify({ type, id }));
-      item.style.opacity = "0.5";
-      document.body.classList.add("dragging-widget");
-    });
-
-    item.addEventListener("dragend", (e) => {
-      item.style.opacity = "1";
-      document.body.classList.remove("dragging-widget");
-    });
-  });
+  attachWidgetTagListeners();
 }
 
 export default {

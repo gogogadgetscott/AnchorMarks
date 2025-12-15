@@ -104,6 +104,7 @@ import {
   filterSidebarTags,
   showAllTags,
   loadTagStats,
+  filterTagStats,
   renameTagAcross,
   updateTagRenameUndoButton,
   toggleFilterTag,
@@ -125,7 +126,13 @@ import {
 } from "./modules/bulk-ops.js";
 
 // Import import/export
-import { importHtml, exportJson, exportHtml } from "./modules/import-export.js";
+import {
+  importHtml,
+  exportJson,
+  exportHtml,
+  exportDashboardViews,
+  importDashboardViews,
+} from "./modules/import-export.js";
 
 // Import command palette
 import {
@@ -505,6 +512,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Re-render things that depend on tag sort
       renderSidebarTags();
       loadTagStats(); // Update the tag overview list in Settings > Tags
+    });
+
+  // Tag Search in Settings
+  document
+    .getElementById("tag-search-input")
+    ?.addEventListener("input", (e) => {
+      filterTagStats(e.target.value);
     });
 
   // Bulk actions
@@ -903,6 +917,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   document
     .getElementById("export-html-btn")
     ?.addEventListener("click", exportHtml);
+
+  // Dashboard Views Export/Import
+  document
+    .getElementById("export-dashboard-views-btn")
+    ?.addEventListener("click", exportDashboardViews);
+  document
+    .getElementById("import-dashboard-views-btn")
+    ?.addEventListener("click", () => {
+      document.getElementById("import-dashboard-views-file")?.click();
+    });
+  document
+    .getElementById("import-dashboard-views-file")
+    ?.addEventListener("change", (e) => {
+      if (e.target.files[0]) importDashboardViews(e.target.files[0]);
+    });
 
   // Tag rename
   document

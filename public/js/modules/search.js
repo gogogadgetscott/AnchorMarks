@@ -456,12 +456,29 @@ export async function loadTagStats() {
       }
     });
 
-    tagStatsList.innerHTML = tags
-      .map((t) => {
-        const path = t.parent
-          ? `<div class="tag-path">${escapeHtml(t.parent)}</div>`
-          : "";
-        return `
+    // Store tags for filtering
+    tagStatsList._allTags = tags;
+
+    renderTagStatsList(tags);
+    updateTagRenameUndoButton();
+  } catch (err) {
+    tagStatsList.innerHTML =
+      '<div class="text-tertiary" style="font-size:0.9rem;">Failed to load tags</div>';
+    updateTagRenameUndoButton();
+  }
+}
+
+// Render tag stats list
+function renderTagStatsList(tags) {
+  const tagStatsList = document.getElementById("tag-stats-list");
+  if (!tagStatsList) return;
+
+  tagStatsList.innerHTML = tags
+    .map((t) => {
+      const path = t.parent
+        ? `<div class="tag-path">${escapeHtml(t.parent)}</div>`
+        : "";
+      return `
                 <div class="tag-stat-item">
                     <div style="flex:1">
                         <div style="display:flex; align-items:center; gap:0.5rem;">
@@ -477,26 +494,43 @@ export async function loadTagStats() {
                          </button>
                     </div>
                 </div>`;
-      })
-      .join("");
+    })
+    .join("");
 
-    // Add listeners for edit buttons
-    tagStatsList.querySelectorAll(".edit-tag-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const tag = {
-          id: btn.dataset.id,
-          name: btn.dataset.name,
-          color: btn.dataset.color,
-        };
-        openTagModal(tag);
-      });
+  // Add listeners for edit buttons
+  tagStatsList.querySelectorAll(".edit-tag-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tag = {
+        id: btn.dataset.id,
+        name: btn.dataset.name,
+        color: btn.dataset.color,
+      };
+      openTagModal(tag);
     });
+  });
+}
 
-    updateTagRenameUndoButton();
-  } catch (err) {
-    tagStatsList.innerHTML =
-      '<div class="text-tertiary" style="font-size:0.9rem;">Failed to load tags</div>';
-    updateTagRenameUndoButton();
+// Filter tag stats based on search term
+export function filterTagStats(searchTerm) {
+  const tagStatsList = document.getElementById("tag-stats-list");
+  if (!tagStatsList || !tagStatsList._allTags) return;
+
+  const term = searchTerm.toLowerCase().trim();
+  
+  if (!term) {
+    renderTagStatsList(tagStatsList._allTags);
+    return;
+  }
+
+  const filtered = tagStatsList._allTags.filter((tag) => {
+    return tag.name.toLowerCase().includes(term) ||
+           (tag.parent && tag.parent.toLowerCase().includes(term));
+  });
+
+  if (filtered.length === 0) {
+    tagStatsList.innerHTML = '<div class="text-tertiary" style="font-size:0.9rem;">No tags found</div>';
+  } else {
+    renderTagStatsList(filtered);
   }
 }
 
