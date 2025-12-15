@@ -480,7 +480,6 @@ export function init() {
     loadSmartInsights();
   }, 1000);
 
-  console.log("[SmartOrg] Initialized");
 }
 
 // Named exports

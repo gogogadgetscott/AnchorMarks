@@ -234,10 +234,6 @@ async function initializeApp() {
   setViewMode(state.viewMode);
 
   // Initialize sidebar filter controls with current state
-  const sidebarFilterSort = document.getElementById("sidebar-filter-sort");
-  if (sidebarFilterSort)
-    sidebarFilterSort.value = state.filterConfig.sort || "recently_added";
-
   const settingsTagSort = document.getElementById("settings-tag-sort");
   if (settingsTagSort)
     settingsTagSort.value = state.filterConfig.tagSort || "count_desc";
@@ -474,9 +470,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Filter controls
   document.getElementById("filter-sort")?.addEventListener("change", (e) => {
     state.filterConfig.sort = e.target.value;
-    // Sync with sidebar filter
-    const sidebarSort = document.getElementById("sidebar-filter-sort");
-    if (sidebarSort) sidebarSort.value = e.target.value;
     renderBookmarks();
   });
 
@@ -488,17 +481,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     .getElementById("filter-tag-search")
     ?.addEventListener("input", () => {
       renderActiveFilters();
-    });
-
-  // Sidebar filter controls (integrated into main sidebar)
-  document
-    .getElementById("sidebar-filter-sort")
-    ?.addEventListener("change", (e) => {
-      state.filterConfig.sort = e.target.value;
-      // Sync with original filter sidebar
-      const filterSort = document.getElementById("filter-sort");
-      if (filterSort) filterSort.value = e.target.value;
-      renderBookmarks();
     });
 
   // Tag Sort in Settings
@@ -771,9 +753,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Bookmarks-specific controls
   const filterBtn = document.getElementById("bookmarks-filter-btn");
-  console.log("Filter button found:", filterBtn);
   filterBtn?.addEventListener("click", () => {
-    console.log("Filter button clicked! Calling toggleFilterDropdown...");
     toggleFilterDropdown();
   });
 

@@ -185,11 +185,6 @@ export function updateActiveNav() {
   const sectionsToToggle = ["filters-section"];
   const isDashboard = state.currentView === "dashboard";
 
-  // Ensure Folders/Tags are visible if they were hidden
-  ["folders-section", "tags-section"].forEach((id) => {
-    document.getElementById(id)?.classList.remove("hidden");
-  });
-
   sectionsToToggle.forEach((id) => {
     const el = document.getElementById(id);
     if (el) {

@@ -831,9 +831,6 @@ async function restoreBookmarkView(id) {
     const searchInput = document.getElementById("search-input");
     if (searchInput) searchInput.value = config.search_query || "";
 
-    const sortSelect = document.getElementById("sidebar-filter-sort");
-    if (sortSelect) sortSelect.value = config.sort_order || "recently_added";
-
     const tagSortSelect = document.getElementById("sidebar-filter-tag-sort");
     if (tagSortSelect) tagSortSelect.value = config.tag_sort || "count_desc";
 
