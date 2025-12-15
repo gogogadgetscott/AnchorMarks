@@ -26,19 +26,31 @@ export async function loadBookmarks() {
     let endpoint = "/bookmarks";
     const params = new URLSearchParams();
 
+    // Smart Collection view is server-filtered and has its own endpoint
+    if (state.currentView === "collection" && state.currentCollection) {
+      endpoint = `/collections/${state.currentCollection}/bookmarks`;
+    }
+
     if (state.currentView === "favorites") params.append("favorites", "true");
-    if (state.currentFolder && state.currentView !== "dashboard") {
+    if (
+      state.currentFolder &&
+      state.currentView !== "dashboard" &&
+      state.currentView !== "collection"
+    ) {
       params.append("folder_id", state.currentFolder);
       if (state.includeChildBookmarks) {
         params.append("include_children", "true");
       }
     }
 
-    const sortOption =
-      state.filterConfig.sort ||
-      state.dashboardConfig.bookmarkSort ||
-      "recently_added";
-    params.append("sort", sortOption);
+    // Only add sort params when using /bookmarks endpoint
+    if (endpoint === "/bookmarks") {
+      const sortOption =
+        state.filterConfig.sort ||
+        state.dashboardConfig.bookmarkSort ||
+        "recently_added";
+      params.append("sort", sortOption);
+    }
 
     const query = params.toString();
     if (query) endpoint += `?${query}`;

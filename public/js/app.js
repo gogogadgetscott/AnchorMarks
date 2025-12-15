@@ -439,6 +439,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll(".nav-item[data-view]").forEach((item) => {
     item.addEventListener("click", () => {
       state.setCurrentView(item.dataset.view);
+      // Leaving collection view should clear the active collection selection
+      if (item.dataset.view !== "collection") {
+        state.setCurrentCollection(null);
+      }
       // Don't clear current folder - treat it as a filter
       state.setDisplayedCount(state.BOOKMARKS_PER_PAGE);
       updateActiveNav();
@@ -1059,6 +1063,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         break;
       case "clear-folder-filter":
         state.setCurrentFolder(null);
+        state.setCurrentCollection(null);
+        state.setCurrentView("all");
+        updateActiveNav();
+        document.getElementById("view-title").textContent = "Bookmarks";
+        renderActiveFilters();
+        loadBookmarks();
+        break;
+      case "clear-collection-filter":
+        state.setCurrentCollection(null);
         state.setCurrentView("all");
         updateActiveNav();
         document.getElementById("view-title").textContent = "Bookmarks";

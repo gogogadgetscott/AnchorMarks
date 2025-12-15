@@ -209,6 +209,7 @@ export function clearAllFilters() {
   if (searchInput) searchInput.value = "";
   state.setCurrentView("all");
   state.setCurrentFolder(null);
+  state.setCurrentCollection(null);
   if (viewTitle) viewTitle.textContent = "Bookmarks";
 
   updateActiveNav();
@@ -231,10 +232,18 @@ export function renderActiveFilters() {
     ? state.folders.find((f) => f.id === currentFolder)?.name
     : null;
 
+  // Check if we have a collection selected
+  const currentCollection =
+    state.currentView === "collection" ? state.currentCollection : null;
+  const collectionName = currentCollection
+    ? state.collections.find((c) => c.id === currentCollection)?.name
+    : null;
+
   const hasFilters =
     state.filterConfig.tags.length > 0 ||
     searchInput?.value.trim() ||
-    currentFolder;
+    currentFolder ||
+    currentCollection;
 
   if (!hasFilters) {
     section.classList.add("hidden");
@@ -260,6 +269,23 @@ export function renderActiveFilters() {
                 </button>
             </div>
         `;
+  }
+
+  // Collection chip
+  if (currentCollection && collectionName) {
+    html += `
+        <div class="filter-chip folder-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px">
+            <path d="M3 6h18"/><path d="M7 12h10"/><path d="M9 18h6"/>
+          </svg>
+          <span>${escapeHtml(collectionName)}</span>
+          <button data-action="clear-collection-filter" title="Remove">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      `;
   }
 
   // Tag mode button

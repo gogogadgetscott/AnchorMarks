@@ -16,11 +16,13 @@ export let isAuthenticated = false;
 export let bookmarks = [];
 export let folders = [];
 export let renderedBookmarks = [];
+export let collections = [];
 
 // UI State
 export let currentDashboardTab = null;
 export let currentView = "dashboard";
 export let currentFolder = null;
+export let currentCollection = null;
 export let viewMode = "grid";
 export let hideFavicons = false;
 export let hideSidebar = false;
@@ -193,6 +195,9 @@ export function setBookmarks(val) {
 export function setFolders(val) {
   folders = val;
 }
+export function setCollections(val) {
+  collections = val;
+}
 export function setRenderedBookmarks(val) {
   renderedBookmarks = val;
 }
@@ -204,6 +209,9 @@ export function setCurrentView(val) {
 }
 export function setCurrentFolder(val) {
   currentFolder = val;
+}
+export function setCurrentCollection(val) {
+  currentCollection = val;
 }
 export function setViewMode(val) {
   viewMode = val;

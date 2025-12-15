@@ -171,6 +171,11 @@ export function updateActiveNav() {
     document
       .querySelector(`.nav-item[data-view="dashboard"]`)
       ?.classList.add("active");
+  } else if (state.currentView === "collection") {
+    // Collections are a bookmarks sub-view; keep the Bookmarks nav highlighted
+    document
+      .querySelector(`.nav-item[data-view="all"]`)
+      ?.classList.add("active");
   } else {
     document
       .querySelector(`.nav-item[data-view="${state.currentView}"]`)
@@ -196,7 +201,10 @@ export function updateActiveNav() {
 
 // Update counts display
 export function updateCounts() {
-  const hasFullData = !state.currentFolder && state.currentView !== "favorites";
+  const hasFullData =
+    !state.currentFolder &&
+    state.currentView !== "favorites" &&
+    state.currentView !== "collection";
 
   // Elements
   const bookmarkCountEl = document.getElementById("bookmark-count");
@@ -249,7 +257,11 @@ export function updateCounts() {
 
   // 4. Bookmarks Count (Filtered)
   let bookmarkVal = 0;
-  if (state.currentView === "all" || state.currentView === "folder") {
+  if (
+    state.currentView === "all" ||
+    state.currentView === "folder" ||
+    state.currentView === "collection"
+  ) {
     bookmarkVal = state.renderedBookmarks.length;
   } else if (hasFullData) {
     // Calculate expected filtered count
@@ -308,6 +320,7 @@ export function updateCounts() {
   switch (state.currentView) {
     case "all":
     case "folder":
+    case "collection":
       if (bookmarksViewCount) {
         bookmarksViewCount.textContent = `${currentViewCount} bookmark${currentViewCount !== 1 ? "s" : ""}`;
       }

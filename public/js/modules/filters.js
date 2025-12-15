@@ -4,6 +4,7 @@
  */
 
 import * as state from "./state.js";
+import { api } from "./api.js";
 import { escapeHtml } from "./utils.js";
 import { showToast } from "./ui.js";
 import { saveSettings } from "./settings.js";
@@ -97,6 +98,12 @@ export async function showFilterDropdown() {
                         <h4>Tags</h4>
                         <div class="filter-grid" id="filter-tags-container"></div>
                     </div>
+
+                    <!-- Collections Section -->
+                    <div class="filter-column">
+                      <h4>Collections</h4>
+                      <div class="filter-grid" id="filter-collections-container"></div>
+                    </div>
                     
                     <!-- Sort & Options -->
                 <div class="filter-column filter-column-controls">
@@ -174,6 +181,8 @@ export async function showFilterDropdown() {
     await renderFoldersInDropdown();
     console.log("Rendering tags...");
     await renderTagsInDropdown();
+    console.log("Rendering collections...");
+    await renderCollectionsInDropdown();
 
     // Render active filters
     renderActiveFilters();
@@ -318,6 +327,9 @@ async function renderFoldersInDropdown() {
     item.addEventListener("click", async () => {
       const folderId = item.dataset.folderId;
 
+      // Switching to folder-based browsing clears any active collection
+      state.setCurrentCollection(null);
+
       if (folderId === "all") {
         state.setCurrentView("all");
         state.setCurrentFolder(null);
@@ -333,6 +345,63 @@ async function renderFoldersInDropdown() {
       renderDropdownActiveFilters();
       renderActiveFilters();
       await renderFoldersInDropdown(); // Re-render to update active state
+    });
+  });
+}
+
+// Render smart collections in dropdown
+async function renderCollectionsInDropdown() {
+  const container = document.getElementById("filter-collections-container");
+  if (!container) return;
+
+  try {
+    const collections = await api("/collections");
+    state.setCollections(Array.isArray(collections) ? collections : []);
+  } catch (err) {
+    console.error("Failed to load collections:", err);
+    state.setCollections([]);
+  }
+
+  if (!state.collections || state.collections.length === 0) {
+    container.innerHTML =
+      '<p style="color:var(--text-tertiary);font-size:0.875rem;padding:1rem;">No collections yet</p>';
+    return;
+  }
+
+  container.innerHTML = state.collections
+    .slice()
+    .sort((a, b) => (a.position || 0) - (b.position || 0))
+    .map((c) => {
+      const isActive =
+        state.currentView === "collection" && state.currentCollection === c.id;
+      const color = c.color || "#6366f1";
+      return `
+        <div class="filter-item ${isActive ? "active" : ""}" data-collection-id="${escapeHtml(c.id)}">
+          <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
+            <span class="folder-color" style="background:${color}"></span>
+            <span class="filter-item-name">${escapeHtml(c.name)}</span>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+
+  container.querySelectorAll(".filter-item").forEach((item) => {
+    item.addEventListener("click", async () => {
+      const collectionId = item.dataset.collectionId;
+      const collection = state.collections.find((c) => c.id === collectionId);
+
+      state.setCurrentFolder(null);
+      state.setCurrentView("collection");
+      state.setCurrentCollection(collectionId);
+
+      const viewTitle = document.getElementById("view-title");
+      if (viewTitle) viewTitle.textContent = collection?.name || "Collection";
+
+      await applyFilters();
+      renderDropdownActiveFilters();
+      renderActiveFilters();
+      await renderCollectionsInDropdown();
     });
   });
 }
@@ -549,6 +618,7 @@ async function clearAllFilters() {
   });
 
   state.setCurrentFolder(null);
+  state.setCurrentCollection(null);
   state.setCurrentView("all");
 
   // Clear search input
@@ -571,6 +641,7 @@ async function clearAllFilters() {
   // Re-render lists to clear selection state
   await renderFoldersInDropdown();
   await renderTagsInDropdown();
+  await renderCollectionsInDropdown();
 
   showToast("All filters cleared", "success");
 }
@@ -582,6 +653,7 @@ function renderDropdownActiveFilters() {
 
   const tags = state.filterConfig.tags || [];
   const folderId = state.currentFolder;
+  const collectionId = state.currentCollection;
   const searchTerm = document.getElementById("search-input")?.value?.trim();
 
   const activeItems = [];
@@ -591,6 +663,17 @@ function renderDropdownActiveFilters() {
     const folder = state.folders.find((f) => f.id === folderId);
     if (folder)
       activeItems.push({ type: "folder", label: folder.name, id: folderId });
+  }
+
+  // Collection
+  if (state.currentView === "collection" && collectionId) {
+    const collection = state.collections.find((c) => c.id === collectionId);
+    if (collection)
+      activeItems.push({
+        type: "collection",
+        label: collection.name,
+        id: collectionId,
+      });
   }
 
   // Tags
@@ -618,6 +701,8 @@ function renderDropdownActiveFilters() {
     let icon = "";
     if (item.type === "folder") {
       icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>`;
+    } else if (item.type === "collection") {
+      icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M9 18h6"/></svg>`;
     } else if (item.type === "tag") {
       icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></svg>`;
     } else {
@@ -649,6 +734,11 @@ function renderDropdownActiveFilters() {
       if (type === "folder") {
         state.setCurrentFolder(null);
         state.setCurrentView("all");
+      } else if (type === "collection") {
+        state.setCurrentCollection(null);
+        state.setCurrentView("all");
+        const viewTitle = document.getElementById("view-title");
+        if (viewTitle) viewTitle.textContent = "Bookmarks";
       } else if (type === "tag") {
         const newTags = state.filterConfig.tags.filter((t) => t !== id);
         state.setFilterConfig({ ...state.filterConfig, tags: newTags });
@@ -664,6 +754,7 @@ function renderDropdownActiveFilters() {
       // Update other UI components
       renderFoldersInDropdown();
       renderTagsInDropdown();
+      renderCollectionsInDropdown();
     });
   });
 }
