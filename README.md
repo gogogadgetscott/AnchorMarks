@@ -77,7 +77,7 @@ npm run test:coverage # Coverage report
 
 See [SECURITY.md](SECURITY.md) for details.
 
-## �� License
+## 📜 License
 
 MIT License - use, modify, and distribute freely.
 
@@ -85,8 +85,3 @@ MIT License - use, modify, and distribute freely.
 
 **[View full documentation in Help →](public/help.html)**
 
-
--update folder/tag list after import.
--Fix folder list to show number of bookmarks in each folder. parent folders should show the number of bookmarks in all child folders.
--How do Smart Collections work? Add to help file.
--Save current view so browser refresh doesn't reset it.
