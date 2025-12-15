@@ -2558,6 +2558,145 @@ body.sidebar-collapsed .nav-section-header {
   z-index: 1100;
 }
 
+/* Tags Input with Badges */
+.tags-input-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  min-height: 42px;
+  cursor: text;
+  transition: border-color 0.2s;
+}
+
+.tags-input-container:focus-within {
+  border-color: var(--primary-500);
+  outline: none;
+}
+
+.selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.selected-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: color-mix(in srgb, var(--tag-color, var(--primary-500)) 15%, transparent);
+  color: var(--tag-color, var(--primary-700));
+  border: 1px solid color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
+  border-radius: var(--radius-full);
+  transition: all 0.2s;
+}
+
+[data-theme="dark"] .selected-tag {
+  background: color-mix(in srgb, var(--tag-color, #6366f1) 15%, transparent);
+  color: color-mix(in srgb, var(--tag-color, #a5b4fc) 80%, white);
+  border-color: color-mix(in srgb, var(--tag-color, #6366f1) 25%, transparent);
+}
+
+.selected-tag-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: currentColor;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.selected-tag-remove:hover {
+  opacity: 1;
+}
+
+.tags-input-container input[type="text"] {
+  flex: 1;
+  min-width: 120px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.875rem;
+  padding: 0.25rem;
+}
+
+.tags-input-container input[type="text"]::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Tag Autocomplete Dropdown */
+.tag-autocomplete {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.25rem;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--modal-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+}
+
+.tag-autocomplete-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tag-autocomplete-item:hover,
+.tag-autocomplete-item.active {
+  background: var(--bg-tertiary);
+}
+
+.tag-autocomplete-name {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.tag-autocomplete-count {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm);
+}
+
+.tag-autocomplete-item:hover .tag-autocomplete-count {
+  background: var(--bg-secondary);
+}
+
+.tag-autocomplete-empty {
+  padding: 0.75rem;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+}
+
+/* Ensure positioning context */
+.form-group {
+  position: relative;
+}
+
 /* Settings */
 .settings-content {
   display: flex;

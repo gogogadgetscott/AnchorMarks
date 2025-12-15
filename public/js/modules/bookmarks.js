@@ -55,7 +55,8 @@ export async function loadBookmarks() {
         tagMap[tag.name] = {
           color: tag.color || "#f59e0b",
           icon: tag.icon || "tag",
-          id: tag.id
+          id: tag.id,
+          count: tag.count || 0
         };
       });
       // Store in state for use in rendering
@@ -519,7 +520,7 @@ export async function trackClick(id) {
 }
 
 // Edit bookmark (populate form)
-export function editBookmark(id) {
+export async function editBookmark(id) {
   const bookmark = state.bookmarks.find((b) => b.id === id);
   if (!bookmark) return;
 
@@ -531,6 +532,10 @@ export function editBookmark(id) {
     bookmark.description || "";
   document.getElementById("bookmark-folder").value = bookmark.folder_id || "";
   document.getElementById("bookmark-tags").value = bookmark.tags || "";
+
+  // Load tags into the new tag input system
+  const { loadTagsFromInput } = await import("./tag-input.js");
+  loadTagsFromInput(bookmark.tags || "");
 
   openModal("bookmark-modal");
 }

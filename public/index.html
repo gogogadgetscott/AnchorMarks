@@ -622,9 +622,13 @@
               </select>
             </div>
             <div class="form-group">
-              <label for="bookmark-tags">Tags</label>
-              <input type="text" id="bookmark-tags" placeholder="work, design, tools" />
-              <div class="tag-suggestions" id="tag-suggestions"></div>
+              <label for="bookmark-tags-input">Tags</label>
+              <div class="tags-input-container" id="tags-input-container">
+                <div class="selected-tags" id="selected-tags"></div>
+                <input type="text" id="bookmark-tags-input" placeholder="Add tags..." autocomplete="off" />
+                <input type="hidden" id="bookmark-tags" />
+              </div>
+              <div class="tag-autocomplete" id="tag-autocomplete" style="display: none;"></div>
               <div class="smart-suggestions" id="smart-collections-suggestions" style="display: none"></div>
             </div>
           </div>

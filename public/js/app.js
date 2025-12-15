@@ -139,6 +139,10 @@ import {
 // Import filters
 import { initFilterDropdown, toggleFilterDropdown } from "./modules/filters.js";
 
+// Import tag input
+import { initTagInput, loadTagsFromInput } from "./modules/tag-input.js";
+
+
 // Import tour
 import {
   checkWelcomeTour,
@@ -493,6 +497,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     await initializeApp();
     // Initialize smart organization features only when authenticated
     SmartOrg.init();
+    // Initialize tag input with autocomplete
+    initTagInput();
   }
 
   // Auth tabs
@@ -679,26 +685,44 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Add Bookmark buttons
   document
     .getElementById("add-bookmark-btn")
-    ?.addEventListener("click", () => openModal("bookmark-modal"));
+    ?.addEventListener("click", () => {
+      document.getElementById("bookmark-modal-title").textContent = "Add Bookmark";
+      document.getElementById("bookmark-form").reset();
+      loadTagsFromInput(""); // Clear tags
+      openModal("bookmark-modal");
+    });
   document
     .getElementById("sidebar-add-bookmark-btn")
-    ?.addEventListener("click", () => openModal("bookmark-modal"));
+    ?.addEventListener("click", () => {
+      document.getElementById("bookmark-modal-title").textContent = "Add Bookmark";
+      document.getElementById("bookmark-form").reset();
+      loadTagsFromInput(""); // Clear tags
+      openModal("bookmark-modal");
+    });
   document
     .getElementById("empty-add-btn")
-    ?.addEventListener("click", () => openModal("bookmark-modal"));
+    ?.addEventListener("click", () => {
+      document.getElementById("bookmark-modal-title").textContent = "Add Bookmark";
+      document.getElementById("bookmark-form").reset();
+      loadTagsFromInput(""); // Clear tags
+      openModal("bookmark-modal");
+    });
 
   // Bookmark Form
   document.getElementById("bookmark-form")?.addEventListener("submit", (e) => {
     e.preventDefault();
     const id = document.getElementById("bookmark-id").value;
+    const tagsValue = document.getElementById("bookmark-tags").value;
+    console.log("[Bookmark Form] Tags value:", tagsValue);
     const data = {
       url: document.getElementById("bookmark-url").value,
       title: document.getElementById("bookmark-title").value || undefined,
       description:
         document.getElementById("bookmark-description").value || undefined,
       folder_id: document.getElementById("bookmark-folder").value || undefined,
-      tags: document.getElementById("bookmark-tags").value || undefined,
+      tags: tagsValue || undefined,
     };
+    console.log("[Bookmark Form] Submitting data:", data);
 
     if (id) {
       updateBookmark(id, data);
