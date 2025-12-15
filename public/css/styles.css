@@ -476,6 +476,17 @@ textarea {
   background: #dc2626;
 }
 
+.btn-outline-danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.btn-outline-danger:hover {
+  background: var(--danger);
+  color: white;
+}
+
 .btn-full {
   width: 100%;
 }

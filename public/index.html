@@ -785,9 +785,8 @@
         <div class="modal-header">
           <h2>Settings</h2>
           <div style="display:flex;gap:0.75rem;align-items:center;">
-            <button class="btn btn-sm btn-danger-outline" id="logout-btn"
-              style="padding: 0.25rem 0.75rem; font-size: 0.8rem; border: 1px solid var(--danger); color: var(--danger); border-radius: 4px; background: transparent;">Sign
-              Out</button>
+            <button class="btn btn-sm btn-outline-danger" id="logout-btn"
+              style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Sign Out</button>
             <button class="btn-icon modal-close">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -810,39 +809,43 @@
           </div>
 
           <div class="settings-panel" id="settings-profile">
-            <div class="setting-item" style="display: block;">
+            <div style="margin-bottom: 2rem;">
               <div class="setting-info" style="margin-bottom: 1rem;">
                 <h4>Update Profile</h4>
                 <p>Change your email address</p>
               </div>
-              <form id="profile-email-form" class="form-row" style="align-items: flex-end;">
-                <div class="form-group" style="flex:1">
+              <form id="profile-email-form">
+                <div class="form-group" style="margin-bottom: 1rem;">
                   <label for="profile-email">Email Address</label>
                   <input type="email" id="profile-email" required>
                 </div>
-                <button type="submit" class="btn btn-primary" style="margin-bottom: 0.5rem;">Update Email</button>
+                <div style="display: flex; justify-content: flex-end;">
+                  <button type="submit" class="btn btn-primary">Update Email</button>
+                </div>
               </form>
             </div>
 
-            <div class="setting-item" style="display: block;">
+            <div style="margin-bottom: 2rem; border-top: 1px solid var(--border-color); padding-top: 2rem;">
               <div class="setting-info" style="margin-bottom: 1rem;">
                 <h4>Change Password</h4>
                 <p>Ensure your account stays secure</p>
               </div>
               <form id="profile-password-form">
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom: 1rem;">
                   <label for="profile-current-password">Current Password</label>
                   <input type="password" id="profile-current-password" required autocomplete="current-password">
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom: 1rem;">
                   <label for="profile-new-password">New Password</label>
                   <input type="password" id="profile-new-password" required minlength="6" autocomplete="new-password">
                 </div>
-                <div style="text-align: right; margin-top: 1rem;">
+                <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
                   <button type="submit" class="btn btn-primary">Change Password</button>
                 </div>
               </form>
             </div>
+
+
           </div>
 
           <div class="settings-panel active" id="settings-general">
@@ -1099,71 +1102,72 @@
                     <line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
                   Export as HTML
+                </button>
               </div>
             </div>
+          </div>
 
-            <div class="settings-panel" id="settings-shortcuts">
-              <div class="shortcuts-section">
-                <h4>Navigation</h4>
-                <table class="shortcuts-table">
-                  <tr>
-                    <td><kbd>Ctrl+Shift+D</kbd> / <kbd>Cmd+Shift+D</kbd></td>
-                    <td>Go to Dashboard</td>
-                  </tr>
-                  <tr>
-                    <td><kbd>Ctrl+Shift+F</kbd> / <kbd>Cmd+Shift+F</kbd></td>
-                    <td>Go to Favorites</td>
-                  </tr>
-                  <tr>
-                    <td><kbd>Ctrl+Shift+A</kbd> / <kbd>Cmd+Shift+A</kbd></td>
-                    <td>Go to All Bookmarks</td>
-                  </tr>
-                  <tr>
-                    <td><kbd>Ctrl+1</kbd> to <kbd>Ctrl+9</kbd> / <kbd>Cmd+1</kbd> to <kbd>Cmd+9</kbd></td>
-                    <td>Jump to folder 1-9</td>
-                  </tr>
-                </table>
-              </div>
+          <div class="settings-panel" id="settings-shortcuts">
+            <div class="shortcuts-section">
+              <h4>Navigation</h4>
+              <table class="shortcuts-table">
+                <tr>
+                  <td><kbd>Ctrl+Shift+D</kbd> / <kbd>Cmd+Shift+D</kbd></td>
+                  <td>Go to Dashboard</td>
+                </tr>
+                <tr>
+                  <td><kbd>Ctrl+Shift+F</kbd> / <kbd>Cmd+Shift+F</kbd></td>
+                  <td>Go to Favorites</td>
+                </tr>
+                <tr>
+                  <td><kbd>Ctrl+Shift+A</kbd> / <kbd>Cmd+Shift+A</kbd></td>
+                  <td>Go to All Bookmarks</td>
+                </tr>
+                <tr>
+                  <td><kbd>Ctrl+1</kbd> to <kbd>Ctrl+9</kbd> / <kbd>Cmd+1</kbd> to <kbd>Cmd+9</kbd></td>
+                  <td>Jump to folder 1-9</td>
+                </tr>
+              </table>
+            </div>
 
-              <div class="shortcuts-section">
-                <h4>Bookmarks</h4>
-                <table class="shortcuts-table">
-                  <tr>
-                    <td><kbd>Ctrl+N</kbd> / <kbd>Cmd+N</kbd></td>
-                    <td>Add new bookmark</td>
-                  </tr>
-                  <tr>
-                    <td><kbd>Ctrl+F</kbd> / <kbd>Cmd+F</kbd></td>
-                    <td>Focus search</td>
-                  </tr>
-                  <tr>
-                    <td><kbd>Ctrl+K</kbd> / <kbd>Cmd+K</kbd></td>
-                    <td>Focus search (alternative)</td>
-                  </tr>
-                  <tr>
-                    <td><kbd>Ctrl+A</kbd> / <kbd>Cmd+A</kbd></td>
-                    <td>Select all bookmarks</td>
-                  </tr>
-                </table>
-              </div>
+            <div class="shortcuts-section">
+              <h4>Bookmarks</h4>
+              <table class="shortcuts-table">
+                <tr>
+                  <td><kbd>Ctrl+N</kbd> / <kbd>Cmd+N</kbd></td>
+                  <td>Add new bookmark</td>
+                </tr>
+                <tr>
+                  <td><kbd>Ctrl+F</kbd> / <kbd>Cmd+F</kbd></td>
+                  <td>Focus search</td>
+                </tr>
+                <tr>
+                  <td><kbd>Ctrl+K</kbd> / <kbd>Cmd+K</kbd></td>
+                  <td>Focus search (alternative)</td>
+                </tr>
+                <tr>
+                  <td><kbd>Ctrl+A</kbd> / <kbd>Cmd+A</kbd></td>
+                  <td>Select all bookmarks</td>
+                </tr>
+              </table>
+            </div>
 
-              <div class="shortcuts-section">
-                <h4>General</h4>
-                <table class="shortcuts-table">
-                  <tr>
-                    <td><kbd>Ctrl+Shift+P</kbd> / <kbd>Cmd+Shift+P</kbd></td>
-                    <td>Open command palette</td>
-                  </tr>
-                  <tr>
-                    <td><kbd>Esc</kbd></td>
-                    <td>Close modals and selections</td>
-                  </tr>
-                  <tr>
-                    <td><kbd>↓</kbd> / <kbd>↑</kbd></td>
-                    <td>Navigate command palette (when open)</td>
-                  </tr>
-                </table>
-              </div>
+            <div class="shortcuts-section">
+              <h4>General</h4>
+              <table class="shortcuts-table">
+                <tr>
+                  <td><kbd>Ctrl+Shift+P</kbd> / <kbd>Cmd+Shift+P</kbd></td>
+                  <td>Open command palette</td>
+                </tr>
+                <tr>
+                  <td><kbd>Esc</kbd></td>
+                  <td>Close modals and selections</td>
+                </tr>
+                <tr>
+                  <td><kbd>↓</kbd> / <kbd>↑</kbd></td>
+                  <td>Navigate command palette (when open)</td>
+                </tr>
+              </table>
             </div>
           </div>
         </div>
