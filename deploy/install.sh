@@ -28,6 +28,7 @@ useradd -r -s /bin/false $APP_USER || true
 echo "📁 Setting up application directory..."
 mkdir -p $APP_DIR
 mkdir -p $APP_DIRpublic/favicons
+mkdir -p $APP_DIRdata
 
 echo "📋 Copying application files..."
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -56,7 +57,7 @@ NODE_ENV=production
 PORT=3000
 HOST=127.0.0.1
 JWT_SECRET=$JWT_SECRET
-DB_PATH=$APP_DIRserver/anchormarks.db
+DB_PATH=$APP_DIRdata/anchormarks.db
 EOF
   echo "✅ Generated .env file with secure JWT secret"
 fi
