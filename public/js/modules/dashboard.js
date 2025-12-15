@@ -334,11 +334,10 @@ export function renderDashboard() {
   const dashboardHtml = `
         <div class="dashboard-freeform-container" id="dashboard-drop-zone">
             <div class="dashboard-help-text">
-                ${
-                  state.dashboardWidgets.length === 0
-                    ? "<p>Drag folders or tags from the sidebar to create widgets</p>"
-                    : ""
-                }
+                ${state.dashboardWidgets.length === 0
+      ? "<p>Drag folders or tags from the sidebar to create widgets</p>"
+      : ""
+    }
             </div>
             <div class="dashboard-widgets-container" id="dashboard-widgets-freeform">
                 ${renderFreeformWidgets()}
@@ -376,16 +375,15 @@ function renderFreeformWidgets() {
                         <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
                     </svg>
                 </div>
-                ${
-                  widget.type === "folder"
-                    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px">
+                ${widget.type === "folder"
+        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px">
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
                     </svg>`
-                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px">
+        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px">
                         <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
                         <line x1="7" y1="7" x2="7.01" y2="7"/>
                     </svg>`
-                }
+      }
                 <div class="widget-title">${escapeHtml(name)}</div>
                 <div class="widget-count">${count}</div>
                 <div class="widget-actions">
@@ -405,22 +403,21 @@ function renderFreeformWidgets() {
             <div class="widget-body">
                 <div class="compact-list">
                     ${sortedBookmarks
-                      .slice(0, 50)
-                      .map(
-                        (b) => `
+        .slice(0, 50)
+        .map(
+          (b) => `
                         <a href="${b.url}" target="_blank" class="compact-item" data-action="track-click" data-id="${b.id}">
                             <div class="compact-favicon">
-                                ${
-                                  !state.hideFavicons && b.favicon
-                                    ? `<img src="${b.favicon}" alt="">`
-                                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/></svg>`
-                                }
+                                ${!state.hideFavicons && b.favicon
+              ? `<img src="${b.favicon}" alt="">`
+              : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/></svg>`
+            }
                             </div>
                             <span class="compact-text">${escapeHtml(b.title)}</span>
                         </a>
                     `,
-                      )
-                      .join("")}
+        )
+        .join("")}
                     ${sortedBookmarks.length > 50 ? `<div style="padding:0.5rem;font-size:0.75rem;color:var(--text-tertiary);text-align:center">+${sortedBookmarks.length - 50} more</div>` : ""}
                 </div>
             </div>
@@ -508,14 +505,19 @@ export function initDashboardDragDrop() {
     e.preventDefault();
     dropZone.classList.remove("drag-over");
 
+    console.log("Drop event fired", { draggedSidebarItem: state.draggedSidebarItem });
+
     const rect = dropZone.getBoundingClientRect();
     const x = e.clientX - rect.left + dropZone.scrollLeft;
     const y = e.clientY - rect.top + dropZone.scrollTop;
 
     if (state.draggedSidebarItem) {
       const { type, id } = state.draggedSidebarItem;
+      console.log("Adding widget:", { type, id, x, y });
       addDashboardWidget(type, id, x, y);
       state.setDraggedSidebarItem(null);
+    } else {
+      console.warn("No draggedSidebarItem found in state");
     }
   });
 
@@ -707,8 +709,8 @@ function showWidgetColorPicker(index, button) {
   picker.innerHTML = `
         <div class="color-picker-grid">
             ${colors
-              .map(
-                (c) => `
+      .map(
+        (c) => `
                 <button class="color-picker-option" 
                         data-color="${c.value}" 
                         title="${c.name}"
@@ -716,8 +718,8 @@ function showWidgetColorPicker(index, button) {
                     ${widget.color === c.value ? '<span class="color-check">✓</span>' : ""}
                 </button>
             `,
-              )
-              .join("")}
+      )
+      .join("")}
         </div>
     `;
 

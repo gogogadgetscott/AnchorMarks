@@ -149,6 +149,16 @@ import {
 // Import Smart Organization UI
 import SmartOrg from "./modules/smart-organization-ui.js";
 
+// Import widget picker
+import {
+  openWidgetPicker,
+  closeWidgetPicker,
+  toggleWidgetSidebarPin,
+  renderWidgetPickerFolders,
+  renderWidgetPickerTags,
+} from "./modules/widget-picker.js";
+
+
 // Set view mode
 function setViewMode(mode) {
   state.setViewMode(mode);
@@ -212,114 +222,7 @@ async function resetBookmarks() {
   }
 }
 
-// Dashboard Settings Loader
-async function loadDashboardSettings() {
-  const modeSelect = document.getElementById("dashboard-mode-select");
-  const sortSelect = document.getElementById("dashboard-bookmark-sort");
-  const tagsList = document.getElementById("dashboard-tags-list");
-  const tagSearch = document.getElementById("dashboard-tag-search");
-  const tagSort = document.getElementById("dashboard-tag-sort");
 
-  if (!modeSelect || !tagsList) return;
-
-  modeSelect.value = state.dashboardConfig.mode;
-  if (sortSelect)
-    sortSelect.value = state.dashboardConfig.bookmarkSort || "recently_added";
-
-  tagsList.innerHTML =
-    '<p style="color:var(--text-tertiary);padding:1rem;text-align:center">Loading tags...</p>';
-
-  let allBookmarks = [];
-  try {
-    allBookmarks = await api("/bookmarks");
-  } catch (err) {
-    tagsList.innerHTML =
-      '<p style="color:var(--danger);padding:1rem">Failed to load tags</p>';
-    return;
-  }
-
-  const tagCounts = {};
-  allBookmarks.forEach((b) => {
-    if (b.tags) {
-      b.tags.split(",").forEach((t) => {
-        const tag = t.trim();
-        if (tag) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-      });
-    }
-  });
-
-  const allTags = Object.keys(tagCounts);
-
-  function renderTagList() {
-    const searchTerm = tagSearch ? tagSearch.value.toLowerCase() : "";
-    let filteredTags = allTags.filter((t) =>
-      t.toLowerCase().includes(searchTerm),
-    );
-
-    const sortMode = tagSort ? tagSort.value : "count_desc";
-    filteredTags.sort((a, b) => {
-      if (sortMode === "count_desc") return tagCounts[b] - tagCounts[a];
-      if (sortMode === "count_asc") return tagCounts[a] - tagCounts[b];
-      return a.localeCompare(b);
-    });
-
-    if (allTags.length === 0) {
-      tagsList.innerHTML =
-        '<p style="color:var(--text-tertiary);padding:1rem;text-align:center">No tags found.</p>';
-    } else if (filteredTags.length === 0) {
-      tagsList.innerHTML =
-        '<p style="color:var(--text-tertiary)">No matching tags.</p>';
-    } else {
-      tagsList.innerHTML = filteredTags
-        .map((tag) => {
-          const checked = state.dashboardConfig.tags.includes(tag)
-            ? "checked"
-            : "";
-          const count = tagCounts[tag];
-          return `
-                    <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;cursor:pointer;padding:4px" title="${count} bookmarks">
-                        <input type="checkbox" value="${tag.replace(/"/g, "&quot;")}" ${checked}>
-                        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(tag)} <span style="color:var(--text-tertiary);font-size:0.8em">(${count})</span></span>
-                    </label>
-                `;
-        })
-        .join("");
-
-      tagsList.querySelectorAll("input").forEach((chk) => {
-        chk.onchange = () => {
-          if (chk.checked) {
-            if (!state.dashboardConfig.tags.includes(chk.value)) {
-              state.dashboardConfig.tags.push(chk.value);
-            }
-          } else {
-            state.dashboardConfig.tags = state.dashboardConfig.tags.filter(
-              (t) => t !== chk.value,
-            );
-          }
-          saveConfig();
-        };
-      });
-    }
-  }
-
-  function saveConfig() {
-    state.dashboardConfig.mode = modeSelect.value;
-    if (sortSelect) state.dashboardConfig.bookmarkSort = sortSelect.value;
-    saveSettings({
-      dashboard_mode: state.dashboardConfig.mode,
-      dashboard_tags: state.dashboardConfig.tags,
-      dashboard_sort: state.dashboardConfig.bookmarkSort,
-    });
-    if (state.currentView === "dashboard") renderDashboard();
-  }
-
-  modeSelect.onchange = saveConfig;
-  if (sortSelect) sortSelect.onchange = saveConfig;
-  if (tagSearch) tagSearch.oninput = renderTagList;
-  if (tagSort) tagSort.onchange = renderTagList;
-
-  renderTagList();
-}
 
 // Initialize application
 async function initializeApp() {
@@ -824,9 +727,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   document
     .getElementById("dashboard-add-widget-btn")
     ?.addEventListener("click", () => {
-      // Show widget selection - integrate with existing dashboard functionality
-      showToast("Add widget functionality - coming soon!", "info");
+      openWidgetPicker();
     });
+
 
   document
     .getElementById("dashboard-layout-btn")
@@ -835,14 +738,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       showToast("Layout settings - coming soon!", "info");
     });
 
-  document
-    .getElementById("dashboard-settings-btn")
-    ?.addEventListener("click", () => {
-      loadDashboardSettings();
-      openModal("settings-modal");
-      // Switch to dashboard tab
-      document.querySelector('[data-settings-tab="dashboard"]')?.click();
-    });
+
 
   // Bookmarks-specific controls
   const filterBtn = document.getElementById("bookmarks-filter-btn");
@@ -866,7 +762,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Settings
   document.getElementById("settings-btn")?.addEventListener("click", () => {
-    loadDashboardSettings();
     openModal("settings-modal");
   });
 
@@ -883,7 +778,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         .getElementById(`settings-${tab.dataset.settingsTab}`)
         ?.classList.add("active");
 
-      if (tab.dataset.settingsTab === "dashboard") loadDashboardSettings();
+
       if (tab.dataset.settingsTab === "tags") loadTagStats();
     });
   });
@@ -1033,7 +928,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
+  // Widget picker search inputs
+  document
+    .getElementById("widget-folder-search")
+    ?.addEventListener("input", (e) => {
+      renderWidgetPickerFolders(e.target.value);
+    });
+
+  document
+    .getElementById("widget-tag-search")
+    ?.addEventListener("input", (e) => {
+      renderWidgetPickerTags(e.target.value);
+    });
+
+  // Widget sidebar controls
+  document
+    .getElementById("close-widget-sidebar")
+    ?.addEventListener("click", closeWidgetPicker);
+
+  document
+    .getElementById("pin-widget-sidebar")
+    ?.addEventListener("click", toggleWidgetSidebarPin);
+
+  document
+    .getElementById("widget-sidebar-overlay")
+    ?.addEventListener("click", closeWidgetPicker);
+
   // Note: Tag suggestions from URL are handled by SmartOrg.init()
+
 
   // Modal Close
   document
@@ -1144,9 +1066,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         e.stopPropagation();
         toggleTagMode();
         break;
-      case "load-dashboard-settings":
-        loadDashboardSettings();
-        break;
+
       case "skip-tour":
         skipTour();
         break;
