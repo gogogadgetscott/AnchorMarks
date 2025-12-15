@@ -126,6 +126,38 @@ export function copyApiKey() {
     showToast('API key copied!', 'success');
 }
 
+// Update profile (email)
+export async function updateProfile(email) {
+    try {
+        const data = await api('/auth/profile', {
+            method: 'PUT',
+            body: JSON.stringify({ email })
+        });
+        state.currentUser.email = data.email;
+        updateUserInfo();
+        showToast('Profile updated!', 'success');
+        return true;
+    } catch (err) {
+        showToast(err.message, 'error');
+        return false;
+    }
+}
+
+// Update password
+export async function updatePassword(currentPassword, newPassword) {
+    try {
+        await api('/auth/password', {
+            method: 'PUT',
+            body: JSON.stringify({ currentPassword, newPassword })
+        });
+        showToast('Password updated successfully!', 'success');
+        return true;
+    } catch (err) {
+        showToast(err.message, 'error');
+        return false;
+    }
+}
+
 export default {
     showAuthScreen,
     showMainApp,
@@ -135,5 +167,7 @@ export default {
     checkAuth,
     updateUserInfo,
     regenerateApiKey,
-    copyApiKey
+    copyApiKey,
+    updateProfile,
+    updatePassword
 };

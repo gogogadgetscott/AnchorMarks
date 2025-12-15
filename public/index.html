@@ -671,6 +671,49 @@
       </div>
     </div>
 
+    <!-- Edit Tag Modal -->
+    <div id="tag-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content modal-sm">
+        <div class="modal-header">
+          <h2>Edit Tag</h2>
+          <button class="btn-icon modal-close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <form id="tag-form">
+          <input type="hidden" id="tag-id">
+          <div class="form-group">
+            <label for="tag-name">Tag Name *</label>
+            <input type="text" id="tag-name" required placeholder="design">
+          </div>
+          <div class="form-group">
+            <label>Color</label>
+            <div class="color-picker-tag">
+              <button type="button" class="color-option-tag active" style="--color: #f59e0b"
+                data-color="#f59e0b"></button>
+              <button type="button" class="color-option-tag" style="--color: #ef4444" data-color="#ef4444"></button>
+              <button type="button" class="color-option-tag" style="--color: #ec4899" data-color="#ec4899"></button>
+              <button type="button" class="color-option-tag" style="--color: #8b5cf6" data-color="#8b5cf6"></button>
+              <button type="button" class="color-option-tag" style="--color: #6366f1" data-color="#6366f1"></button>
+              <button type="button" class="color-option-tag" style="--color: #0ea5e9" data-color="#0ea5e9"></button>
+              <button type="button" class="color-option-tag" style="--color: #14b8a6" data-color="#14b8a6"></button>
+              <button type="button" class="color-option-tag" style="--color: #22c55e" data-color="#22c55e"></button>
+              <button type="button" class="color-option-tag" style="--color: #64748b" data-color="#64748b"></button>
+            </div>
+            <input type="hidden" id="tag-color" value="#f59e0b">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary modal-cancel">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Tag</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Filter Sidebar -->
     <div class="filter-sidebar" id="filter-sidebar">
       <div class="filter-header">
@@ -742,6 +785,7 @@
         </div>
         <div class="settings-content">
           <div class="settings-tabs">
+            <button class="settings-tab" data-settings-tab="profile">Profile</button>
             <button class="settings-tab active" data-settings-tab="general">General</button>
             <button class="settings-tab" data-settings-tab="api">API Access</button>
             <button class="settings-tab" data-settings-tab="sync">Browser Sync</button>
@@ -750,6 +794,50 @@
               data-action="load-dashboard-settings">Dashboard</button>
             <button class="settings-tab" data-settings-tab="tags">Tags</button>
             <button class="settings-tab" data-settings-tab="shortcuts">Keyboard Shortcuts</button>
+          </div>
+
+          <div class="settings-panel" id="settings-profile">
+            <div class="setting-item" style="display: block;">
+              <div class="setting-info" style="margin-bottom: 1rem;">
+                <h4>Update Profile</h4>
+                <p>Change your email address</p>
+              </div>
+              <form id="profile-email-form" class="form-row" style="align-items: flex-end;">
+                <div class="form-group" style="flex:1">
+                  <label for="profile-email">Email Address</label>
+                  <input type="email" id="profile-email" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-bottom: 0.5rem;">Update Email</button>
+              </form>
+            </div>
+
+            <div class="setting-item" style="display: block;">
+              <div class="setting-info" style="margin-bottom: 1rem;">
+                <h4>Change Password</h4>
+                <p>Ensure your account stays secure</p>
+              </div>
+              <form id="profile-password-form">
+                <div class="form-group">
+                  <label for="profile-current-password">Current Password</label>
+                  <input type="password" id="profile-current-password" required autocomplete="current-password">
+                </div>
+                <div class="form-group">
+                  <label for="profile-new-password">New Password</label>
+                  <input type="password" id="profile-new-password" required minlength="6" autocomplete="new-password">
+                </div>
+                <div style="text-align: right; margin-top: 1rem;">
+                  <button type="submit" class="btn btn-primary">Change Password</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="setting-item danger">
+              <div class="setting-info">
+                <h4>Sign Out</h4>
+                <p>Log out of your account</p>
+              </div>
+              <button class="btn btn-danger" id="logout-btn">Sign Out</button>
+            </div>
           </div>
 
           <div class="settings-panel active" id="settings-general">
@@ -809,13 +897,7 @@
               <button class="btn btn-outline" id="restart-tour-btn">Restart Tour</button>
             </div>
 
-            <div class="setting-item danger">
-              <div class="setting-info">
-                <h4>Sign Out</h4>
-                <p>Log out of your account</p>
-              </div>
-              <button class="btn btn-danger" id="logout-btn">Sign Out</button>
-            </div>
+
           </div>
 
           <div class="settings-panel" id="settings-dashboard">

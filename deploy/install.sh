@@ -8,8 +8,8 @@ echo "🔗 AnchorMarks Deployment Script"
 echo "==============================="
 
 # Configuration
-APP_DIR="/opt/anchormarks"
-APP_USER="anchormarks"
+APP_DIR="./"
+APP_USER="user"
 NODE_VERSION="20"
 
 # Check if running as root (POSIX-compatible)
@@ -27,35 +27,43 @@ useradd -r -s /bin/false $APP_USER || true
 
 echo "📁 Setting up application directory..."
 mkdir -p $APP_DIR
-mkdir -p $APP_DIR/public/favicons
+mkdir -p $APP_DIRpublic/favicons
 
 echo "📋 Copying application files..."
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SOURCE_DIR="$(dirname "$SCRIPT_DIR")"
-cp -r "$SOURCE_DIR/server" $APP_DIR/
-cp -r "$SOURCE_DIR/public" $APP_DIR/
-cp "$SOURCE_DIR/package"*.json $APP_DIR/
+
+# Resolve APP_DIR to absolute path for comparison
+ABSOLUTE_APP_DIR="$(cd "$APP_DIR" 2>/dev/null && pwd || echo "$APP_DIR")"
+
+if [ "$SOURCE_DIR" = "$ABSOLUTE_APP_DIR" ]; then
+  echo "ℹ️  Installing in-place. Skipping file copy."
+else
+  cp -r "$SOURCE_DIR/server" "$APP_DIR"
+  cp -r "$SOURCE_DIR/public" "$APP_DIR"
+  cp "$SOURCE_DIR/package"*.json "$APP_DIR"
+fi
 
 echo "📚 Installing dependencies..."
 cd $APP_DIR
 npm ci --only=production
 
 echo "🔐 Setting up environment..."
-if [ ! -f $APP_DIR/.env ]; then
+if [ ! -f $APP_DIR.env ]; then
   JWT_SECRET=$(openssl rand -base64 32)
-  cat > $APP_DIR/.env << EOF
+  cat > $APP_DIR.env << EOF
 NODE_ENV=production
 PORT=3000
 HOST=127.0.0.1
 JWT_SECRET=$JWT_SECRET
-DB_PATH=$APP_DIR/server/anchormarks.db
+DB_PATH=$APP_DIRserver/anchormarks.db
 EOF
   echo "✅ Generated .env file with secure JWT secret"
 fi
 
 echo "👤 Setting permissions..."
 chown -R $APP_USER:$APP_USER $APP_DIR
-chmod 600 $APP_DIR/.env
+chmod 600 $APP_DIR.env
 
 echo "🚀 Setting up systemd service..."
 cp "$SCRIPT_DIR/anchormarks.service" /etc/systemd/system/
@@ -91,5 +99,5 @@ echo ""
 echo "📋 Next steps:"
 echo "   1. Configure Nginx (see deploy/nginx.conf)"
 echo "   2. Set up SSL with Let's Encrypt"
-echo "   3. Update CORS_ORIGIN in $APP_DIR/.env"
+echo "   3. Update CORS_ORIGIN in $APP_DIR.env"
 echo ""

@@ -171,6 +171,64 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
         db.prepare('UPDATE users SET api_key = ? WHERE id = ?').run(newApiKey, req.user.id);
         res.json({ api_key: newApiKey });
     });
+    // Update profile (email)
+    app.put('/api/auth/profile', authenticateToken, (req, res) => {
+        try {
+            const { email } = req.body;
+
+            if (!email) {
+                return res.status(400).json({ error: 'Email is required' });
+            }
+
+            // Check if email is taken by another user
+            const existing = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(email.toLowerCase(), req.user.id);
+            if (existing) {
+                return res.status(400).json({ error: 'Email already in use' });
+            }
+
+            db.prepare('UPDATE users SET email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+                .run(email.toLowerCase(), req.user.id);
+
+            res.json({ success: true, email: email.toLowerCase() });
+        } catch (err) {
+            console.error('Update profile error:', err);
+            res.status(500).json({ error: 'Failed to update profile' });
+        }
+    });
+
+    // Change password
+    app.put('/api/auth/password', authenticateToken, async (req, res) => {
+        try {
+            const { currentPassword, newPassword } = req.body;
+
+            if (!currentPassword || !newPassword) {
+                return res.status(400).json({ error: 'Both current and new passwords are required' });
+            }
+
+            if (newPassword.length < 6) {
+                return res.status(400).json({ error: 'New password must be at least 6 characters' });
+            }
+
+            // Verify current password
+            const user = db.prepare('SELECT password FROM users WHERE id = ?').get(req.user.id);
+            const validPassword = await bcrypt.compare(currentPassword, user.password);
+
+            if (!validPassword) {
+                return res.status(400).json({ error: 'Incorrect current password' });
+            }
+
+            // Hash new password
+            const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+            db.prepare('UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+                .run(hashedPassword, req.user.id);
+
+            res.json({ success: true });
+        } catch (err) {
+            console.error('Change password error:', err);
+            res.status(500).json({ error: 'Failed to change password' });
+        }
+    });
 }
 
 module.exports = {

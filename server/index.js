@@ -219,6 +219,10 @@ app.get('/api/health', (req, res) => {
 
 setupAuthRoutes(app, db, authenticateTokenMiddleware, fetchFaviconWrapper);
 
+// Maintenance Routes
+const setupMaintenanceRoutes = require('./routes/maintenance');
+app.use('/api/maintenance', setupMaintenanceRoutes(db, authenticateTokenMiddleware));
+
 // ============== USER SETTINGS API ==============
 
 // Get user settings
