@@ -17,6 +17,14 @@
     <!-- Auth Screen -->
     <div id="auth-screen" class="auth-screen">
       <div class="auth-container">
+        <div id="server-status-banner" class="status-banner error hidden">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span id="server-status-message">Server Unavailable</span>
+        </div>
         <div class="auth-header">
           <div class="logo">
             <div class="logo-icon">
@@ -776,12 +784,17 @@
       <div class="modal-content modal-lg">
         <div class="modal-header">
           <h2>Settings</h2>
-          <button class="btn-icon modal-close">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+          <div style="display:flex;gap:0.75rem;align-items:center;">
+            <button class="btn btn-sm btn-danger-outline" id="logout-btn"
+              style="padding: 0.25rem 0.75rem; font-size: 0.8rem; border: 1px solid var(--danger); color: var(--danger); border-radius: 4px; background: transparent;">Sign
+              Out</button>
+            <button class="btn-icon modal-close">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
         </div>
         <div class="settings-content">
           <div class="settings-tabs">
@@ -829,14 +842,6 @@
                   <button type="submit" class="btn btn-primary">Change Password</button>
                 </div>
               </form>
-            </div>
-
-            <div class="setting-item danger">
-              <div class="setting-info">
-                <h4>Sign Out</h4>
-                <p>Log out of your account</p>
-              </div>
-              <button class="btn btn-danger" id="logout-btn">Sign Out</button>
             </div>
           </div>
 
