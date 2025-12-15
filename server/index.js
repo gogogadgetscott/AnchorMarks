@@ -14,6 +14,12 @@ const { initializeDatabase, ensureDirectories } = require("./database");
 const { authenticateToken, validateCsrfToken } = require("./middleware");
 const { setupAuthRoutes } = require("./routes/auth");
 const { isPrivateAddress, fetchFavicon } = require("./utils");
+const {
+  ensureTagsExist,
+  updateBookmarkTags,
+  getBookmarkTagsString,
+  getUserTags,
+} = require("./tag-helpers");
 
 const app = express();
 config.validateSecurityConfig();
@@ -1433,39 +1439,10 @@ app.post("/api/bookmarks", authenticateTokenMiddleware, async (req, res) => {
     contentType,
   );
 
-  // Handle tags via new bookmark_tags table
+  // Handle tags via normalized bookmark_tags table
   if (tags && tags.trim()) {
-    const tagNames = tags
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-    for (const tagName of tagNames) {
-      try {
-        // Get or create tag
-        let tag = db
-          .prepare("SELECT id FROM tags WHERE user_id = ? AND name = ?")
-          .get(req.user.id, tagName);
-
-        if (!tag) {
-          const tagId = uuidv4();
-          const maxTagPos = db
-            .prepare("SELECT MAX(position) as max FROM tags WHERE user_id = ?")
-            .get(req.user.id);
-          const tagPosition = (maxTagPos.max || 0) + 1;
-          db.prepare(
-            "INSERT INTO tags (id, user_id, name, position) VALUES (?, ?, ?, ?)",
-          ).run(tagId, req.user.id, tagName, tagPosition);
-          tag = { id: tagId };
-        }
-
-        // Link bookmark to tag
-        db.prepare(
-          "INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)",
-        ).run(id, tag.id);
-      } catch (err) {
-        // Ignore errors, continue with other tags
-      }
-    }
+    const tagIds = ensureTagsExist(db, req.user.id, tags);
+    updateBookmarkTags(db, id, tagIds);
   }
 
   // Trigger async favicon fetch
@@ -1603,46 +1580,12 @@ app.put("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
 
   // Handle tags via new bookmark_tags table if provided
   if (tags !== undefined) {
-    // Clear old tags
-    db.prepare("DELETE FROM bookmark_tags WHERE bookmark_id = ?").run(
-      req.params.id,
-    );
-
-    // Add new tags
     if (tags && tags.trim()) {
-      const tagNames = tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-      for (const tagName of tagNames) {
-        try {
-          // Get or create tag
-          let tag = db
-            .prepare("SELECT id FROM tags WHERE user_id = ? AND name = ?")
-            .get(req.user.id, tagName);
-
-          if (!tag) {
-            const tagId = uuidv4();
-            const maxTagPos = db
-              .prepare(
-                "SELECT MAX(position) as max FROM tags WHERE user_id = ?",
-              )
-              .get(req.user.id);
-            const tagPosition = (maxTagPos.max || 0) + 1;
-            db.prepare(
-              "INSERT INTO tags (id, user_id, name, position) VALUES (?, ?, ?, ?)",
-            ).run(tagId, req.user.id, tagName, tagPosition);
-            tag = { id: tagId };
-          }
-
-          // Link bookmark to tag
-          db.prepare(
-            "INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)",
-          ).run(req.params.id, tag.id);
-        } catch (err) {
-          // Ignore errors, continue with other tags
-        }
-      }
+      const tagIds = ensureTagsExist(db, req.user.id, tags);
+      updateBookmarkTags(db, req.params.id, tagIds);
+    } else {
+      // Clear all tags if empty string provided
+      updateBookmarkTags(db, req.params.id, []);
     }
   }
 
@@ -1688,29 +1631,8 @@ app.delete("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
 
 // List tags with counts (supports hierarchy by name delimiter e.g. parent/child)
 app.get("/api/tags", authenticateTokenMiddleware, (req, res) => {
-  const rows = db
-    .prepare(
-      "SELECT tags FROM bookmarks WHERE user_id = ? AND tags IS NOT NULL AND tags != ''",
-    )
-    .all(req.user.id);
-  const counts = {};
-
-  rows.forEach((row) => {
-    parseTags(row.tags).forEach((tag) => {
-      counts[tag] = (counts[tag] || 0) + 1;
-    });
-  });
-
-  const tags = Object.keys(counts)
-    .sort((a, b) => counts[b] - counts[a])
-    .map((name) => ({
-      name,
-      count: counts[name],
-      parent: name.includes("/")
-        ? name.split("/").slice(0, -1).join("/") || null
-        : null,
-    }));
-
+  // Use normalized tag system with bookmark_tags junction table
+  const tags = getUserTags(db, req.user.id);
   res.json(tags);
 });
 
@@ -2383,7 +2305,7 @@ app.get("/api/bookmarks/by-domain", authenticateTokenMiddleware, (req, res) => {
     try {
       const domain = new URL(b.url).hostname.replace("www.", "");
       domainCounts[domain] = (domainCounts[domain] || 0) + 1;
-    } catch (e) {}
+    } catch (e) { }
   });
 
   const sorted = Object.entries(domainCounts)
