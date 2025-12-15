@@ -196,12 +196,10 @@ textarea {
 .bg-gradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    135deg,
-    var(--primary-600) 0%,
-    #8b5cf6 50%,
-    #ec4899 100%
-  );
+  background: linear-gradient(135deg,
+      var(--primary-600) 0%,
+      #8b5cf6 50%,
+      #ec4899 100%);
   opacity: 0.1;
 }
 
@@ -819,45 +817,49 @@ body.sidebar-collapsed .nav-section-header {
   justify-content: flex-start;
 }
 
-.sidebar-search {
-  padding: 0 0 0.75rem 0;
+.header-search-bar {
   position: relative;
+  width: 320px;
+  /* Slightly wider for header */
 }
 
-.sidebar-search svg {
+.header-search-bar svg {
   position: absolute;
   left: 0.75rem;
-  top: 0;
-  bottom: 0;
-  margin: auto;
+  top: 50%;
+  transform: translateY(-50%);
   width: 18px;
   height: 18px;
-  transform: translateY(-5px);
   color: var(--text-tertiary);
+  pointer-events: none;
 }
 
-.sidebar-search input {
+.header-search-bar input {
   width: 100%;
-  padding: 0.5rem 1rem 0.5rem 2.5rem;
+  padding: 0.5rem 2.5rem 0.5rem 2.5rem;
+  /* Space for icon and kbd */
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
   color: var(--text-primary);
   font-size: 0.875rem;
-  line-height: 1.5;
+  height: 38px;
+  /* Match standard button height */
+  transition: all var(--transition-fast);
 }
 
-.sidebar-search input:focus {
+.header-search-bar input:focus {
   outline: none;
   border-color: var(--primary-500);
+  background: var(--bg-primary);
+  box-shadow: 0 0 0 3px var(--primary-100);
 }
 
-.sidebar-search kbd {
+.header-search-bar kbd {
   position: absolute;
   right: 0.75rem;
-  top: 0;
-  bottom: 0;
-  margin: auto;
+  top: 50%;
+  transform: translateY(-50%);
   height: 20px;
   padding: 0 6px;
   display: inline-flex;
@@ -865,12 +867,14 @@ body.sidebar-collapsed .nav-section-header {
   justify-content: center;
   font-size: 0.75rem;
   line-height: 1;
-  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  color: var(--text-tertiary);
-  transform: translateY(-5px);
+  pointer-events: none;
 }
+
+
 
 .sidebar-actions {
   padding: 1rem 0.5rem 0 0.5rem;
@@ -2267,6 +2271,7 @@ body.sidebar-collapsed .nav-section-header {
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 1;
@@ -2627,11 +2632,11 @@ body.sidebar-collapsed .nav-section-header {
   box-shadow: var(--shadow-sm);
 }
 
-.toggle input:checked + .toggle-slider {
+.toggle input:checked+.toggle-slider {
   background: var(--primary-500);
 }
 
-.toggle input:checked + .toggle-slider::before {
+.toggle input:checked+.toggle-slider::before {
   transform: translateX(20px);
 }
 
@@ -2645,7 +2650,7 @@ body.sidebar-collapsed .nav-section-header {
   margin-bottom: 0.5rem;
 }
 
-.api-section > p {
+.api-section>p {
   font-size: 0.875rem;
   color: var(--text-secondary);
   margin-bottom: 1rem;
@@ -2731,7 +2736,7 @@ body.sidebar-collapsed .nav-section-header {
   margin-bottom: 0.5rem;
 }
 
-.sync-info > p {
+.sync-info>p {
   color: var(--text-secondary);
   margin-bottom: 1.5rem;
 }
@@ -2753,7 +2758,7 @@ body.sidebar-collapsed .nav-section-header {
   margin-bottom: 0.5rem;
 }
 
-.import-section > p {
+.import-section>p {
   font-size: 0.875rem;
   color: var(--text-secondary);
   margin-bottom: 1rem;
@@ -3659,11 +3664,9 @@ body.sidebar-collapsed .nav-section-header {
   width: 16px;
   height: 16px;
   cursor: nwse-resize;
-  background: linear-gradient(
-    135deg,
-    transparent 50%,
-    var(--text-tertiary) 50%
-  );
+  background: linear-gradient(135deg,
+      transparent 50%,
+      var(--text-tertiary) 50%);
   opacity: 0.3;
   transition: opacity var(--transition-fast);
 }
@@ -4793,6 +4796,28 @@ body.sidebar-collapsed .nav-section-header {
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
   margin-bottom: 20px;
+}
+
+/* Responsive adjustments for header search */
+@media (max-width: 768px) {
+  .header-search-bar {
+    width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-search-bar {
+    width: 140px;
+  }
+
+  .header-search-bar input {
+    padding-right: 0.5rem;
+    /* reduce padding since kbd might be hidden */
+  }
+
+  .header-search-bar kbd {
+    display: none;
+  }
 }
 
 .stat-card {
