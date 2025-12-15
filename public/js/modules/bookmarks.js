@@ -46,6 +46,29 @@ export async function loadBookmarks() {
     const bookmarks = await api(endpoint);
     state.setBookmarks(bookmarks);
 
+    // Load tags metadata for color/icon rendering
+    try {
+      const tags = await api("/tags");
+      // Create a lookup map for quick access
+      const tagMap = {};
+      tags.forEach(tag => {
+        tagMap[tag.name] = {
+          color: tag.color || "#f59e0b",
+          icon: tag.icon || "tag",
+          id: tag.id,
+          count: tag.count || 0
+        };
+      });
+      // Store in state for use in rendering
+      if (!state.tagMetadata) {
+        state.tagMetadata = {};
+      }
+      state.tagMetadata = tagMap;
+    } catch (err) {
+      console.error("Failed to load tag metadata:", err);
+      // Continue without tag metadata
+    }
+
     if (state.currentView === "dashboard") {
       // Dynamic import to avoid circular dependency
       const { renderDashboard } = await import("./dashboard.js");
@@ -192,9 +215,9 @@ export function renderBookmarks() {
 export function createBookmarkCard(bookmark, index) {
   const tags = bookmark.tags
     ? bookmark.tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter((t) => t)
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => t)
     : [];
   const hostname = getHostname(bookmark.url);
   const baseUrl = getBaseUrl(bookmark.url);
@@ -208,11 +231,10 @@ export function createBookmarkCard(bookmark, index) {
       </label>
       <div class="bookmark-header">
         <div class="bookmark-favicon">
-          ${
-            !state.hideFavicons && bookmark.favicon
-              ? `<img src="${bookmark.favicon}" alt="" onerror="this.parentElement.innerHTML='<svg viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><path d=\\'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\\'/><path d=\\'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\\'/></svg>'">`
-              : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
-          }
+          ${!state.hideFavicons && bookmark.favicon
+      ? `<img src="${bookmark.favicon}" alt="" onerror="this.parentElement.innerHTML='<svg viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><path d=\\'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\\'/><path d=\\'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\\'/></svg>'">`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
+    }
         </div>
         <div class="bookmark-info">
           <div class="bookmark-title">${escapeHtml(bookmark.title)}</div>
@@ -220,7 +242,11 @@ export function createBookmarkCard(bookmark, index) {
         </div>
       </div>
       ${bookmark.description ? `<div class="bookmark-description">${escapeHtml(bookmark.description)}</div>` : ""}
-      ${tags.length ? `<div class="bookmark-tags">${tags.map((t) => `<span class="tag" data-action="toggle-filter-tag" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</span>`).join("")}</div>` : ""}
+      ${tags.length ? `<div class="bookmark-tags">${tags.map((t) => {
+      const tagMeta = state.tagMetadata[t] || {};
+      const tagColor = tagMeta.color || "#f59e0b";
+      return `<span class="tag" data-action="toggle-filter-tag" data-tag="${escapeHtml(t)}" style="--tag-color: ${tagColor}">${escapeHtml(t)}</span>`;
+    }).join("")}</div>` : ""}
       <div class="bookmark-actions">
         <button class="bookmark-action-btn primary" data-action="open-bookmark" data-url="${escapeHtml(bookmark.url)}" title="Open bookmark">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -494,7 +520,7 @@ export async function trackClick(id) {
 }
 
 // Edit bookmark (populate form)
-export function editBookmark(id) {
+export async function editBookmark(id) {
   const bookmark = state.bookmarks.find((b) => b.id === id);
   if (!bookmark) return;
 
@@ -506,6 +532,10 @@ export function editBookmark(id) {
     bookmark.description || "";
   document.getElementById("bookmark-folder").value = bookmark.folder_id || "";
   document.getElementById("bookmark-tags").value = bookmark.tags || "";
+
+  // Load tags into the new tag input system
+  const { loadTagsFromInput } = await import("./tag-input.js");
+  loadTagsFromInput(bookmark.tags || "");
 
   openModal("bookmark-modal");
 }

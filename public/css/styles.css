@@ -817,45 +817,49 @@ body.sidebar-collapsed .nav-section-header {
   justify-content: flex-start;
 }
 
-.sidebar-search {
-  padding: 0 0 0.75rem 0;
+.header-search-bar {
   position: relative;
+  width: 320px;
+  /* Slightly wider for header */
 }
 
-.sidebar-search svg {
+.header-search-bar svg {
   position: absolute;
   left: 0.75rem;
-  top: 0;
-  bottom: 0;
-  margin: auto;
+  top: 50%;
+  transform: translateY(-50%);
   width: 18px;
   height: 18px;
-  transform: translateY(-5px);
   color: var(--text-tertiary);
+  pointer-events: none;
 }
 
-.sidebar-search input {
+.header-search-bar input {
   width: 100%;
-  padding: 0.5rem 1rem 0.5rem 2.5rem;
+  padding: 0.5rem 2.5rem 0.5rem 2.5rem;
+  /* Space for icon and kbd */
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
   color: var(--text-primary);
   font-size: 0.875rem;
-  line-height: 1.5;
+  height: 38px;
+  /* Match standard button height */
+  transition: all var(--transition-fast);
 }
 
-.sidebar-search input:focus {
+.header-search-bar input:focus {
   outline: none;
   border-color: var(--primary-500);
+  background: var(--bg-primary);
+  box-shadow: 0 0 0 3px var(--primary-100);
 }
 
-.sidebar-search kbd {
+.header-search-bar kbd {
   position: absolute;
   right: 0.75rem;
-  top: 0;
-  bottom: 0;
-  margin: auto;
+  top: 50%;
+  transform: translateY(-50%);
   height: 20px;
   padding: 0 6px;
   display: inline-flex;
@@ -863,12 +867,14 @@ body.sidebar-collapsed .nav-section-header {
   justify-content: center;
   font-size: 0.75rem;
   line-height: 1;
-  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  color: var(--text-tertiary);
-  transform: translateY(-5px);
+  pointer-events: none;
 }
+
+
 
 .sidebar-actions {
   padding: 1rem 0.5rem 0 0.5rem;
@@ -1863,28 +1869,28 @@ body.sidebar-collapsed .nav-section-header {
   padding: 0.25rem 0.625rem;
   font-size: 0.6875rem;
   font-weight: 500;
-  background: var(--primary-50);
-  color: var(--primary-700);
+  background: color-mix(in srgb, var(--tag-color, var(--primary-500)) 15%, transparent);
+  color: var(--tag-color, var(--primary-700));
   border-radius: var(--radius-full);
-  border: 1px solid var(--primary-100);
+  border: 1px solid color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
   transition: all var(--transition-fast);
   cursor: pointer;
 }
 
 .tag:hover {
-  background: var(--primary-100);
-  border-color: var(--primary-200);
+  background: color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
+  border-color: color-mix(in srgb, var(--tag-color, var(--primary-500)) 35%, transparent);
 }
 
 [data-theme="dark"] .tag {
-  background: rgba(99, 102, 241, 0.15);
-  color: #a5b4fc;
-  border-color: rgba(99, 102, 241, 0.25);
+  background: color-mix(in srgb, var(--tag-color, #6366f1) 15%, transparent);
+  color: color-mix(in srgb, var(--tag-color, #a5b4fc) 80%, white);
+  border-color: color-mix(in srgb, var(--tag-color, #6366f1) 25%, transparent);
 }
 
 [data-theme="dark"] .tag:hover {
-  background: rgba(99, 102, 241, 0.25);
-  border-color: rgba(99, 102, 241, 0.35);
+  background: color-mix(in srgb, var(--tag-color, #6366f1) 25%, transparent);
+  border-color: color-mix(in srgb, var(--tag-color, #6366f1) 35%, transparent);
 }
 
 .bookmark-action-btn {
@@ -2519,6 +2525,176 @@ body.sidebar-collapsed .nav-section-header {
 .color-option.active {
   border-color: var(--text-primary);
   box-shadow: 0 0 0 2px var(--bg-primary);
+}
+
+/* Tag modal color picker (same styles as folder) */
+.color-picker-tag {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.color-option-tag {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--color);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.color-option-tag:hover {
+  transform: scale(1.1);
+}
+
+.color-option-tag.active {
+  border-color: var(--text-primary);
+  box-shadow: 0 0 0 2px var(--bg-primary);
+}
+
+/* Tag modal needs higher z-index since it opens from within settings modal */
+#tag-modal {
+  z-index: 1100;
+}
+
+/* Tags Input with Badges */
+.tags-input-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  min-height: 42px;
+  cursor: text;
+  transition: border-color 0.2s;
+}
+
+.tags-input-container:focus-within {
+  border-color: var(--primary-500);
+  outline: none;
+}
+
+.selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.selected-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: color-mix(in srgb, var(--tag-color, var(--primary-500)) 15%, transparent);
+  color: var(--tag-color, var(--primary-700));
+  border: 1px solid color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
+  border-radius: var(--radius-full);
+  transition: all 0.2s;
+}
+
+[data-theme="dark"] .selected-tag {
+  background: color-mix(in srgb, var(--tag-color, #6366f1) 15%, transparent);
+  color: color-mix(in srgb, var(--tag-color, #a5b4fc) 80%, white);
+  border-color: color-mix(in srgb, var(--tag-color, #6366f1) 25%, transparent);
+}
+
+.selected-tag-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: currentColor;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.selected-tag-remove:hover {
+  opacity: 1;
+}
+
+.tags-input-container input[type="text"] {
+  flex: 1;
+  min-width: 120px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.875rem;
+  padding: 0.25rem;
+}
+
+.tags-input-container input[type="text"]::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Tag Autocomplete Dropdown */
+.tag-autocomplete {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.25rem;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--modal-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+}
+
+.tag-autocomplete-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tag-autocomplete-item:hover,
+.tag-autocomplete-item.active {
+  background: var(--bg-tertiary);
+}
+
+.tag-autocomplete-name {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.tag-autocomplete-count {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm);
+}
+
+.tag-autocomplete-item:hover .tag-autocomplete-count {
+  background: var(--bg-secondary);
+}
+
+.tag-autocomplete-empty {
+  padding: 0.75rem;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+}
+
+/* Ensure positioning context */
+.form-group {
+  position: relative;
 }
 
 /* Settings */
@@ -5058,6 +5234,28 @@ body.dragging-widget .widget-sidebar-overlay {
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
   margin-bottom: 20px;
+}
+
+/* Responsive adjustments for header search */
+@media (max-width: 768px) {
+  .header-search-bar {
+    width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-search-bar {
+    width: 140px;
+  }
+
+  .header-search-bar input {
+    padding-right: 0.5rem;
+    /* reduce padding since kbd might be hidden */
+  }
+
+  .header-search-bar kbd {
+    display: none;
+  }
 }
 
 .stat-card {

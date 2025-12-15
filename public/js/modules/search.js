@@ -42,6 +42,8 @@ export function renderSidebarTags() {
         return a.count - b.count;
       case "name_asc":
         return a.name.localeCompare(b.name);
+      case "name_desc":
+        return b.name.localeCompare(a.name);
       case "count_desc":
       default:
         return b.count - a.count;
@@ -109,6 +111,22 @@ export function filterSidebarTags(searchTerm) {
   const filtered = state.allSidebarTags.filter((t) =>
     t.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  // Re-sort filtered results based on current sort config
+  const sortMode = state.filterConfig.tagSort || "count_desc";
+  filtered.sort((a, b) => {
+    switch (sortMode) {
+      case "count_asc":
+        return a.count - b.count;
+      case "name_asc":
+        return a.name.localeCompare(b.name);
+      case "name_desc":
+        return b.name.localeCompare(a.name);
+      case "count_desc":
+      default:
+        return b.count - a.count;
+    }
+  });
 
   renderTagsList(filtered.slice(0, state.showingAllTags ? 100 : 15));
 }
@@ -396,6 +414,22 @@ export async function loadTagStats() {
       return;
     }
 
+    // Sort tags based on user preference
+    const sortMode = state.filterConfig.tagSort || "count_desc";
+    tags.sort((a, b) => {
+      switch (sortMode) {
+        case "count_asc":
+          return a.count - b.count;
+        case "name_asc":
+          return a.name.localeCompare(b.name);
+        case "name_desc":
+          return b.name.localeCompare(a.name);
+        case "count_desc":
+        default:
+          return b.count - a.count;
+      }
+    });
+
     tagStatsList.innerHTML = tags
       .map((t) => {
         const path = t.parent
@@ -470,6 +504,7 @@ export default {
   renameTagAcross,
   updateTagRenameUndoButton,
   renderTagsForFilter,
+  openTagModal,
 };
 
 // Render tags for filter dropdown
@@ -555,16 +590,34 @@ export async function renderTagsForFilter(container) {
 
 // Tag Modal
 export function openTagModal(tag) {
+  console.log("Opening tag modal for tag:", tag);
+
   const modal = document.getElementById("tag-modal");
   const form = document.getElementById("tag-form");
-  if (!modal || !form) return;
+  const tagIdInput = document.getElementById("tag-id");
+  const tagNameInput = document.getElementById("tag-name");
+  const tagColorInput = document.getElementById("tag-color");
 
-  document.getElementById("tag-id").value = tag.id;
-  document.getElementById("tag-name").value = tag.name;
+  if (!modal) {
+    console.error("Tag modal not found");
+    return;
+  }
+  if (!form) {
+    console.error("Tag form not found");
+    return;
+  }
+  if (!tagIdInput || !tagNameInput || !tagColorInput) {
+    console.error("Tag form inputs not found", { tagIdInput, tagNameInput, tagColorInput });
+    return;
+  }
+
+  tagIdInput.value = tag.id || "";
+  tagNameInput.value = tag.name || "";
 
   // Set color
-  const color = tag.color || "#6366f1";
-  document.getElementById("tag-color").value = color;
+  const color = tag.color || "#f59e0b";
+  tagColorInput.value = color;
+
   document.querySelectorAll(".color-option-tag").forEach((btn) => {
     if (btn.dataset.color === color) {
       btn.classList.add("active");
@@ -573,8 +626,31 @@ export function openTagModal(tag) {
     }
   });
 
+  console.log("Removing hidden class from modal");
   modal.classList.remove("hidden");
-  document.getElementById("tag-name").focus();
+
+  // Debug: Check computed styles
+  setTimeout(() => {
+    const computedStyle = window.getComputedStyle(modal);
+    console.log("Modal computed styles:", {
+      display: computedStyle.display,
+      visibility: computedStyle.visibility,
+      opacity: computedStyle.opacity,
+      zIndex: computedStyle.zIndex,
+      position: computedStyle.position,
+      classList: Array.from(modal.classList),
+    });
+
+    const rect = modal.getBoundingClientRect();
+    console.log("Modal position:", {
+      top: rect.top,
+      left: rect.left,
+      width: rect.width,
+      height: rect.height,
+    });
+  }, 100);
+
+  tagNameInput.focus();
 }
 
 export async function handleTagSubmit(e) {
@@ -601,5 +677,36 @@ export async function handleTagSubmit(e) {
     showToast("Tag updated successfully", "success");
   } catch (err) {
     showToast(err.message || "Failed to update tag", "error");
+  }
+}
+
+// Create a new tag
+export async function createNewTag(name, color) {
+  if (!name || !name.trim()) {
+    showToast("Tag name is required", "error");
+    return false;
+  }
+
+  try {
+    await api("/tags", {
+      method: "POST",
+      body: JSON.stringify({
+        name: name.trim(),
+        color: color || "#f59e0b"
+      }),
+    });
+
+    // Reload tag stats to show the new tag
+    await loadTagStats();
+
+    // Also update sidebar tags
+    renderSidebarTags();
+
+    showToast(`Tag "${name}" created successfully`, "success");
+    return true;
+  } catch (err) {
+    const errorMsg = err.message || "Failed to create tag";
+    showToast(errorMsg, "error");
+    return false;
   }
 }

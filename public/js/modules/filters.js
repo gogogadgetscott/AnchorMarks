@@ -362,6 +362,8 @@ async function renderTagsInDropdown() {
       // Apply tag sort from filter config
       if (state.filterConfig.tagSort === "name_asc") {
         return a.name.localeCompare(b.name);
+      } else if (state.filterConfig.tagSort === "name_desc") {
+        return b.name.localeCompare(a.name);
       } else if (state.filterConfig.tagSort === "count_asc") {
         return a.count - b.count;
       } else {

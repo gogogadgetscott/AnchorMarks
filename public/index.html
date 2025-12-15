@@ -208,14 +208,7 @@
               </svg>
             </div>
             <div class="nav-section-content" id="filters-content">
-              <div class="sidebar-search">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="M21 21l-4.35-4.35" />
-                </svg>
-                <input type="text" id="search-input" placeholder="Search bookmarks..." />
-                <kbd>Ctrl+K</kbd>
-              </div>
+
               <div class="sidebar-filter-group">
                 <label for="sidebar-filter-sort">Sort bookmarks</label>
                 <select id="sidebar-filter-sort" class="sidebar-filter-select">
@@ -226,14 +219,7 @@
                   <option value="z_a">Z – A</option>
                 </select>
               </div>
-              <div class="sidebar-filter-group">
-                <label for="sidebar-filter-tag-sort">Sort tags</label>
-                <select id="sidebar-filter-tag-sort" class="sidebar-filter-select">
-                  <option value="count_desc">Most used first</option>
-                  <option value="count_asc">Least used first</option>
-                  <option value="name_asc">A → Z</option>
-                </select>
-              </div>
+
               <!-- Active Filters (integrated) -->
               <div class="sidebar-active-filters-wrapper hidden" id="active-filters-section">
                 <div class="sidebar-filter-header">
@@ -377,6 +363,14 @@
             <span class="bookmark-count" id="bookmarks-view-count">0 bookmarks</span>
           </div>
           <div class="header-right">
+            <div class="header-search-bar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+              <input type="text" id="search-input" placeholder="Search bookmarks..." />
+              <kbd>Ctrl+K</kbd>
+            </div>
             <button class="btn btn-secondary" id="bookmarks-filter-btn" title="Filters">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 style="width: 16px; height: 16px">
@@ -628,9 +622,13 @@
               </select>
             </div>
             <div class="form-group">
-              <label for="bookmark-tags">Tags</label>
-              <input type="text" id="bookmark-tags" placeholder="work, design, tools" />
-              <div class="tag-suggestions" id="tag-suggestions"></div>
+              <label for="bookmark-tags-input">Tags</label>
+              <div class="tags-input-container" id="tags-input-container">
+                <div class="selected-tags" id="selected-tags"></div>
+                <input type="text" id="bookmark-tags-input" placeholder="Add tags..." autocomplete="off" />
+                <input type="hidden" id="bookmark-tags" />
+              </div>
+              <div class="tag-autocomplete" id="tag-autocomplete" style="display: none;"></div>
               <div class="smart-suggestions" id="smart-collections-suggestions" style="display: none"></div>
             </div>
           </div>
@@ -743,9 +741,6 @@
       </div>
     </div>
 
-
-    <!-- Widget picker dropdown will be created dynamically -->
-
     <!-- Filter Sidebar -->
     <div class="filter-sidebar" id="filter-sidebar">
       <div class="filter-header">
@@ -840,7 +835,9 @@
             <button class="settings-tab" data-settings-tab="import">
               Import/Export
             </button>
-
+            <button class="settings-tab" data-settings-tab="dashboard" data-action="load-dashboard-settings">
+              Dashboard
+            </button>
             <button class="settings-tab" data-settings-tab="tags">
               Tags
             </button>
@@ -1102,7 +1099,65 @@
             </div>
           </div>
 
+          <div class="settings-panel" id="settings-dashboard">
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4>Dashboard Mode</h4>
+                <p>Group bookmarks by folders or tags</p>
+              </div>
+              <select id="dashboard-mode-select" class="form-input" style="width: auto">
+                <option value="folder">Folders</option>
+                <option value="tag">Tags</option>
+              </select>
+            </div>
 
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4>Bookmark Order</h4>
+                <p>Sort order of bookmarks within columns</p>
+              </div>
+              <select id="dashboard-bookmark-sort" class="form-input" style="width: auto">
+                <option value="recently_added">Recently Added</option>
+                <option value="oldest_first">Oldest First</option>
+                <option value="most_visited">Most Visited</option>
+                <option value="a_z">A – Z</option>
+                <option value="z_a">Z – A</option>
+              </select>
+            </div>
+
+            <div class="setting-item" style="display: block">
+              <div class="setting-info" style="margin-bottom: 10px">
+                <h4>Dashboard Tags</h4>
+                <p>Select tags to display as columns (Tag Mode only)</p>
+              </div>
+
+              <div style="display: flex; gap: 10px; margin-bottom: 10px">
+                <input type="text" id="dashboard-tag-search" class="form-input"
+                  placeholder="Start typing to find tag..." style="flex: 1" />
+                <select id="dashboard-tag-sort" class="form-input" style="width: auto">
+                  <option value="count_desc">Count: High ➜ Low</option>
+                  <option value="count_asc">Count: Low ➜ High</option>
+                  <option value="name_asc">Name: A ➜ Z</option>
+                </select>
+              </div>
+
+              <div id="dashboard-tags-list" style="
+                    display: grid;
+                    grid-template-columns: repeat(
+                      auto-fill,
+                      minmax(180px, 1fr)
+                    );
+                    gap: 8px;
+                    max-height: 250px;
+                    overflow-y: auto;
+                    padding: 10px;
+                    border: 1px solid var(--border-color);
+                    border-radius: 6px;
+                  ">
+                <!-- Tags will be populated here -->
+              </div>
+            </div>
+          </div>
 
           <div class="settings-panel" id="settings-tags">
             <div class="setting-item" style="display: block">
@@ -1111,6 +1166,40 @@
                 <p>See your tags, counts, and nested paths</p>
               </div>
               <div id="tag-stats-list" class="tag-stats-list"></div>
+
+              <div class="setting-item" style="margin-top: 1.5rem;">
+                <div class="setting-info">
+                  <h4>Add New Tag</h4>
+                  <p>Create a new tag to organize your bookmarks.</p>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                  <input type="text" id="new-tag-name" class="form-input" placeholder="Tag name"
+                    style="width: 200px;" />
+                  <input type="color" id="new-tag-color" class="form-input" value="#f59e0b"
+                    style="width: 60px; height: 38px; padding: 2px;" />
+                  <button class="btn btn-primary" id="add-new-tag-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      style="width: 16px; height: 16px;">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Add Tag
+                  </button>
+                </div>
+              </div>
+
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Sort Tags</h4>
+                  <p>Choose your preferred order for the tag list.</p>
+                </div>
+                <select id="settings-tag-sort" class="form-input" style="width: auto">
+                  <option value="count_desc">Most used first</option>
+                  <option value="count_asc">Least used first</option>
+                  <option value="name_asc">A → Z</option>
+                  <option value="name_desc">Z → A</option>
+                </select>
+              </div>
             </div>
 
             <!-- Tags Section (Hidden - moved to filter dropdown) -->

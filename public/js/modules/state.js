@@ -45,6 +45,9 @@ export let filterConfig = {
   tagMode: "OR",
 };
 
+// Tag metadata (colors, icons) loaded from database
+export let tagMetadata = {};
+
 // Selection State
 export let selectedBookmarks = new Set();
 export let lastSelectedIndex = null;

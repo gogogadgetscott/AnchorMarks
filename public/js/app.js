@@ -111,6 +111,7 @@ import {
   removeTagFilter,
   clearAllFilters,
   handleTagSubmit,
+  createNewTag,
 } from "./modules/search.js";
 
 // Import bulk operations
@@ -138,6 +139,10 @@ import {
 
 // Import filters
 import { initFilterDropdown, toggleFilterDropdown } from "./modules/filters.js";
+
+// Import tag input
+import { initTagInput, loadTagsFromInput } from "./modules/tag-input.js";
+
 
 // Import tour
 import {
@@ -233,9 +238,9 @@ async function initializeApp() {
   if (sidebarFilterSort)
     sidebarFilterSort.value = state.filterConfig.sort || "recently_added";
 
-  const sidebarTagSort = document.getElementById("sidebar-filter-tag-sort");
-  if (sidebarTagSort)
-    sidebarTagSort.value = state.filterConfig.tagSort || "count_desc";
+  const settingsTagSort = document.getElementById("settings-tag-sort");
+  if (settingsTagSort)
+    settingsTagSort.value = state.filterConfig.tagSort || "count_desc";
 }
 
 // Keyboard handler
@@ -393,6 +398,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     await initializeApp();
     // Initialize smart organization features only when authenticated
     SmartOrg.init();
+    // Initialize tag input with autocomplete
+    initTagInput();
   }
 
   // Auth tabs
@@ -494,14 +501,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       renderBookmarks();
     });
 
+  // Tag Sort in Settings
   document
-    .getElementById("sidebar-filter-tag-sort")
+    .getElementById("settings-tag-sort")
     ?.addEventListener("change", (e) => {
       state.filterConfig.tagSort = e.target.value;
-      // Sync with original filter sidebar
+      // Also update the filter dropdown if it exists
       const filterTagSort = document.getElementById("filter-tag-sort");
       if (filterTagSort) filterTagSort.value = e.target.value;
+
+      // Save to settings to persist
+      saveSettings({ tag_sort: e.target.value });
+
+      // Re-render things that depend on tag sort
       renderSidebarTags();
+      loadTagStats(); // Update the tag overview list in Settings > Tags
     });
 
   // Bulk actions
@@ -572,26 +586,44 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Add Bookmark buttons
   document
     .getElementById("add-bookmark-btn")
-    ?.addEventListener("click", () => openModal("bookmark-modal"));
+    ?.addEventListener("click", () => {
+      document.getElementById("bookmark-modal-title").textContent = "Add Bookmark";
+      document.getElementById("bookmark-form").reset();
+      loadTagsFromInput(""); // Clear tags
+      openModal("bookmark-modal");
+    });
   document
     .getElementById("sidebar-add-bookmark-btn")
-    ?.addEventListener("click", () => openModal("bookmark-modal"));
+    ?.addEventListener("click", () => {
+      document.getElementById("bookmark-modal-title").textContent = "Add Bookmark";
+      document.getElementById("bookmark-form").reset();
+      loadTagsFromInput(""); // Clear tags
+      openModal("bookmark-modal");
+    });
   document
     .getElementById("empty-add-btn")
-    ?.addEventListener("click", () => openModal("bookmark-modal"));
+    ?.addEventListener("click", () => {
+      document.getElementById("bookmark-modal-title").textContent = "Add Bookmark";
+      document.getElementById("bookmark-form").reset();
+      loadTagsFromInput(""); // Clear tags
+      openModal("bookmark-modal");
+    });
 
   // Bookmark Form
   document.getElementById("bookmark-form")?.addEventListener("submit", (e) => {
     e.preventDefault();
     const id = document.getElementById("bookmark-id").value;
+    const tagsValue = document.getElementById("bookmark-tags").value;
+    console.log("[Bookmark Form] Tags value:", tagsValue);
     const data = {
       url: document.getElementById("bookmark-url").value,
       title: document.getElementById("bookmark-title").value || undefined,
       description:
         document.getElementById("bookmark-description").value || undefined,
       folder_id: document.getElementById("bookmark-folder").value || undefined,
-      tags: document.getElementById("bookmark-tags").value || undefined,
+      tags: tagsValue || undefined,
     };
+    console.log("[Bookmark Form] Submitting data:", data);
 
     if (id) {
       updateBookmark(id, data);
@@ -901,6 +933,42 @@ document.addEventListener("DOMContentLoaded", async () => {
         showToast("Undo complete", "success");
       } catch (err) {
         showToast(err.message || "Undo failed", "error");
+      }
+    });
+
+  // Add new tag
+  document
+    .getElementById("add-new-tag-btn")
+    ?.addEventListener("click", async () => {
+      const nameInput = document.getElementById("new-tag-name");
+      const colorInput = document.getElementById("new-tag-color");
+
+      const name = nameInput?.value.trim();
+      const color = colorInput?.value || "#f59e0b";
+
+      if (!name) {
+        showToast("Please enter a tag name", "error");
+        nameInput?.focus();
+        return;
+      }
+
+      const success = await createNewTag(name, color);
+
+      if (success) {
+        // Clear the input fields
+        if (nameInput) nameInput.value = "";
+        if (colorInput) colorInput.value = "#f59e0b";
+        nameInput?.focus();
+      }
+    });
+
+  // Enter key support for new tag input
+  document
+    .getElementById("new-tag-name")
+    ?.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        document.getElementById("add-new-tag-btn")?.click();
       }
     });
 
