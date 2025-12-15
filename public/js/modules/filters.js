@@ -7,6 +7,7 @@ import * as state from "./state.js";
 import { escapeHtml } from "./utils.js";
 import { showToast } from "./ui.js";
 import { saveSettings } from "./settings.js";
+import { renderActiveFilters } from "./search.js";
 
 let filterDropdownPinned = false;
 
@@ -176,6 +177,7 @@ export async function showFilterDropdown() {
 
     // Render active filters
     renderActiveFilters();
+    renderDropdownActiveFilters();
 
     // Set current values
     const sortSelect = document.getElementById("filter-sort-select");
@@ -244,9 +246,6 @@ async function renderFoldersInDropdown() {
   const container = document.getElementById("filter-folders-container");
   if (!container) return;
 
-  // Get all top-level folders and "No Folder"
-  const topLevelFolders = state.folders.filter((f) => !f.parent_id);
-
   // Add "All Bookmarks" option
   const allCount = state.bookmarks.length;
   const noFolderCount = getFolderBookmarkCount(null);
@@ -274,17 +273,25 @@ async function renderFoldersInDropdown() {
         `;
   }
 
-  // Render top-level folders with counts
-  topLevelFolders.sort((a, b) => (a.position || 0) - (b.position || 0));
-  topLevelFolders.forEach((folder) => {
-    const count = getFolderBookmarkCount(folder.id);
-    if (count === 0) return; // Skip empty folders
+  // Recursive function to render folder tree
+  const renderFolderTree = (parentId = null, depth = 0) => {
+    const folderList = state.folders.filter((f) => f.parent_id === parentId);
+    folderList.sort((a, b) => (a.position || 0) - (b.position || 0));
 
-    const isActive = state.currentFolder === folder.id;
-    const color = folder.color || "#6366f1";
+    folderList.forEach((folder) => {
+      const count = getFolderBookmarkCount(folder.id);
 
-    html += `
-            <div class="filter-item ${isActive ? "active" : ""}" data-folder-id="${folder.id}">
+      // Even if count is 0, we might want to show it if it has children? 
+      // strict "if (count === 0) return" might hide parents with children but no bookmarks themselves.
+      // But adhering to previous logic:
+      if (count === 0 && !state.folders.some(f => f.parent_id === folder.id)) return;
+
+      const isActive = state.currentFolder === folder.id;
+      const color = folder.color || "#6366f1";
+      const paddingLeft = depth * 1.5; // 1.5rem per indentation level
+
+      html += `
+            <div class="filter-item ${isActive ? "active" : ""}" data-folder-id="${folder.id}" style="padding-left: ${0.5 + paddingLeft}rem">
                 <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
                     <span class="folder-color" style="background:${color}"></span>
                     <span class="filter-item-name">${escapeHtml(folder.name)}</span>
@@ -292,7 +299,14 @@ async function renderFoldersInDropdown() {
                 <span class="filter-item-count">${count}</span>
             </div>
         `;
-  });
+
+      // Render children
+      renderFolderTree(folder.id, depth + 1);
+    });
+  };
+
+  // Start with top-level folders
+  renderFolderTree(null, 0);
 
   container.innerHTML =
     html ||
@@ -315,6 +329,8 @@ async function renderFoldersInDropdown() {
       }
 
       await applyFilters();
+      renderDropdownActiveFilters();
+      renderActiveFilters();
       await renderFoldersInDropdown(); // Re-render to update active state
     });
   });
@@ -394,6 +410,8 @@ async function renderTagsInDropdown() {
       });
 
       await applyFilters();
+      renderDropdownActiveFilters();
+      renderActiveFilters();
       await renderTagsInDropdown(); // Re-render to update active state
     });
   });
@@ -528,6 +546,7 @@ async function clearAllFilters() {
   });
 
   state.setCurrentFolder(null);
+  state.setCurrentView("all");
 
   // Clear search input
   const searchInput = document.getElementById("search-input");
@@ -543,7 +562,103 @@ async function clearAllFilters() {
   // Reload
   await applyFilters();
 
+  renderDropdownActiveFilters();
+  renderActiveFilters();
+
+  // Re-render lists to clear selection state
+  await renderFoldersInDropdown();
+  await renderTagsInDropdown();
+
   showToast("All filters cleared", "success");
+}
+
+// Render active filters in dropdown
+function renderDropdownActiveFilters() {
+  const container = document.getElementById("filter-active-filters");
+  if (!container) return;
+
+  const tags = state.filterConfig.tags || [];
+  const folderId = state.currentFolder;
+  const searchTerm = document.getElementById("search-input")?.value?.trim();
+
+  const activeItems = [];
+
+  // Folder
+  if (folderId) {
+    const folder = state.folders.find((f) => f.id === folderId);
+    if (folder)
+      activeItems.push({ type: "folder", label: folder.name, id: folderId });
+  }
+
+  // Tags
+  tags.forEach((tag) => {
+    activeItems.push({ type: "tag", label: tag, id: tag });
+  });
+
+  // Search
+  if (searchTerm) {
+    activeItems.push({ type: "search", label: `Search: ${searchTerm}`, id: "search" });
+  }
+
+  if (activeItems.length === 0) {
+    container.innerHTML =
+      '<span class="filter-no-active" id="filter-no-active">No filters active</span>';
+    return;
+  }
+
+  let html = "";
+  activeItems.forEach((item) => {
+    let icon = "";
+    if (item.type === "folder") {
+      icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>`;
+    } else if (item.type === "tag") {
+      icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></svg>`;
+    } else {
+      icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>`;
+    }
+
+    html += `
+            <div class="filter-chip">
+                ${icon}
+                <span>${escapeHtml(item.label)}</span>
+                <button class="btn-icon remove-filter-btn" data-type="${item.type}" data-id="${escapeHtml(item.id)}" style="padding:2px;width:14px;height:14px;margin-left:4px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+  });
+
+  container.innerHTML = html;
+
+  // Attach remove handlers
+  container.querySelectorAll(".remove-filter-btn").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const type = btn.dataset.type;
+      const id = btn.dataset.id;
+
+      if (type === "folder") {
+        state.setCurrentFolder(null);
+        state.setCurrentView("all");
+      } else if (type === "tag") {
+        const newTags = state.filterConfig.tags.filter((t) => t !== id);
+        state.setFilterConfig({ ...state.filterConfig, tags: newTags });
+      } else if (type === "search") {
+        const searchInput = document.getElementById("search-input");
+        if (searchInput) searchInput.value = "";
+      }
+
+      await applyFilters();
+      renderDropdownActiveFilters();
+      renderActiveFilters();
+
+      // Update other UI components
+      renderFoldersInDropdown();
+      renderTagsInDropdown();
+    });
+  });
 }
 
 // Export functions
