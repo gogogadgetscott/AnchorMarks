@@ -139,7 +139,7 @@ import {
 } from "./modules/commands.js";
 
 // Import filters
-import { initFilterDropdown, toggleFilterDropdown, updateFilterButtonVisibility } from "./modules/filters.js";
+import { initFilterDropdown, toggleFilterDropdown, updateFilterButtonVisibility, updateFilterButtonText } from "./modules/filters.js";
 
 // Import tag input
 import { initTagInput, loadTagsFromInput } from "./modules/tag-input.js";
@@ -465,7 +465,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("search-input")?.addEventListener("input", () => {
     clearTimeout(searchTimeout);
     state.setDisplayedCount(state.BOOKMARKS_PER_PAGE);
-    searchTimeout = setTimeout(renderBookmarks, 300);
+    searchTimeout = setTimeout(() => {
+      renderBookmarks();
+      updateFilterButtonText();
+    }, 300);
   });
 
   // Keyboard shortcuts

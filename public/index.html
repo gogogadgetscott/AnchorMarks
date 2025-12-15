@@ -1266,13 +1266,6 @@
               <button class="settings-tab" data-settings-tab="import">
                 Import/Export
               </button>
-              <button
-                class="settings-tab"
-                data-settings-tab="dashboard"
-                data-action="load-dashboard-settings"
-              >
-                Dashboard
-              </button>
               <button class="settings-tab" data-settings-tab="tags">
                 Tags
               </button>
@@ -1608,86 +1601,6 @@
                     </svg>
                     Export as HTML
                   </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="settings-panel" id="settings-dashboard">
-              <div class="setting-item">
-                <div class="setting-info">
-                  <h4>Dashboard Mode</h4>
-                  <p>Group bookmarks by folders or tags</p>
-                </div>
-                <select
-                  id="dashboard-mode-select"
-                  class="form-input"
-                  style="width: auto"
-                >
-                  <option value="folder">Folders</option>
-                  <option value="tag">Tags</option>
-                </select>
-              </div>
-
-              <div class="setting-item">
-                <div class="setting-info">
-                  <h4>Bookmark Order</h4>
-                  <p>Sort order of bookmarks within columns</p>
-                </div>
-                <select
-                  id="dashboard-bookmark-sort"
-                  class="form-input"
-                  style="width: auto"
-                >
-                  <option value="recently_added">Recently Added</option>
-                  <option value="oldest_first">Oldest First</option>
-                  <option value="most_visited">Most Visited</option>
-                  <option value="a_z">A – Z</option>
-                  <option value="z_a">Z – A</option>
-                </select>
-              </div>
-
-              <div class="setting-item" style="display: block">
-                <div class="setting-info" style="margin-bottom: 10px">
-                  <h4>Dashboard Tags</h4>
-                  <p>Select tags to display as columns (Tag Mode only)</p>
-                </div>
-
-                <div style="display: flex; gap: 10px; margin-bottom: 10px">
-                  <input
-                    type="text"
-                    id="dashboard-tag-search"
-                    class="form-input"
-                    placeholder="Start typing to find tag..."
-                    style="flex: 1"
-                  />
-                  <select
-                    id="dashboard-tag-sort"
-                    class="form-input"
-                    style="width: auto"
-                  >
-                    <option value="count_desc">Count: High ➜ Low</option>
-                    <option value="count_asc">Count: Low ➜ High</option>
-                    <option value="name_asc">Name: A ➜ Z</option>
-                  </select>
-                </div>
-
-                <div
-                  id="dashboard-tags-list"
-                  style="
-                    display: grid;
-                    grid-template-columns: repeat(
-                      auto-fill,
-                      minmax(180px, 1fr)
-                    );
-                    gap: 8px;
-                    max-height: 250px;
-                    overflow-y: auto;
-                    padding: 10px;
-                    border: 1px solid var(--border-color);
-                    border-radius: 6px;
-                  "
-                >
-                  <!-- Tags will be populated here -->
                 </div>
               </div>
             </div>

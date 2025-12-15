@@ -12,6 +12,51 @@ import { renderActiveFilters } from "./search.js";
 
 let filterDropdownPinned = false;
 
+// Count active filters
+function getActiveFilterCount() {
+  let count = 0;
+  
+  // Count active tags
+  if (state.filterConfig.tags && state.filterConfig.tags.length > 0) {
+    count += state.filterConfig.tags.length;
+  }
+  
+  // Count search term
+  const searchInput = document.getElementById("search-input");
+  if (searchInput && searchInput.value.trim()) {
+    count += 1;
+  }
+  
+  // Count folder filter (if not "all" view)
+  if (state.currentFolder) {
+    count += 1;
+  }
+  
+  // Count collection filter
+  if (state.currentView === "collection" && state.currentCollection) {
+    count += 1;
+  }
+  
+  return count;
+}
+
+// Update filter button text with count
+export function updateFilterButtonText() {
+  const filterBtn = document.getElementById("filter-dropdown-btn");
+  if (!filterBtn) return;
+  
+  const count = getActiveFilterCount();
+  const textSpan = filterBtn.querySelector(".filter-btn-text");
+  
+  if (textSpan) {
+    if (count > 0) {
+      textSpan.textContent = `Filters (${count})`;
+    } else {
+      textSpan.textContent = "Filters";
+    }
+  }
+}
+
 // Show/hide filter button based on current view
 export function updateFilterButtonVisibility() {
   const filterBtn = document.getElementById("filter-dropdown-btn");
@@ -20,6 +65,7 @@ export function updateFilterButtonVisibility() {
   const bookmarksViews = ["all", "folder", "collection"];
   if (bookmarksViews.includes(state.currentView)) {
     filterBtn.style.display = "";
+    updateFilterButtonText();
     // If filter was pinned, restore it when coming back to bookmarks view
     if (filterDropdownPinned && !document.getElementById("filter-dropdown")) {
       showFilterDropdown();
@@ -46,7 +92,7 @@ export function initFilterDropdown() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
         </svg>
-        Filters
+        <span class="filter-btn-text">Filters</span>
     `;
 
   btn.addEventListener("click", (e) => {
@@ -380,6 +426,7 @@ async function renderFoldersInDropdown() {
       await applyFilters();
       renderDropdownActiveFilters();
       renderActiveFilters();
+      updateFilterButtonText();
       await renderFoldersInDropdown(); // Re-render to update active state
       watchViewChanges(); // Close dropdown if not pinned
     });
@@ -438,6 +485,7 @@ async function renderCollectionsInDropdown() {
       await applyFilters();
       renderDropdownActiveFilters();
       renderActiveFilters();
+      updateFilterButtonText();
       await renderCollectionsInDropdown();
       watchViewChanges(); // Close dropdown if not pinned
     });
@@ -522,6 +570,7 @@ async function renderTagsInDropdown() {
       await applyFilters();
       renderDropdownActiveFilters();
       renderActiveFilters();
+      updateFilterButtonText();
       await renderTagsInDropdown(); // Re-render to update active state
     });
   });
@@ -686,6 +735,7 @@ async function clearAllFilters() {
 
   renderDropdownActiveFilters();
   renderActiveFilters();
+  updateFilterButtonText();
 
   // Re-render lists to clear selection state
   await renderFoldersInDropdown();
@@ -800,6 +850,7 @@ function renderDropdownActiveFilters() {
       await applyFilters();
       renderDropdownActiveFilters();
       renderActiveFilters();
+      updateFilterButtonText();
 
       // Update other UI components
       renderFoldersInDropdown();
