@@ -401,9 +401,37 @@ export async function loadTagStats() {
         const path = t.parent
           ? `<div class="tag-path">${escapeHtml(t.parent)}</div>`
           : "";
-        return `<div class="tag-stat-item"><div>${escapeHtml(t.name)}${path}</div><span class="badge">${t.count}</span></div>`;
+        return `
+                <div class="tag-stat-item">
+                    <div style="flex:1">
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <span class="tag-dot" style="background-color: ${t.color || "var(--text-secondary)"}"></span>
+                            ${escapeHtml(t.name)}
+                        </div>
+                        ${path}
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                         <span class="badge">${t.count}</span>
+                         <button class="btn-icon btn-sm edit-tag-btn" data-id="${t.id}" data-name="${escapeHtml(t.name)}" data-color="${t.color || ""}" title="Edit Tag">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                         </button>
+                    </div>
+                </div>`;
       })
       .join("");
+
+    // Add listeners for edit buttons
+    tagStatsList.querySelectorAll(".edit-tag-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tag = {
+          id: btn.dataset.id,
+          name: btn.dataset.name,
+          color: btn.dataset.color,
+        };
+        openTagModal(tag);
+      });
+    });
+
     updateTagRenameUndoButton();
   } catch (err) {
     tagStatsList.innerHTML =
@@ -523,4 +551,55 @@ export async function renderTagsForFilter(container) {
       await loadBookmarks();
     });
   });
+}
+
+// Tag Modal
+export function openTagModal(tag) {
+  const modal = document.getElementById("tag-modal");
+  const form = document.getElementById("tag-form");
+  if (!modal || !form) return;
+
+  document.getElementById("tag-id").value = tag.id;
+  document.getElementById("tag-name").value = tag.name;
+
+  // Set color
+  const color = tag.color || "#6366f1";
+  document.getElementById("tag-color").value = color;
+  document.querySelectorAll(".color-option-tag").forEach((btn) => {
+    if (btn.dataset.color === color) {
+      btn.classList.add("active");
+    } else {
+      btn.classList.remove("active");
+    }
+  });
+
+  modal.classList.remove("hidden");
+  document.getElementById("tag-name").focus();
+}
+
+export async function handleTagSubmit(e) {
+  e.preventDefault();
+  const id = document.getElementById("tag-id").value;
+  const name = document.getElementById("tag-name").value.trim();
+  const color = document.getElementById("tag-color").value;
+
+  if (!name) return;
+
+  try {
+    await api(`/tags/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ name, color }),
+    });
+
+    document.getElementById("tag-modal").classList.add("hidden");
+    loadTagStats(); // Reload stats
+
+    // request refresh of dashboard or sidebar if needed
+    const event = new CustomEvent("tag-updated");
+    window.dispatchEvent(event);
+
+    showToast("Tag updated successfully", "success");
+  } catch (err) {
+    showToast(err.message || "Failed to update tag", "error");
+  }
 }

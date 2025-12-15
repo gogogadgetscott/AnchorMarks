@@ -38,13 +38,15 @@ import {
   showAuthScreen,
   showMainApp,
   updateUserInfo,
+  updateProfile,
+  updatePassword,
 } from "./modules/auth.js";
 
 // Import settings
 import {
   loadSettings,
   saveSettings,
-  toggleTheme,
+  setTheme,
   applyFaviconSetting,
   toggleFavicons,
   toggleSidebar,
@@ -107,7 +109,7 @@ import {
   renderActiveFilters,
   removeTagFilter,
   clearAllFilters,
-  clearSearch,
+  handleTagSubmit,
 } from "./modules/search.js";
 
 // Import bulk operations
@@ -473,6 +475,14 @@ function handleKeyboard(e) {
 document.addEventListener("DOMContentLoaded", async () => {
   // Initialize DOM references
   initDom();
+
+  // Initial theme load from localStorage (for immediate visual feedback)
+  const savedTheme = localStorage.getItem("anchormarks_theme");
+  if (savedTheme) {
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    const themeSelect = document.getElementById("theme-select");
+    if (themeSelect) themeSelect.value = savedTheme;
+  }
 
   // Check authentication
   const isAuthed = await checkAuth();
@@ -879,8 +889,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   document
-    .getElementById("dark-mode-toggle")
-    ?.addEventListener("change", toggleTheme);
+    .getElementById("theme-select")
+    ?.addEventListener("change", (e) => setTheme(e.target.value));
   document
     .getElementById("hide-favicons-toggle")
     ?.addEventListener("change", toggleFavicons);
@@ -910,6 +920,46 @@ document.addEventListener("DOMContentLoaded", async () => {
       startTour();
     }, 150);
     showToast("Onboarding tour restarted", "success");
+  });
+
+  // Profile Settings
+  document
+    .getElementById("profile-email-form")
+    ?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("profile-email").value;
+      if (await updateProfile(email)) {
+        document.getElementById("profile-email").value = "";
+      }
+    });
+
+  document
+    .getElementById("profile-password-form")
+    ?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const currentPassword = document.getElementById(
+        "profile-current-password",
+      ).value;
+      const newPassword = document.getElementById("profile-new-password").value;
+      if (await updatePassword(currentPassword, newPassword)) {
+        document.getElementById("profile-current-password").value = "";
+        document.getElementById("profile-new-password").value = "";
+      }
+    });
+
+  // Tag Editor
+  document
+    .getElementById("tag-form")
+    ?.addEventListener("submit", handleTagSubmit);
+
+  document.querySelectorAll(".color-option-tag").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document
+        .querySelectorAll(".color-option-tag")
+        .forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("tag-color").value = btn.dataset.color;
+    });
   });
 
   // Import/Export

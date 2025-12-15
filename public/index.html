@@ -21,6 +21,20 @@
       <!-- Auth Screen -->
       <div id="auth-screen" class="auth-screen">
         <div class="auth-container">
+          <div id="server-status-banner" class="status-banner error hidden">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              style="width: 18px; height: 18px"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="server-status-message">Server Unavailable</span>
+          </div>
           <div class="auth-header">
             <div class="logo">
               <div class="logo-icon">
@@ -1083,6 +1097,99 @@
         </div>
       </div>
 
+      <!-- Edit Tag Modal -->
+      <div id="tag-modal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-sm">
+          <div class="modal-header">
+            <h2>Edit Tag</h2>
+            <button class="btn-icon modal-close">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <form id="tag-form">
+            <input type="hidden" id="tag-id" />
+            <div class="form-group">
+              <label for="tag-name">Tag Name *</label>
+              <input type="text" id="tag-name" required placeholder="design" />
+            </div>
+            <div class="form-group">
+              <label>Color</label>
+              <div class="color-picker-tag">
+                <button
+                  type="button"
+                  class="color-option-tag active"
+                  style="--color: #f59e0b"
+                  data-color="#f59e0b"
+                ></button>
+                <button
+                  type="button"
+                  class="color-option-tag"
+                  style="--color: #ef4444"
+                  data-color="#ef4444"
+                ></button>
+                <button
+                  type="button"
+                  class="color-option-tag"
+                  style="--color: #ec4899"
+                  data-color="#ec4899"
+                ></button>
+                <button
+                  type="button"
+                  class="color-option-tag"
+                  style="--color: #8b5cf6"
+                  data-color="#8b5cf6"
+                ></button>
+                <button
+                  type="button"
+                  class="color-option-tag"
+                  style="--color: #6366f1"
+                  data-color="#6366f1"
+                ></button>
+                <button
+                  type="button"
+                  class="color-option-tag"
+                  style="--color: #0ea5e9"
+                  data-color="#0ea5e9"
+                ></button>
+                <button
+                  type="button"
+                  class="color-option-tag"
+                  style="--color: #14b8a6"
+                  data-color="#14b8a6"
+                ></button>
+                <button
+                  type="button"
+                  class="color-option-tag"
+                  style="--color: #22c55e"
+                  data-color="#22c55e"
+                ></button>
+                <button
+                  type="button"
+                  class="color-option-tag"
+                  style="--color: #64748b"
+                  data-color="#64748b"
+                ></button>
+              </div>
+              <input type="hidden" id="tag-color" value="#f59e0b" />
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary modal-cancel">
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-primary">Save Tag</button>
+            </div>
+          </form>
+        </div>
+      </div>
       <!-- Add Folder Modal -->
       <div id="folder-modal" class="modal hidden">
         <div class="modal-backdrop"></div>
@@ -1278,20 +1385,32 @@
         <div class="modal-content modal-lg">
           <div class="modal-header">
             <h2>Settings</h2>
-            <button class="btn-icon modal-close">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
+            <div style="display: flex; gap: 0.75rem; align-items: center">
+              <button
+                class="btn btn-sm btn-outline-danger"
+                id="logout-btn"
+                style="padding: 0.25rem 0.75rem; font-size: 0.8rem"
               >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
+                Sign Out
+              </button>
+              <button class="btn-icon modal-close">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
           </div>
           <div class="settings-content">
             <div class="settings-tabs">
+              <button class="settings-tab" data-settings-tab="profile">
+                Profile
+              </button>
               <button class="settings-tab active" data-settings-tab="general">
                 General
               </button>
@@ -1319,16 +1438,107 @@
               </button>
             </div>
 
+            <div class="settings-panel" id="settings-profile">
+              <div style="margin-bottom: 2rem">
+                <div class="setting-info" style="margin-bottom: 1rem">
+                  <h4>Update Profile</h4>
+                  <p>Change your email address</p>
+                </div>
+                <form id="profile-email-form">
+                  <div class="form-group" style="margin-bottom: 1rem">
+                    <label for="profile-email">Email Address</label>
+                    <input
+                      type="email"
+                      id="profile-email"
+                      required
+                      autocomplete="email"
+                    />
+                  </div>
+                  <div style="display: flex; justify-content: flex-end">
+                    <button type="submit" class="btn btn-primary">
+                      Update Email
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <div
+                style="
+                  margin-bottom: 2rem;
+                  border-top: 1px solid var(--border-color);
+                  padding-top: 2rem;
+                "
+              >
+                <div class="setting-info" style="margin-bottom: 1rem">
+                  <h4>Change Password</h4>
+                  <p>Ensure your account stays secure</p>
+                </div>
+                <form id="profile-password-form">
+                  <!-- Accessibility Fix: Hidden Username -->
+                  <input
+                    type="text"
+                    name="username"
+                    autocomplete="username"
+                    style="display: none"
+                  />
+                  <div class="form-group" style="margin-bottom: 1rem">
+                    <label for="profile-current-password"
+                      >Current Password</label
+                    >
+                    <input
+                      type="password"
+                      id="profile-current-password"
+                      required
+                      autocomplete="current-password"
+                    />
+                  </div>
+                  <div class="form-group" style="margin-bottom: 1rem">
+                    <label for="profile-new-password">New Password</label>
+                    <input
+                      type="password"
+                      id="profile-new-password"
+                      required
+                      minlength="6"
+                      autocomplete="new-password"
+                    />
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: flex-end;
+                      margin-top: 1rem;
+                    "
+                  >
+                    <button type="submit" class="btn btn-primary">
+                      Change Password
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
             <div class="settings-panel active" id="settings-general">
               <div class="setting-item">
                 <div class="setting-info">
-                  <h4>Dark Mode</h4>
-                  <p>Switch between light and dark themes</p>
+                  <h4>Theme</h4>
+                  <p>Choose your preferred color theme</p>
                 </div>
-                <label class="toggle">
-                  <input type="checkbox" id="dark-mode-toggle" />
-                  <span class="toggle-slider"></span>
-                </label>
+                <select
+                  id="theme-select"
+                  style="
+                    padding: 0.5rem;
+                    border: 1px solid var(--border-color);
+                    border-radius: var(--radius-md);
+                    background: var(--bg-primary);
+                    color: var(--text-primary);
+                  "
+                >
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                  <option value="ocean">Ocean</option>
+                  <option value="sunset">Sunset</option>
+                  <option value="midnight">Midnight</option>
+                </select>
               </div>
               <div class="setting-item">
                 <div class="setting-info">
@@ -1365,6 +1575,15 @@
               </div>
               <div class="setting-item">
                 <div class="setting-info">
+                  <h4>Onboarding Tour</h4>
+                  <p>Restart the guided tour if you skipped it</p>
+                </div>
+                <button class="btn btn-outline" id="restart-tour-btn">
+                  Restart Tour
+                </button>
+              </div>
+              <div class="setting-item">
+                <div class="setting-info">
                   <h4>Reset to Example Bookmarks</h4>
                   <p>
                     Clear all bookmarks and restore the default starter
@@ -1374,158 +1593,6 @@
                 <button class="btn btn-outline" id="reset-bookmarks-btn">
                   Reset Bookmarks
                 </button>
-              </div>
-
-              <div class="setting-item">
-                <div class="setting-info">
-                  <h4>Onboarding Tour</h4>
-                  <p>Restart the guided tour if you skipped it</p>
-                </div>
-                <button class="btn btn-outline" id="restart-tour-btn">
-                  Restart Tour
-                </button>
-              </div>
-
-              <div class="setting-item danger">
-                <div class="setting-info">
-                  <h4>Sign Out</h4>
-                  <p>Log out of your account</p>
-                </div>
-                <button class="btn btn-danger" id="logout-btn">Sign Out</button>
-              </div>
-            </div>
-
-            <div class="settings-panel" id="settings-dashboard">
-              <div class="setting-item">
-                <div class="setting-info">
-                  <h4>Dashboard Mode</h4>
-                  <p>Group bookmarks by folders or tags</p>
-                </div>
-                <select
-                  id="dashboard-mode-select"
-                  class="form-input"
-                  style="width: auto"
-                >
-                  <option value="folder">Folders</option>
-                  <option value="tag">Tags</option>
-                </select>
-              </div>
-
-              <div class="setting-item">
-                <div class="setting-info">
-                  <h4>Bookmark Order</h4>
-                  <p>Sort order of bookmarks within columns</p>
-                </div>
-                <select
-                  id="dashboard-bookmark-sort"
-                  class="form-input"
-                  style="width: auto"
-                >
-                  <option value="recently_added">Recently Added</option>
-                  <option value="oldest_first">Oldest First</option>
-                  <option value="most_visited">Most Visited</option>
-                  <option value="a_z">A – Z</option>
-                  <option value="z_a">Z – A</option>
-                </select>
-              </div>
-
-              <div class="setting-item" style="display: block">
-                <div class="setting-info" style="margin-bottom: 10px">
-                  <h4>Dashboard Tags</h4>
-                  <p>Select tags to display as columns (Tag Mode only)</p>
-                </div>
-
-                <div style="display: flex; gap: 10px; margin-bottom: 10px">
-                  <input
-                    type="text"
-                    id="dashboard-tag-search"
-                    class="form-input"
-                    placeholder="Start typing to find tag..."
-                    style="flex: 1"
-                  />
-                  <select
-                    id="dashboard-tag-sort"
-                    class="form-input"
-                    style="width: auto"
-                  >
-                    <option value="count_desc">Count: High ➜ Low</option>
-                    <option value="count_asc">Count: Low ➜ High</option>
-                    <option value="name_asc">Name: A ➜ Z</option>
-                  </select>
-                </div>
-
-                <div
-                  id="dashboard-tags-list"
-                  style="
-                    display: grid;
-                    grid-template-columns: repeat(
-                      auto-fill,
-                      minmax(180px, 1fr)
-                    );
-                    gap: 8px;
-                    max-height: 250px;
-                    overflow-y: auto;
-                    padding: 10px;
-                    border: 1px solid var(--border-color);
-                    border-radius: 6px;
-                  "
-                >
-                  <!-- Tags will be populated here -->
-                </div>
-              </div>
-            </div>
-
-            <div class="settings-panel" id="settings-tags">
-              <div class="setting-item" style="display: block">
-                <div class="setting-info" style="margin-bottom: 10px">
-                  <h4>Tag Overview</h4>
-                  <p>See your tags, counts, and nested paths</p>
-                </div>
-                <div id="tag-stats-list" class="tag-stats-list"></div>
-              </div>
-
-              <!-- Tags Section (Hidden - moved to filter dropdown) -->
-              <div class="nav-section collapsible hidden" id="tags-section">
-                <div class="setting-info" style="margin-bottom: 10px">
-                  <h4>Merge / Rename Tag</h4>
-                  <p>
-                    Move all uses of one tag to another (use “parent/child” for
-                    hierarchy)
-                  </p>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="tag-rename-from">From</label>
-                    <input
-                      type="text"
-                      id="tag-rename-from"
-                      placeholder="old tag"
-                    />
-                  </div>
-                  <div class="form-group">
-                    <label for="tag-rename-to">To</label>
-                    <input
-                      type="text"
-                      id="tag-rename-to"
-                      placeholder="new tag (can be nested)"
-                    />
-                  </div>
-                </div>
-                <div style="display: flex; gap: 0.5rem; align-items: center">
-                  <button class="btn btn-primary" id="tag-rename-btn">
-                    Rename / Merge
-                  </button>
-                  <button
-                    class="btn btn-ghost"
-                    id="tag-rename-undo-btn"
-                    disabled
-                  >
-                    Undo last rename
-                  </button>
-                  <span class="text-tertiary" style="font-size: 0.9rem"
-                    >Example: dev/js → dev/frontend/js</span
-                  >
-                </div>
               </div>
             </div>
 
@@ -1695,197 +1762,221 @@
                   </button>
                 </div>
               </div>
-
-              <div class="settings-panel" id="settings-shortcuts">
-                <div class="shortcuts-section">
-                  <h4>Navigation</h4>
-                  <table class="shortcuts-table">
-                    <tr>
-                      <td><kbd>Ctrl+Shift+D</kbd> / <kbd>Cmd+Shift+D</kbd></td>
-                      <td>Go to Dashboard</td>
-                    </tr>
-                    <tr>
-                      <td><kbd>Ctrl+Shift+F</kbd> / <kbd>Cmd+Shift+F</kbd></td>
-                      <td>Go to Favorites</td>
-                    </tr>
-                    <tr>
-                      <td><kbd>Ctrl+Shift+A</kbd> / <kbd>Cmd+Shift+A</kbd></td>
-                      <td>Go to All Bookmarks</td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <kbd>Ctrl+1</kbd> to <kbd>Ctrl+9</kbd> /
-                        <kbd>Cmd+1</kbd> to <kbd>Cmd+9</kbd>
-                      </td>
-                      <td>Jump to folder 1-9</td>
-                    </tr>
-                  </table>
-                </div>
-
-                <div class="shortcuts-section">
-                  <h4>Bookmarks</h4>
-                  <table class="shortcuts-table">
-                    <tr>
-                      <td><kbd>Ctrl+N</kbd> / <kbd>Cmd+N</kbd></td>
-                      <td>Add new bookmark</td>
-                    </tr>
-                    <tr>
-                      <td><kbd>Ctrl+F</kbd> / <kbd>Cmd+F</kbd></td>
-                      <td>Focus search</td>
-                    </tr>
-                    <tr>
-                      <td><kbd>Ctrl+K</kbd> / <kbd>Cmd+K</kbd></td>
-                      <td>Focus search (alternative)</td>
-                    </tr>
-                    <tr>
-                      <td><kbd>Ctrl+A</kbd> / <kbd>Cmd+A</kbd></td>
-                      <td>Select all bookmarks</td>
-                    </tr>
-                  </table>
-                </div>
-
-                <div class="shortcuts-section">
-                  <h4>General</h4>
-                  <table class="shortcuts-table">
-                    <tr>
-                      <td><kbd>Ctrl+Shift+P</kbd> / <kbd>Cmd+Shift+P</kbd></td>
-                      <td>Open command palette</td>
-                    </tr>
-                    <tr>
-                      <td><kbd>Esc</kbd></td>
-                      <td>Close modals and selections</td>
-                    </tr>
-                    <tr>
-                      <td><kbd>↓</kbd> / <kbd>↑</kbd></td>
-                      <td>Navigate command palette (when open)</td>
-                    </tr>
-                  </table>
-                </div>
-              </div>
             </div>
-          </div>
-        </div>
 
-        <!-- Keyboard Shortcuts Help Popup -->
-        <div id="shortcuts-popup" class="shortcuts-popup hidden">
-          <div class="shortcuts-popup-backdrop"></div>
-          <div class="shortcuts-popup-panel">
-            <div class="shortcuts-popup-header">
-              <h2>Keyboard Shortcuts</h2>
-              <button
-                class="btn-icon shortcuts-popup-close"
-                id="shortcuts-popup-close"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
+            <div class="settings-panel" id="settings-dashboard">
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Dashboard Mode</h4>
+                  <p>Group bookmarks by folders or tags</p>
+                </div>
+                <select
+                  id="dashboard-mode-select"
+                  class="form-input"
+                  style="width: auto"
                 >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
-            <div class="shortcuts-popup-content">
-              <div class="shortcuts-group">
-                <h3>Navigation</h3>
-                <div class="shortcut-item">
-                  <div class="shortcut-keys"><kbd>Ctrl+Shift+D</kbd></div>
-                  <div class="shortcut-label">Dashboard</div>
-                </div>
-                <div class="shortcut-item">
-                  <div class="shortcut-keys"><kbd>Ctrl+Shift+F</kbd></div>
-                  <div class="shortcut-label">Favorites</div>
-                </div>
-                <div class="shortcut-item">
-                  <div class="shortcut-keys"><kbd>Ctrl+Shift+A</kbd></div>
-                  <div class="shortcut-label">All Bookmarks</div>
-                </div>
-                <div class="shortcut-item">
-                  <div class="shortcut-keys">
-                    <kbd>Ctrl+1</kbd>–<kbd>9</kbd>
-                  </div>
-                  <div class="shortcut-label">Jump to Folder</div>
-                </div>
+                  <option value="folder">Folders</option>
+                  <option value="tag">Tags</option>
+                </select>
               </div>
 
-              <div class="shortcuts-group">
-                <h3>Bookmarks</h3>
-                <div class="shortcut-item">
-                  <div class="shortcut-keys"><kbd>Ctrl+N</kbd></div>
-                  <div class="shortcut-label">Add Bookmark</div>
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Bookmark Order</h4>
+                  <p>Sort order of bookmarks within columns</p>
                 </div>
-                <div class="shortcut-item">
-                  <div class="shortcut-keys"><kbd>Ctrl+F</kbd></div>
-                  <div class="shortcut-label">Search</div>
-                </div>
-                <div class="shortcut-item">
-                  <div class="shortcut-keys"><kbd>Ctrl+A</kbd></div>
-                  <div class="shortcut-label">Select All</div>
-                </div>
-              </div>
-
-              <div class="shortcuts-group">
-                <h3>General</h3>
-                <div class="shortcut-item">
-                  <div class="shortcut-keys"><kbd>Ctrl+Shift+P</kbd></div>
-                  <div class="shortcut-label">Command Palette</div>
-                </div>
-                <div class="shortcut-item">
-                  <div class="shortcut-keys">
-                    <kbd>Shift+/</kbd> or <kbd>></kbd>
-                  </div>
-                  <div class="shortcut-label">Help (this menu)</div>
-                </div>
-                <div class="shortcut-item">
-                  <div class="shortcut-keys"><kbd>Esc</kbd></div>
-                  <div class="shortcut-label">Close/Cancel</div>
-                </div>
-              </div>
-
-              <div class="shortcuts-info">
-                <p>💡 On Mac, use <kbd>Cmd</kbd> instead of <kbd>Ctrl</kbd></p>
-                <a
-                  href="/help.html"
-                  target="_blank"
-                  class="shortcuts-help-link"
+                <select
+                  id="dashboard-bookmark-sort"
+                  class="form-input"
+                  style="width: auto"
                 >
-                  📚 View Full Documentation
-                </a>
+                  <option value="recently_added">Recently Added</option>
+                  <option value="oldest_first">Oldest First</option>
+                  <option value="most_visited">Most Visited</option>
+                  <option value="a_z">A – Z</option>
+                  <option value="z_a">Z – A</option>
+                </select>
+              </div>
+
+              <div class="setting-item" style="display: block">
+                <div class="setting-info" style="margin-bottom: 10px">
+                  <h4>Dashboard Tags</h4>
+                  <p>Select tags to display as columns (Tag Mode only)</p>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 10px">
+                  <input
+                    type="text"
+                    id="dashboard-tag-search"
+                    class="form-input"
+                    placeholder="Start typing to find tag..."
+                    style="flex: 1"
+                  />
+                  <select
+                    id="dashboard-tag-sort"
+                    class="form-input"
+                    style="width: auto"
+                  >
+                    <option value="count_desc">Count: High ➜ Low</option>
+                    <option value="count_asc">Count: Low ➜ High</option>
+                    <option value="name_asc">Name: A ➜ Z</option>
+                  </select>
+                </div>
+
+                <div
+                  id="dashboard-tags-list"
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(
+                      auto-fill,
+                      minmax(180px, 1fr)
+                    );
+                    gap: 8px;
+                    max-height: 250px;
+                    overflow-y: auto;
+                    padding: 10px;
+                    border: 1px solid var(--border-color);
+                    border-radius: 6px;
+                  "
+                >
+                  <!-- Tags will be populated here -->
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <div id="command-palette" class="command-palette hidden">
-          <div class="command-palette-backdrop"></div>
-          <div class="command-palette-panel">
-            <div class="command-palette-header">
-              <span>Quick actions</span>
-              <kbd>Ctrl+Shift+P</kbd>
+            <div class="settings-panel" id="settings-tags">
+              <div class="setting-item" style="display: block">
+                <div class="setting-info" style="margin-bottom: 10px">
+                  <h4>Tag Overview</h4>
+                  <p>See your tags, counts, and nested paths</p>
+                </div>
+                <div id="tag-stats-list" class="tag-stats-list"></div>
+              </div>
+
+              <!-- Tags Section (Hidden - moved to filter dropdown) -->
+              <div class="nav-section collapsible hidden" id="tags-section">
+                <div class="setting-info" style="margin-bottom: 10px">
+                  <h4>Merge / Rename Tag</h4>
+                  <p>
+                    Move all uses of one tag to another (use “parent/child” for
+                    hierarchy)
+                  </p>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="tag-rename-from">From</label>
+                    <input
+                      type="text"
+                      id="tag-rename-from"
+                      placeholder="old tag"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="tag-rename-to">To</label>
+                    <input
+                      type="text"
+                      id="tag-rename-to"
+                      placeholder="new tag (can be nested)"
+                    />
+                  </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center">
+                  <button class="btn btn-primary" id="tag-rename-btn">
+                    Rename / Merge
+                  </button>
+                  <button
+                    class="btn btn-ghost"
+                    id="tag-rename-undo-btn"
+                    disabled
+                  >
+                    Undo last rename
+                  </button>
+                  <span class="text-tertiary" style="font-size: 0.9rem"
+                    >Example: dev/js → dev/frontend/js</span
+                  >
+                </div>
+              </div>
             </div>
-            <input
-              type="text"
-              id="command-palette-input"
-              placeholder="Type a command or folder..."
-              autocomplete="off"
-            />
-            <div id="command-palette-list" class="command-palette-list"></div>
+
+            <div class="settings-panel" id="settings-shortcuts">
+              <div class="shortcuts-section">
+                <h4>Navigation</h4>
+                <table class="shortcuts-table">
+                  <tr>
+                    <td><kbd>Ctrl+Shift+D</kbd> / <kbd>Cmd+Shift+D</kbd></td>
+                    <td>Go to Dashboard</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>Ctrl+Shift+F</kbd> / <kbd>Cmd+Shift+F</kbd></td>
+                    <td>Go to Favorites</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>Ctrl+Shift+A</kbd> / <kbd>Cmd+Shift+A</kbd></td>
+                    <td>Go to All Bookmarks</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <kbd>Ctrl+1</kbd> to <kbd>Ctrl+9</kbd> /
+                      <kbd>Cmd+1</kbd> to <kbd>Cmd+9</kbd>
+                    </td>
+                    <td>Jump to folder 1-9</td>
+                  </tr>
+                </table>
+              </div>
+              <div class="shortcuts-section">
+                <h4>Bookmarks</h4>
+                <table class="shortcuts-table">
+                  <tr>
+                    <td><kbd>Ctrl+N</kbd> / <kbd>Cmd+N</kbd></td>
+                    <td>Add new bookmark</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>Ctrl+F</kbd> / <kbd>Cmd+F</kbd></td>
+                    <td>Focus search</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>Ctrl+K</kbd> / <kbd>Cmd+K</kbd></td>
+                    <td>Focus search (alternative)</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>Ctrl+A</kbd> / <kbd>Cmd+A</kbd></td>
+                    <td>Select all bookmarks</td>
+                  </tr>
+                </table>
+              </div>
+              <div class="shortcuts-section">
+                <h4>General</h4>
+                <table class="shortcuts-table">
+                  <tr>
+                    <td><kbd>Ctrl+Shift+P</kbd> / <kbd>Cmd+Shift+P</kbd></td>
+                    <td>Open command palette</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>Esc</kbd></td>
+                    <td>Close modals and selections</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>↓</kbd> / <kbd>↑</kbd></td>
+                    <td>Navigate command palette (when open)</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Onboarding Tour -->
-      <div id="tour-overlay" class="tour-overlay hidden"></div>
-      <div id="tour-popover" class="tour-popover hidden">
-        <div class="tour-header">
-          <div class="tour-steps">
-            <span class="tour-step" id="tour-step-1">1</span>
-            <span class="tour-step" id="tour-step-2">2</span>
-            <span class="tour-step" id="tour-step-3">3</span>
-          </div>
-          <button class="btn-icon tour-close" data-action="skip-tour">
+    <!-- Keyboard Shortcuts Help Popup -->
+    <div id="shortcuts-popup" class="shortcuts-popup hidden">
+      <div class="shortcuts-popup-backdrop"></div>
+      <div class="shortcuts-popup-panel">
+        <div class="shortcuts-popup-header">
+          <h2>Keyboard Shortcuts</h2>
+          <button
+            class="btn-icon shortcuts-popup-close"
+            id="shortcuts-popup-close"
+          >
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -1897,24 +1988,126 @@
             </svg>
           </button>
         </div>
-        <div class="tour-content">
-          <h3 id="tour-title"></h3>
-          <p id="tour-description"></p>
-        </div>
-        <div class="tour-actions">
-          <button class="btn btn-secondary tour-skip" data-action="skip-tour">
-            Skip
-          </button>
-          <button class="btn btn-primary tour-next" id="tour-next-btn">
-            Next
-          </button>
-        </div>
-      </div>
+        <div class="shortcuts-popup-content">
+          <div class="shortcuts-group">
+            <h3>Navigation</h3>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Ctrl+Shift+D</kbd></div>
+              <div class="shortcut-label">Dashboard</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Ctrl+Shift+F</kbd></div>
+              <div class="shortcut-label">Favorites</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Ctrl+Shift+A</kbd></div>
+              <div class="shortcut-label">All Bookmarks</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Ctrl+1</kbd>–<kbd>9</kbd></div>
+              <div class="shortcut-label">Jump to Folder</div>
+            </div>
+          </div>
 
-      <!-- Toast Notification (outside main-app so visible on auth screen too) -->
-      <div id="toast" class="toast hidden">
-        <span class="toast-message"></span>
+          <div class="shortcuts-group">
+            <h3>Bookmarks</h3>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Ctrl+N</kbd></div>
+              <div class="shortcut-label">Add Bookmark</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Ctrl+F</kbd></div>
+              <div class="shortcut-label">Search</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Ctrl+A</kbd></div>
+              <div class="shortcut-label">Select All</div>
+            </div>
+          </div>
+
+          <div class="shortcuts-group">
+            <h3>General</h3>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Ctrl+Shift+P</kbd></div>
+              <div class="shortcut-label">Command Palette</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys">
+                <kbd>Shift+/</kbd> or <kbd>></kbd>
+              </div>
+              <div class="shortcut-label">Help (this menu)</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="shortcut-keys"><kbd>Esc</kbd></div>
+              <div class="shortcut-label">Close/Cancel</div>
+            </div>
+          </div>
+
+          <div class="shortcuts-info">
+            <p>💡 On Mac, use <kbd>Cmd</kbd> instead of <kbd>Ctrl</kbd></p>
+            <a href="/help.html" target="_blank" class="shortcuts-help-link">
+              📚 View Full Documentation
+            </a>
+          </div>
+        </div>
       </div>
+    </div>
+
+    <div id="command-palette" class="command-palette hidden">
+      <div class="command-palette-backdrop"></div>
+      <div class="command-palette-panel">
+        <div class="command-palette-header">
+          <span>Quick actions</span>
+          <kbd>Ctrl+Shift+P</kbd>
+        </div>
+        <input
+          type="text"
+          id="command-palette-input"
+          placeholder="Type a command or folder..."
+          autocomplete="off"
+        />
+        <div id="command-palette-list" class="command-palette-list"></div>
+      </div>
+    </div>
+
+    <!-- Onboarding Tour -->
+    <div id="tour-overlay" class="tour-overlay hidden"></div>
+    <div id="tour-popover" class="tour-popover hidden">
+      <div class="tour-header">
+        <div class="tour-steps">
+          <span class="tour-step" id="tour-step-1">1</span>
+          <span class="tour-step" id="tour-step-2">2</span>
+          <span class="tour-step" id="tour-step-3">3</span>
+        </div>
+        <button class="btn-icon tour-close" data-action="skip-tour">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="tour-content">
+        <h3 id="tour-title"></h3>
+        <p id="tour-description"></p>
+      </div>
+      <div class="tour-actions">
+        <button class="btn btn-secondary tour-skip" data-action="skip-tour">
+          Skip
+        </button>
+        <button class="btn btn-primary tour-next" id="tour-next-btn">
+          Next
+        </button>
+      </div>
+    </div>
+
+    <!-- Toast Notification (outside main-app so visible on auth screen too) -->
+    <div id="toast" class="toast hidden">
+      <span class="toast-message"></span>
     </div>
 
     <script type="module" src="js/app.js"></script>

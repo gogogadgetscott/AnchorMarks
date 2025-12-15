@@ -116,6 +116,32 @@ describe("Auth negative paths and extras", () => {
     expect(meAfter.body.user.api_key).toBe(regen.body.api_key);
   });
 
+  it("updates profile email", async () => {
+    const newEmail = `updated_${Date.now()}@example.com`;
+    // We must update the global email variable so the login test (if any) or subsequent checks know it changed
+    // But since subsequent tests use 'agent', the session is preserved.
+
+    const res = await agent
+      .put("/api/auth/profile")
+      .set("X-CSRF-Token", csrfToken)
+      .send({ email: newEmail });
+
+    expect(res.status).toBe(200);
+    expect(res.body.email).toBe(newEmail);
+    email = newEmail; // Update local tracker
+  });
+
+  it("updates password", async () => {
+    const newPassword = "newPassword123!";
+    const res = await agent
+      .put("/api/auth/password")
+      .set("X-CSRF-Token", csrfToken)
+      .send({ currentPassword: password, newPassword });
+
+    expect(res.status).toBe(200);
+    password = newPassword; // Update local tracker
+  });
+
   it("logs out and clears cookies", async () => {
     const res = await agent
       .post("/api/auth/logout")

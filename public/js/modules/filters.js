@@ -281,10 +281,11 @@ async function renderFoldersInDropdown() {
     folderList.forEach((folder) => {
       const count = getFolderBookmarkCount(folder.id);
 
-      // Even if count is 0, we might want to show it if it has children? 
+      // Even if count is 0, we might want to show it if it has children?
       // strict "if (count === 0) return" might hide parents with children but no bookmarks themselves.
       // But adhering to previous logic:
-      if (count === 0 && !state.folders.some(f => f.parent_id === folder.id)) return;
+      if (count === 0 && !state.folders.some((f) => f.parent_id === folder.id))
+        return;
 
       const isActive = state.currentFolder === folder.id;
       const color = folder.color || "#6366f1";
@@ -597,7 +598,11 @@ function renderDropdownActiveFilters() {
 
   // Search
   if (searchTerm) {
-    activeItems.push({ type: "search", label: `Search: ${searchTerm}`, id: "search" });
+    activeItems.push({
+      type: "search",
+      label: `Search: ${searchTerm}`,
+      id: "search",
+    });
   }
 
   if (activeItems.length === 0) {
