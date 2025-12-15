@@ -8,6 +8,7 @@ Search and open bookmarks from your AnchorMarks bookmark manager directly from F
    - Usually: `%APPDATA%\FlowLauncher\Plugins\AnchorMarks-1.0.0`
 
 2. Install the required Python dependency:
+
    ```
    pip install requests
    ```
@@ -21,13 +22,13 @@ Search and open bookmarks from your AnchorMarks bookmark manager directly from F
 
 ## Usage
 
-| Command | Description |
-|---------|-------------|
-| `lv` | Show your top/recent bookmarks |
-| `lv <query>` | Search bookmarks |
-| `lv add <url>` | Add a new bookmark |
-| `lv open` | Open AnchorMarks in browser |
-| `lv config <url> <key>` | Configure server and API key |
+| Command                 | Description                    |
+| ----------------------- | ------------------------------ |
+| `lv`                    | Show your top/recent bookmarks |
+| `lv <query>`            | Search bookmarks               |
+| `lv add <url>`          | Add a new bookmark             |
+| `lv open`               | Open AnchorMarks in browser    |
+| `lv config <url> <key>` | Configure server and API key   |
 
 ## Examples
 

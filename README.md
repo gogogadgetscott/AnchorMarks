@@ -18,8 +18,8 @@ A modern, self-hosted bookmark manager with browser sync, Flow Launcher integrat
 
 ## 📸 Screenshots
 
-| Dashboard | Search | Mobile |
-|:---:|:---:|:---:|
+|                                          Dashboard                                          |                                        Search                                         |                                        Mobile                                         |
+| :-----------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------: |
 | <img src="screenshots/anchormarks_dashboard_1765737807089.png" width="300" alt="Dashboard"> | <img src="screenshots/anchormarks_search_1765737823968.png" width="300" alt="Search"> | <img src="screenshots/anchormarks_mobile_1765737840238.png" width="200" alt="Mobile"> |
 
 ## 🚀 Quick Start
@@ -37,11 +37,13 @@ npm run dev
 ## 🔧 Configuration
 
 **Development** (default):
+
 ```bash
 npm run dev  # Runs on localhost:3000
 ```
 
 **Production**:
+
 ```bash
 cp .env.example .env
 # Edit .env with your settings
@@ -84,7 +86,6 @@ MIT License - use, modify, and distribute freely.
 ---
 
 **[View full documentation in Help →](public/help.html)**
-
 
 -update folder/tag list after import.
 -Fix folder list to show number of bookmarks in each folder. parent folders should show the number of bookmarks in all child folders.

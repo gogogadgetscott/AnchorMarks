@@ -3,58 +3,63 @@
  * Handles folder CRUD operations and rendering
  */
 
-import * as state from './state.js';
-import { api } from './api.js';
-import { escapeHtml } from './utils.js';
-import { showToast, closeModals, openModal, updateActiveNav } from './ui.js';
-import { loadBookmarks } from './bookmarks.js';
-import { renderActiveFilters } from './search.js';
-import { addDashboardWidget } from './dashboard.js';
+import * as state from "./state.js";
+import { api } from "./api.js";
+import { escapeHtml } from "./utils.js";
+import { showToast, closeModals, openModal, updateActiveNav } from "./ui.js";
+import { loadBookmarks } from "./bookmarks.js";
+import { renderActiveFilters } from "./search.js";
+import { addDashboardWidget } from "./dashboard.js";
 
 // Load folders from server
 export async function loadFolders() {
-    try {
-        const folders = await api('/folders');
-        state.setFolders(folders);
-        renderFolders();
-        updateFolderSelect();
-        populateBulkMoveSelect();
-    } catch (err) {
-        showToast('Failed to load folders', 'error');
-    }
+  try {
+    const folders = await api("/folders");
+    state.setFolders(folders);
+    renderFolders();
+    updateFolderSelect();
+    populateBulkMoveSelect();
+  } catch (err) {
+    showToast("Failed to load folders", "error");
+  }
 }
 
 // Render folders in sidebar
 export function renderFolders() {
-    const container = document.getElementById('folders-list');
-    if (!container) return;
+  const container = document.getElementById("folders-list");
+  if (!container) return;
 
-    const rootFolders = state.folders.filter(f => !f.parent_id);
+  const rootFolders = state.folders.filter((f) => !f.parent_id);
 
-    const sorter = (a, b) => {
-        const countA = state.bookmarks.filter(bm => bm.folder_id === a.id).length;
-        const countB = state.bookmarks.filter(bm => bm.folder_id === b.id).length;
-        if (countA > 0 && countB === 0) return -1;
-        if (countA === 0 && countB > 0) return 1;
-        return a.name.localeCompare(b.name);
-    };
+  const sorter = (a, b) => {
+    const countA = state.bookmarks.filter((bm) => bm.folder_id === a.id).length;
+    const countB = state.bookmarks.filter((bm) => bm.folder_id === b.id).length;
+    if (countA > 0 && countB === 0) return -1;
+    if (countA === 0 && countB > 0) return 1;
+    return a.name.localeCompare(b.name);
+  };
 
-    rootFolders.sort(sorter);
+  rootFolders.sort(sorter);
 
-    function renderFolderTree(folderList, level = 0) {
-        return folderList.map(f => {
-            const children = state.folders.filter(child => child.parent_id === f.id).sort(sorter);
+  function renderFolderTree(folderList, level = 0) {
+    return folderList
+      .map((f) => {
+        const children = state.folders
+          .filter((child) => child.parent_id === f.id)
+          .sort(sorter);
 
-            // Recursive count
-            const descIds = getAllChildFolderIds(f.id);
-            const allIds = new Set([f.id, ...descIds]);
-            const count = state.bookmarks.filter(b => allIds.has(b.folder_id)).length;
+        // Recursive count
+        const descIds = getAllChildFolderIds(f.id);
+        const allIds = new Set([f.id, ...descIds]);
+        const count = state.bookmarks.filter((b) =>
+          allIds.has(b.folder_id),
+        ).length;
 
-            const isEmpty = count === 0;
-            const indentation = level * 12;
+        const isEmpty = count === 0;
+        const indentation = level * 12;
 
-            return `
-            <div class="nav-item folder-item ${state.currentFolder === f.id ? 'active' : ''} ${isEmpty ? 'empty' : ''}" 
+        return `
+            <div class="nav-item folder-item ${state.currentFolder === f.id ? "active" : ""} ${isEmpty ? "empty" : ""}" 
                  data-folder="${f.id}" 
                  data-folder-name="${escapeHtml(f.name)}"
                  data-folder-color="${f.color}"
@@ -62,7 +67,7 @@ export function renderFolders() {
                  style="padding-left: ${12 + indentation}px; cursor: grab;">
                 <span class="folder-color" style="background: ${f.color}"></span>
                 <span class="folder-name">${escapeHtml(f.name)}</span>
-                ${count > 0 ? `<span class="badge">${count}</span>` : ''}
+                ${count > 0 ? `<span class="badge">${count}</span>` : ""}
                 <div class="folder-actions">
                     <button class="btn-icon" data-action="edit-folder" data-id="${f.id}" title="Edit">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
@@ -80,315 +85,327 @@ export function renderFolders() {
             </div>
             ${renderFolderTree(children, level + 1)}
             `;
-        }).join('');
-    }
+      })
+      .join("");
+  }
 
-    container.innerHTML = renderFolderTree(rootFolders);
+  container.innerHTML = renderFolderTree(rootFolders);
 
-    // Attach event listeners
-    container.querySelectorAll('.folder-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-            if (e.defaultPrevented) return;
+  // Attach event listeners
+  container.querySelectorAll(".folder-item").forEach((item) => {
+    item.addEventListener("click", (e) => {
+      if (e.defaultPrevented) return;
 
-            // Fix: Allow folder actions (edit/delete) to bubble to global handler
-            if (e.target.closest('.folder-actions')) return;
+      // Fix: Allow folder actions (edit/delete) to bubble to global handler
+      if (e.target.closest(".folder-actions")) return;
 
-            e.stopPropagation();
+      e.stopPropagation();
 
-            // Feature: Add to dashboard if in dashboard mode
-            if (state.currentView === 'dashboard') {
-                const existingWidgets = state.dashboardWidgets.length;
-                const x = 50 + (existingWidgets * 30) % 300;
-                const y = 50 + (existingWidgets * 30) % 200;
+      // Feature: Add to dashboard if in dashboard mode
+      if (state.currentView === "dashboard") {
+        const existingWidgets = state.dashboardWidgets.length;
+        const x = 50 + ((existingWidgets * 30) % 300);
+        const y = 50 + ((existingWidgets * 30) % 200);
 
-                try {
-                    addDashboardWidget('folder', item.dataset.folder, x, y);
-                } catch (err) {
-                    showToast('Error adding widget: ' + err.message, 'error');
-                }
-                return;
-            }
-
-            state.setCurrentFolder(item.dataset.folder);
-            state.setCurrentView('folder');
-            updateActiveNav();
-            renderActiveFilters();
-            loadBookmarks();
-
-            const folder = state.folders.find(f => f.id === state.currentFolder);
-            const viewTitle = document.getElementById('view-title');
-            if (viewTitle) viewTitle.textContent = folder ? folder.name : 'Folder';
-        });
-
-        // Setup drag for dashboard
-        if (item.getAttribute('draggable') === 'true') {
-            item.addEventListener('dragstart', (e) => {
-                state.setDraggedSidebarItem({
-                    type: 'folder',
-                    id: item.dataset.folder,
-                    name: item.dataset.folderName,
-                    color: item.dataset.folderColor
-                });
-                e.dataTransfer.effectAllowed = 'copy';
-                e.dataTransfer.setData('text/plain', item.dataset.folderName);
-            });
-
-            item.addEventListener('dragend', () => {
-                state.setDraggedSidebarItem(null);
-            });
+        try {
+          addDashboardWidget("folder", item.dataset.folder, x, y);
+        } catch (err) {
+          showToast("Error adding widget: " + err.message, "error");
         }
-    });
-}
+        return;
+      }
 
+      state.setCurrentFolder(item.dataset.folder);
+      state.setCurrentView("folder");
+      updateActiveNav();
+      renderActiveFilters();
+      loadBookmarks();
+
+      const folder = state.folders.find((f) => f.id === state.currentFolder);
+      const viewTitle = document.getElementById("view-title");
+      if (viewTitle) viewTitle.textContent = folder ? folder.name : "Folder";
+    });
+
+    // Setup drag for dashboard
+    if (item.getAttribute("draggable") === "true") {
+      item.addEventListener("dragstart", (e) => {
+        state.setDraggedSidebarItem({
+          type: "folder",
+          id: item.dataset.folder,
+          name: item.dataset.folderName,
+          color: item.dataset.folderColor,
+        });
+        e.dataTransfer.effectAllowed = "copy";
+        e.dataTransfer.setData("text/plain", item.dataset.folderName);
+      });
+
+      item.addEventListener("dragend", () => {
+        state.setDraggedSidebarItem(null);
+      });
+    }
+  });
+}
 
 // Update folder select dropdown
 export function updateFolderSelect() {
-    const select = document.getElementById('bookmark-folder');
-    if (!select) return;
+  const select = document.getElementById("bookmark-folder");
+  if (!select) return;
 
-    let options = '<option value="">None</option>';
-    const sorter = (a, b) => a.name.localeCompare(b.name);
+  let options = '<option value="">None</option>';
+  const sorter = (a, b) => a.name.localeCompare(b.name);
 
-    function buildOptions(parent_id, level = 0) {
-        const children = state.folders.filter(f => f.parent_id === parent_id).sort(sorter);
-        children.forEach(f => {
-            const prefix = '&nbsp;&nbsp;&nbsp;'.repeat(level);
-            options += `<option value="${f.id}">${prefix}${escapeHtml(f.name)}</option>`;
-            buildOptions(f.id, level + 1);
-        });
-    }
+  function buildOptions(parent_id, level = 0) {
+    const children = state.folders
+      .filter((f) => f.parent_id === parent_id)
+      .sort(sorter);
+    children.forEach((f) => {
+      const prefix = "&nbsp;&nbsp;&nbsp;".repeat(level);
+      options += `<option value="${f.id}">${prefix}${escapeHtml(f.name)}</option>`;
+      buildOptions(f.id, level + 1);
+    });
+  }
 
-    buildOptions(null);
-    select.innerHTML = options;
+  buildOptions(null);
+  select.innerHTML = options;
 }
 
 // Update folder parent select dropdown
 export function updateFolderParentSelect(currentId = null) {
-    const select = document.getElementById('folder-parent');
-    if (!select) return;
+  const select = document.getElementById("folder-parent");
+  if (!select) return;
 
-    let options = '<option value="">None (Top Level)</option>';
+  let options = '<option value="">None (Top Level)</option>';
 
-    function isDescendant(potentialParentId) {
-        if (!currentId) return false;
-        if (potentialParentId === currentId) return true;
+  function isDescendant(potentialParentId) {
+    if (!currentId) return false;
+    if (potentialParentId === currentId) return true;
 
-        let parent = state.folders.find(f => f.id === potentialParentId);
-        while (parent) {
-            if (parent.id === currentId) return true;
-            parent = state.folders.find(f => f.id === parent.parent_id);
-        }
-        return false;
+    let parent = state.folders.find((f) => f.id === potentialParentId);
+    while (parent) {
+      if (parent.id === currentId) return true;
+      parent = state.folders.find((f) => f.id === parent.parent_id);
     }
+    return false;
+  }
 
-    const sorter = (a, b) => a.name.localeCompare(b.name);
+  const sorter = (a, b) => a.name.localeCompare(b.name);
 
-    function buildOptions(parent_id, level = 0) {
-        const children = state.folders.filter(f => f.parent_id === parent_id).sort(sorter);
-        children.forEach(f => {
-            if (currentId && (f.id === currentId || isDescendant(f.id))) return;
-            const prefix = '&nbsp;&nbsp;&nbsp;'.repeat(level);
-            options += `<option value="${f.id}">${prefix}${escapeHtml(f.name)}</option>`;
-            buildOptions(f.id, level + 1);
-        });
-    }
+  function buildOptions(parent_id, level = 0) {
+    const children = state.folders
+      .filter((f) => f.parent_id === parent_id)
+      .sort(sorter);
+    children.forEach((f) => {
+      if (currentId && (f.id === currentId || isDescendant(f.id))) return;
+      const prefix = "&nbsp;&nbsp;&nbsp;".repeat(level);
+      options += `<option value="${f.id}">${prefix}${escapeHtml(f.name)}</option>`;
+      buildOptions(f.id, level + 1);
+    });
+  }
 
-    buildOptions(null);
-    select.innerHTML = options;
+  buildOptions(null);
+  select.innerHTML = options;
 }
 
 // Populate bulk move select
 export function populateBulkMoveSelect() {
-    const select = document.getElementById('bulk-move-select');
-    if (!select) return;
+  const select = document.getElementById("bulk-move-select");
+  if (!select) return;
 
-    select.innerHTML = '<option value="">Choose folder</option>' +
-        state.folders.map(f => `<option value="${f.id}">${escapeHtml(f.name)}</option>`).join('');
+  select.innerHTML =
+    '<option value="">Choose folder</option>' +
+    state.folders
+      .map((f) => `<option value="${f.id}">${escapeHtml(f.name)}</option>`)
+      .join("");
 }
 
 // Create folder
 export async function createFolder(data) {
-    try {
-        const folder = await api('/folders', {
-            method: 'POST',
-            body: JSON.stringify(data)
-        });
-        state.folders.push(folder);
-        renderFolders();
-        updateFolderSelect();
-        closeModals();
-        showToast('Folder created!', 'success');
-    } catch (err) {
-        showToast(err.message, 'error');
-    }
+  try {
+    const folder = await api("/folders", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    state.folders.push(folder);
+    renderFolders();
+    updateFolderSelect();
+    closeModals();
+    showToast("Folder created!", "success");
+  } catch (err) {
+    showToast(err.message, "error");
+  }
 }
 
 // Update folder
 export async function updateFolder(id, data) {
-    try {
-        const folder = await api(`/folders/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data)
-        });
-        const index = state.folders.findIndex(f => f.id === id);
-        if (index !== -1) state.folders[index] = folder;
-        renderFolders();
-        updateFolderSelect();
-        closeModals();
-        showToast('Folder updated!', 'success');
-    } catch (err) {
-        showToast(err.message, 'error');
-    }
+  try {
+    const folder = await api(`/folders/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+    const index = state.folders.findIndex((f) => f.id === id);
+    if (index !== -1) state.folders[index] = folder;
+    renderFolders();
+    updateFolderSelect();
+    closeModals();
+    showToast("Folder updated!", "success");
+  } catch (err) {
+    showToast(err.message, "error");
+  }
 }
 
 // Delete folder
 export async function deleteFolder(id) {
-    if (!confirm('Delete this folder? Bookmarks will be moved to uncategorized.')) return;
+  if (!confirm("Delete this folder? Bookmarks will be moved to uncategorized."))
+    return;
 
-    try {
-        await api(`/folders/${id}`, { method: 'DELETE' });
-        state.setFolders(state.folders.filter(f => f.id !== id));
+  try {
+    await api(`/folders/${id}`, { method: "DELETE" });
+    state.setFolders(state.folders.filter((f) => f.id !== id));
 
-        if (state.currentFolder === id) {
-            state.setCurrentFolder(null);
-            state.setCurrentView('all');
-            const viewTitle = document.getElementById('view-title');
-            if (viewTitle) viewTitle.textContent = 'Bookmarks';
-            renderActiveFilters();
-        }
-
-        renderFolders();
-        updateFolderSelect();
-        loadBookmarks();
-        showToast('Folder deleted', 'success');
-    } catch (err) {
-        showToast(err.message, 'error');
+    if (state.currentFolder === id) {
+      state.setCurrentFolder(null);
+      state.setCurrentView("all");
+      const viewTitle = document.getElementById("view-title");
+      if (viewTitle) viewTitle.textContent = "Bookmarks";
+      renderActiveFilters();
     }
+
+    renderFolders();
+    updateFolderSelect();
+    loadBookmarks();
+    showToast("Folder deleted", "success");
+  } catch (err) {
+    showToast(err.message, "error");
+  }
 }
 
 // Edit folder (populate form)
 export function editFolder(id) {
-    const folder = state.folders.find(f => f.id === id);
-    if (!folder) return;
+  const folder = state.folders.find((f) => f.id === id);
+  if (!folder) return;
 
-    document.getElementById('folder-modal-title').textContent = 'Edit Folder';
-    document.getElementById('folder-id').value = id;
-    document.getElementById('folder-name').value = folder.name;
-    document.getElementById('folder-color').value = folder.color;
+  document.getElementById("folder-modal-title").textContent = "Edit Folder";
+  document.getElementById("folder-id").value = id;
+  document.getElementById("folder-name").value = folder.name;
+  document.getElementById("folder-color").value = folder.color;
 
-    document.querySelectorAll('.color-option').forEach(opt => {
-        if (opt.dataset.color === folder.color) opt.classList.add('active');
-        else opt.classList.remove('active');
-    });
+  document.querySelectorAll(".color-option").forEach((opt) => {
+    if (opt.dataset.color === folder.color) opt.classList.add("active");
+    else opt.classList.remove("active");
+  });
 
-    updateFolderParentSelect(id);
-    document.getElementById('folder-parent').value = folder.parent_id || '';
+  updateFolderParentSelect(id);
+  document.getElementById("folder-parent").value = folder.parent_id || "";
 
-    // Change button text
-    const form = document.getElementById('folder-form');
-    if (form) {
-        const btn = form.querySelector('button[type="submit"]');
-        if (btn) btn.textContent = 'Save';
-    }
+  // Change button text
+  const form = document.getElementById("folder-form");
+  if (form) {
+    const btn = form.querySelector('button[type="submit"]');
+    if (btn) btn.textContent = "Save";
+  }
 
-    openModal('folder-modal');
+  openModal("folder-modal");
 }
 
 // Navigate to folder by index
 export function navigateToFolderByIndex(index) {
-    const rootFolders = state.folders.filter(f => !f.parent_id);
+  const rootFolders = state.folders.filter((f) => !f.parent_id);
 
-    if (index < 0 || index >= rootFolders.length) {
-        return;
-    }
+  if (index < 0 || index >= rootFolders.length) {
+    return;
+  }
 
-    const folder = rootFolders[index];
-    state.setCurrentFolder(folder.id);
-    state.setCurrentView('folder');
+  const folder = rootFolders[index];
+  state.setCurrentFolder(folder.id);
+  state.setCurrentView("folder");
 
-    const viewTitle = document.getElementById('view-title');
-    if (viewTitle) viewTitle.textContent = folder.name;
+  const viewTitle = document.getElementById("view-title");
+  if (viewTitle) viewTitle.textContent = folder.name;
 
-    updateActiveNav();
-    renderActiveFilters();
-    loadBookmarks();
+  updateActiveNav();
+  renderActiveFilters();
+  loadBookmarks();
 }
 
 export function getAllChildFolderIds(folderId) {
-    const ids = [folderId];
-    const children = state.folders.filter(f => f.parent_id === folderId);
-    children.forEach(child => {
-        ids.push(...getAllChildFolderIds(child.id));
-    });
-    return ids;
+  const ids = [folderId];
+  const children = state.folders.filter((f) => f.parent_id === folderId);
+  children.forEach((child) => {
+    ids.push(...getAllChildFolderIds(child.id));
+  });
+  return ids;
 }
 
 // Render folders for filter dropdown
 export async function renderFoldersForFilter(container) {
-    if (!container) return;
+  if (!container) return;
 
-    const folders = state.folders;
+  const folders = state.folders;
 
-    if (folders.length === 0) {
-        container.innerHTML = '<div style="padding:0.5rem;color:var(--text-tertiary);text-align:center;font-size:0.85rem">No folders yet</div>';
-        return;
-    }
+  if (folders.length === 0) {
+    container.innerHTML =
+      '<div style="padding:0.5rem;color:var(--text-tertiary);text-align:center;font-size:0.85rem">No folders yet</div>';
+    return;
+  }
 
-    // Build folder tree HTML (similar to sidebar)
-    const buildFolderTree = (parentId = null, level = 0) => {
-        return folders
-            .filter(f => f.parent_id === parentId)
-            .map(folder => {
-                const isActive = state.currentFolder === folder.id;
-                const hasChildren = folders.some(f => f.parent_id === folder.id);
-                const indent = level * 1.25;
+  // Build folder tree HTML (similar to sidebar)
+  const buildFolderTree = (parentId = null, level = 0) => {
+    return folders
+      .filter((f) => f.parent_id === parentId)
+      .map((folder) => {
+        const isActive = state.currentFolder === folder.id;
+        const hasChildren = folders.some((f) => f.parent_id === folder.id);
+        const indent = level * 1.25;
 
-                return `
-                    <div class="folder-item ${isActive ? 'active' : ''}" data-folder-id="${folder.id}" style="padding-left: ${indent}rem">
-                        <span class="folder-icon" style="color: ${escapeHtml(folder.color || '#6b7280')}">📁</span>
+        return `
+                    <div class="folder-item ${isActive ? "active" : ""}" data-folder-id="${folder.id}" style="padding-left: ${indent}rem">
+                        <span class="folder-icon" style="color: ${escapeHtml(folder.color || "#6b7280")}">📁</span>
                         <span class="folder-name">${escapeHtml(folder.name)}</span>
                         <span class="folder-count">${folder.bookmark_count || 0}</span>
                     </div>
-                    ${hasChildren ? buildFolderTree(folder.id, level + 1) : ''}
+                    ${hasChildren ? buildFolderTree(folder.id, level + 1) : ""}
                 `;
-            }).join('');
-    };
+      })
+      .join("");
+  };
 
-    container.innerHTML = buildFolderTree();
+  container.innerHTML = buildFolderTree();
 
-    // Attach click handlers
-    container.querySelectorAll('.folder-item').forEach(item => {
-        item.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const folderId = item.dataset.folderId;
+  // Attach click handlers
+  container.querySelectorAll(".folder-item").forEach((item) => {
+    item.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const folderId = item.dataset.folderId;
 
-            // Toggle active state
-            container.querySelectorAll('.folder-item').forEach(f => f.classList.remove('active'));
-            item.classList.add('active');
+      // Toggle active state
+      container
+        .querySelectorAll(".folder-item")
+        .forEach((f) => f.classList.remove("active"));
+      item.classList.add("active");
 
-            // Update state and reload
-            state.setCurrentFolder(folderId);
-            state.setFilterConfig({
-                ...state.filterConfig,
-                folder: folderId
-            });
+      // Update state and reload
+      state.setCurrentFolder(folderId);
+      state.setFilterConfig({
+        ...state.filterConfig,
+        folder: folderId,
+      });
 
-            const { loadBookmarks } = await import('./bookmarks.js');
-            await loadBookmarks();
-        });
+      const { loadBookmarks } = await import("./bookmarks.js");
+      await loadBookmarks();
     });
+  });
 }
 
 export default {
-    loadFolders,
-    renderFolders,
-    updateFolderSelect,
-    updateFolderParentSelect,
-    populateBulkMoveSelect,
-    createFolder,
-    updateFolder,
-    deleteFolder,
-    editFolder,
-    navigateToFolderByIndex,
-    getAllChildFolderIds
+  loadFolders,
+  renderFolders,
+  updateFolderSelect,
+  updateFolderParentSelect,
+  populateBulkMoveSelect,
+  createFolder,
+  updateFolder,
+  deleteFolder,
+  editFolder,
+  navigateToFolderByIndex,
+  getAllChildFolderIds,
 };

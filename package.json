@@ -30,8 +30,11 @@
     "test:watch": "jest --watch",
     "test:debug": "jest --detectOpenHandles --runInBand --debug",
     "test:coverage": "jest --coverage",
+    "lint": "eslint \"**/*.js\" --fix && prettier . --write",
+    "lint-check": "eslint \"**/*.js\" && prettier . --check",
+    "install": "npm install",
     "clean": "rm -rf node_modules coverage",
-    "reinstall": "npm run clean && npm install",
+    "reinstall": "npm run clean && npm run install",
     "docker:build": "docker compose build",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
@@ -54,7 +57,10 @@
     "@babel/core": "^7.28.5",
     "@babel/preset-env": "^7.28.5",
     "babel-jest": "^30.2.0",
+    "eslint": "^9.39.2",
+    "globals": "^16.5.0",
     "jest": "^30.2.0",
+    "prettier": "^3.7.4",
     "supertest": "^7.1.3"
   },
   "engines": {

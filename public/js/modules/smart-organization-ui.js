@@ -1,6 +1,6 @@
 /**
  * Smart Organization Frontend Components
- * 
+ *
  * This module provides smart tag suggestions, collection recommendations,
  * and bookmark insights using the AnchorMarks API.
  */
@@ -17,10 +17,10 @@ async function api(endpoint, options) {
     return AM.api(endpoint, options);
   }
   // Fallback to fetch
-  const response = await fetch('/api' + endpoint, {
+  const response = await fetch("/api" + endpoint, {
     ...options,
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...options?.headers }
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...options?.headers },
   });
   return response.json();
 }
@@ -29,8 +29,8 @@ async function api(endpoint, options) {
 function escapeHtml(text) {
   const AM = getAPI();
   if (AM.escapeHtml) return AM.escapeHtml(text);
-  if (!text) return '';
-  const div = document.createElement('div');
+  if (!text) return "";
+  const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
 }
@@ -45,12 +45,14 @@ function addTagToInput(tag) {
   if (AM.addTagToInput) {
     AM.addTagToInput(tag);
   } else {
-    const input = document.getElementById('bookmark-tags');
+    const input = document.getElementById("bookmark-tags");
     if (input) {
-      const current = input.value ? input.value.split(',').map(t => t.trim()) : [];
+      const current = input.value
+        ? input.value.split(",").map((t) => t.trim())
+        : [];
       if (!current.includes(tag)) {
         current.push(tag);
-        input.value = current.join(', ');
+        input.value = current.join(", ");
       }
     }
   }
@@ -66,7 +68,7 @@ function loadFolders() {
 let smartTagSuggestTimeout;
 
 async function showSmartTagSuggestions(url) {
-  const tagSuggestions = document.getElementById('tag-suggestions');
+  const tagSuggestions = document.getElementById("tag-suggestions");
   if (!tagSuggestions || !url) {
     renderTagSuggestions([]);
     return;
@@ -75,7 +77,9 @@ async function showSmartTagSuggestions(url) {
   clearTimeout(smartTagSuggestTimeout);
   smartTagSuggestTimeout = setTimeout(async () => {
     try {
-      const response = await api(`/tags/suggest-smart?url=${encodeURIComponent(url)}&limit=8`);
+      const response = await api(
+        `/tags/suggest-smart?url=${encodeURIComponent(url)}&limit=8`,
+      );
 
       if (response.suggestions && response.suggestions.length > 0) {
         renderSmartTagSuggestions(response.suggestions, response.domain_info);
@@ -83,52 +87,60 @@ async function showSmartTagSuggestions(url) {
         renderTagSuggestions([]);
       }
     } catch (err) {
-      console.error('Smart tag suggestions failed:', err);
+      console.error("Smart tag suggestions failed:", err);
       renderTagSuggestions([]);
     }
   }, 400);
 }
 
 function renderTagSuggestions(list) {
-  const tagSuggestions = document.getElementById('tag-suggestions');
+  const tagSuggestions = document.getElementById("tag-suggestions");
   if (!tagSuggestions) return;
 
   if (!list || list.length === 0) {
-    tagSuggestions.innerHTML = '<span class="text-tertiary" style="font-size:0.85rem;">No suggestions</span>';
+    tagSuggestions.innerHTML =
+      '<span class="text-tertiary" style="font-size:0.85rem;">No suggestions</span>';
     return;
   }
 
-  tagSuggestions.innerHTML = list.map(tag => `
+  tagSuggestions.innerHTML = list
+    .map(
+      (tag) => `
     <button type="button" class="tag-suggestion" data-tag="${escapeHtml(tag)}">
       ${escapeHtml(tag)}
     </button>
-  `).join('');
+  `,
+    )
+    .join("");
 
   // Add click handlers
-  tagSuggestions.querySelectorAll('.tag-suggestion').forEach(btn => {
-    btn.addEventListener('click', () => {
+  tagSuggestions.querySelectorAll(".tag-suggestion").forEach((btn) => {
+    btn.addEventListener("click", () => {
       addTagToInput(btn.dataset.tag);
     });
   });
 }
 
 function renderSmartTagSuggestions(suggestions, domainInfo) {
-  const tagSuggestions = document.getElementById('tag-suggestions');
+  const tagSuggestions = document.getElementById("tag-suggestions");
   if (!tagSuggestions) return;
 
   if (!suggestions || suggestions.length === 0) {
-    tagSuggestions.innerHTML = '<span class="text-tertiary" style="font-size:0.85rem;">No suggestions</span>';
+    tagSuggestions.innerHTML =
+      '<span class="text-tertiary" style="font-size:0.85rem;">No suggestions</span>';
     return;
   }
 
-  const html = suggestions.map(sugg => {
-    const sourceIcon = {
-      'domain': '🌐',
-      'activity': '📊',
-      'similar': '🔗'
-    }[sugg.source] || '✨';
+  const html = suggestions
+    .map((sugg) => {
+      const sourceIcon =
+        {
+          domain: "🌐",
+          activity: "📊",
+          similar: "🔗",
+        }[sugg.source] || "✨";
 
-    return `
+      return `
       <div class="smart-tag-suggestion" data-tag="${escapeHtml(sugg.tag)}" title="${escapeHtml(sugg.reason)}">
         <button type="button" class="tag-suggestion-btn">
           <span class="source-icon">${sourceIcon}</span>
@@ -137,26 +149,28 @@ function renderSmartTagSuggestions(suggestions, domainInfo) {
         </button>
       </div>
     `;
-  }).join('');
+    })
+    .join("");
 
   tagSuggestions.innerHTML = html;
 
   // Add click handlers
-  tagSuggestions.querySelectorAll('.tag-suggestion-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tag = btn.closest('.smart-tag-suggestion').dataset.tag;
+  tagSuggestions.querySelectorAll(".tag-suggestion-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tag = btn.closest(".smart-tag-suggestion").dataset.tag;
       addTagToInput(tag);
     });
   });
 
   // Add domain info
   if (domainInfo && domainInfo.domain) {
-    const infoEl = document.createElement('div');
-    infoEl.className = 'domain-info-mini text-tertiary';
-    infoEl.style.cssText = 'font-size:0.75rem; margin-top:8px; padding-top:8px; border-top:1px solid var(--border-color);';
+    const infoEl = document.createElement("div");
+    infoEl.className = "domain-info-mini text-tertiary";
+    infoEl.style.cssText =
+      "font-size:0.75rem; margin-top:8px; padding-top:8px; border-top:1px solid var(--border-color);";
     infoEl.innerHTML = `
       📌 ${domainInfo.bookmark_count} bookmarks from ${escapeHtml(domainInfo.domain)}
-      ${domainInfo.category ? ` • ${escapeHtml(domainInfo.category)}` : ''}
+      ${domainInfo.category ? ` • ${escapeHtml(domainInfo.category)}` : ""}
     `;
     tagSuggestions.appendChild(infoEl);
   }
@@ -170,33 +184,35 @@ async function loadSmartCollections() {
   if (!AM.isAuthenticated || !AM.isAuthenticated()) return;
 
   try {
-    const response = await api('/smart-collections/suggest?limit=5');
+    const response = await api("/smart-collections/suggest?limit=5");
 
     if (response.collections && response.collections.length > 0) {
       renderSmartCollectionSuggestions(response.collections);
     }
   } catch (err) {
-    console.error('Failed to load smart collections:', err);
+    console.error("Failed to load smart collections:", err);
   }
 }
 
 function renderSmartCollectionSuggestions(collections) {
-  const container = document.getElementById('smart-collections-suggestions');
+  const container = document.getElementById("smart-collections-suggestions");
   if (!container) return;
 
   if (!collections || collections.length === 0) {
-    container.style.display = 'none';
+    container.style.display = "none";
     return;
   }
 
-  container.style.display = 'block';
+  container.style.display = "block";
   container.innerHTML = `
     <div class="smart-collections-header">
       <h3>✨ Smart Collections</h3>
       <button class="close-smart-collections btn-icon" aria-label="Close">✕</button>
     </div>
     <div class="smart-collections-list">
-      ${collections.map(coll => `
+      ${collections
+        .map(
+          (coll) => `
         <div class="smart-collection-card">
           <div class="collection-header">
             <span class="collection-icon" style="font-size:1.5rem;">${getCollectionIcon(coll.icon)}</span>
@@ -209,27 +225,38 @@ function renderSmartCollectionSuggestions(collections) {
             <span class="collection-count">📚 ${coll.bookmark_count}</span>
             <span class="collection-type">${escapeHtml(coll.type)}</span>
           </div>
-          ${coll.tags ? `
+          ${
+            coll.tags
+              ? `
             <div class="collection-tags">
-              ${coll.tags.slice(0, 3).map(t => `<span class="tag-badge">${escapeHtml(t)}</span>`).join('')}
-              ${coll.tags.length > 3 ? `<span class="tag-badge more">+${coll.tags.length - 3}</span>` : ''}
+              ${coll.tags
+                .slice(0, 3)
+                .map((t) => `<span class="tag-badge">${escapeHtml(t)}</span>`)
+                .join("")}
+              ${coll.tags.length > 3 ? `<span class="tag-badge more">+${coll.tags.length - 3}</span>` : ""}
             </div>
-          ` : ''}
+          `
+              : ""
+          }
           <button class="btn btn-secondary create-collection-btn" data-collection='${escapeHtml(JSON.stringify(coll))}'>
             Create Collection
           </button>
         </div>
-      `).join('')}
+      `,
+        )
+        .join("")}
     </div>
   `;
 
   // Add event listeners
-  container.querySelector('.close-smart-collections')?.addEventListener('click', () => {
-    container.style.display = 'none';
-  });
+  container
+    .querySelector(".close-smart-collections")
+    ?.addEventListener("click", () => {
+      container.style.display = "none";
+    });
 
-  container.querySelectorAll('.create-collection-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+  container.querySelectorAll(".create-collection-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
       createSmartCollectionFromSuggestion(btn.dataset.collection);
     });
   });
@@ -237,34 +264,35 @@ function renderSmartCollectionSuggestions(collections) {
 
 function getCollectionIcon(icon) {
   const iconMap = {
-    'clock': '🕐',
-    'trending-up': '📈',
-    'eye-off': '👁️',
-    'link': '🔗',
-    'palette': '🎨',
-    'filter': '🔍',
-    'tag': '🏷️',
-    'folder': '📁'
+    clock: "🕐",
+    "trending-up": "📈",
+    "eye-off": "👁️",
+    link: "🔗",
+    palette: "🎨",
+    filter: "🔍",
+    tag: "🏷️",
+    folder: "📁",
   };
-  return iconMap[icon] || '📌';
+  return iconMap[icon] || "📌";
 }
 
 async function createSmartCollectionFromSuggestion(collectionJson) {
   try {
     const collection = JSON.parse(collectionJson);
 
-    const response = await api('/smart-collections/create', {
-      method: 'POST',
-      body: JSON.stringify(collection)
+    const response = await api("/smart-collections/create", {
+      method: "POST",
+      body: JSON.stringify(collection),
     });
 
     if (response.id) {
-      showToast(`Created collection: ${collection.name}`, 'success');
+      showToast(`Created collection: ${collection.name}`, "success");
       loadFolders();
-      document.getElementById('smart-collections-suggestions').style.display = 'none';
+      document.getElementById("smart-collections-suggestions").style.display =
+        "none";
     }
   } catch (err) {
-    showToast(`Failed to create collection: ${err.message}`, 'error');
+    showToast(`Failed to create collection: ${err.message}`, "error");
   }
 }
 
@@ -276,15 +304,15 @@ async function loadSmartInsights() {
   if (!AM.isAuthenticated || !AM.isAuthenticated()) return;
 
   try {
-    const insights = await api('/smart-insights');
+    const insights = await api("/smart-insights");
     renderSmartInsights(insights);
   } catch (err) {
-    console.error('Failed to load smart insights:', err);
+    console.error("Failed to load smart insights:", err);
   }
 }
 
 function renderSmartInsights(insights) {
-  const container = document.getElementById('smart-insights-widget');
+  const container = document.getElementById("smart-insights-widget");
   if (!container || !insights) return;
 
   container.innerHTML = `
@@ -306,11 +334,16 @@ function renderSmartInsights(insights) {
         </div>
       </div>
 
-      ${insights.top_domains?.length > 0 ? `
+      ${
+        insights.top_domains?.length > 0
+          ? `
         <div class="insights-section">
           <h4>Top Domains</h4>
           <div class="insights-list">
-            ${insights.top_domains.slice(0, 5).map(d => `
+            ${insights.top_domains
+              .slice(0, 5)
+              .map(
+                (d) => `
               <div class="insight-item">
                 <span class="item-name">${escapeHtml(d.domain)}</span>
                 <div class="item-bar">
@@ -318,25 +351,40 @@ function renderSmartInsights(insights) {
                 </div>
                 <span class="item-count">${d.count}</span>
               </div>
-            `).join('')}
+            `,
+              )
+              .join("")}
           </div>
         </div>
-      ` : ''}
+      `
+          : ""
+      }
 
-      ${insights.top_tags?.length > 0 ? `
+      ${
+        insights.top_tags?.length > 0
+          ? `
         <div class="insights-section">
           <h4>Top Tags</h4>
           <div class="insights-tags">
-            ${insights.top_tags.slice(0, 8).map(t => `
+            ${insights.top_tags
+              .slice(0, 8)
+              .map(
+                (t) => `
               <span class="tag-badge-small" title="${t.count} bookmarks">
                 ${escapeHtml(t.tag)} (${t.count})
               </span>
-            `).join('')}
+            `,
+              )
+              .join("")}
           </div>
         </div>
-      ` : ''}
+      `
+          : ""
+      }
 
-      ${insights.recent_activity ? `
+      ${
+        insights.recent_activity
+          ? `
         <div class="insights-section">
           <h4>📈 Activity</h4>
           <div class="insights-stats">
@@ -350,7 +398,9 @@ function renderSmartInsights(insights) {
             </div>
           </div>
         </div>
-      ` : ''}
+      `
+          : ""
+      }
     </div>
   `;
 }
@@ -359,18 +409,20 @@ function renderSmartInsights(insights) {
 
 async function showDomainStats(domain) {
   try {
-    const stats = await api(`/smart-collections/domain-stats?domain=${encodeURIComponent(domain)}`);
+    const stats = await api(
+      `/smart-collections/domain-stats?domain=${encodeURIComponent(domain)}`,
+    );
     displayDomainStatsModal(stats);
   } catch (err) {
-    showToast(`Failed to load domain stats: ${err.message}`, 'error');
+    showToast(`Failed to load domain stats: ${err.message}`, "error");
   }
 }
 
 function displayDomainStatsModal(stats) {
   if (!stats) return;
 
-  const modal = document.createElement('div');
-  modal.className = 'modal smart-stats-modal';
+  const modal = document.createElement("div");
+  modal.className = "modal smart-stats-modal";
   modal.innerHTML = `
     <div class="modal-backdrop"></div>
     <div class="modal-content">
@@ -391,7 +443,7 @@ function displayDomainStatsModal(stats) {
           </div>
           <div class="stat-card">
             <span class="stat-label">Category</span>
-            <span class="stat-value">${escapeHtml(stats.category || 'General')}</span>
+            <span class="stat-value">${escapeHtml(stats.category || "General")}</span>
           </div>
         </div>
       </div>
@@ -399,21 +451,25 @@ function displayDomainStatsModal(stats) {
   `;
 
   // Close handlers
-  modal.querySelector('.modal-close').addEventListener('click', () => modal.remove());
-  modal.querySelector('.modal-backdrop').addEventListener('click', () => modal.remove());
+  modal
+    .querySelector(".modal-close")
+    .addEventListener("click", () => modal.remove());
+  modal
+    .querySelector(".modal-backdrop")
+    .addEventListener("click", () => modal.remove());
 
   document.body.appendChild(modal);
-  modal.classList.add('show');
+  modal.classList.add("show");
 }
 
 // ============== INITIALIZATION ==============
 
 export function init() {
-  const bookmarkUrlInput = document.getElementById('bookmark-url');
+  const bookmarkUrlInput = document.getElementById("bookmark-url");
 
   // Attach smart tag suggestions to URL input
   if (bookmarkUrlInput) {
-    bookmarkUrlInput.addEventListener('input', (e) => {
+    bookmarkUrlInput.addEventListener("input", (e) => {
       showSmartTagSuggestions(e.target.value);
     });
   }
@@ -424,11 +480,16 @@ export function init() {
     loadSmartInsights();
   }, 1000);
 
-  console.log('[SmartOrg] Initialized');
+  console.log("[SmartOrg] Initialized");
 }
 
 // Named exports
-export { showSmartTagSuggestions, loadSmartCollections, loadSmartInsights, showDomainStats };
+export {
+  showSmartTagSuggestions,
+  loadSmartCollections,
+  loadSmartInsights,
+  showDomainStats,
+};
 
 // Default export
 export default {
@@ -436,5 +497,5 @@ export default {
   showSmartTagSuggestions,
   loadSmartCollections,
   loadSmartInsights,
-  showDomainStats
+  showDomainStats,
 };

@@ -1,6 +1,6 @@
-const Database = require('better-sqlite3');
-const path = require('path');
-const fs = require('fs');
+const Database = require("better-sqlite3");
+const path = require("path");
+const fs = require("fs");
 
 function initializeDatabase(DB_PATH) {
   // Ensure database directory exists
@@ -13,7 +13,7 @@ function initializeDatabase(DB_PATH) {
   const db = new Database(DB_PATH);
 
   // Enable WAL mode for better concurrent access
-  db.pragma('journal_mode = WAL');
+  db.pragma("journal_mode = WAL");
 
   // Initialize database tables
   db.exec(`
@@ -150,74 +150,92 @@ function initializeDatabase(DB_PATH) {
 
   // Add hide_sidebar column if it doesn't exist (migration)
   try {
-    db.prepare('ALTER TABLE user_settings ADD COLUMN hide_sidebar INTEGER DEFAULT 0').run();
+    db.prepare(
+      "ALTER TABLE user_settings ADD COLUMN hide_sidebar INTEGER DEFAULT 0",
+    ).run();
   } catch (err) {
     // Column already exists, ignore
   }
 
   // Add dashboard_widgets column if it doesn't exist (migration)
   try {
-    db.prepare('ALTER TABLE user_settings ADD COLUMN dashboard_widgets TEXT').run();
+    db.prepare(
+      "ALTER TABLE user_settings ADD COLUMN dashboard_widgets TEXT",
+    ).run();
   } catch (err) {
     // Column already exists, ignore
   }
 
   // Add thumbnail_local column if it doesn't exist (migration)
   try {
-    db.prepare('ALTER TABLE bookmarks ADD COLUMN thumbnail_local TEXT').run();
+    db.prepare("ALTER TABLE bookmarks ADD COLUMN thumbnail_local TEXT").run();
   } catch (err) {
     // Column already exists, ignore
   }
 
   // Add include_child_bookmarks column if it doesn't exist (migration)
   try {
-    db.prepare('ALTER TABLE user_settings ADD COLUMN include_child_bookmarks INTEGER DEFAULT 0').run();
+    db.prepare(
+      "ALTER TABLE user_settings ADD COLUMN include_child_bookmarks INTEGER DEFAULT 0",
+    ).run();
   } catch (err) {
     // Column already exists, ignore
   }
 
   // Add dashboard_mode column
   try {
-    db.prepare("ALTER TABLE user_settings ADD COLUMN dashboard_mode TEXT DEFAULT 'folder'").run();
-  } catch (err) { }
+    db.prepare(
+      "ALTER TABLE user_settings ADD COLUMN dashboard_mode TEXT DEFAULT 'folder'",
+    ).run();
+  } catch (err) {}
 
   // Add dashboard_tags column
   try {
-    db.prepare("ALTER TABLE user_settings ADD COLUMN dashboard_tags TEXT").run();
-  } catch (err) { }
+    db.prepare(
+      "ALTER TABLE user_settings ADD COLUMN dashboard_tags TEXT",
+    ).run();
+  } catch (err) {}
 
   // Add dashboard_sort column
   try {
-    db.prepare("ALTER TABLE user_settings ADD COLUMN dashboard_sort TEXT DEFAULT 'recently_added'").run();
-  } catch (err) { }
+    db.prepare(
+      "ALTER TABLE user_settings ADD COLUMN dashboard_sort TEXT DEFAULT 'recently_added'",
+    ).run();
+  } catch (err) {}
 
   // Add collapsed_sections column
   try {
-    db.prepare("ALTER TABLE user_settings ADD COLUMN collapsed_sections TEXT").run();
-  } catch (err) { }
+    db.prepare(
+      "ALTER TABLE user_settings ADD COLUMN collapsed_sections TEXT",
+    ).run();
+  } catch (err) {}
 
   // Add current_view column
   try {
-    db.prepare("ALTER TABLE user_settings ADD COLUMN current_view TEXT DEFAULT 'all'").run();
-  } catch (err) { }
+    db.prepare(
+      "ALTER TABLE user_settings ADD COLUMN current_view TEXT DEFAULT 'all'",
+    ).run();
+  } catch (err) {}
 
   // Add snap_to_grid column
   try {
-    db.prepare("ALTER TABLE user_settings ADD COLUMN snap_to_grid INTEGER DEFAULT 1").run();
-  } catch (err) { }
+    db.prepare(
+      "ALTER TABLE user_settings ADD COLUMN snap_to_grid INTEGER DEFAULT 1",
+    ).run();
+  } catch (err) {}
 
   return db;
 }
 
 function ensureDirectories() {
   // Ensure favicons directory exists
-  const FAVICONS_DIR = path.join(__dirname, '../public/favicons');
+  const FAVICONS_DIR = path.join(__dirname, "../public/favicons");
   if (!fs.existsSync(FAVICONS_DIR)) {
     fs.mkdirSync(FAVICONS_DIR, { recursive: true });
   }
 
   // Ensure thumbnails directory exists
-  const THUMBNAILS_DIR = path.join(__dirname, '../public/thumbnails');
+  const THUMBNAILS_DIR = path.join(__dirname, "../public/thumbnails");
   if (!fs.existsSync(THUMBNAILS_DIR)) {
     fs.mkdirSync(THUMBNAILS_DIR, { recursive: true });
   }
@@ -227,5 +245,5 @@ function ensureDirectories() {
 
 module.exports = {
   initializeDatabase,
-  ensureDirectories
+  ensureDirectories,
 };

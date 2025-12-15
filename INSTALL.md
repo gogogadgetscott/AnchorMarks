@@ -49,6 +49,7 @@ sudo bash deploy/install.sh
 ```
 
 **Next Steps:**
+
 1. Create an account (click "Sign Up")
 2. Add your first bookmark (click "+ New Bookmark")
 3. Organize with folders and tags
@@ -101,14 +102,17 @@ Open http://localhost:3000 in your browser and create an account!
 Choose the installation method that best suits your needs:
 
 ### Development
+
 - **For local development & testing**
 - [Quick Start](#quick-start-development)
 
 ### Production - Docker (Recommended)
+
 - **For easy deployment & scaling**
 - [Docker Installation](#docker-installation)
 
 ### Production - Direct Installation
+
 - **For dedicated servers without Docker**
 - [Linux/macOS Installation](#linuxmacos-installation)
 - [Windows Installation](#windows-installation)
@@ -125,22 +129,26 @@ Choose the installation method that best suits your needs:
 ### Option 1: Docker Compose (Easiest)
 
 1. **Configure Environment**
+
    ```bash
    cp .env.example .env
    ```
 
 2. **Edit `.env` with your settings:**
+
    ```bash
    nano .env
    # Set: NODE_ENV=production, JWT_SECRET, CORS_ORIGIN, DB_PATH
    ```
 
 3. **Start Services**
+
    ```bash
    docker-compose up -d
    ```
 
 4. **Verify**
+
    ```bash
    docker-compose logs -f anchormarks
    curl http://localhost:3000/api/health
@@ -154,16 +162,19 @@ Choose the installation method that best suits your needs:
 ### Option 2: Manual Docker Build
 
 1. **Build Image**
+
    ```bash
    docker build -t anchormarks:latest .
    ```
 
 2. **Create Data Volume** (optional, recommended)
+
    ```bash
    docker volume create anchormarks_data
    ```
 
 3. **Run Container**
+
    ```bash
    docker run -d \
      --name anchormarks \
@@ -178,6 +189,7 @@ Choose the installation method that best suits your needs:
    ```
 
 4. **Verify**
+
    ```bash
    docker logs -f anchormarks
    curl http://localhost:3000/api/health
@@ -230,23 +242,27 @@ docker rmi anchormarks:latest
 ### Step 1: Install Node.js
 
 **Ubuntu/Debian:**
+
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt-get install -y nodejs
 ```
 
 **CentOS/RHEL:**
+
 ```bash
 curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
 sudo yum install -y nodejs
 ```
 
 **macOS (using Homebrew):**
+
 ```bash
 brew install node@18
 ```
 
 Verify installation:
+
 ```bash
 node --version
 npm --version
@@ -291,6 +307,7 @@ CORS_ORIGIN=https://yourdomain.com
 ```
 
 Generate a strong JWT_SECRET:
+
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
@@ -322,6 +339,7 @@ sudo systemctl status anchormarks
 ```
 
 View logs:
+
 ```bash
 sudo journalctl -u anchormarks -f
 ```
@@ -329,22 +347,26 @@ sudo journalctl -u anchormarks -f
 ### Step 7: Set Up Nginx Reverse Proxy
 
 1. **Copy configuration**
+
    ```bash
    sudo cp deploy/nginx.conf /etc/nginx/sites-available/anchormarks
    ```
 
 2. **Edit configuration**
+
    ```bash
    sudo nano /etc/nginx/sites-available/anchormarks
    # Change server_name to your domain
    ```
 
 3. **Enable site**
+
    ```bash
    sudo ln -s /etc/nginx/sites-available/anchormarks /etc/nginx/sites-enabled/
    ```
 
 4. **Test Nginx configuration**
+
    ```bash
    sudo nginx -t
    ```
@@ -434,6 +456,7 @@ sudo systemctl disable anchormarks
      ```
 
 2. **Clone/Navigate to Project**
+
    ```powershell
    cd C:\Users\YourUsername\Documents
    git clone https://github.com/yourusername/anchormarks
@@ -441,12 +464,14 @@ sudo systemctl disable anchormarks
    ```
 
 3. **Install Dependencies**
+
    ```powershell
    cd anchormarks
    npm install
    ```
 
 4. **Configure Environment**
+
    ```powershell
    Copy-Item .env.example .env
    notepad .env
@@ -454,6 +479,7 @@ sudo systemctl disable anchormarks
    ```
 
 5. **Start Application**
+
    ```powershell
    npm run dev
    ```
@@ -471,6 +497,7 @@ sudo systemctl disable anchormarks
    - Search for "Docker Desktop" and launch
 
 3. **Configure AnchorMarks**
+
    ```powershell
    cd C:\path\to\anchormarks
    Copy-Item .env.example .env
@@ -478,15 +505,17 @@ sudo systemctl disable anchormarks
    ```
 
 4. **Build and Run**
+
    ```powershell
    docker-compose up -d
    ```
 
 5. **Verify**
+
    ```powershell
    # Check if container is running
    docker ps
-   
+
    # View logs
    docker-compose logs -f
    ```
@@ -494,12 +523,14 @@ sudo systemctl disable anchormarks
 ### Option 3: Using Windows Services (Advanced)
 
 1. **Install NSSM** (Non-Sucking Service Manager)
+
    ```powershell
    # Download from https://nssm.cc/download
    # Extract and add to PATH
    ```
 
 2. **Install as Service**
+
    ```powershell
    nssm install AnchorMarks "C:\Program Files\nodejs\node.exe" "C:\path\to\anchormarks\server\index.js"
    nssm set AnchorMarks AppDirectory "C:\path\to\anchormarks"
@@ -508,13 +539,14 @@ sudo systemctl disable anchormarks
    ```
 
 3. **Manage Service**
+
    ```powershell
    # View status
    nssm status AnchorMarks
-   
+
    # Stop service
    nssm stop AnchorMarks
-   
+
    # Start service
    nssm start AnchorMarks
    ```
@@ -536,6 +568,7 @@ curl https://yourdomain.com/api/health
 ```
 
 Expected response:
+
 ```json
 { "status": "ok" }
 ```
@@ -672,6 +705,7 @@ After installation:
 5. **Enable HTTPS** - Follow Step 8 above to secure your installation
 
 For more information, see:
+
 - [README.md](README.md) - Features and usage
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Development guidelines
 - [SECURITY.md](SECURITY.md) - Security best practices
