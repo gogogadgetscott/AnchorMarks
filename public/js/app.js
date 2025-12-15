@@ -94,6 +94,7 @@ import {
   addDashboardWidget,
   removeDashboardWidget,
   filterDashboardBookmarks,
+  toggleLayoutSettings,
 } from "./modules/dashboard.js";
 
 // Import search functions
@@ -731,8 +732,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document
     .getElementById("dashboard-layout-btn")
     ?.addEventListener("click", () => {
-      // Toggle layout settings
-      showToast("Layout settings - coming soon!", "info");
+      toggleLayoutSettings();
     });
 
 

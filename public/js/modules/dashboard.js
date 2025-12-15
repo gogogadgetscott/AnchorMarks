@@ -47,32 +47,6 @@ export async function initDashboardViews() {
     headerActions.insertBefore(btn, headerActions.firstChild);
   }
 
-  // Add snap-to-grid toggle if it doesn't exist
-  if (!document.getElementById("snap-to-grid-toggle")) {
-    const snapBtn = document.createElement("button");
-    snapBtn.id = "snap-to-grid-toggle";
-    snapBtn.className = `btn btn-secondary ${state.snapToGrid ? "active" : ""}`;
-    snapBtn.title = "Snap to Grid";
-    snapBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
-                <rect x="3" y="3" width="7" height="7" />
-                <rect x="14" y="3" width="7" height="7" />
-                <rect x="14" y="14" width="7" height="7" />
-                <rect x="3" y="14" width="7" height="7" />
-            </svg>
-        `;
-    snapBtn.addEventListener("click", async () => {
-      state.setSnapToGrid(!state.snapToGrid);
-      snapBtn.classList.toggle("active", state.snapToGrid);
-      await saveSettings({ snap_to_grid: state.snapToGrid });
-      showToast(
-        `Snap to grid ${state.snapToGrid ? "enabled" : "disabled"}`,
-        "success",
-      );
-    });
-
-    headerActions.insertBefore(snapBtn, headerActions.firstChild);
-  }
 
   // Initial load
   await loadViews();
@@ -785,6 +759,228 @@ export function filterDashboardBookmarks(term) {
   });
 }
 
+// Toggle layout settings dropdown
+export function toggleLayoutSettings() {
+  const existing = document.getElementById("layout-settings-dropdown");
+  if (existing) {
+    closeLayoutSettings();
+  } else {
+    showLayoutSettings();
+  }
+}
+
+// Show layout settings dropdown
+export function showLayoutSettings() {
+  // Remove existing
+  document.getElementById("layout-settings-dropdown")?.remove();
+
+  const dropdown = document.createElement("div");
+  dropdown.id = "layout-settings-dropdown";
+  dropdown.className = "filter-dropdown"; // Reuse filter dropdown styles
+
+  dropdown.innerHTML = `
+    <div class="filter-dropdown-header">
+      <span class="filter-dropdown-title">Dashboard Layout</span>
+      <div class="filter-dropdown-actions">
+        <button class="btn-icon" id="layout-close-btn" title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="filter-dropdown-body">
+      <div class="filter-row">
+        <div class="filter-column">
+          <h4>Layout Actions</h4>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <button class="btn btn-outline btn-full" id="auto-position-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;margin-right:0.5rem">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+              </svg>
+              Auto Position Widgets
+            </button>
+            <button class="btn btn-outline btn-full ${state.snapToGrid ? 'active' : ''}" id="snap-to-grid-toggle-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;margin-right:0.5rem">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+                <line x1="3" y1="12" x2="21" y2="12" stroke-dasharray="2,2"/><line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2,2"/>
+              </svg>
+              Snap to Grid ${state.snapToGrid ? '(ON)' : '(OFF)'}
+            </button>
+            <button class="btn btn-outline btn-full" id="clear-dashboard-btn" style="color: var(--danger-600); border-color: var(--danger-600);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;margin-right:0.5rem">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              Clear All Widgets
+            </button>
+          </div>
+        </div>
+        <div class="filter-column">
+          <h4>Info</h4>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6;">
+            <strong>Auto Position:</strong> Automatically arranges all widgets in a grid layout.<br><br>
+            <strong>Snap to Grid:</strong> When enabled, widgets snap to a 20px grid when dragging or resizing.<br><br>
+            <strong>Clear All:</strong> Removes all widgets from the dashboard. This action cannot be undone.
+          </p>
+          <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+            <div style="font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; margin-bottom: 0.5rem;">Statistics</div>
+            <div style="font-size: 0.875rem;"><strong>${state.dashboardWidgets.length}</strong> widget${state.dashboardWidgets.length !== 1 ? 's' : ''} on dashboard</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Find the dashboard header and insert after it
+  const dashboardHeader = document.getElementById("dashboard-header");
+
+  if (dashboardHeader && dashboardHeader.style.display !== "none") {
+    dashboardHeader.style.position = "relative";
+    dashboardHeader.insertAdjacentElement("afterend", dropdown);
+  } else {
+    document.body.appendChild(dropdown);
+  }
+
+  // Attach event listeners
+  attachLayoutSettingsListeners();
+
+  // Setup auto-hide
+  setTimeout(() => {
+    document.addEventListener("click", handleLayoutSettingsClickOutside);
+  }, 0);
+}
+
+// Close layout settings dropdown
+export function closeLayoutSettings() {
+  const dropdown = document.getElementById("layout-settings-dropdown");
+  if (dropdown) {
+    dropdown.remove();
+    document.removeEventListener("click", handleLayoutSettingsClickOutside);
+  }
+}
+
+// Handle click outside to close
+function handleLayoutSettingsClickOutside(e) {
+  const dropdown = document.getElementById("layout-settings-dropdown");
+  const btn = document.getElementById("dashboard-layout-btn");
+
+  if (
+    dropdown &&
+    !dropdown.contains(e.target) &&
+    e.target !== btn &&
+    !btn?.contains(e.target)
+  ) {
+    closeLayoutSettings();
+  }
+}
+
+// Attach event listeners
+function attachLayoutSettingsListeners() {
+  // Close button
+  const closeBtn = document.getElementById("layout-close-btn");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeLayoutSettings();
+    });
+  }
+
+  // Auto position button
+  const autoPositionBtn = document.getElementById("auto-position-btn");
+  if (autoPositionBtn) {
+    autoPositionBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      autoPositionWidgets();
+    });
+  }
+
+  // Snap to grid toggle button
+  const snapToggleBtn = document.getElementById("snap-to-grid-toggle-btn");
+  if (snapToggleBtn) {
+    snapToggleBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      state.setSnapToGrid(!state.snapToGrid);
+      await saveSettings({ snap_to_grid: state.snapToGrid });
+      showToast(
+        `Snap to grid ${state.snapToGrid ? "enabled" : "disabled"}`,
+        "success"
+      );
+      // Re-render dropdown to update button state
+      closeLayoutSettings();
+      showLayoutSettings();
+    });
+  }
+
+  // Clear dashboard button
+  const clearBtn = document.getElementById("clear-dashboard-btn");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      confirmClearDashboard();
+    });
+  }
+}
+
+// Auto position widgets in a grid
+export function autoPositionWidgets() {
+  if (state.dashboardWidgets.length === 0) {
+    showToast("No widgets to position", "info");
+    return;
+  }
+
+  const WIDGET_WIDTH = 320;
+  const WIDGET_HEIGHT = 400;
+  const GAP = 20;
+  const COLUMNS = 3; // Number of widgets per row
+
+  state.dashboardWidgets.forEach((widget, index) => {
+    const row = Math.floor(index / COLUMNS);
+    const col = index % COLUMNS;
+
+    // Start at 0,0 instead of GAP,GAP
+    widget.x = col * (WIDGET_WIDTH + GAP);
+    widget.y = row * (WIDGET_HEIGHT + GAP);
+    widget.w = WIDGET_WIDTH;
+    widget.h = WIDGET_HEIGHT;
+  });
+
+  saveDashboardWidgets();
+  renderDashboard();
+  showToast(`${state.dashboardWidgets.length} widget${state.dashboardWidgets.length !== 1 ? 's' : ''} positioned`, "success");
+  closeLayoutSettings();
+}
+
+// Confirm and clear dashboard
+function confirmClearDashboard() {
+  const count = state.dashboardWidgets.length;
+
+  if (count === 0) {
+    showToast("Dashboard is already empty", "info");
+    return;
+  }
+
+  if (confirm(`Are you sure you want to remove all ${count} widget${count !== 1 ? 's' : ''} from the dashboard? This cannot be undone.`)) {
+    clearDashboard();
+  }
+}
+
+// Clear all widgets from dashboard
+export function clearDashboard() {
+  const count = state.dashboardWidgets.length;
+
+  // Use setDashboardWidgets to update the state properly
+  state.setDashboardWidgets([]);
+
+  saveDashboardWidgets();
+  renderDashboard();
+  updateCounts();
+
+  showToast(`Cleared ${count} widget${count !== 1 ? 's' : ''} from dashboard`, "success");
+  closeLayoutSettings();
+}
+
 // Make functions global for inline onclick handlers
 window.saveCurrentView = saveCurrentView;
 window.deleteView = deleteView;
@@ -796,4 +992,7 @@ export default {
   addDashboardWidget,
   removeDashboardWidget,
   filterDashboardBookmarks,
+  toggleLayoutSettings,
+  autoPositionWidgets,
+  clearDashboard,
 };
