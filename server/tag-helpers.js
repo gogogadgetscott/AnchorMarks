@@ -5,6 +5,19 @@
 
 const { v4: uuidv4 } = require("uuid");
 
+let hasColorOverrideColumn; // cached flag to avoid repeated PRAGMA checks
+
+function ensureBookmarkTagsSchema(db) {
+  if (hasColorOverrideColumn !== undefined) return hasColorOverrideColumn;
+  try {
+    const cols = db.prepare("PRAGMA table_info(bookmark_tags)").all();
+    hasColorOverrideColumn = cols.some((c) => c.name === "color_override");
+  } catch (err) {
+    hasColorOverrideColumn = false;
+  }
+  return hasColorOverrideColumn;
+}
+
 /**
  * Parse tag string (comma-separated) and ensure all tags exist
  * @param {object} db - Database instance
@@ -12,17 +25,26 @@ const { v4: uuidv4 } = require("uuid");
  * @param {string} tagsString - Comma-separated tag names
  * @returns {Array} Array of tag IDs
  */
-function ensureTagsExist(db, userId, tagsString) {
-  if (!tagsString || tagsString.trim() === "") {
-    return [];
+function ensureTagsExist(db, userId, tagsInput, options = {}) {
+  const returnMap = options.returnMap === true;
+
+  if (
+    !tagsInput ||
+    (typeof tagsInput === "string" && tagsInput.trim() === "") ||
+    (Array.isArray(tagsInput) && tagsInput.length === 0)
+  ) {
+    return returnMap ? { tagIds: [], tagMap: {} } : [];
   }
 
-  const tagNames = tagsString
-    .split(",")
-    .map((t) => t.trim())
-    .filter((t) => t.length > 0);
+  const tagNames = Array.isArray(tagsInput)
+    ? tagsInput.map((t) => String(t))
+    : tagsInput
+        .split(",")
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0);
 
   const tagIds = [];
+  const tagMap = {};
 
   for (const tagName of tagNames) {
     // Check if tag exists
@@ -37,12 +59,14 @@ function ensureTagsExist(db, userId, tagsString) {
         "INSERT INTO tags (id, user_id, name, color, icon) VALUES (?, ?, ?, ?, ?)",
       ).run(tagId, userId, tagName, "#f59e0b", "tag");
       tagIds.push(tagId);
+      tagMap[tagName] = tagId;
     } else {
       tagIds.push(tag.id);
+      tagMap[tagName] = tag.id;
     }
   }
 
-  return tagIds;
+  return returnMap ? { tagIds, tagMap } : tagIds;
 }
 
 /**
@@ -51,17 +75,29 @@ function ensureTagsExist(db, userId, tagsString) {
  * @param {string} bookmarkId - Bookmark ID
  * @param {Array} tagIds - Array of tag IDs
  */
-function updateBookmarkTags(db, bookmarkId, tagIds) {
+function updateBookmarkTags(db, bookmarkId, tagIds, options = {}) {
+  const colorOverridesByTagId = options.colorOverridesByTagId || {};
+  const allowColorOverride = ensureBookmarkTagsSchema(db);
   // Delete existing relationships
   db.prepare("DELETE FROM bookmark_tags WHERE bookmark_id = ?").run(bookmarkId);
 
   // Create new relationships
   if (tagIds && tagIds.length > 0) {
-    const stmt = db.prepare(
-      "INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)",
-    );
-    for (const tagId of tagIds) {
-      stmt.run(bookmarkId, tagId);
+    if (allowColorOverride) {
+      const stmt = db.prepare(
+        "INSERT INTO bookmark_tags (bookmark_id, tag_id, color_override) VALUES (?, ?, ?)",
+      );
+      for (const tagId of tagIds) {
+        const override = colorOverridesByTagId[tagId] || null;
+        stmt.run(bookmarkId, tagId, override);
+      }
+    } else {
+      const stmt = db.prepare(
+        "INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)",
+      );
+      for (const tagId of tagIds) {
+        stmt.run(bookmarkId, tagId);
+      }
     }
   }
 }
@@ -116,23 +152,9 @@ function getUserTags(db, userId) {
     .all(userId);
 }
 
-/**
- * Sync TEXT tags field with normalized tags (for backwards compatibility)
- * @param {object} db - Database instance
- * @param {string} bookmarkId - Bookmark ID
- */
-function syncBookmarkTagsText(db, bookmarkId) {
-  const tagsString = getBookmarkTagsString(db, bookmarkId);
-  db.prepare("UPDATE bookmarks SET tags = ? WHERE id = ?").run(
-    tagsString,
-    bookmarkId,
-  );
-}
-
 module.exports = {
   ensureTagsExist,
   updateBookmarkTags,
   getBookmarkTagsString,
   getUserTags,
-  syncBookmarkTagsText,
 };

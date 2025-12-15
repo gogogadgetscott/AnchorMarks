@@ -90,15 +90,18 @@ app.get("/api/tags/suggest-smart", authenticateToken, (req, res) => {
     const domainTags = db
       .prepare(
         `
-      SELECT DISTINCT tags FROM bookmarks 
-      WHERE user_id = ? AND url LIKE ?
+      SELECT DISTINCT t.name as tag
+      FROM bookmarks b
+      JOIN bookmark_tags bt ON bt.bookmark_id = b.id
+      JOIN tags t ON t.id = bt.tag_id
+      WHERE b.user_id = ? AND b.url LIKE ?
     `,
       )
       .all(req.user.id, `%${domain}%`);
 
     domainTags.forEach((row) => {
-      if (row.tags) {
-        smartOrg.tokenizeText(row.tags).forEach((t) => tagsToScore.add(t));
+      if (row.tag) {
+        tagsToScore.add(row.tag);
       }
     });
 

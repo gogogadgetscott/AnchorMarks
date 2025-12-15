@@ -17,8 +17,8 @@ const { isPrivateAddress, fetchFavicon } = require("./utils");
 const {
   ensureTagsExist,
   updateBookmarkTags,
-  getBookmarkTagsString,
   getUserTags,
+  getBookmarkTagsString,
 } = require("./tag-helpers");
 
 const app = express();
@@ -746,24 +746,37 @@ app.post(
 
 // Get all folders with counts
 app.get("/api/folders", authenticateTokenMiddleware, (req, res) => {
-  const folders = db
+  const bookmarks = db
     .prepare(
       `
-        SELECT f.*, 
-        (SELECT COUNT(*) FROM bookmarks b WHERE b.folder_id = f.id) as bookmark_count
-        FROM folders f 
-        WHERE f.user_id = ? 
-        ORDER BY f.position
-    `,
+    SELECT 
+      b., 
+      COALESCE(tags_joined.tags, '') as tags,
+      COALESCE(tags_joined.tags_detailed, '[]') as tags_detailed
+    FROM bookmarks b
+    LEFT JOIN (
+      SELECT bt.bookmark_id,
+             GROUP_CONCAT(t.name, ', ') as tags,
+             json_group_array(
+               json_object(
+                 'name', t.name,
+                 'tag_id', t.id,
+                 'color', t.color,
+                 'color_override', bt.color_override
+               )
+             ) as tags_detailed
+      FROM bookmark_tags bt
+      JOIN tags t ON t.id = bt.tag_id
+      WHERE t.user_id = ?
+      GROUP BY bt.bookmark_id
+    ) tags_joined ON tags_joined.bookmark_id = b.id
+    WHERE b.user_id = ?
+  `,
     )
-    .all(req.user.id);
-  res.json(folders);
-});
-
-// Create folder
-app.post("/api/folders", authenticateTokenMiddleware, (req, res) => {
-  const { name, parent_id, color, icon } = req.body;
-  const id = uuidv4();
+    .all(req.user.id, req.user.id);
+  bookmarks.forEach((b) => {
+    b.tags_detailed = parseTagsDetailed(b.tags_detailed);
+  });
 
   const maxPos = db
     .prepare("SELECT MAX(position) as max FROM folders WHERE user_id = ?")
@@ -824,22 +837,10 @@ app.delete("/api/folders/:id", authenticateTokenMiddleware, (req, res) => {
 
 // ============== TAGS ==============
 
-// Get all tags for user with bookmark counts
+// Get all tags for user with bookmark counts (supports hierarchy by name delimiter e.g. parent/child)
 app.get("/api/tags", authenticateTokenMiddleware, (req, res) => {
-  const tags = db
-    .prepare(
-      `
-        SELECT 
-            t.*,
-            COUNT(bt.bookmark_id) as count
-        FROM tags t
-        LEFT JOIN bookmark_tags bt ON t.id = bt.tag_id
-        WHERE t.user_id = ?
-        GROUP BY t.id
-        ORDER BY t.position, t.name
-    `,
-    )
-    .all(req.user.id);
+  // Use normalized tag system with bookmark_tags junction table
+  const tags = getUserTags(db, req.user.id);
   res.json(tags);
 });
 
@@ -925,6 +926,7 @@ app.delete("/api/tags/:id", authenticateTokenMiddleware, (req, res) => {
     req.params.id,
     req.user.id,
   );
+
   res.json({ success: true });
 });
 
@@ -1022,37 +1024,59 @@ app.get(
     }
 
     const filters = JSON.parse(collection.filters);
-    let query = "SELECT * FROM bookmarks WHERE user_id = ?";
-    const params = [req.user.id];
+    let query = `
+      SELECT b.*, COALESCE(tg.tags_joined, '') as tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed
+      FROM bookmarks b
+      LEFT JOIN (
+        SELECT bt.bookmark_id,
+               GROUP_CONCAT(t.name, ', ') as tags_joined,
+               json_group_array(
+                 json_object(
+                   'name', t.name,
+                   'tag_id', t.id,
+                   'color', t.color,
+                   'color_override', bt.color_override
+                 )
+               ) as tags_detailed
+        FROM bookmark_tags bt
+        JOIN tags t ON t.id = bt.tag_id
+        WHERE t.user_id = ?
+        GROUP BY bt.bookmark_id
+      ) tg ON tg.bookmark_id = b.id
+      WHERE b.user_id = ?`;
+    const params = [req.user.id, req.user.id];
 
     if (filters.tags && filters.tags.length > 0) {
-      const tagConditions = filters.tags.map(() => "tags LIKE ?").join(" OR ");
+      const tagConditions = filters.tags.map(() => "tg.tags_joined LIKE ?").join(" OR ");
       query += ` AND (${tagConditions})`;
       filters.tags.forEach((tag) => params.push(`%${tag}%`));
     }
 
     if (filters.search) {
-      query += " AND (title LIKE ? OR url LIKE ? OR description LIKE ?)";
+      query += " AND (b.title LIKE ? OR b.url LIKE ? OR b.description LIKE ?)";
       const searchTerm = `%${filters.search}%`;
       params.push(searchTerm, searchTerm, searchTerm);
     }
 
     if (filters.domain) {
-      query += " AND url LIKE ?";
+      query += " AND b.url LIKE ?";
       params.push(`%${filters.domain}%`);
     }
 
     if (filters.favorites) {
-      query += " AND is_favorite = 1";
+      query += " AND b.is_favorite = 1";
     }
 
     if (filters.untagged) {
-      query += ' AND (tags IS NULL OR tags = "")';
+      query += " AND NOT EXISTS (SELECT 1 FROM bookmark_tags bt WHERE bt.bookmark_id = b.id)";
     }
 
     query += " ORDER BY created_at DESC";
 
     const bookmarks = db.prepare(query).all(...params);
+    bookmarks.forEach((b) => {
+      b.tags_detailed = parseTagsDetailed(b.tags_detailed);
+    });
     res.json(bookmarks);
   },
 );
@@ -1063,9 +1087,28 @@ app.get(
 app.get("/api/bookmarks", authenticateTokenMiddleware, (req, res) => {
   const { folder_id, search, favorites, tags, sort, limit, offset } = req.query;
 
-  let query = "SELECT * FROM bookmarks WHERE user_id = ?";
-  let countQuery = "SELECT COUNT(*) as total FROM bookmarks WHERE user_id = ?";
-  const params = [req.user.id];
+  let baseSelect = `
+    FROM bookmarks b
+    LEFT JOIN (
+      SELECT bt.bookmark_id,
+             GROUP_CONCAT(t.name, ', ') as tags_joined,
+             json_group_array(
+               json_object(
+                 'name', t.name,
+                 'tag_id', t.id,
+                 'color', t.color,
+                 'color_override', bt.color_override
+               )
+             ) as tags_detailed
+      FROM bookmark_tags bt
+      JOIN tags t ON t.id = bt.tag_id
+      WHERE t.user_id = ?
+      GROUP BY bt.bookmark_id
+    ) tg ON tg.bookmark_id = b.id
+    WHERE b.user_id = ?`;
+  let query = `SELECT b.*, COALESCE(tg.tags_joined, '') as tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed ${baseSelect}`;
+  let countQuery = `SELECT COUNT(*) as total ${baseSelect}`;
+  const params = [req.user.id, req.user.id];
 
   if (folder_id) {
     if (req.query.include_children === "true") {
@@ -1090,29 +1133,29 @@ app.get("/api/bookmarks", authenticateTokenMiddleware, (req, res) => {
             ))`;
       params.push(folder_id, folder_id); // Push twice because of the CTE structure
     } else {
-      query += " AND folder_id = ?";
-      countQuery += " AND folder_id = ?";
+      query += " AND b.folder_id = ?";
+      countQuery += " AND b.folder_id = ?";
       params.push(folder_id);
     }
   }
 
   if (favorites === "true") {
-    query += " AND is_favorite = 1";
-    countQuery += " AND is_favorite = 1";
+    query += " AND b.is_favorite = 1";
+    countQuery += " AND b.is_favorite = 1";
   }
 
   if (search) {
     query +=
-      " AND (title LIKE ? OR url LIKE ? OR description LIKE ? OR tags LIKE ?)";
+      " AND (b.title LIKE ? OR b.url LIKE ? OR b.description LIKE ? OR tg.tags_joined LIKE ?)";
     countQuery +=
-      " AND (title LIKE ? OR url LIKE ? OR description LIKE ? OR tags LIKE ?)";
+      " AND (b.title LIKE ? OR b.url LIKE ? OR b.description LIKE ? OR tg.tags_joined LIKE ?)";
     const searchTerm = `%${search}%`;
     params.push(searchTerm, searchTerm, searchTerm, searchTerm);
   }
 
   if (tags) {
-    query += " AND tags LIKE ?";
-    countQuery += " AND tags LIKE ?";
+    query += " AND tg.tags_joined LIKE ?";
+    countQuery += " AND tg.tags_joined LIKE ?";
     params.push(`%${tags}%`);
   }
 
@@ -1152,6 +1195,9 @@ app.get("/api/bookmarks", authenticateTokenMiddleware, (req, res) => {
       query += ` OFFSET ${parseInt(offset)}`;
     }
     const bookmarks = db.prepare(query).all(...params);
+    bookmarks.forEach((b) => {
+      b.tags_detailed = parseTagsDetailed(b.tags_detailed);
+    });
     return res.json({
       bookmarks,
       total,
@@ -1161,18 +1207,42 @@ app.get("/api/bookmarks", authenticateTokenMiddleware, (req, res) => {
   }
 
   const bookmarks = db.prepare(query).all(...params);
+  bookmarks.forEach((b) => {
+    b.tags_detailed = parseTagsDetailed(b.tags_detailed);
+  });
   res.json(bookmarks);
 });
 
 // Get single bookmark
 app.get("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
   const bookmark = db
-    .prepare("SELECT * FROM bookmarks WHERE id = ? AND user_id = ?")
-    .get(req.params.id, req.user.id);
+    .prepare(
+      `SELECT b.*, COALESCE(tg.tags_joined, '') as tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed
+       FROM bookmarks b
+       LEFT JOIN (
+         SELECT bt.bookmark_id,
+                GROUP_CONCAT(t.name, ', ') as tags_joined,
+                json_group_array(
+                  json_object(
+                    'name', t.name,
+                    'tag_id', t.id,
+                    'color', t.color,
+                    'color_override', bt.color_override
+                  )
+                ) as tags_detailed
+         FROM bookmark_tags bt
+         JOIN tags t ON t.id = bt.tag_id
+         WHERE t.user_id = ?
+         GROUP BY bt.bookmark_id
+       ) tg ON tg.bookmark_id = b.id
+       WHERE b.id = ? AND b.user_id = ?`,
+    )
+    .get(req.user.id, req.params.id, req.user.id);
 
   if (!bookmark) {
     return res.status(404).json({ error: "Bookmark not found" });
   }
+  bookmark.tags_detailed = parseTagsDetailed(bookmark.tags_detailed);
   res.json(bookmark);
 });
 
@@ -1423,8 +1493,8 @@ app.post("/api/bookmarks", authenticateTokenMiddleware, async (req, res) => {
 
   db.prepare(
     `
-    INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, tags, position, content_type) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, position, content_type) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `,
   ).run(
     id,
@@ -1434,21 +1504,50 @@ app.post("/api/bookmarks", authenticateTokenMiddleware, async (req, res) => {
     url,
     description || null,
     faviconUrl,
-    tags || null,
     position,
     contentType,
   );
 
   // Handle tags via normalized bookmark_tags table
+  let tagResult = { tagIds: [], tagMap: {} };
   if (tags && tags.trim()) {
-    const tagIds = ensureTagsExist(db, req.user.id, tags);
-    updateBookmarkTags(db, id, tagIds);
+    tagResult = ensureTagsExist(db, req.user.id, tags, { returnMap: true });
+    const overrides = normalizeTagColorOverrides(
+      req.body.tag_colors || req.body.tagColorOverrides,
+      tagResult.tagMap,
+    );
+    updateBookmarkTags(db, id, tagResult.tagIds, {
+      colorOverridesByTagId: overrides,
+    });
   }
 
   // Trigger async favicon fetch
   fetchFaviconWrapper(url, id).catch(console.error);
 
-  const bookmark = db.prepare("SELECT * FROM bookmarks WHERE id = ?").get(id);
+  const bookmark = db
+    .prepare(
+      `SELECT b.*, COALESCE(tg.tags_joined, '') as tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed
+       FROM bookmarks b
+       LEFT JOIN (
+         SELECT bt.bookmark_id,
+                GROUP_CONCAT(t.name, ', ') as tags_joined,
+                json_group_array(
+                  json_object(
+                    'name', t.name,
+                    'tag_id', t.id,
+                    'color', t.color,
+                    'color_override', bt.color_override
+                  )
+                ) as tags_detailed
+         FROM bookmark_tags bt
+         JOIN tags t ON t.id = bt.tag_id
+         WHERE t.user_id = ?
+         GROUP BY bt.bookmark_id
+       ) tg ON tg.bookmark_id = b.id
+       WHERE b.id = ?`,
+    )
+    .get(req.user.id, id);
+  bookmark.tags_detailed = parseTagsDetailed(bookmark.tags_detailed);
   res.json(bookmark);
 });
 
@@ -1538,6 +1637,44 @@ function stringifyTags(tagsArray) {
   return parseTags(tagsArray).join(", ");
 }
 
+function parseTagsDetailed(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    return [];
+  }
+}
+
+function normalizeTagColorOverrides(raw, tagMap = {}) {
+  const overrides = {};
+  if (!raw) return overrides;
+
+  const isValidHex = (color) =>
+    typeof color === "string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(color.trim());
+
+  const assignOverride = (name, color) => {
+    if (!name || !isValidHex(color)) return;
+    const tagId = tagMap[name] || tagMap[name.trim()] || null;
+    if (tagId) {
+      overrides[tagId] = color.trim();
+    }
+  };
+
+  if (Array.isArray(raw)) {
+    raw.forEach((entry) => {
+      if (entry && typeof entry === "object") {
+        assignOverride(entry.name || entry.tag, entry.color || entry.color_override);
+      }
+    });
+  } else if (typeof raw === "object") {
+    Object.entries(raw).forEach(([name, color]) => assignOverride(name, color));
+  }
+
+  return overrides;
+}
+
 // Update bookmark
 app.put("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
   const {
@@ -1558,7 +1695,6 @@ app.put("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
       url = COALESCE(?, url),
       description = COALESCE(?, description),
       folder_id = COALESCE(?, folder_id),
-      tags = COALESCE(?, tags),
       is_favorite = COALESCE(?, is_favorite),
       position = COALESCE(?, position),
       favicon = COALESCE(?, favicon),
@@ -1570,7 +1706,6 @@ app.put("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
     url,
     description,
     folder_id,
-    tags,
     is_favorite,
     position,
     favicon,
@@ -1581,8 +1716,16 @@ app.put("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
   // Handle tags via new bookmark_tags table if provided
   if (tags !== undefined) {
     if (tags && tags.trim()) {
-      const tagIds = ensureTagsExist(db, req.user.id, tags);
-      updateBookmarkTags(db, req.params.id, tagIds);
+      const tagResult = ensureTagsExist(db, req.user.id, tags, {
+        returnMap: true,
+      });
+      const overrides = normalizeTagColorOverrides(
+        req.body.tag_colors || req.body.tagColorOverrides,
+        tagResult.tagMap,
+      );
+      updateBookmarkTags(db, req.params.id, tagResult.tagIds, {
+        colorOverridesByTagId: overrides,
+      });
     } else {
       // Clear all tags if empty string provided
       updateBookmarkTags(db, req.params.id, []);
@@ -1590,8 +1733,29 @@ app.put("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
   }
 
   const bookmark = db
-    .prepare("SELECT * FROM bookmarks WHERE id = ?")
-    .get(req.params.id);
+    .prepare(
+      `SELECT b.*, COALESCE(tg.tags_joined, '') as tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed
+       FROM bookmarks b
+       LEFT JOIN (
+         SELECT bt.bookmark_id,
+                GROUP_CONCAT(t.name, ', ') as tags_joined,
+                json_group_array(
+                  json_object(
+                    'name', t.name,
+                    'tag_id', t.id,
+                    'color', t.color,
+                    'color_override', bt.color_override
+                  )
+                ) as tags_detailed
+         FROM bookmark_tags bt
+         JOIN tags t ON t.id = bt.tag_id
+         WHERE t.user_id = ?
+         GROUP BY bt.bookmark_id
+       ) tg ON tg.bookmark_id = b.id
+       WHERE b.id = ?`,
+    )
+    .get(req.user.id, req.params.id);
+  bookmark.tags_detailed = parseTagsDetailed(bookmark.tags_detailed);
   res.json(bookmark);
 });
 
@@ -1629,13 +1793,6 @@ app.delete("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
 
 // ============== TAG ROUTES ==============
 
-// List tags with counts (supports hierarchy by name delimiter e.g. parent/child)
-app.get("/api/tags", authenticateTokenMiddleware, (req, res) => {
-  // Use normalized tag system with bookmark_tags junction table
-  const tags = getUserTags(db, req.user.id);
-  res.json(tags);
-});
-
 // Suggest tags from URL/domain and prior usage
 app.get("/api/tags/suggest", authenticateTokenMiddleware, (req, res) => {
   const { url } = req.query;
@@ -1644,7 +1801,6 @@ app.get("/api/tags/suggest", authenticateTokenMiddleware, (req, res) => {
   try {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname.replace(/^www\./, "");
-    const domainLike = `%${hostname}%`;
     const counts = {};
     const bump = (tag, weight = 1) => {
       if (!tag) return;
@@ -1655,9 +1811,19 @@ app.get("/api/tags/suggest", authenticateTokenMiddleware, (req, res) => {
     // Fetch a slice of bookmarks for TF-IDF style scoring
     const allRows = db
       .prepare(
-        "SELECT title, tags, url FROM bookmarks WHERE user_id = ? LIMIT 800",
+        `SELECT b.title, b.url, COALESCE(tg.tags_joined, '') as tags
+         FROM bookmarks b
+         LEFT JOIN (
+           SELECT bt.bookmark_id, GROUP_CONCAT(t.name, ', ') as tags_joined
+           FROM bookmark_tags bt
+           JOIN tags t ON t.id = bt.tag_id
+           WHERE t.user_id = ?
+           GROUP BY bt.bookmark_id
+         ) tg ON tg.bookmark_id = b.id
+         WHERE b.user_id = ?
+         LIMIT 800`,
       )
-      .all(req.user.id);
+      .all(req.user.id, req.user.id);
 
     // Existing tags on same domain + compute doc frequencies for title terms
     const docFreq = {};
@@ -1748,18 +1914,13 @@ app.post("/api/tags/bulk-add", authenticateTokenMiddleware, (req, res) => {
 
   const normalizedTags = parseTags(tags);
   const updated = [];
-  const getBookmark = db.prepare(
-    "SELECT id, tags FROM bookmarks WHERE id = ? AND user_id = ?",
-  );
-  const updateBookmark = db.prepare(
-    "UPDATE bookmarks SET tags = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
-  );
 
   bookmark_ids.forEach((id) => {
-    const bm = getBookmark.get(id, req.user.id);
-    if (!bm) return;
-    const merged = mergeTags(bm.tags, normalizedTags);
-    updateBookmark.run(stringifyTags(merged), id, req.user.id);
+    const current = getBookmarkTagsString(db, id);
+    const merged = mergeTags(current, normalizedTags);
+    const tagsString = stringifyTags(merged);
+    const tagIds = ensureTagsExist(db, req.user.id, tagsString);
+    updateBookmarkTags(db, id, tagIds);
     updated.push(id);
   });
 
@@ -1777,24 +1938,25 @@ app.post("/api/tags/bulk-remove", authenticateTokenMiddleware, (req, res) => {
 
   const removeSet = new Set(parseTags(tags).map((t) => t.toLowerCase()));
   const updated = [];
-  const getBookmark = db.prepare(
-    "SELECT id, tags FROM bookmarks WHERE id = ? AND user_id = ?",
-  );
-  const updateBookmark = db.prepare(
-    "UPDATE bookmarks SET tags = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
-  );
 
   bookmark_ids.forEach((id) => {
-    const bm = getBookmark.get(id, req.user.id);
-    if (!bm || !bm.tags) return;
-    const filtered = parseTags(bm.tags).filter(
+    const current = getBookmarkTagsString(db, id);
+    if (!current) {
+      updateBookmarkTags(db, id, []);
+      return;
+    }
+    const filtered = parseTags(current).filter(
       (t) => !removeSet.has(t.toLowerCase()),
     );
-    updateBookmark.run(
-      filtered.length ? stringifyTags(filtered) : null,
-      id,
-      req.user.id,
-    );
+    const tagsString = filtered.length ? stringifyTags(filtered) : null;
+
+    if (tagsString) {
+      const tagIds = ensureTagsExist(db, req.user.id, tagsString);
+      updateBookmarkTags(db, id, tagIds);
+    } else {
+      updateBookmarkTags(db, id, []);
+    }
+
     updated.push(id);
   });
 
@@ -1808,31 +1970,59 @@ app.post("/api/tags/rename", authenticateTokenMiddleware, (req, res) => {
     return res.status(400).json({ error: "from and to are required" });
   }
 
-  const rows = db
-    .prepare("SELECT id, tags FROM bookmarks WHERE user_id = ? AND tags LIKE ?")
-    .all(req.user.id, `%${from}%`);
-  const updateBookmark = db.prepare(
-    "UPDATE bookmarks SET tags = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
-  );
+  const sourceTag = db
+    .prepare("SELECT * FROM tags WHERE user_id = ? AND name = ?")
+    .get(req.user.id, from);
+
+  if (!sourceTag) {
+    return res.status(404).json({ error: "Tag not found" });
+  }
+
+  const destinationTag = db
+    .prepare("SELECT * FROM tags WHERE user_id = ? AND name = ?")
+    .get(req.user.id, to);
+
+  const sourceRelations = db
+    .prepare(
+      "SELECT bookmark_id, color_override FROM bookmark_tags WHERE tag_id = ?",
+    )
+    .all(sourceTag.id);
+
+  const bookmarkIds = sourceRelations.map((row) => row.bookmark_id);
+
   let updated = 0;
 
-  rows.forEach((row) => {
-    const tagsArr = parseTags(row.tags);
-    let changed = false;
-    const renamed = tagsArr.map((t) => {
-      if (t === from) {
-        changed = true;
-        return to;
-      }
-      return t;
-    });
-
-    if (changed) {
-      const merged = mergeTags(renamed, []);
-      updateBookmark.run(stringifyTags(merged), row.id, req.user.id);
-      updated += 1;
+  const runMerge = db.transaction(() => {
+    if (destinationTag) {
+      // Merge relationships onto destination tag and drop the source tag row.
+      const insertRel = db.prepare(
+        "INSERT OR IGNORE INTO bookmark_tags (bookmark_id, tag_id, color_override) VALUES (?, ?, ?)",
+      );
+      sourceRelations.forEach((rel) => {
+        const info = insertRel.run(
+          rel.bookmark_id,
+          destinationTag.id,
+          rel.color_override || null,
+        );
+        if (info.changes > 0) updated += 1;
+      });
+      db.prepare("DELETE FROM bookmark_tags WHERE tag_id = ?").run(
+        sourceTag.id,
+      );
+      db.prepare("DELETE FROM tags WHERE id = ? AND user_id = ?").run(
+        sourceTag.id,
+        req.user.id,
+      );
+    } else {
+      // Pure rename: update the existing tag row.
+      db.prepare(
+        "UPDATE tags SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
+      ).run(to, sourceTag.id, req.user.id);
+      updated = bookmarkIds.length;
     }
   });
+
+  runMerge();
 
   res.json({ updated });
 });
@@ -1879,23 +2069,32 @@ app.post("/api/import/json", authenticateTokenMiddleware, (req, res) => {
 
       db.prepare(
         `
-        INSERT INTO bookmarks (id, user_id, title, url, description, favicon, tags) 
+        INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon) 
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `,
       ).run(
         id,
         req.user.id,
+        bm.folder_id || null,
         bm.title || bm.url,
         bm.url,
         bm.description || null,
         faviconUrl,
-        bm.tags || null,
       );
+
+      // Attach normalized tags if provided
+      const normalizedTags = bm.tags ? stringifyTags(parseTags(bm.tags)) : null;
+      if (normalizedTags) {
+        const tagIds = ensureTagsExist(db, req.user.id, normalizedTags);
+        updateBookmarkTags(db, id, tagIds);
+      }
 
       // Trigger async favicon fetch
       fetchFaviconWrapper(bm.url, id).catch(console.error);
 
-      imported.push(db.prepare("SELECT * FROM bookmarks WHERE id = ?").get(id));
+      const bookmarkRecord = db.prepare("SELECT * FROM bookmarks WHERE id = ?").get(id);
+      bookmarkRecord.tags = getBookmarkTagsString(db, id);
+      imported.push(bookmarkRecord);
     }
 
     res.json({ imported: imported.length, bookmarks: imported });
@@ -1908,8 +2107,36 @@ app.post("/api/import/json", authenticateTokenMiddleware, (req, res) => {
 app.get("/api/export", authenticateTokenMiddleware, (req, res) => {
   const { format } = req.query;
   const bookmarks = db
-    .prepare("SELECT * FROM bookmarks WHERE user_id = ?")
-    .all(req.user.id);
+    .prepare(
+      `
+    SELECT 
+      b.*, 
+      COALESCE(tags_joined.tags, '') as tags,
+      COALESCE(tags_joined.tags_detailed, '[]') as tags_detailed
+    FROM bookmarks b
+    LEFT JOIN (
+      SELECT bt.bookmark_id,
+             GROUP_CONCAT(t.name, ', ') as tags,
+             json_group_array(
+               json_object(
+                 'name', t.name,
+                 'tag_id', t.id,
+                 'color', t.color,
+                 'color_override', bt.color_override
+               )
+             ) as tags_detailed
+      FROM bookmark_tags bt
+      JOIN tags t ON t.id = bt.tag_id
+      WHERE t.user_id = ?
+      GROUP BY bt.bookmark_id
+    ) tags_joined ON tags_joined.bookmark_id = b.id
+    WHERE b.user_id = ?
+  `,
+    )
+    .all(req.user.id, req.user.id);
+  bookmarks.forEach((b) => {
+    b.tags_detailed = parseTagsDetailed(b.tags_detailed);
+  });
   const folders = db
     .prepare("SELECT * FROM folders WHERE user_id = ?")
     .all(req.user.id);
@@ -1991,6 +2218,11 @@ app.post("/api/sync/push", authenticateTokenMiddleware, (req, res) => {
           db.prepare(
             "UPDATE bookmarks SET title = ?, folder_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
           ).run(bm.title, bm.folder_id, existing.id);
+          if (bm.tags) {
+            const tagsString = stringifyTags(parseTags(bm.tags));
+            const tagIds = ensureTagsExist(db, req.user.id, tagsString);
+            updateBookmarkTags(db, existing.id, tagIds);
+          }
           results.updated++;
         } else {
           const id = uuidv4();
@@ -2007,6 +2239,12 @@ app.post("/api/sync/push", authenticateTokenMiddleware, (req, res) => {
             faviconUrl,
           );
 
+          if (bm.tags) {
+            const tagsString = stringifyTags(parseTags(bm.tags));
+            const tagIds = ensureTagsExist(db, req.user.id, tagsString);
+            updateBookmarkTags(db, id, tagIds);
+          }
+
           // Trigger async favicon fetch
           fetchFaviconWrapper(bm.url, id).catch(console.error);
           results.created++;
@@ -2022,8 +2260,37 @@ app.post("/api/sync/push", authenticateTokenMiddleware, (req, res) => {
 
 app.get("/api/sync/pull", authenticateTokenMiddleware, (req, res) => {
   const bookmarks = db
-    .prepare("SELECT * FROM bookmarks WHERE user_id = ? ORDER BY position")
-    .all(req.user.id);
+    .prepare(
+      `
+    SELECT 
+      b.*, 
+      COALESCE(tags_joined.tags, '') as tags,
+      COALESCE(tags_joined.tags_detailed, '[]') as tags_detailed
+    FROM bookmarks b
+    LEFT JOIN (
+      SELECT bt.bookmark_id,
+             GROUP_CONCAT(t.name, ', ') as tags,
+             json_group_array(
+               json_object(
+                 'name', t.name,
+                 'tag_id', t.id,
+                 'color', t.color,
+                 'color_override', bt.color_override
+               )
+             ) as tags_detailed
+      FROM bookmark_tags bt
+      JOIN tags t ON t.id = bt.tag_id
+      WHERE t.user_id = ?
+      GROUP BY bt.bookmark_id
+    ) tags_joined ON tags_joined.bookmark_id = b.id
+    WHERE b.user_id = ?
+    ORDER BY b.position
+  `,
+    )
+    .all(req.user.id, req.user.id);
+  bookmarks.forEach((b) => {
+    b.tags_detailed = parseTagsDetailed(b.tags_detailed);
+  });
   const folders = db
     .prepare("SELECT * FROM folders WHERE user_id = ? ORDER BY position")
     .all(req.user.id);
@@ -2054,12 +2321,14 @@ app.get("/api/quick-search", authenticateTokenMiddleware, (req, res) => {
   const bookmarks = db
     .prepare(
       `
-    SELECT id, title, url, favicon_local as favicon, click_count 
-    FROM bookmarks 
-    WHERE user_id = ? AND (title LIKE ? OR url LIKE ? OR tags LIKE ?)
+    SELECT DISTINCT b.id, b.title, b.url, b.favicon_local as favicon, b.click_count 
+    FROM bookmarks b
+    LEFT JOIN bookmark_tags bt ON bt.bookmark_id = b.id
+    LEFT JOIN tags t ON t.id = bt.tag_id
+    WHERE b.user_id = ? AND (b.title LIKE ? OR b.url LIKE ? OR t.name LIKE ?)
     ORDER BY 
-      CASE WHEN title LIKE ? THEN 0 ELSE 1 END,
-      click_count DESC
+      CASE WHEN b.title LIKE ? THEN 0 ELSE 1 END,
+      b.click_count DESC
     LIMIT ?
   `,
     )
@@ -2101,31 +2370,32 @@ app.get("/api/stats", authenticateTokenMiddleware, (req, res) => {
     )
     .all(req.user.id);
 
-  // Get tag stats
-  const allBookmarks = db
+  // Get tag stats from normalized tables
+  const tagCounts = db
     .prepare(
-      "SELECT tags FROM bookmarks WHERE user_id = ? AND tags IS NOT NULL",
+      `
+      SELECT t.name, COUNT(bt.bookmark_id) as count
+      FROM tags t
+      LEFT JOIN bookmark_tags bt ON t.id = bt.tag_id
+      WHERE t.user_id = ?
+      GROUP BY t.id
+      ORDER BY count DESC, t.name ASC
+    `,
     )
     .all(req.user.id);
-  const tagCounts = {};
-  allBookmarks.forEach((b) => {
-    if (b.tags) {
-      b.tags.split(",").forEach((t) => {
-        const tag = t.trim();
-        if (tag) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-      });
-    }
-  });
+
+  const usedTags = tagCounts.filter((t) => t.count > 0);
 
   res.json({
     total_bookmarks: bookmarkCount.count,
     total_folders: folderCount.count,
-    total_tags: Object.keys(tagCounts).length,
+    total_tags: usedTags.length,
     favorites: favoriteCount.count,
     top_clicked: topClicked,
-    top_tags: Object.entries(tagCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10),
+    top_tags: usedTags
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+      .map((t) => [t.name, t.count]),
   });
 });
 
@@ -2429,8 +2699,8 @@ function createExampleBookmarks(userId, folderId = null) {
 
     db.prepare(
       `
-            INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, tags, position) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, position) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `,
     ).run(
       id,
@@ -2440,14 +2710,19 @@ function createExampleBookmarks(userId, folderId = null) {
       bm.url,
       bm.description,
       faviconUrl,
-      bm.tags,
       i + 1,
     );
+
+    if (bm.tags) {
+      const tagsString = stringifyTags(parseTags(bm.tags));
+      const tagIds = ensureTagsExist(db, userId, tagsString);
+      updateBookmarkTags(db, id, tagIds);
+    }
 
     // Trigger async favicon fetch
     fetchFaviconWrapper(bm.url, id).catch(console.error);
 
-    created.push({ id, ...bm, favicon: faviconUrl });
+    created.push({ id, ...bm, favicon: faviconUrl, tags: bm.tags });
   }
 
   return created;
@@ -2575,13 +2850,19 @@ function parseBookmarkHtml(html, userId) {
           if (!url.startsWith("javascript:") && !url.startsWith("place:")) {
             const id = uuidv4();
             const faviconUrl = null;
+            const tagsString = tags ? stringifyTags(parseTags(tags)) : null;
 
             db.prepare(
-              "INSERT INTO bookmarks (id, user_id, folder_id, title, url, favicon, tags) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            ).run(id, userId, currentParentId, title, url, faviconUrl, tags);
+              "INSERT INTO bookmarks (id, user_id, folder_id, title, url, favicon) VALUES (?, ?, ?, ?, ?, ?)",
+            ).run(id, userId, currentParentId, title, url, faviconUrl);
+
+            if (tagsString) {
+              const tagIds = ensureTagsExist(db, userId, tagsString);
+              updateBookmarkTags(db, id, tagIds);
+            }
 
             fetchFaviconWrapper(url, id).catch(console.error);
-            imported.push({ id });
+            imported.push({ id, title, url, tags: tagsString || null });
           }
         }
         i = aEnd + 4;
@@ -2684,16 +2965,17 @@ app.get("/api/tags/suggest-smart", authenticateTokenMiddleware, (req, res) => {
     const domainTags = db
       .prepare(
         `
-            SELECT DISTINCT tags FROM bookmarks 
-            WHERE user_id = ? AND url LIKE ?
+            SELECT DISTINCT t.name as tag
+            FROM bookmarks b
+            JOIN bookmark_tags bt ON bt.bookmark_id = b.id
+            JOIN tags t ON t.id = bt.tag_id
+            WHERE b.user_id = ? AND b.url LIKE ?
         `,
       )
       .all(req.user.id, `%${domain}%`);
 
     domainTags.forEach((row) => {
-      if (row.tags) {
-        smartOrg.tokenizeText(row.tags).forEach((t) => tagsToScore.add(t));
-      }
+      if (row.tag) tagsToScore.add(row.tag);
     });
 
     // Score all tags
@@ -2731,7 +3013,7 @@ app.get("/api/tags/suggest-smart", authenticateTokenMiddleware, (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Smart tag suggestions error:", err);
+    console.error("Smart tag suggestions error:", err.message || err);
     return res.status(400).json({ error: err.message || "Invalid URL" });
   }
 });

@@ -216,6 +216,9 @@ export function setCurrentCollection(val) {
 export function setViewMode(val) {
   viewMode = val;
 }
+export function setTagMetadata(val) {
+  tagMetadata = val;
+}
 export function setHideFavicons(val) {
   hideFavicons = val;
 }

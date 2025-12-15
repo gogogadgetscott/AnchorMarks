@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const { JWT_SECRET, NODE_ENV } = require("../config");
+const { ensureTagsExist, updateBookmarkTags } = require("../tag-helpers");
 
 function generateCsrfToken() {
   return uuidv4().replace(/-/g, "");
@@ -50,8 +51,8 @@ function createExampleBookmarks(db, userId, folderId = null, fetchFavicon) {
 
     db.prepare(
       `
-            INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, tags, position) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, position) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `,
     ).run(
       id,
@@ -61,9 +62,13 @@ function createExampleBookmarks(db, userId, folderId = null, fetchFavicon) {
       bm.url,
       bm.description,
       faviconUrl,
-      bm.tags,
       i + 1,
     );
+
+    if (bm.tags) {
+      const tagIds = ensureTagsExist(db, userId, bm.tags);
+      updateBookmarkTags(db, id, tagIds);
+    }
 
     // Trigger async favicon fetch
     if (fetchFavicon && process.env.NODE_ENV !== "test") {

@@ -151,6 +151,8 @@ Now that we have normalized tags, we can easily add:
 - AI-powered tag suggestions
 - Tag color customization per bookmark
 
+> Update: Per-bookmark tag color overrides now live (`bookmark_tags.color_override`). See `server/migrations/add-bookmark-tag-color-override.js` for the migration.
+
 ## Files Modified
 
 ### New Files
@@ -166,6 +168,6 @@ Now that we have normalized tags, we can easily add:
 ## Next Steps
 
 1. Monitor application for any tag-related issues
-2. Run comprehensive testing on tag features
+2. ✅ Run comprehensive testing on tag features (Jest: `server/__tests__/tags-features.test.js`)
 3. Consider removing TEXT column sync after stable period
 4. Potentially add migration to `database.js` for new installations

@@ -72,10 +72,7 @@ export async function loadBookmarks() {
         };
       });
       // Store in state for use in rendering
-      if (!state.tagMetadata) {
-        state.tagMetadata = {};
-      }
-      state.tagMetadata = tagMap;
+      state.setTagMetadata(tagMap);
     } catch (err) {
       console.error("Failed to load tag metadata:", err);
       // Continue without tag metadata
@@ -225,12 +222,20 @@ export function renderBookmarks() {
 
 // Create bookmark card HTML
 export function createBookmarkCard(bookmark, index) {
-  const tags = bookmark.tags
+  const tagsFromString = bookmark.tags
     ? bookmark.tags
         .split(",")
         .map((t) => t.trim())
         .filter((t) => t)
     : [];
+
+  const tagEntries = Array.isArray(bookmark.tags_detailed)
+    ? bookmark.tags_detailed.map((t) => ({
+        name: t.name,
+        color: t.color,
+        color_override: t.color_override,
+      }))
+    : tagsFromString.map((name) => ({ name }));
   const hostname = getHostname(bookmark.url);
   const baseUrl = getBaseUrl(bookmark.url);
   const displayUrl = state.viewMode === "list" ? baseUrl : hostname;
@@ -256,12 +261,14 @@ export function createBookmarkCard(bookmark, index) {
       </div>
       ${bookmark.description ? `<div class="bookmark-description">${escapeHtml(bookmark.description)}</div>` : ""}
       ${
-        tags.length
-          ? `<div class="bookmark-tags">${tags
-              .map((t) => {
-                const tagMeta = state.tagMetadata[t] || {};
-                const tagColor = tagMeta.color || "#f59e0b";
-                return `<span class="tag" data-action="toggle-filter-tag" data-tag="${escapeHtml(t)}" style="--tag-color: ${tagColor}">${escapeHtml(t)}</span>`;
+        tagEntries.length
+          ? `<div class="bookmark-tags">${tagEntries
+              .map((tag) => {
+                const tagName = tag.name;
+                const tagMeta = state.tagMetadata[tagName] || {};
+                const tagColor =
+                  tag.color_override || tag.color || tagMeta.color || "#f59e0b";
+                return `<span class="tag" data-action="toggle-filter-tag" data-tag="${escapeHtml(tagName)}" style="--tag-color: ${tagColor}">${escapeHtml(tagName)}</span>`;
               })
               .join("")}</div>`
           : ""

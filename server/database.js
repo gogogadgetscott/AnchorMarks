@@ -50,7 +50,6 @@ function initializeDatabase(DB_PATH) {
         favicon TEXT,
         favicon_local TEXT,
         thumbnail_local TEXT,
-        tags TEXT,
         position INTEGER DEFAULT 0,
         is_favorite INTEGER DEFAULT 0,
         click_count INTEGER DEFAULT 0,
@@ -112,6 +111,7 @@ function initializeDatabase(DB_PATH) {
       CREATE TABLE IF NOT EXISTS bookmark_tags (
         bookmark_id TEXT NOT NULL,
         tag_id TEXT NOT NULL,
+        color_override TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (bookmark_id, tag_id),
         FOREIGN KEY (bookmark_id) REFERENCES bookmarks(id) ON DELETE CASCADE,
@@ -148,6 +148,59 @@ function initializeDatabase(DB_PATH) {
       CREATE INDEX IF NOT EXISTS idx_bookmark_views_user ON bookmark_views(user_id);
     `);
 
+  // Migration: drop legacy bookmarks.tags column by table rebuild if present
+  try {
+    const cols = db.prepare("PRAGMA table_info(bookmarks)").all();
+    const hasTags = cols.some((c) => c.name === "tags");
+    if (hasTags) {
+      db.transaction(() => {
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS bookmarks_new (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            folder_id TEXT,
+            title TEXT NOT NULL,
+            url TEXT NOT NULL,
+            description TEXT,
+            favicon TEXT,
+            favicon_local TEXT,
+            thumbnail_local TEXT,
+            position INTEGER DEFAULT 0,
+            is_favorite INTEGER DEFAULT 0,
+            click_count INTEGER DEFAULT 0,
+            last_clicked DATETIME,
+            is_dead INTEGER DEFAULT 0,
+            last_checked DATETIME,
+            content_type TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE SET NULL
+          );
+        `);
+        db.exec(`
+          INSERT INTO bookmarks_new (
+            id, user_id, folder_id, title, url, description, favicon, favicon_local, thumbnail_local,
+            position, is_favorite, click_count, last_clicked, is_dead, last_checked, content_type, created_at, updated_at
+          )
+          SELECT 
+            id, user_id, folder_id, title, url, description, favicon, favicon_local, thumbnail_local,
+            position, is_favorite, click_count, last_clicked, is_dead, last_checked, content_type, created_at, updated_at
+          FROM bookmarks;
+        `);
+        db.exec(`
+          DROP TABLE bookmarks;
+          ALTER TABLE bookmarks_new RENAME TO bookmarks;
+        `);
+        // Recreate indexes
+        db.exec(`
+          CREATE INDEX IF NOT EXISTS idx_bookmarks_user ON bookmarks(user_id);
+          CREATE INDEX IF NOT EXISTS idx_bookmarks_folder ON bookmarks(folder_id);
+        `);
+      })();
+    }
+  } catch {}
+
   // Add hide_sidebar column if it doesn't exist (migration)
   try {
     db.prepare(
@@ -169,6 +222,15 @@ function initializeDatabase(DB_PATH) {
   // Add thumbnail_local column if it doesn't exist (migration)
   try {
     db.prepare("ALTER TABLE bookmarks ADD COLUMN thumbnail_local TEXT").run();
+  } catch (err) {
+    // Column already exists, ignore
+  }
+
+  // Add color_override to bookmark_tags for per-bookmark tag colors
+  try {
+    db.prepare(
+      "ALTER TABLE bookmark_tags ADD COLUMN color_override TEXT",
+    ).run();
   } catch (err) {
     // Column already exists, ignore
   }

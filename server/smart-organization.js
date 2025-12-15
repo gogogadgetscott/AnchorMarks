@@ -196,11 +196,14 @@ function getDomainScore(db, userId, domain, tag) {
     const taggedCount = db
       .prepare(
         `
-      SELECT COUNT(*) as count FROM bookmarks
-      WHERE user_id = ? AND url LIKE ? AND tags LIKE ?
+      SELECT COUNT(*) as count
+      FROM bookmarks b
+      JOIN bookmark_tags bt ON bt.bookmark_id = b.id
+      JOIN tags t ON t.id = bt.tag_id
+      WHERE b.user_id = ? AND b.url LIKE ? AND t.name = ?
     `,
       )
-      .get(userId, `%${domain}%`, `%${tag}%`);
+      .get(userId, `%${domain}%`, tag);
 
     const frequency = taggedCount.count / domainBookmarks.count;
     // Scale by log of total count to avoid over-weighting rare domains
@@ -239,13 +242,16 @@ function getActivityScore(db, userId, tag, days = 7) {
     const recentTagged = db
       .prepare(
         `
-      SELECT COUNT(*) as count FROM bookmarks
-      WHERE user_id = ? 
-      AND tags LIKE ?
-      AND datetime(created_at) > datetime('now', ? || ' days')
+      SELECT COUNT(*) as count
+      FROM bookmarks b
+      JOIN bookmark_tags bt ON bt.bookmark_id = b.id
+      JOIN tags t ON t.id = bt.tag_id
+      WHERE b.user_id = ? 
+      AND t.name = ?
+      AND datetime(b.created_at) > datetime('now', ? || ' days')
     `,
       )
-      .get(userId, `%${tag}%`, -days);
+      .get(userId, tag, -days);
 
     const frequency = recentTagged.count / recentQuery.count;
 
@@ -276,25 +282,35 @@ function getSimilarityScore(db, userId, url, tag) {
     const similarBookmarks = db
       .prepare(
         `
-      SELECT id, tags FROM bookmarks
-      WHERE user_id = ?
+      SELECT b.id, b.title, b.url, COALESCE(tags_joined.tags, '') as tags
+      FROM bookmarks b
+      LEFT JOIN (
+        SELECT bt.bookmark_id, GROUP_CONCAT(t.name, ', ') as tags
+        FROM bookmark_tags bt
+        JOIN tags t ON t.id = bt.tag_id
+        WHERE t.user_id = ?
+        GROUP BY bt.bookmark_id
+      ) tags_joined ON tags_joined.bookmark_id = b.id
+      WHERE b.user_id = ?
       LIMIT 100
     `,
       )
-      .all(userId);
+      .all(userId, userId);
 
     let matchCount = 0;
     let tagCount = 0;
 
     similarBookmarks.forEach((bm) => {
-      const bmTokens = tokenizeText(bm.id); // In real impl, use title
-      const matches = tokens.filter(
-        (t) => bm.id.includes(t) || (bm.tags || "").toLowerCase().includes(t),
-      );
+      const bmTokens = tokenizeText(`${bm.title || ""} ${bm.url || ""}`);
+      const matches = tokens.filter((t) => bmTokens.includes(t));
 
       if (matches.length > 0) {
         matchCount++;
-        if ((bm.tags || "").includes(tag)) {
+        const tagTokens = (bm.tags || "")
+          .split(",")
+          .map((t) => t.trim().toLowerCase())
+          .filter(Boolean);
+        if (tagTokens.includes(tag.toLowerCase())) {
           tagCount++;
         }
       }
@@ -416,14 +432,21 @@ function generateReason(tag, domain, scores, db, userId) {
       )
       .get(userId, `%${domain}%`);
 
+    if (!domainBookmarks.count) {
+      return `No bookmarks found for ${domain}`;
+    }
+
     const taggedCount = db
       .prepare(
         `
-      SELECT COUNT(*) as count FROM bookmarks
-      WHERE user_id = ? AND url LIKE ? AND tags LIKE ?
+      SELECT COUNT(*) as count
+      FROM bookmarks b
+      JOIN bookmark_tags bt ON bt.bookmark_id = b.id
+      JOIN tags t ON t.id = bt.tag_id
+      WHERE b.user_id = ? AND b.url LIKE ? AND t.name = ?
     `,
       )
-      .get(userId, `%${domain}%`, `%${tag}%`);
+      .get(userId, `%${domain}%`, tag);
 
     const percent = Math.round(
       (taggedCount.count / domainBookmarks.count) * 100,
@@ -433,13 +456,16 @@ function generateReason(tag, domain, scores, db, userId) {
     const recentTagged = db
       .prepare(
         `
-      SELECT COUNT(*) as count FROM bookmarks
-      WHERE user_id = ? 
-      AND tags LIKE ?
-      AND datetime(created_at) > datetime('now', '-7 days')
+      SELECT COUNT(*) as count
+      FROM bookmarks b
+      JOIN bookmark_tags bt ON bt.bookmark_id = b.id
+      JOIN tags t ON t.id = bt.tag_id
+      WHERE b.user_id = ? 
+      AND t.name = ?
+      AND datetime(b.created_at) > datetime('now', '-7 days')
     `,
       )
-      .get(userId, `%${tag}%`);
+      .get(userId, tag);
 
     return `Added ${recentTagged.count} bookmarks with this tag in the last 7 days`;
   } else {
@@ -466,28 +492,20 @@ function getDomainStats(db, userId, domain) {
       .get(userId, `%${domain}%`).count;
 
     // Get tag distribution for this domain
-    const tagDistribution = db
+    const distribution = db
       .prepare(
         `
-      SELECT 
-        TRIM(value) as tag,
-        COUNT(*) as count
-      FROM (
-        SELECT json_extract(json_array(tags), '$') as value
-        FROM bookmarks
-        WHERE user_id = ? AND url LIKE ? AND tags IS NOT NULL
-      )
-      GROUP BY tag
+      SELECT t.name as tag, COUNT(bt.bookmark_id) as count
+      FROM bookmarks b
+      JOIN bookmark_tags bt ON bt.bookmark_id = b.id
+      JOIN tags t ON t.id = bt.tag_id
+      WHERE b.user_id = ? AND b.url LIKE ?
+      GROUP BY t.id
       ORDER BY count DESC
       LIMIT 10
     `,
       )
       .all(userId, `%${domain}%`);
-
-    const distribution = tagDistribution.map((row) => ({
-      tag: row.tag,
-      count: row.count,
-    }));
 
     return {
       domain,
