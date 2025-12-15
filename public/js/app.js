@@ -151,11 +151,8 @@ import SmartOrg from "./modules/smart-organization-ui.js";
 
 // Import widget picker
 import {
+  toggleWidgetPicker,
   openWidgetPicker,
-  closeWidgetPicker,
-  toggleWidgetSidebarPin,
-  renderWidgetPickerFolders,
-  renderWidgetPickerTags,
 } from "./modules/widget-picker.js";
 
 
@@ -927,32 +924,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       toggleSection(header.dataset.toggleSection);
     });
   });
-
-  // Widget picker search inputs
-  document
-    .getElementById("widget-folder-search")
-    ?.addEventListener("input", (e) => {
-      renderWidgetPickerFolders(e.target.value);
-    });
-
-  document
-    .getElementById("widget-tag-search")
-    ?.addEventListener("input", (e) => {
-      renderWidgetPickerTags(e.target.value);
-    });
-
-  // Widget sidebar controls
-  document
-    .getElementById("close-widget-sidebar")
-    ?.addEventListener("click", closeWidgetPicker);
-
-  document
-    .getElementById("pin-widget-sidebar")
-    ?.addEventListener("click", toggleWidgetSidebarPin);
-
-  document
-    .getElementById("widget-sidebar-overlay")
-    ?.addEventListener("click", closeWidgetPicker);
 
   // Note: Tag suggestions from URL are handled by SmartOrg.init()
 
