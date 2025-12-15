@@ -1869,28 +1869,28 @@ body.sidebar-collapsed .nav-section-header {
   padding: 0.25rem 0.625rem;
   font-size: 0.6875rem;
   font-weight: 500;
-  background: var(--primary-50);
-  color: var(--primary-700);
+  background: color-mix(in srgb, var(--tag-color, var(--primary-500)) 15%, transparent);
+  color: var(--tag-color, var(--primary-700));
   border-radius: var(--radius-full);
-  border: 1px solid var(--primary-100);
+  border: 1px solid color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
   transition: all var(--transition-fast);
   cursor: pointer;
 }
 
 .tag:hover {
-  background: var(--primary-100);
-  border-color: var(--primary-200);
+  background: color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
+  border-color: color-mix(in srgb, var(--tag-color, var(--primary-500)) 35%, transparent);
 }
 
 [data-theme="dark"] .tag {
-  background: rgba(99, 102, 241, 0.15);
-  color: #a5b4fc;
-  border-color: rgba(99, 102, 241, 0.25);
+  background: color-mix(in srgb, var(--tag-color, #6366f1) 15%, transparent);
+  color: color-mix(in srgb, var(--tag-color, #a5b4fc) 80%, white);
+  border-color: color-mix(in srgb, var(--tag-color, #6366f1) 25%, transparent);
 }
 
 [data-theme="dark"] .tag:hover {
-  background: rgba(99, 102, 241, 0.25);
-  border-color: rgba(99, 102, 241, 0.35);
+  background: color-mix(in srgb, var(--tag-color, #6366f1) 25%, transparent);
+  border-color: color-mix(in srgb, var(--tag-color, #6366f1) 35%, transparent);
 }
 
 .bookmark-action-btn {
@@ -2525,6 +2525,37 @@ body.sidebar-collapsed .nav-section-header {
 .color-option.active {
   border-color: var(--text-primary);
   box-shadow: 0 0 0 2px var(--bg-primary);
+}
+
+/* Tag modal color picker (same styles as folder) */
+.color-picker-tag {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.color-option-tag {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--color);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.color-option-tag:hover {
+  transform: scale(1.1);
+}
+
+.color-option-tag.active {
+  border-color: var(--text-primary);
+  box-shadow: 0 0 0 2px var(--bg-primary);
+}
+
+/* Tag modal needs higher z-index since it opens from within settings modal */
+#tag-modal {
+  z-index: 1100;
 }
 
 /* Settings */

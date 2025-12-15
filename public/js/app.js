@@ -110,6 +110,7 @@ import {
   removeTagFilter,
   clearAllFilters,
   handleTagSubmit,
+  createNewTag,
 } from "./modules/search.js";
 
 // Import bulk operations
@@ -332,9 +333,9 @@ async function initializeApp() {
   if (sidebarFilterSort)
     sidebarFilterSort.value = state.filterConfig.sort || "recently_added";
 
-  const sidebarTagSort = document.getElementById("sidebar-filter-tag-sort");
-  if (sidebarTagSort)
-    sidebarTagSort.value = state.filterConfig.tagSort || "count_desc";
+  const settingsTagSort = document.getElementById("settings-tag-sort");
+  if (settingsTagSort)
+    settingsTagSort.value = state.filterConfig.tagSort || "count_desc";
 }
 
 // Keyboard handler
@@ -593,14 +594,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       renderBookmarks();
     });
 
+  // Tag Sort in Settings
   document
-    .getElementById("sidebar-filter-tag-sort")
+    .getElementById("settings-tag-sort")
     ?.addEventListener("change", (e) => {
       state.filterConfig.tagSort = e.target.value;
-      // Sync with original filter sidebar
+      // Also update the filter dropdown if it exists
       const filterTagSort = document.getElementById("filter-tag-sort");
       if (filterTagSort) filterTagSort.value = e.target.value;
+
+      // Save to settings to persist
+      saveSettings({ tag_sort: e.target.value });
+
+      // Re-render things that depend on tag sort
       renderSidebarTags();
+      loadTagStats(); // Update the tag overview list in Settings > Tags
     });
 
   // Bulk actions
@@ -1009,6 +1017,42 @@ document.addEventListener("DOMContentLoaded", async () => {
         showToast("Undo complete", "success");
       } catch (err) {
         showToast(err.message || "Undo failed", "error");
+      }
+    });
+
+  // Add new tag
+  document
+    .getElementById("add-new-tag-btn")
+    ?.addEventListener("click", async () => {
+      const nameInput = document.getElementById("new-tag-name");
+      const colorInput = document.getElementById("new-tag-color");
+
+      const name = nameInput?.value.trim();
+      const color = colorInput?.value || "#f59e0b";
+
+      if (!name) {
+        showToast("Please enter a tag name", "error");
+        nameInput?.focus();
+        return;
+      }
+
+      const success = await createNewTag(name, color);
+
+      if (success) {
+        // Clear the input fields
+        if (nameInput) nameInput.value = "";
+        if (colorInput) colorInput.value = "#f59e0b";
+        nameInput?.focus();
+      }
+    });
+
+  // Enter key support for new tag input
+  document
+    .getElementById("new-tag-name")
+    ?.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        document.getElementById("add-new-tag-btn")?.click();
       }
     });
 

@@ -24,6 +24,14 @@ export async function loadSettings() {
     state.setDashboardWidgets(settings.dashboard_widgets || []);
     state.setCollapsedSections(settings.collapsed_sections || []);
 
+    // Load tag sort preference
+    if (settings.tag_sort) {
+      state.setFilterConfig({
+        ...state.filterConfig,
+        tagSort: settings.tag_sort,
+      });
+    }
+
     // Set current view from settings
     if (settings.current_view) {
       state.setCurrentView(settings.current_view);
