@@ -9,8 +9,7 @@
   <meta name="keywords" content="bookmarks, bookmark manager, sync, organize, productivity">
   <title>AnchorMarks - Your Bookmarks, Beautifully Organized</title>
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="icon" type="image/svg+xml"
-    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔗</text></svg>">
+  <link rel="icon" type="image/png" href="icon.png">
 </head>
 
 <body>
@@ -21,10 +20,7 @@
         <div class="auth-header">
           <div class="logo">
             <div class="logo-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-              </svg>
+              <img src="icon.png" alt="AnchorMarks Logo">
             </div>
             <span class="logo-text">AnchorMarks</span>
           </div>
@@ -106,10 +102,7 @@
         <div class="sidebar-header">
           <div class="logo">
             <div class="logo-icon small">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-              </svg>
+              <img src="icon.png" alt="AnchorMarks Logo">
             </div>
             <span class="logo-text">AnchorMarks</span>
           </div>
@@ -247,8 +240,8 @@
             </div>
           </div>
 
-          <!-- Folders Section - Collapsible -->
-          <div class="nav-section collapsible" id="folders-section">
+          <!-- Folders Section (Hidden - moved to filter dropdown) -->
+          <div class="nav-section collapsible hidden" id="folders-section">
             <div class="nav-section-header" data-toggle-section="folders-section">
               <div class="section-title">
                 <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -257,30 +250,17 @@
                 <span>Folders</span>
                 <span class="badge section-badge" id="folders-count">0</span>
               </div>
-              <div class="section-actions">
-                <button class="btn-icon btn-icon-sm" id="add-folder-btn" title="Add Folder">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                </button>
-                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </div>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </div>
-            <div class="nav-section-content" id="folders-content">
-              <div id="folders-list" class="folders-list">
-                <!-- Folders will be rendered here -->
-              </div>
-              <button class="show-more-btn hidden" id="folders-show-more">
-                Show all folders
-              </button>
+            <div class="nav-section-content">
+              <div id="folders-list" class="folders-list"></div>
             </div>
           </div>
 
-          <!-- Tags Section - Collapsible -->
-          <div class="nav-section collapsible" id="tags-section">
+          <!-- Tags Section (Hidden - moved to filter dropdown) -->
+          <div class="nav-section collapsible hidden" id="tags-section">
             <div class="nav-section-header" data-toggle-section="tags-section">
               <div class="section-title">
                 <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -335,7 +315,8 @@
 
       <!-- Main Content -->
       <main class="main-content">
-        <header class="content-header">
+        <!-- Dashboard Header -->
+        <header class="content-header dashboard-header" id="dashboard-header" style="display: none;">
           <div class="header-left">
             <button class="btn-icon" id="toggle-sidebar-btn" title="Toggle Sidebar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -344,10 +325,56 @@
                 <line x1="3" y1="18" x2="21" y2="18" />
               </svg>
             </button>
-            <h1 id="view-title">Bookmarks</h1>
-            <span class="bookmark-count" id="view-count">0 bookmarks</span>
+            <h1>Dashboard</h1>
           </div>
           <div class="header-right">
+            <button class="btn btn-secondary" id="dashboard-add-widget-btn" title="Add Widget">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                style="width:16px;height:16px">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add Widget
+            </button>
+            <button class="btn-icon" id="dashboard-layout-btn" title="Layout Settings">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="9" />
+                <rect x="14" y="3" width="7" height="5" />
+                <rect x="14" y="12" width="7" height="9" />
+                <rect x="3" y="16" width="7" height="5" />
+              </svg>
+            </button>
+            <button class="btn-icon" id="dashboard-settings-btn" title="Dashboard Settings">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <!-- Bookmarks Header -->
+        <header class="content-header bookmarks-header" id="bookmarks-header" style="display: none;">
+          <div class="header-left">
+            <button class="btn-icon" id="toggle-sidebar-btn-bookmarks" title="Toggle Sidebar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <h1 id="bookmarks-view-title">Bookmarks</h1>
+            <span class="bookmark-count" id="bookmarks-view-count">0 bookmarks</span>
+          </div>
+          <div class="header-right">
+            <button class="btn btn-secondary" id="bookmarks-filter-btn" title="Filters">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                style="width:16px;height:16px">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+              Filters
+            </button>
             <div class="view-toggle">
               <button class="view-btn active" data-view-mode="grid" title="Grid View">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -378,6 +405,115 @@
             </div>
           </div>
         </header>
+
+        <!-- Favorites Header -->
+        <header class="content-header favorites-header" id="favorites-header" style="display: none;">
+          <div class="header-left">
+            <button class="btn-icon" id="toggle-sidebar-btn-favorites" title="Toggle Sidebar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <h1>Favorites</h1>
+            <span class="bookmark-count" id="favorites-view-count">0 favorites</span>
+          </div>
+          <div class="header-right">
+            <div class="sort-controls">
+              <label for="favorites-sort">Sort by</label>
+              <select id="favorites-sort" class="form-select">
+                <option value="recently_added">Recently Added</option>
+                <option value="most_visited">Most Visited</option>
+                <option value="a_z">A – Z</option>
+                <option value="z_a">Z – A</option>
+              </select>
+            </div>
+            <div class="view-toggle">
+              <button class="view-btn active" data-view-mode="grid" title="Grid View">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                </svg>
+              </button>
+              <button class="view-btn" data-view-mode="list" title="List View">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <line x1="3" y1="6" x2="3.01" y2="6" />
+                  <line x1="3" y1="12" x2="3.01" y2="12" />
+                  <line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+              </button>
+              <button class="view-btn" data-view-mode="compact" title="Compact List">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="4" y1="6" x2="20" y2="6" />
+                  <line x1="4" y1="10" x2="20" y2="10" />
+                  <line x1="4" y1="14" x2="20" y2="14" />
+                  <line x1="4" y1="18" x2="20" y2="18" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <!-- Recents Header -->
+        <header class="content-header recents-header" id="recents-header" style="display: none;">
+          <div class="header-left">
+            <button class="btn-icon" id="toggle-sidebar-btn-recents" title="Toggle Sidebar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <h1>Recent</h1>
+            <span class="bookmark-count" id="recents-view-count">0 recent</span>
+          </div>
+          <div class="header-right">
+            <div class="time-range-controls">
+              <label for="recents-range">Time Range</label>
+              <select id="recents-range" class="form-select">
+                <option value="today">Today</option>
+                <option value="week">Last Week</option>
+                <option value="month">Last Month</option>
+                <option value="all">All Time</option>
+              </select>
+            </div>
+            <div class="view-toggle">
+              <button class="view-btn active" data-view-mode="grid" title="Grid View">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                </svg>
+              </button>
+              <button class="view-btn" data-view-mode="list" title="List View">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <line x1="3" y1="6" x2="3.01" y2="6" />
+                  <line x1="3" y1="12" x2="3.01" y2="12" />
+                  <line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+              </button>
+              <button class="view-btn" data-view-mode="compact" title="Compact List">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="4" y1="6" x2="20" y2="6" />
+                  <line x1="4" y1="10" x2="20" y2="10" />
+                  <line x1="4" y1="14" x2="20" y2="14" />
+                  <line x1="4" y1="18" x2="20" y2="18" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </header>
+
 
         <div id="bulk-bar" class="bulk-bar hidden">
           <div class="bulk-left">
@@ -649,11 +785,30 @@
             </div>
             <div class="setting-item">
               <div class="setting-info">
+                <h4>Include Child Bookmarks</h4>
+                <p>Show bookmarks from sub-folders in main view and dashboard widgets</p>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="include-children-toggle">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="setting-item">
+              <div class="setting-info">
                 <h4>Reset to Example Bookmarks</h4>
                 <p>Clear all bookmarks and restore the default starter bookmarks</p>
               </div>
               <button class="btn btn-outline" id="reset-bookmarks-btn">Reset Bookmarks</button>
             </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4>Onboarding Tour</h4>
+                <p>Restart the guided tour if you skipped it</p>
+              </div>
+              <button class="btn btn-outline" id="restart-tour-btn">Restart Tour</button>
+            </div>
+
             <div class="setting-item danger">
               <div class="setting-info">
                 <h4>Sign Out</h4>
@@ -721,7 +876,8 @@
               <div id="tag-stats-list" class="tag-stats-list"></div>
             </div>
 
-            <div class="setting-item" style="display:block;">
+            <!-- Tags Section (Hidden - moved to filter dropdown) -->
+            <div class="nav-section collapsible hidden" id="tags-section">
               <div class="setting-info" style="margin-bottom:10px;">
                 <h4>Merge / Rename Tag</h4>
                 <p>Move all uses of one tag to another (use “parent/child” for hierarchy)</p>
@@ -921,32 +1077,6 @@
           </div>
         </div>
       </div>
-      <!-- Onboarding Tour -->
-      <div id="tour-overlay" class="tour-overlay hidden"></div>
-      <div id="tour-popover" class="tour-popover hidden">
-        <div class="tour-header">
-          <div class="tour-steps">
-            <span class="tour-step" id="tour-step-1">1</span>
-            <span class="tour-step" id="tour-step-2">2</span>
-            <span class="tour-step" id="tour-step-3">3</span>
-          </div>
-          <button class="btn-icon tour-close" data-action="skip-tour">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-        <div class="tour-content">
-          <h3 id="tour-title"></h3>
-          <p id="tour-description"></p>
-        </div>
-        <div class="tour-actions">
-          <button class="btn btn-secondary tour-skip" data-action="skip-tour">Skip</button>
-          <button class="btn btn-primary tour-next" id="tour-next-btn">Next</button>
-        </div>
-      </div>
-
 
       <!-- Keyboard Shortcuts Help Popup -->
       <div id="shortcuts-popup" class="shortcuts-popup hidden">
@@ -1034,6 +1164,32 @@
           <input type="text" id="command-palette-input" placeholder="Type a command or folder..." autocomplete="off">
           <div id="command-palette-list" class="command-palette-list"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- Onboarding Tour -->
+    <div id="tour-overlay" class="tour-overlay hidden"></div>
+    <div id="tour-popover" class="tour-popover hidden">
+      <div class="tour-header">
+        <div class="tour-steps">
+          <span class="tour-step" id="tour-step-1">1</span>
+          <span class="tour-step" id="tour-step-2">2</span>
+          <span class="tour-step" id="tour-step-3">3</span>
+        </div>
+        <button class="btn-icon tour-close" data-action="skip-tour">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="tour-content">
+        <h3 id="tour-title"></h3>
+        <p id="tour-description"></p>
+      </div>
+      <div class="tour-actions">
+        <button class="btn btn-secondary tour-skip" data-action="skip-tour">Skip</button>
+        <button class="btn btn-primary tour-next" id="tour-next-btn">Next</button>
       </div>
     </div>
 

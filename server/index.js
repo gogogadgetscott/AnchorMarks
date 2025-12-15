@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -172,6 +172,15 @@ function rateLimiter(req, res, next) {
 
 app.use('/api', rateLimiter);
 app.use(express.json({ limit: '10mb' }));
+
+// Request logging (must be before express.static; static can end the response and skip later middleware)
+app.use((req, res, next) => {
+    if (config.NODE_ENV === 'development') {
+        console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
+    }
+    next();
+});
+
 app.use(express.static(path.join(__dirname, '../public'), {
     maxAge: config.NODE_ENV === 'production' ? '1d' : 0
 }));
@@ -186,14 +195,6 @@ app.use('/api', (req, res, next) => {
 
     if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
         return validateCsrfTokenMiddleware(req, res, next);
-    }
-    next();
-});
-
-// Request logging
-app.use((req, res, next) => {
-    if (config.NODE_ENV === 'development') {
-        console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
     }
     next();
 });
@@ -250,8 +251,12 @@ app.get('/api/settings', authenticateTokenMiddleware, (req, res) => {
             dashboard_tags: settings.dashboard_tags ? JSON.parse(settings.dashboard_tags) : [],
             dashboard_sort: settings.dashboard_sort || 'updated_desc',
             widget_order: settings.widget_order ? JSON.parse(settings.widget_order) : {},
+            widget_order: settings.widget_order ? JSON.parse(settings.widget_order) : {},
             dashboard_widgets: settings.dashboard_widgets ? JSON.parse(settings.dashboard_widgets) : [],
-            collapsed_sections: settings.collapsed_sections ? JSON.parse(settings.collapsed_sections) : []
+            collapsed_sections: settings.collapsed_sections ? JSON.parse(settings.collapsed_sections) : [],
+            include_child_bookmarks: settings.include_child_bookmarks || 0,
+            current_view: settings.current_view || 'all',
+            snap_to_grid: settings.snap_to_grid === 1
         });
     } catch (err) {
         console.error('Error fetching settings:', err);
@@ -272,7 +277,8 @@ app.put('/api/settings', authenticateTokenMiddleware, validateCsrfTokenMiddlewar
             dashboard_sort,
             widget_order,
             dashboard_widgets,
-            collapsed_sections
+            collapsed_sections,
+            include_child_bookmarks
         } = req.body;
 
         const existing = db.prepare('SELECT user_id FROM user_settings WHERE user_id = ?').get(req.user.id);
@@ -322,6 +328,18 @@ app.put('/api/settings', authenticateTokenMiddleware, validateCsrfTokenMiddlewar
                 updates.push('collapsed_sections = ?');
                 values.push(JSON.stringify(collapsed_sections));
             }
+            if (include_child_bookmarks !== undefined) {
+                updates.push('include_child_bookmarks = ?');
+                values.push(include_child_bookmarks);
+            }
+            if (req.body.snap_to_grid !== undefined) {
+                updates.push('snap_to_grid = ?');
+                values.push(req.body.snap_to_grid ? 1 : 0);
+            }
+            if (req.body.current_view !== undefined) {
+                updates.push('current_view = ?');
+                values.push(req.body.current_view);
+            }
 
             if (updates.length > 0) {
                 updates.push('updated_at = CURRENT_TIMESTAMP');
@@ -333,19 +351,17 @@ app.put('/api/settings', authenticateTokenMiddleware, validateCsrfTokenMiddlewar
             db.prepare(`
                 INSERT INTO user_settings (
                     user_id, view_mode, hide_favicons, hide_sidebar, theme, dashboard_mode,
-                    dashboard_tags, dashboard_sort, widget_order, collapsed_sections
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    dashboard_tags, dashboard_sort, widget_order, dashboard_widgets, collapsed_sections, include_child_bookmarks
+            ) VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            )
             `).run(
-                req.user.id,
-                view_mode || 'grid',
-                hide_favicons ? 1 : 0,
-                hide_sidebar ? 1 : 0,
-                theme || 'dark',
-                dashboard_mode || 'folder',
-                dashboard_tags ? JSON.stringify(dashboard_tags) : null,
-                dashboard_sort || 'updated_desc',
+                req.user.id, view_mode || 'grid', hide_favicons || 0, hide_sidebar || 0, theme || 'light',
+                dashboard_mode || 'folder', dashboard_tags ? JSON.stringify(dashboard_tags) : null, dashboard_sort || 'updated_desc',
                 widget_order ? JSON.stringify(widget_order) : null,
-                collapsed_sections ? JSON.stringify(collapsed_sections) : null
+                dashboard_widgets ? JSON.stringify(dashboard_widgets) : null,
+                collapsed_sections ? JSON.stringify(collapsed_sections) : null,
+                include_child_bookmarks || 0
             );
         }
 
@@ -353,6 +369,207 @@ app.put('/api/settings', authenticateTokenMiddleware, validateCsrfTokenMiddlewar
     } catch (err) {
         console.error('Error updating settings:', err);
         res.status(500).json({ error: 'Failed to update settings' });
+    }
+});
+
+// ============== DASHBOARD VIEWS =============
+
+// Get all dashboard views
+app.get('/api/dashboard/views', authenticateTokenMiddleware, (req, res) => {
+    try {
+        const views = db.prepare('SELECT * FROM dashboard_views WHERE user_id = ? ORDER BY position, name').all(req.user.id);
+        res.json(views.map(v => ({ ...v, config: JSON.parse(v.config) })));
+    } catch (err) {
+        console.error('Error fetching dashboard views:', err);
+        res.status(500).json({ error: 'Failed to fetch dashboard views' });
+    }
+});
+
+// Create dashboard view
+app.post('/api/dashboard/views', authenticateTokenMiddleware, (req, res) => {
+    try {
+        const { name, config } = req.body;
+        if (!name || !config) return res.status(400).json({ error: 'Name and config required' });
+
+        const id = uuidv4();
+        const maxPos = db.prepare('SELECT MAX(position) as max FROM dashboard_views WHERE user_id = ?').get(req.user.id);
+        const position = (maxPos.max || 0) + 1;
+
+        db.prepare('INSERT INTO dashboard_views (id, user_id, name, config, position) VALUES (?, ?, ?, ?, ?)')
+            .run(id, req.user.id, name, JSON.stringify(config), position);
+
+        const view = db.prepare('SELECT * FROM dashboard_views WHERE id = ?').get(id);
+        res.json({ ...view, config: JSON.parse(view.config) });
+    } catch (err) {
+        console.error('Error creating dashboard view:', err);
+        res.status(500).json({ error: 'Failed to create dashboard view' });
+    }
+});
+
+// Update dashboard view
+app.put('/api/dashboard/views/:id', authenticateTokenMiddleware, (req, res) => {
+    try {
+        const { name, config, position } = req.body;
+
+        db.prepare(`
+            UPDATE dashboard_views SET 
+                name = COALESCE(?, name),
+                config = COALESCE(?, config),
+                position = COALESCE(?, position),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ?
+        `).run(
+            name,
+            config ? JSON.stringify(config) : null,
+            position,
+            req.params.id,
+            req.user.id
+        );
+
+        const view = db.prepare('SELECT * FROM dashboard_views WHERE id = ?').get(req.params.id);
+        res.json({ ...view, config: JSON.parse(view.config) });
+    } catch (err) {
+        console.error('Error updating dashboard view:', err);
+        res.status(500).json({ error: 'Failed to update dashboard view' });
+    }
+});
+
+// Delete dashboard view
+app.delete('/api/dashboard/views/:id', authenticateTokenMiddleware, (req, res) => {
+    try {
+        db.prepare('DELETE FROM dashboard_views WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error deleting dashboard view:', err);
+        res.status(500).json({ error: 'Failed to delete dashboard view' });
+    }
+});
+
+// Restore dashboard view (apply to settings)
+app.post('/api/dashboard/views/:id/restore', authenticateTokenMiddleware, (req, res) => {
+    try {
+        const view = db.prepare('SELECT * FROM dashboard_views WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+        if (!view) {
+            return res.status(404).json({ error: 'View not found' });
+        }
+
+        const config = JSON.parse(view.config);
+
+        // Update user settings with view config INCLUDING current_view
+        db.prepare(`
+            UPDATE user_settings 
+            SET dashboard_mode = ?, 
+                dashboard_tags = ?, 
+                dashboard_sort = ?,
+                widget_order = ?,
+                dashboard_widgets = ?,
+                include_child_bookmarks = ?,
+                current_view = 'dashboard',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+        `).run(
+            config.dashboard_mode || 'folder',
+            config.dashboard_tags ? JSON.stringify(config.dashboard_tags) : null,
+            config.dashboard_sort || 'recently_added',
+            config.widget_order ? JSON.stringify(config.widget_order) : null,
+            config.dashboard_widgets ? JSON.stringify(config.dashboard_widgets) : null,
+            config.include_child_bookmarks || 0,
+            req.user.id
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error restoring dashboard view:', err);
+        res.status(500).json({ error: 'Failed to restore dashboard view' });
+    }
+});
+
+// ============== BOOKMARK VIEWS ROUTES ==============
+
+// Get all bookmark views for user
+app.get('/api/bookmark/views', authenticateTokenMiddleware, (req, res) => {
+    try {
+        const views = db.prepare('SELECT * FROM bookmark_views WHERE user_id = ? ORDER BY position ASC, created_at DESC').all(req.user.id);
+        res.json(views);
+    } catch (err) {
+        console.error('Error fetching bookmark views:', err);
+        res.status(500).json({ error: 'Failed to fetch bookmark views' });
+    }
+});
+
+// Create new bookmark view
+app.post('/api/bookmark/views', authenticateTokenMiddleware, (req, res) => {
+    try {
+        const { name, config } = req.body;
+        if (!name || !config) {
+            return res.status(400).json({ error: 'Name and config are required' });
+        }
+
+        const id = uuidv4();
+        db.prepare(`
+            INSERT INTO bookmark_views (id, user_id, name, config)
+            VALUES (?, ?, ?, ?)
+        `).run(id, req.user.id, name, JSON.stringify(config));
+
+        const view = db.prepare('SELECT * FROM bookmark_views WHERE id = ?').get(id);
+        res.json(view);
+    } catch (err) {
+        console.error('Error creating bookmark view:', err);
+        res.status(500).json({ error: 'Failed to create bookmark view' });
+    }
+});
+
+// Update bookmark view
+app.put('/api/bookmark/views/:id', authenticateTokenMiddleware, (req, res) => {
+    try {
+        const { name, config } = req.body;
+        const view = db.prepare('SELECT * FROM bookmark_views WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+
+        if (!view) {
+            return res.status(404).json({ error: 'View not found' });
+        }
+
+        db.prepare(`
+            UPDATE bookmark_views 
+            SET name = ?, config = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ?
+        `).run(name || view.name, config ? JSON.stringify(config) : view.config, req.params.id, req.user.id);
+
+        const updated = db.prepare('SELECT * FROM bookmark_views WHERE id = ?').get(req.params.id);
+        res.json(updated);
+    } catch (err) {
+        console.error('Error updating bookmark view:', err);
+        res.status(500).json({ error: 'Failed to update bookmark view' });
+    }
+});
+
+// Delete bookmark view
+app.delete('/api/bookmark/views/:id', authenticateTokenMiddleware, (req, res) => {
+    try {
+        const result = db.prepare('DELETE FROM bookmark_views WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'View not found' });
+        }
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error deleting bookmark view:', err);
+        res.status(500).json({ error: 'Failed to delete bookmark view' });
+    }
+});
+
+// Restore bookmark view
+app.post('/api/bookmark/views/:id/restore', authenticateTokenMiddleware, (req, res) => {
+    try {
+        const view = db.prepare('SELECT * FROM bookmark_views WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+        if (!view) {
+            return res.status(404).json({ error: 'View not found' });
+        }
+
+        // Just return the config - frontend will apply it
+        res.json({ success: true, config: JSON.parse(view.config) });
+    } catch (err) {
+        console.error('Error restoring bookmark view:', err);
+        res.status(500).json({ error: 'Failed to restore bookmark view' });
     }
 });
 
@@ -621,9 +838,32 @@ app.get('/api/bookmarks', authenticateTokenMiddleware, (req, res) => {
     const params = [req.user.id];
 
     if (folder_id) {
-        query += ' AND folder_id = ?';
-        countQuery += ' AND folder_id = ?';
-        params.push(folder_id);
+        if (req.query.include_children === 'true') {
+            // Recursive CTE to find all descendant folders
+            query += ` AND (folder_id = ? OR folder_id IN (
+                WITH RECURSIVE subfolders AS (
+                    SELECT id FROM folders WHERE parent_id = ?
+                    UNION ALL
+                    SELECT f.id FROM folders f
+                    JOIN subfolders s ON f.parent_id = s.id
+                )
+                SELECT id FROM subfolders
+            ))`;
+            countQuery += ` AND (folder_id = ? OR folder_id IN (
+                WITH RECURSIVE subfolders AS (
+                    SELECT id FROM folders WHERE parent_id = ?
+                    UNION ALL
+                    SELECT f.id FROM folders f
+                    JOIN subfolders s ON f.parent_id = s.id
+                )
+                SELECT id FROM subfolders
+            ))`;
+            params.push(folder_id, folder_id); // Push twice because of the CTE structure
+        } else {
+            query += ' AND folder_id = ?';
+            countQuery += ' AND folder_id = ?';
+            params.push(folder_id);
+        }
     }
 
     if (favorites === 'true') {
@@ -1834,8 +2074,14 @@ app.get('/api/tags/suggest-smart', authenticateTokenMiddleware, (req, res) => {
         return res.status(400).json({ error: 'URL parameter required' });
     }
 
+    let urlObj;
     try {
-        const urlObj = new URL(url);
+        urlObj = new URL(url);
+    } catch (e) {
+        return res.status(400).json({ error: 'Invalid URL' });
+    }
+
+    try {
         const domain = urlObj.hostname.replace(/^www\./, '');
 
         // Get domain category info
@@ -2138,7 +2384,7 @@ app.get('/api/smart-insights', authenticateTokenMiddleware, (req, res) => {
 });
 
 // Serve frontend for all other routes
-app.get('*', (req, res) => {
+app.all(/(.*)/, (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
@@ -2174,5 +2420,6 @@ if (config.NODE_ENV !== 'test') {
 
 // Expose helpers for tests
 app._isPrivateAddress = isPrivateAddress;
+app.db = db;
 
 module.exports = app;

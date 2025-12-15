@@ -8,3 +8,8 @@ Thumbs.db
 public/favicons/*.png
 public/favicons/*.ico
 *.log
+
+# Test coverage output
+coverage/
+*.lcov
+.nyc_output/

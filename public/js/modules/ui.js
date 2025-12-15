@@ -121,6 +121,37 @@ export function addTagToInput(tag) {
     dom.bookmarkTagsInput.value = Array.from(current).join(', ');
 }
 
+// Show/hide view-specific headers
+export function updateViewHeader() {
+    // Hide all headers
+    ['dashboard-header', 'bookmarks-header', 'favorites-header', 'recents-header'].forEach(id => {
+        const header = document.getElementById(id);
+        if (header) header.style.display = 'none';
+    });
+
+    // Show active view header
+    let headerId;
+    switch (state.currentView) {
+        case 'dashboard':
+            headerId = 'dashboard-header';
+            break;
+        case 'favorites':
+            headerId = 'favorites-header';
+            break;
+        case 'recent':
+            headerId = 'recents-header';
+            break;
+        case 'all':
+        case 'folder':
+        default:
+            headerId = 'bookmarks-header';
+            break;
+    }
+
+    const activeHeader = document.getElementById(headerId);
+    if (activeHeader) activeHeader.style.display = 'flex';
+}
+
 // Update active navigation
 export function updateActiveNav() {
     document.querySelectorAll('.nav-item').forEach(item => {
@@ -134,6 +165,9 @@ export function updateActiveNav() {
     } else {
         document.querySelector(`.nav-item[data-view="${state.currentView}"]`)?.classList.add('active');
     }
+
+    // Update view-specific header
+    updateViewHeader();
 
     // Toggle sidebar sections visibility based on view
     // Only hide Filters section in Dashboard (keep Folders/Tags for drag & drop)
@@ -153,6 +187,7 @@ export function updateActiveNav() {
         }
     });
 }
+
 
 // Update counts display
 export function updateCounts() {
@@ -243,11 +278,33 @@ export function updateCounts() {
         }
     }
 
-    // Update View Count Label
+    // Update View Count Label on specific headers
+    const bookmarksViewCount = document.getElementById('bookmarks-view-count');
+    const favoritesViewCount = document.getElementById('favorites-view-count');
+    const recentsViewCount = document.getElementById('recents-view-count');
+
     let currentViewCount = state.renderedBookmarks.length;
     if (state.currentView === 'dashboard') currentViewCount = dashboardVal;
 
-    if (viewCountEl) viewCountEl.textContent = `${currentViewCount} bookmark${currentViewCount !== 1 ? 's' : ''}`;
+    // Update the appropriate view-specific count
+    switch (state.currentView) {
+        case 'all':
+        case 'folder':
+            if (bookmarksViewCount) {
+                bookmarksViewCount.textContent = `${currentViewCount} bookmark${currentViewCount !== 1 ? 's' : ''}`;
+            }
+            break;
+        case 'favorites':
+            if (favoritesViewCount) {
+                favoritesViewCount.textContent = `${favVal} favorite${favVal !== 1 ? 's' : ''}`;
+            }
+            break;
+        case 'recent':
+            if (recentsViewCount) {
+                recentsViewCount.textContent = `${recentVal} recent`;
+            }
+            break;
+    }
 
     updateStats();
 }
@@ -387,6 +444,7 @@ export default {
     closeModals,
     resetForms,
     addTagToInput,
+    updateViewHeader,
     updateActiveNav,
     updateCounts,
     updateStats,

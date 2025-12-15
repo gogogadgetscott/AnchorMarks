@@ -32,6 +32,7 @@ beforeAll(() => {
 });
 
 afterAll(() => {
+  if (app.db) app.db.close();
   if (fs.existsSync(TEST_DB_PATH)) {
     fs.unlinkSync(TEST_DB_PATH);
   }

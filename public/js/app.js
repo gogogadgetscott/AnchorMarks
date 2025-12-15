@@ -21,6 +21,7 @@ import {
     closeModals,
     resetForms,
     addTagToInput,
+    updateViewHeader,
     updateActiveNav,
     updateCounts,
     updateStats,
@@ -47,7 +48,8 @@ import {
     applyFaviconSetting,
     toggleFavicons,
     toggleSidebar,
-    toggleSection
+    toggleSection,
+    toggleIncludeChildBookmarks
 } from './modules/settings.js';
 
 // Import bookmark functions
@@ -135,9 +137,16 @@ import {
     closeShortcutsPopup
 } from './modules/commands.js';
 
+// Import filters
+import {
+    initFilterDropdown,
+    toggleFilterDropdown
+} from './modules/filters.js';
+
 // Import tour
 import {
     checkWelcomeTour,
+    startTour,
     skipTour,
     nextTourStep
 } from './modules/tour.js';
@@ -282,6 +291,7 @@ async function loadDashboardSettings() {
         if (sortSelect) state.dashboardConfig.bookmarkSort = sortSelect.value;
         saveSettings({
             dashboard_mode: state.dashboardConfig.mode,
+            dashboard_tags: state.dashboardConfig.tags,
             dashboard_sort: state.dashboardConfig.bookmarkSort
         });
         if (state.currentView === 'dashboard') renderDashboard();
@@ -376,18 +386,29 @@ function handleKeyboard(e) {
     if (modifier && e.shiftKey && key === 'd') {
         if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
         e.preventDefault();
-        state.setCurrentView('dashboard');
         state.setCurrentFolder(null);
-        updateActiveNav();
-        document.getElementById('view-title').textContent = 'Dashboard';
-        loadBookmarks();
+        switchView('dashboard');
     }
 
+    async function switchView(view) {
+        state.setCurrentView(view);
+        updateActiveNav();
+
+        // Save current view to persist across refreshes
+        await saveSettings({ current_view: view });
+
+        if (view === 'dashboard') {
+            const { renderDashboard } = await import('./modules/dashboard.js');
+            renderDashboard();
+        } else {
+            const { loadBookmarks } = await import('./modules/bookmarks.js');
+            loadBookmarks();
+        }
+    }
     // Ctrl+Shift+F: Favorites
     if (modifier && e.shiftKey && key === 'f') {
         if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
         e.preventDefault();
-        state.setCurrentView('favorites');
         state.setCurrentFolder(null);
         updateActiveNav();
         document.getElementById('view-title').textContent = 'Favorites';
@@ -484,9 +505,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             state.setDisplayedCount(state.BOOKMARKS_PER_PAGE);
             updateActiveNav();
             renderActiveFilters();
-            loadBookmarks();
-            const viewTitle = document.getElementById('view-title');
-            if (viewTitle) viewTitle.textContent = item.querySelector('span')?.textContent || '';
+
+            if (item.dataset.view === 'dashboard') {
+                renderDashboard();
+            } else {
+                loadBookmarks();
+            }
         });
     });
 
@@ -655,6 +679,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Add Folder
     document.getElementById('add-folder-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
+        document.getElementById('folder-modal-title').textContent = 'New Folder';
+        document.getElementById('folder-form').reset();
+        document.getElementById('folder-id').value = '';
+        document.getElementById('folder-color').value = '#6366f1';
+
+        // Reset button text
+        const form = document.getElementById('folder-form');
+        if (form) {
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) btn.textContent = 'Create Folder';
+        }
+
         updateFolderParentSelect();
         openModal('folder-modal');
     });
@@ -690,6 +726,50 @@ document.addEventListener('DOMContentLoaded', async () => {
         btn.addEventListener('click', () => setViewMode(btn.dataset.viewMode));
     });
 
+    // Sidebar toggle buttons for all views
+    document.getElementById('toggle-sidebar-btn')?.addEventListener('click', toggleSidebar);
+    document.getElementById('toggle-sidebar-btn-bookmarks')?.addEventListener('click', toggleSidebar);
+    document.getElementById('toggle-sidebar-btn-favorites')?.addEventListener('click', toggleSidebar);
+    document.getElementById('toggle-sidebar-btn-recents')?.addEventListener('click', toggleSidebar);
+
+    // Dashboard-specific controls
+    document.getElementById('dashboard-add-widget-btn')?.addEventListener('click', () => {
+        // Show widget selection - integrate with existing dashboard functionality
+        showToast('Add widget functionality - coming soon!', 'info');
+    });
+
+    document.getElementById('dashboard-layout-btn')?.addEventListener('click', () => {
+        // Toggle layout settings
+        showToast('Layout settings - coming soon!', 'info');
+    });
+
+    document.getElementById('dashboard-settings-btn')?.addEventListener('click', () => {
+        loadDashboardSettings();
+        openModal('settings-modal');
+        // Switch to dashboard tab
+        document.querySelector('[data-settings-tab="dashboard"]')?.click();
+    });
+
+    // Bookmarks-specific controls
+    const filterBtn = document.getElementById('bookmarks-filter-btn');
+    console.log('Filter button found:', filterBtn);
+    filterBtn?.addEventListener('click', () => {
+        console.log('Filter button clicked! Calling toggleFilterDropdown...');
+        toggleFilterDropdown();
+    });
+
+    // Favorites-specific controls
+    document.getElementById('favorites-sort')?.addEventListener('change', (e) => {
+        state.filterConfig.sort = e.target.value;
+        renderBookmarks();
+    });
+
+    // Recents-specific controls
+    document.getElementById('recents-range')?.addEventListener('change', (e) => {
+        // Filter by time range - will need to implement range filtering
+        loadBookmarks();
+    });
+
     // Settings
     document.getElementById('settings-btn')?.addEventListener('click', () => {
         loadDashboardSettings();
@@ -710,6 +790,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('dark-mode-toggle')?.addEventListener('change', toggleTheme);
     document.getElementById('hide-favicons-toggle')?.addEventListener('change', toggleFavicons);
+    document.getElementById('include-children-toggle')?.addEventListener('change', toggleIncludeChildBookmarks);
     document.getElementById('toggle-sidebar-btn')?.addEventListener('click', toggleSidebar);
     applyFaviconSetting();
 
@@ -717,6 +798,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('copy-api-key')?.addEventListener('click', copyApiKey);
     document.getElementById('regenerate-api-key')?.addEventListener('click', regenerateApiKey);
     document.getElementById('reset-bookmarks-btn')?.addEventListener('click', resetBookmarks);
+    document.getElementById('restart-tour-btn')?.addEventListener('click', () => {
+        localStorage.removeItem('anchormarks_tour_dismissed');
+        state.setIsInitialLoad(true);
+        closeModals();
+        setTimeout(() => {
+            startTour();
+        }, 150);
+        showToast('Onboarding tour restarted', 'success');
+    });
 
     // Import/Export
     document.getElementById('import-html-btn')?.addEventListener('click', () => {

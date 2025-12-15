@@ -17,3 +17,7 @@ describe('network safety helpers', () => {
         expect(await isPrivateAddress('ftp://example.com')).toBe(true);
     });
 });
+
+afterAll(() => {
+    if (app.db) app.db.close();
+});

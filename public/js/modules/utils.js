@@ -19,6 +19,15 @@ export function getHostname(url) {
     }
 }
 
+// Extract base URL (origin) from a URL, e.g. https://example.com
+export function getBaseUrl(url) {
+    try {
+        return new URL(url).origin;
+    } catch {
+        return url;
+    }
+}
+
 // Parse comma-separated tag input
 export function parseTagInput(value) {
     if (!value) return [];
@@ -38,6 +47,7 @@ export function downloadBlob(blob, filename) {
 export default {
     escapeHtml,
     getHostname,
+    getBaseUrl,
     parseTagInput,
     downloadBlob
 };

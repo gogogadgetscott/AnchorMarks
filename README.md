@@ -6,6 +6,7 @@ A modern, self-hosted bookmark manager with browser sync, Flow Launcher integrat
 
 - **📚 Organize Bookmarks** - Create folders with custom colors
 - **🔍 Fast Search** - Full-text search with intelligent ranking
+- **🎯 Advanced Filtering** - Full-width filter bar with folder/tag counts (see [Help](public/help.html#search))
 - **⭐ Favorites** - Quick access to important bookmarks
 - **🏷️ Tags** - Categorize and filter bookmarks
 - **🌙 Dark Mode** - Beautiful light and dark themes
@@ -13,7 +14,13 @@ A modern, self-hosted bookmark manager with browser sync, Flow Launcher integrat
 - **🔄 Browser Sync** - Chrome/Edge/Firefox extension
 - **🔌 API Access** - REST API for Flow Launcher and other tools
 - **📥 Import/Export** - HTML & JSON support
-- **🖼️ Auto Favicons** - Automatic favicon fetching and caching
+- 🖼️ **Auto Favicons** - Automatic favicon fetching and caching
+
+## 📸 Screenshots
+
+| Dashboard | Search | Mobile |
+|:---:|:---:|:---:|
+| <img src="screenshots/anchormarks_dashboard_1765737807089.png" width="300" alt="Dashboard"> | <img src="screenshots/anchormarks_search_1765737823968.png" width="300" alt="Search"> | <img src="screenshots/anchormarks_mobile_1765737840238.png" width="200" alt="Mobile"> |
 
 ## 🚀 Quick Start
 
@@ -49,6 +56,7 @@ See [INSTALL.md](INSTALL.md) for detailed deployment options.
 - **[INSTALL.md](INSTALL.md)** - Installation and quick start guide
 - **[SECURITY.md](SECURITY.md)** - Security policy and best practices
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development guidelines
+- **Auth & CSRF Flow** - Developer reference: [public/help.html#developer-auth-csrf](public/help.html#developer-auth-csrf)
 
 ## 🧪 Testing
 
@@ -76,3 +84,9 @@ MIT License - use, modify, and distribute freely.
 ---
 
 **[View full documentation in Help →](public/help.html)**
+
+
+-update folder/tag list after import.
+-Fix folder list to show number of bookmarks in each folder. parent folders should show the number of bookmarks in all child folders.
+-How do Smart Collections work? Add to help file.
+-Save current view so browser refresh doesn't reset it.

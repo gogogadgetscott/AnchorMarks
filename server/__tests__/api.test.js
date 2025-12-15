@@ -41,6 +41,7 @@ beforeAll(async () => {
 
 afterAll(() => {
     // Clean up SQLite files generated during tests
+    if (app.db) app.db.close();
     [TEST_DB_PATH, `${TEST_DB_PATH}-shm`, `${TEST_DB_PATH}-wal`]
         .forEach(file => { if (fs.existsSync(file)) fs.unlinkSync(file); });
 });

@@ -1,37 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AnchorMarks - Help & Documentation</title>
+  <link rel="icon" type="image/png" href="icon.png">
   <link rel="stylesheet" href="css/styles.css">
   <style>
+    html {
+      scroll-behavior: smooth;
+    }
+
+    .help-anchor {
+      scroll-margin-top: 2rem;
+    }
+
+    .help-anchor:target {
+      padding-left: 0.75rem;
+      border-left: 4px solid var(--primary-500);
+      border-radius: var(--radius-md);
+    }
+
     .help-container {
-      max-width: 900px;
+      max-width: 1180px;
       margin: 0 auto;
-      padding: 2rem;
+      padding: 2rem 1.5rem;
       background: var(--bg-primary);
       min-height: 100vh;
     }
-    
+
+    .help-shell {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      .help-container {
+        padding: 1.5rem 1rem;
+      }
+
+      .help-shell {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+    }
+
+    .help-main {
+      min-width: 0;
+    }
+
     .help-header {
       text-align: center;
       margin-bottom: 3rem;
       padding-bottom: 2rem;
       border-bottom: 2px solid var(--border-color);
     }
-    
+
     .help-header h1 {
       font-size: 2.5rem;
       margin-bottom: 0.5rem;
       color: var(--text-primary);
     }
-    
+
     .help-header p {
       font-size: 1.125rem;
       color: var(--text-secondary);
     }
-    
+
     .back-link {
       display: inline-flex;
       align-items: center;
@@ -42,49 +80,113 @@
       font-weight: 500;
       transition: color var(--transition-fast);
     }
-    
+
     .back-link:hover {
       color: var(--primary-700);
     }
-    
+
     .help-nav {
       background: var(--bg-secondary);
-      padding: 1.5rem;
-      border-radius: var(--radius-lg);
-      margin-bottom: 2rem;
+      padding: 1.25rem;
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 1.25rem;
+      max-height: calc(100vh - 2.5rem);
+      overflow: auto;
     }
-    
+
+    @media (max-width: 960px) {
+      .help-nav {
+        position: static;
+        max-height: none;
+      }
+    }
+
     .help-nav h3 {
       margin-bottom: 1rem;
       color: var(--text-primary);
     }
-    
+
     .help-nav ul {
       list-style: none;
       padding: 0;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 0.5rem;
+      grid-template-columns: 1fr;
+      gap: 0.25rem;
     }
-    
+
+    .help-nav li {
+      margin: 0;
+    }
+
     .help-nav a {
       color: var(--primary-600);
       text-decoration: none;
-      padding: 0.5rem;
-      display: block;
+      padding: 0.5rem 0.75rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
       border-radius: var(--radius-sm);
-      transition: background var(--transition-fast);
+      transition: background var(--transition-fast), color var(--transition-fast);
     }
-    
+
+    .help-nav .nav-icon {
+      flex: 0 0 1.25rem;
+      width: 1.25rem;
+      line-height: 1.2;
+    }
+
+    .help-nav .nav-text {
+      flex: 1;
+      min-width: 0;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .help-anchor .section-icon {
+      display: inline-block;
+      width: 1.25rem;
+      margin-right: 0.5rem;
+    }
+
+    .help-section h2 .section-icon {
+      display: inline-block;
+      width: 1.5rem;
+      margin-right: 0.6rem;
+    }
+
+    .help-nav a.active {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      box-shadow: inset 2px 0 0 var(--primary-500);
+    }
+
     .help-nav a:hover {
       background: var(--bg-hover);
     }
-    
-    .help-section {
-      margin-bottom: 3rem;
-      scroll-margin-top: 2rem;
+
+    .help-nav a:focus-visible {
+      outline: 2px solid var(--primary-500);
+      outline-offset: 2px;
     }
-    
+
+    .help-section {
+      margin-bottom: 1.5rem;
+      scroll-margin-top: 2rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-2xl);
+      box-shadow: var(--shadow-sm);
+      padding: 1.75rem;
+    }
+
+    .help-section:target {
+      border-color: var(--primary-500);
+      box-shadow: var(--shadow-md);
+    }
+
     .help-section h2 {
       font-size: 1.75rem;
       margin-bottom: 1rem;
@@ -92,37 +194,219 @@
       border-bottom: 1px solid var(--border-color);
       padding-bottom: 0.5rem;
     }
-    
+
     .help-section h3 {
       font-size: 1.25rem;
       margin-top: 1.5rem;
       margin-bottom: 0.75rem;
       color: var(--text-primary);
     }
-    
+
+    .help-at-a-glance {
+      margin-top: -0.25rem;
+      margin-bottom: 1rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+    }
+
+    .help-hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      margin: 1rem 0 1.25rem;
+    }
+
+    .help-hero-actions .btn {
+      text-decoration: none;
+    }
+
+    .help-checklist {
+      margin: 0.75rem 0 0;
+    }
+
+    .help-callouts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .help-mini-glossary {
+      margin-top: 1rem;
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-color);
+    }
+
+    .help-mini-glossary h3 {
+      margin-top: 0;
+    }
+
+    .help-nav-groups {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .help-nav-group h4 {
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      margin: 0.75rem 0 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .help-nav-group ul {
+      list-style: none;
+      padding: 0;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.25rem;
+    }
+
+    .help-nav-group li {
+      min-width: 0;
+    }
+
+    .help-nav-group a {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      overflow-wrap: anywhere;
+    }
+
+    .shortcuts-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      overflow: hidden;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+    }
+
+    .shortcuts-table th,
+    .shortcuts-table td {
+      text-align: left;
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+    }
+
+    .shortcuts-table th {
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      background: var(--bg-tertiary);
+    }
+
+    .shortcuts-table td {
+      color: var(--text-secondary);
+    }
+
+    .shortcuts-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    @media (max-width: 720px) {
+      .help-nav-group ul {
+        grid-template-columns: 1fr;
+      }
+
+      .shortcuts-table th:nth-child(2),
+      .shortcuts-table td:nth-child(2),
+      .shortcuts-table th:nth-child(3),
+      .shortcuts-table td:nth-child(3) {
+        display: block;
+        width: 100%;
+      }
+
+      .shortcuts-table tr {
+        display: block;
+        padding: 0.25rem 0;
+      }
+
+      .shortcuts-table th,
+      .shortcuts-table td {
+        display: block;
+        border-bottom: none;
+      }
+
+      .shortcuts-table td {
+        padding-top: 0;
+      }
+    }
+
     .help-section p {
       line-height: 1.7;
       color: var(--text-secondary);
       margin-bottom: 1rem;
     }
-    
-    .help-section ul, .help-section ol {
+
+    .help-section a {
+      color: var(--primary-600);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      text-decoration-color: var(--border-color);
+    }
+
+    .help-section a:hover {
+      text-decoration-color: var(--primary-600);
+    }
+
+    .help-section img.doc-image {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      background: var(--bg-secondary);
+    }
+
+    .help-section code {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.125rem 0.375rem;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.9em;
+      color: var(--text-primary);
+    }
+
+    .help-section kbd {
+      display: inline-block;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.15rem 0.45rem;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.85em;
+      font-weight: 600;
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+      white-space: nowrap;
+    }
+
+    .help-section ul,
+    .help-section ol {
       margin-bottom: 1rem;
       padding-left: 1.5rem;
     }
-    
+
     .help-section li {
       line-height: 1.7;
       color: var(--text-secondary);
       margin-bottom: 0.5rem;
     }
-    
+
     .shortcuts-grid {
       display: grid;
       gap: 1rem;
       margin-top: 1rem;
     }
-    
+
     .shortcut-item {
       display: flex;
       align-items: center;
@@ -132,43 +416,44 @@
       border-radius: var(--radius-md);
       border: 1px solid var(--border-color);
     }
-    
+
     .shortcut-keys {
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
     }
-    
+
     .shortcut-desc {
       color: var(--text-secondary);
       flex: 1;
       padding-right: 1rem;
     }
-    
+
     .feature-card {
       background: var(--bg-secondary);
       padding: 1.5rem;
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-xl);
       border: 1px solid var(--border-color);
       margin-bottom: 1rem;
     }
-    
+
     .feature-card h4 {
       margin-bottom: 0.5rem;
       color: var(--text-primary);
     }
-    
+
     .code-block {
       background: var(--gray-900);
-      color: #e2e8f0;
+      color: var(--gray-100);
       padding: 1rem;
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-lg);
       overflow-x: auto;
-      font-family: 'Monaco', 'Menlo', monospace;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
       font-size: 0.875rem;
       margin: 1rem 0;
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
-    
+
     .tip-box {
       background: var(--primary-50);
       border-left: 4px solid var(--primary-500);
@@ -176,889 +461,721 @@
       border-radius: var(--radius-md);
       margin: 1rem 0;
     }
-    
+
+    [data-theme="dark"] .tip-box {
+      background: var(--bg-tertiary);
+    }
+
     .tip-box strong {
       color: var(--primary-700);
     }
   </style>
 </head>
+
 <body>
   <div class="help-container">
     <a href="/" class="back-link">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M19 12H5M12 19l-7-7 7-7"/>
+        <path d="M19 12H5M12 19l-7-7 7-7" />
       </svg>
       Back to AnchorMarks
     </a>
-    
+
     <div class="help-header">
-      <h1>📚 AnchorMarks Help & Documentation</h1>
+      <div class="logo" aria-label="AnchorMarks">
+        <div class="logo-icon">
+          <img src="icon.png" alt="AnchorMarks Logo">
+        </div>
+        <span class="logo-text">AnchorMarks</span>
+      </div>
+      <h1>Help &amp; Documentation</h1>
       <p>Everything you need to know about managing your bookmarks</p>
     </div>
-    
-    <div class="help-nav">
-      <h3>Quick Navigation</h3>
-      <ul>
-        <li><a href="#getting-started">Getting Started</a></li>
-        <li><a href="#bookmarks">Managing Bookmarks</a></li>
-        <li><a href="#folders">Organizing with Folders</a></li>
-        <li><a href="#tags">Using Tags</a></li>
-        <li><a href="#smart-org">Smart Organization</a></li>
-        <li><a href="#dashboard">Dashboard</a></li>
-        <li><a href="#shortcuts">Keyboard Shortcuts</a></li>
-        <li><a href="#onboarding">Onboarding Tour</a></li>
-        <li><a href="#search">Search & Filter</a></li>
-        <li><a href="#browser-extension">Browser Extension</a></li>
-        <li><a href="#api">API Access</a></li>
-        <li><a href="#import-export">Import & Export</a></li>
-        <li><a href="#deployment">Deployment</a></li>
-        <li><a href="#api-full">API Reference</a></li>
-        <li><a href="#project-structure">Project Structure</a></li>
-        <li><a href="#security-guide">Security Guide</a></li>
-        <li><a href="#advanced">Advanced Features</a></li>
-        <li><a href="#roadmap">Roadmap</a></li>
-        <li><a href="#troubleshooting">Troubleshooting</a></li>
-      </ul>
+
+    <div class="help-shell">
+      <nav class="help-nav" aria-label="Help navigation">
+        <h3>Quick Navigation</h3>
+        <div class="help-nav-groups">
+          <div class="help-nav-group">
+            <h4>Usage</h4>
+            <ul>
+              <li><a href="#getting-started"><span class="nav-icon" aria-hidden="true">🚀</span><span
+                    class="nav-text">Getting Started</span></a></li>
+              <li><a href="#bookmarks"><span class="nav-icon" aria-hidden="true">🔖</span><span
+                    class="nav-text">Bookmarks</span></a></li>
+              <li><a href="#folders"><span class="nav-icon" aria-hidden="true">📁</span><span
+                    class="nav-text">Folders</span></a></li>
+              <li><a href="#tags"><span class="nav-icon" aria-hidden="true">🏷️</span><span
+                    class="nav-text">Tags</span></a></li>
+              <li><a href="#search"><span class="nav-icon" aria-hidden="true">🔎</span><span class="nav-text">Search
+                    &amp; Filter</span></a></li>
+              <li><a href="#smart-collections"><span class="nav-icon" aria-hidden="true">✨</span><span
+                    class="nav-text">Smart Collections</span></a></li>
+              <li><a href="#onboarding"><span class="nav-icon" aria-hidden="true">🧭</span><span
+                    class="nav-text">Onboarding Tour</span></a></li>
+              <li><a href="#shortcuts"><span class="nav-icon" aria-hidden="true">⌨️</span><span
+                    class="nav-text">Keyboard Shortcuts</span></a></li>
+              <li><a href="#troubleshooting"><span class="nav-icon" aria-hidden="true">🛠️</span><span
+                    class="nav-text">Troubleshooting</span></a></li>
+              <li><a href="#need-more-help"><span class="nav-icon" aria-hidden="true">💬</span><span
+                    class="nav-text">Need More Help</span></a></li>
+            </ul>
+          </div>
+
+          <div class="help-nav-group">
+            <h4>Power Features</h4>
+            <ul>
+              <li><a href="#smart-org"><span class="nav-icon" aria-hidden="true">🧠</span><span class="nav-text">Smart
+                    Organization</span></a></li>
+              <li><a href="#dashboard"><span class="nav-icon" aria-hidden="true">📊</span><span
+                    class="nav-text">Dashboard</span></a></li>
+              <li><a href="#advanced"><span class="nav-icon" aria-hidden="true">⚙️</span><span class="nav-text">Advanced
+                    Features</span></a></li>
+              <li><a href="#views"><span class="nav-icon" aria-hidden="true">👁️</span><span
+                    class="nav-text">Views</span></a></li>
+            </ul>
+          </div>
+
+          <div class="help-nav-group">
+            <h4>Administration</h4>
+            <ul>
+              <li><a href="#deployment"><span class="nav-icon" aria-hidden="true">🚢</span><span
+                    class="nav-text">Deployment</span></a></li>
+              <li><a href="#security-auth"><span class="nav-icon" aria-hidden="true">🔐</span><span
+                    class="nav-text">Security &amp; Auth</span></a></li>
+              <li><a href="#api-reference"><span class="nav-icon" aria-hidden="true">🔌</span><span class="nav-text">API
+                    Reference</span></a></li>
+            </ul>
+          </div>
+
+          <div class="help-nav-group">
+            <h4>Developer</h4>
+            <ul>
+              <li><a href="#project-structure"><span class="nav-icon" aria-hidden="true">🧱</span><span
+                    class="nav-text">Project Structure</span></a></li>
+              <li><a href="#developer-overview"><span class="nav-icon" aria-hidden="true">👩‍💻</span><span
+                    class="nav-text">Developer Overview</span></a></li>
+              <li><a href="#filter-bar-walkthrough"><span class="nav-icon" aria-hidden="true">🧰</span><span
+                    class="nav-text">Filter Bar Walkthrough</span></a></li>
+              <li><a href="#roadmap"><span class="nav-icon" aria-hidden="true">🗺️</span><span
+                    class="nav-text">Roadmap</span></a></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+
+      <main class="help-main">
+
+        <section class="help-section" id="start-here">
+          <h2><span class="section-icon" aria-hidden="true">🧭</span>Start here</h2>
+          <p>
+            This page is for anyone using AnchorMarks: new users who want quick wins, power users who want faster
+            workflows, and self-hosters/integrators who need deployment, security, and API details.
+          </p>
+
+          <div class="help-hero-actions" role="navigation" aria-label="Start here shortcuts">
+            <a class="btn btn-outline" href="#getting-started">Just Started</a>
+            <a class="btn btn-outline" href="#power-user-features">Power User Features</a>
+            <a class="btn btn-outline" href="#self-hosting-api">Self-hosting &amp; API</a>
+          </div>
+
+          <h3 class="help-anchor" id="first-5-minutes">First 5 minutes</h3>
+          <ol class="help-checklist">
+            <li><a href="#bookmarks">Add your first bookmark</a></li>
+            <li><a href="#folders">Create one folder</a></li>
+            <li><a href="#tags">Add a tag</a></li>
+            <li><a href="#search">Try search</a></li>
+            <li><a href="#dashboard">Turn on the dashboard</a></li>
+          </ol>
+
+          <div class="help-callouts" aria-label="AnchorMarks highlights">
+            <div class="feature-card">
+              <h4>Smart Organization</h4>
+              <p>Get tag suggestions and discover patterns as your library grows.</p>
+            </div>
+            <div class="feature-card">
+              <h4>Dashboard widgets</h4>
+              <p>Build a home screen from folders/tags you care about.</p>
+            </div>
+            <div class="feature-card">
+              <h4>Health Tools</h4>
+              <p>Spot duplicates and dead links to keep things clean.</p>
+            </div>
+          </div>
+
+          <div class="help-mini-glossary">
+            <h3 class="help-anchor" id="glossary">Glossary (quick)</h3>
+            <ul>
+              <li><strong>Views:</strong> saved setups you can restore later (filters/sort/search, or a dashboard widget
+                layout).</li>
+              <li><strong>Smart Collections:</strong> saved or suggested groupings based on rules/analysis.</li>
+              <li><strong>Health Tools:</strong> utilities that help you find duplicates and broken links.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="help-section" id="using-anchormarks">
+          <h2><span class="section-icon" aria-hidden="true">📌</span>Using AnchorMarks</h2>
+
+          <h3 class="help-anchor" id="getting-started"><span class="section-icon" aria-hidden="true">🚀</span>Getting
+            Started</h3>
+          <p>AnchorMarks is a self-hosted bookmark manager built for fast capture, flexible organization, and quick
+            retrieval.</p>
+
+          <div class="tip-box">
+            <strong>Missed the tour?</strong> Open <strong>Settings</strong> → <strong>General</strong> →
+            <strong>Restart Tour</strong> to run the onboarding tour again (no dev tools required).
+          </div>
+
+          <h3 class="help-anchor" id="bookmarks"><span class="section-icon" aria-hidden="true">🔖</span>Getting Started
+            → Advanced Features (Bookmarks)</h3>
+          <h4>Adding bookmarks</h4>
+          <ol>
+            <li><strong>Manual:</strong> click the “Add Bookmark” button or press <kbd>Ctrl+N</kbd> / <kbd>Cmd+N</kbd>
+            </li>
+            <li><strong>Browser extension:</strong> save directly from your browser</li>
+            <li><strong>Import:</strong> bring in an HTML export from another tool</li>
+          </ol>
+
+          <h4>Editing &amp; favorites</h4>
+          <ul>
+            <li>Edit a bookmark’s title, URL, description, folder, and tags.</li>
+            <li>Star important items as favorites for quick access.</li>
+          </ul>
+
+          <h4>Bulk actions</h4>
+          <ul>
+            <li>Select multiple bookmarks with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+click and <kbd>Shift</kbd>+click.</li>
+            <li>Use bulk actions to add/remove tags, move, favorite, or delete.</li>
+          </ul>
+
+          <h3 class="help-anchor" id="views"><span class="section-icon" aria-hidden="true">👁️</span>Views</h3>
+          <p>
+            Views are saved setups you can restore later (filters/sort/search, or a dashboard widget layout).
+          </p>
+          <ul>
+            <li>Use the <strong>Views</strong> menu to save your current setup.</li>
+            <li>Restore a view from the same menu (or via a created shortcut bookmark, if enabled).</li>
+          </ul>
+
+          <h3 class="help-anchor" id="folders"><span class="section-icon" aria-hidden="true">📁</span>Folders</h3>
+          <p>Use folders for a clear hierarchy (with optional nesting) and quick navigation.</p>
+          <ul>
+            <li>Create folders from the sidebar and optionally pick a parent folder.</li>
+            <li><strong>Folder color:</strong> when creating/editing a folder, pick a color from the color swatches. The
+              color shows as a dot next to the folder in the sidebar.</li>
+            <li>Quick jump: <kbd>Ctrl+1</kbd>–<kbd>Ctrl+9</kbd> / <kbd>Cmd+1</kbd>–<kbd>Cmd+9</kbd> for top-level
+              folders.</li>
+          </ul>
+
+          <div class="tip-box">
+            <strong>Color key (characters):</strong> If you want even more visual grouping, you can prefix folder names
+            with colored emoji characters (works anywhere text is shown).
+            <div class="code-block">🔴 Urgent • 🟡 Waiting • 🟢 Active • 🔵 Reference • 🟣 Personal</div>
+          </div>
+
+          <h3 class="help-anchor" id="tags"><span class="section-icon" aria-hidden="true">🏷️</span>Tags</h3>
+          <p>Tags are flexible labels that work across folders (and can be hierarchical).</p>
+          <ul>
+            <li>Enter tags separated by commas; autocomplete helps reuse existing tags.</li>
+            <li>Use nested tags with slashes (example: <code>dev/frontend/js</code>).</li>
+            <li>Manage and merge/rename tags in Settings → Tags.</li>
+          </ul>
+
+          <div class="tip-box">
+            <strong>Color key (characters):</strong> You can also use emoji as a lightweight “color system” for tags.
+            Example tags: <code>🔵 reference</code>, <code>🟢 active</code>, <code>🟣 personal</code>.
+          </div>
+
+          <h3 class="help-anchor" id="search"><span class="section-icon" aria-hidden="true">🔎</span>Search &amp; Filter
+          </h3>
+          <p>AnchorMarks features a powerful full-width filter bar (similar to Adobe Lightroom) for quickly finding
+            bookmarks.</p>
+
+          <h4>Search</h4>
+          <ul>
+            <li>Search matches titles, URLs, descriptions, and tags.</li>
+            <li>Use the search box in the header or press <kbd>Ctrl+K</kbd> / <kbd>Cmd+K</kbd> to focus search.</li>
+          </ul>
+
+          <h4>Full-Width Filter Bar</h4>
+          <p>Click the <strong>Filters</strong> button (funnel icon) in the Bookmarks header to open the full-width
+            filter bar.</p>
+
+          <ul>
+            <li><strong>Folders Grid:</strong> Click any folder to show only bookmarks in that folder (includes
+              subfolders)
+              <ul>
+                <li>Shows bookmark count for each folder</li>
+                <li>"All Bookmarks" shows everything</li>
+                <li>"No Folder" appears if you have uncategorized bookmarks</li>
+                <li>Empty folders are hidden automatically</li>
+              </ul>
+            </li>
+            <li><strong>Tags Grid:</strong> Click one or more tags to filter bookmarks
+              <ul>
+                <li>Each tag shows how many bookmarks use it</li>
+                <li><strong>OR mode</strong> (default): Shows bookmarks with ANY selected tag</li>
+                <li><strong>AND mode:</strong> Shows bookmarks with ALL selected tags</li>
+                <li>Switch modes using the "Tag mode" dropdown</li>
+              </ul>
+            </li>
+            <li><strong>Active Filters:</strong> See currently active filters in the right column
+              <ul>
+                <li>Shows which folder is selected (if any)</li>
+                <li>Shows which tags are selected (if any)</li>
+                <li>Click the × button on any badge to remove that filter</li>
+                <li>Displays "No filters active" when nothing is filtered</li>
+              </ul>
+            </li>
+            <li><strong>Sort & Search Controls:</strong>
+              <ul>
+                <li>Sort by: Recently Added, A-Z, Z-A, Most Visited, or Oldest First</li>
+                <li>Tag mode: Switch between OR and AND</li>
+                <li>Clear All Filters: Reset everything at once</li>
+              </ul>
+            </li>
+            <li><strong>Pin / Auto-hide:</strong>
+              <ul>
+                <li>Click the pin icon to keep the filter bar open</li>
+                <li>When unpinned, the bar closes when you click outside</li>
+                <li>Pinned state is remembered for your session</li>
+              </ul>
+            </li>
+          </ul>
+
+          <div class="tip-box">
+            <strong>Quick Tip:</strong> The filter bar pushes content down when open, so you can see both your filters
+            and results at the same time. Combine folder + tag filters to create powerful queries (example: "Work"
+            folder + "urgent" tag).
+          </div>
+
+          <p>
+            Open the command palette with <kbd>Ctrl+Shift+P</kbd> / <kbd>Cmd+Shift+P</kbd> for quick actions and
+            navigation.
+          </p>
+
+          <h3 class="help-anchor" id="smart-collections"><span class="section-icon" aria-hidden="true">✨</span>Smart
+            Collections</h3>
+          <p class="help-at-a-glance"><strong>At a glance:</strong> Smart Collections are saved, rule-based groupings
+            that
+            automatically update as your bookmarks change (think “saved searches” with a friendly name).</p>
+          <ul>
+            <li><strong>Dynamic:</strong> a collection isn’t a folder — it’s a set of rules. When you add/edit
+              bookmarks,
+              the collection updates automatically.</li>
+            <li><strong>Suggested:</strong> AnchorMarks can suggest collections based on tag clusters, common domains,
+              and
+              recent activity patterns.</li>
+            <li><strong>Rule types:</strong> tag-based (one or more tags), domain-based (example:
+              <code>github.com</code>),
+              or activity-based filters (example: favorites-only, untagged-only, text search).</li>
+          </ul>
+          <h4>Create a Smart Collection</h4>
+          <ol>
+            <li>Open <strong>Dashboard</strong>.</li>
+            <li>Look for the <strong>✨ Smart Collections</strong> suggestions panel (it may appear after a moment).</li>
+            <li>Click <strong>Create Collection</strong> on a suggestion you like.</li>
+          </ol>
+          <div class="tip-box">
+            <strong>Example:</strong> If you frequently save GitHub links, AnchorMarks may suggest a collection like
+            “Code” (domain-based) or a tag cluster like <code>dev</code> + <code>code</code>.
+          </div>
+
+          <h3 class="help-anchor" id="onboarding"><span class="section-icon" aria-hidden="true">🧭</span>Onboarding Tour
+          </h3>
+          <p>The onboarding tour is a quick guided walkthrough of the basics (add, search, tag).</p>
+          <ul>
+            <li>Shows automatically for new accounts with small libraries.</li>
+            <li>Restart anytime from Settings → General → Restart Tour.</li>
+          </ul>
+
+          <h3 class="help-anchor" id="power-user-features">Power User Features</h3>
+          <p>These features shine once you have more bookmarks and want faster workflows.</p>
+
+          <h3 class="help-anchor" id="smart-org"><span class="section-icon" aria-hidden="true">🧠</span>Smart
+            Organization</h3>
+          <p class="help-at-a-glance"><strong>At a glance:</strong> Smart Organization suggests tags, proposes
+            collections, and surfaces insights based on your bookmarks and usage patterns.</p>
+          <ul>
+            <li><strong>Smart tag suggestions:</strong> combines domain, activity, and similarity signals (example:
+              GitHub → <code>dev</code>, <code>code</code>).</li>
+            <li><strong>Smart Collections:</strong> domain/activity/tag-cluster groupings. Example: automatically create
+              a “Research PDFs” collection from your most-saved document domains.</li>
+            <li><strong>Smart Insights:</strong> analytics and “what to clean up next” signals. Example: see your top
+              domains and tags, then get a suggestion to merge duplicate tags.</li>
+          </ul>
+          <div class="code-block">Score = (Domain × 35%) + (Activity × 40%) + (Similarity × 25%)</div>
+
+          <h3 class="help-anchor" id="dashboard"><span class="section-icon" aria-hidden="true">📊</span>Dashboard</h3>
+          <p class="help-at-a-glance"><strong>At a glance:</strong> The dashboard is a configurable home screen that can
+            group bookmarks by folders or selected tags using draggable widgets.</p>
+          <ul>
+            <li><strong>Modes:</strong> Folder mode (columns by folder) or Tag mode (columns by selected tags).</li>
+            <li><strong>Widgets:</strong> drag, resize, and arrange widgets to match your workflow.</li>
+            <li><strong>Snap to grid:</strong> toggle the grid button in the Dashboard header to snap widget
+              moves/resizes
+              to a 20px grid (saved to your account so it persists).</li>
+            <li><strong>Views:</strong> save and restore dashboard layouts from the Views menu.</li>
+          </ul>
+          <div class="tip-box">
+            <strong>Tip:</strong> In Dashboard view, click any folder or tag in the sidebar to add it as a widget.
+          </div>
+
+          <h3 class="help-anchor" id="advanced"><span class="section-icon" aria-hidden="true">⚙️</span>Advanced Features
+          </h3>
+          <p class="help-at-a-glance"><strong>At a glance:</strong> Advanced features help you manage large libraries
+            faster (bulk ops, hierarchies, insights, and cleanup tools).</p>
+          <ul>
+            <li><strong>Bulk operations:</strong> move, tag, favorite, or delete in batches.</li>
+            <li><strong>Tag hierarchies:</strong> use <code>parent/child</code> syntax to keep tag sets organized.</li>
+            <li><strong>Click tracking:</strong> sort by popularity and understand what you actually use.</li>
+            <li><strong>Content type detection:</strong> categorize common content types (articles, videos, PDFs, code,
+              etc.).</li>
+            <li><strong>Health Tools:</strong> duplicate detection + dead link checking. Example: after an import, find
+              404s and duplicates and clean them up in one pass.</li>
+          </ul>
+
+          <h3 class="help-anchor" id="shortcuts"><span class="section-icon" aria-hidden="true">⌨️</span>Keyboard
+            Shortcuts</h3>
+          <p>Press <kbd>&gt;</kbd> anytime to view the shortcuts popup.</p>
+
+          <table class="shortcuts-table" aria-label="Keyboard shortcuts">
+            <thead>
+              <tr>
+                <th>Action</th>
+                <th>Windows/Linux</th>
+                <th>macOS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Go to Dashboard</td>
+                <td><kbd>Ctrl+Shift+D</kbd></td>
+                <td><kbd>Cmd+Shift+D</kbd></td>
+              </tr>
+              <tr>
+                <td>Go to Favorites</td>
+                <td><kbd>Ctrl+Shift+F</kbd></td>
+                <td><kbd>Cmd+Shift+F</kbd></td>
+              </tr>
+              <tr>
+                <td>Go to All Bookmarks</td>
+                <td><kbd>Ctrl+Shift+A</kbd></td>
+                <td><kbd>Cmd+Shift+A</kbd></td>
+              </tr>
+              <tr>
+                <td>Jump to folder 1–9</td>
+                <td><kbd>Ctrl+1</kbd>–<kbd>Ctrl+9</kbd></td>
+                <td><kbd>Cmd+1</kbd>–<kbd>Cmd+9</kbd></td>
+              </tr>
+              <tr>
+                <td>Add new bookmark</td>
+                <td><kbd>Ctrl+N</kbd></td>
+                <td><kbd>Cmd+N</kbd></td>
+              </tr>
+              <tr>
+                <td>Focus search</td>
+                <td><kbd>Ctrl+K</kbd></td>
+                <td><kbd>Cmd+K</kbd></td>
+              </tr>
+              <tr>
+                <td>Select all bookmarks</td>
+                <td><kbd>Ctrl+A</kbd></td>
+                <td><kbd>Cmd+A</kbd></td>
+              </tr>
+              <tr>
+                <td>Open command palette</td>
+                <td><kbd>Ctrl+Shift+P</kbd></td>
+                <td><kbd>Cmd+Shift+P</kbd></td>
+              </tr>
+              <tr>
+                <td>Show shortcuts help</td>
+                <td><kbd>&gt;</kbd></td>
+                <td><kbd>&gt;</kbd></td>
+              </tr>
+              <tr>
+                <td>Close modals</td>
+                <td><kbd>Esc</kbd></td>
+                <td><kbd>Esc</kbd></td>
+              </tr>
+              <tr>
+                <td>Navigate command palette</td>
+                <td><kbd>↑</kbd>/<kbd>↓</kbd></td>
+                <td><kbd>↑</kbd>/<kbd>↓</kbd></td>
+              </tr>
+              <tr>
+                <td>Execute command</td>
+                <td><kbd>Enter</kbd></td>
+                <td><kbd>Enter</kbd></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 class="help-anchor" id="troubleshooting"><span class="section-icon"
+              aria-hidden="true">🛠️</span>Troubleshooting</h3>
+          <h4>Common issues</h4>
+          <ul>
+            <li><strong>Server won’t start:</strong> verify Node.js 18+, run <code>npm install</code>, and confirm env
+              vars (especially <code>JWT_SECRET</code> in production).</li>
+            <li><strong>Can’t access the app:</strong> check <code>curl http://localhost:3000/api/health</code>,
+              firewall, and reverse proxy config.</li>
+            <li><strong>Database locked:</strong> restart the server; confirm DB file permissions and backups.</li>
+            <li><strong>Extension won’t sync:</strong> confirm server URL + API key in extension settings and check the
+              browser console.</li>
+            <li><strong>API requests failing:</strong> ensure <code>X-API-Key</code> is set and the endpoint is allowed
+              for API keys.</li>
+          </ul>
+
+          <h3 class="help-anchor" id="need-more-help"><span class="section-icon" aria-hidden="true">💬</span>Need More
+            Help?</h3>
+          <ul>
+            <li>Read the project README and INSTALL guide for full setup details.</li>
+            <li>Review CONTRIBUTING for development workflow.</li>
+            <li>Report issues on the GitHub repository.</li>
+          </ul>
+          <div class="tip-box">
+            <strong>Quick tip:</strong> Press <kbd>&gt;</kbd> for shortcut help, or <kbd>Ctrl+Shift+P</kbd> /
+            <kbd>Cmd+Shift+P</kbd> for the command palette.
+          </div>
+        </section>
+
+        <section class="help-section" id="running-developing">
+          <h2><span class="section-icon" aria-hidden="true">🛠️</span>Running &amp; Developing AnchorMarks</h2>
+
+          <h3 class="help-anchor" id="self-hosting-api">Self-hosting &amp; API</h3>
+          <p>
+            If you’re deploying AnchorMarks or integrating via the API (Flow Launcher, browser extension, scripts),
+            start here.
+          </p>
+
+          <h3 class="help-anchor" id="deployment"><span class="section-icon" aria-hidden="true">🚢</span>Deployment</h3>
+          <p>Production requires a strong <code>JWT_SECRET</code>, correct <code>CORS_ORIGIN</code>, and reliable
+            backups.</p>
+
+          <h4>Docker (recommended)</h4>
+          <div class="code-block">docker-compose up -d</div>
+
+          <h4>Manual Linux/macOS install</h4>
+          <div class="code-block">npm ci --only=production
+            node server/index.js</div>
+
+          <h4>Nginx reverse proxy</h4>
+          <p>Use the template in <code>deploy/nginx.conf</code> and terminate HTTPS at the proxy.</p>
+
+          <h4>Minimal production checklist</h4>
+          <ul>
+            <li>✓ Set <code>NODE_ENV=production</code></li>
+            <li>✓ Generate a strong <code>JWT_SECRET</code></li>
+            <li>✓ Use HTTPS (reverse proxy recommended)</li>
+            <li>✓ Set <code>CORS_ORIGIN</code> to your real domain(s) (never <code>*</code>)</li>
+            <li>✓ Configure backups for <code>DB_PATH</code> (SQLite file) and verify restores</li>
+          </ul>
+
+          <h3 class="help-anchor" id="security-auth"><span class="section-icon" aria-hidden="true">🔐</span>Security
+            &amp; Auth</h3>
+          <p>This section consolidates security best practices and the auth/CSRF model used by the web UI and API.</p>
+
+          <h4>Built-in protections</h4>
+          <ul>
+            <li>Password hashing (bcrypt)</li>
+            <li>JWT auth in an httpOnly cookie for browser sessions</li>
+            <li>CSRF tokens required for state-changing browser requests</li>
+            <li>User isolation: every query filters by <code>user_id</code></li>
+            <li>SSRF guard for remote fetches (blocks private IP ranges)</li>
+          </ul>
+
+          <h4>Developer: Auth &amp; CSRF (how it works)</h4>
+          <ul>
+            <li><strong>JWT cookie:</strong> login/register sets a <code>token</code> cookie; browser requests include
+              it automatically.</li>
+            <li><strong>CSRF:</strong> mutating requests send <code>X-CSRF-Token</code> matching the
+              <code>csrfToken</code> cookie.
+            </li>
+            <li><strong>API keys:</strong> integrations authenticate with <code>X-API-Key</code> and bypass CSRF
+              (non-cookie requests).</li>
+          </ul>
+
+          <p>
+            <img class="doc-image" src="diagrams/auth-csrf-sequence.svg" alt="Auth and CSRF flow sequence diagram" />
+          </p>
+
+          <h3 class="help-anchor" id="api-reference"><span class="section-icon" aria-hidden="true">🔌</span>API
+            Reference</h3>
+          <p>
+            Get your API key from Settings → API Access. API key requests use the <code>X-API-Key</code> header.
+          </p>
+
+          <h4>Hello, API</h4>
+          <div class="code-block">curl -sS \
+            -H "X-API-Key: YOUR_API_KEY" \
+            "http://localhost:3000/api/quick-search?q=github"</div>
+          <p>Sample (shortened) response:</p>
+          <div class="code-block">[{"id":"...","title":"GitHub","url":"https://github.com","tags":["dev","code"]}]</div>
+          <p>See the endpoint list below for more.</p>
+
+          <h4>Core endpoints</h4>
+          <ul>
+            <li><code>GET /api/health</code> (no auth)</li>
+            <li><code>GET /api/quick-search?q=query</code> (API key supported; optimized for quick search)</li>
+            <li><code>GET /api/bookmarks</code> (cookie auth; API key may be restricted by whitelist)</li>
+            <li><code>GET /api/folders</code></li>
+          </ul>
+
+          <div class="tip-box">
+            <strong>Security:</strong> Treat API keys like passwords. Regenerate them in Settings if compromised.
+          </div>
+
+          <h3 class="help-anchor" id="project-structure"><span class="section-icon" aria-hidden="true">🧱</span>Project
+            Structure</h3>
+          <ul>
+            <li><strong>server/</strong> — backend API and DB logic (main entry: <code>server/index.js</code>)</li>
+            <li><strong>public/</strong> — frontend SPA and assets (<code>public/js/app.js</code>, modules in
+              <code>public/js/modules/</code>)
+            </li>
+            <li><strong>extension/</strong> — browser extension</li>
+            <li><strong>flow-launcher-plugin/</strong> — Flow Launcher integration</li>
+            <li><strong>deploy/</strong> — deployment configs/scripts (systemd + nginx templates)</li>
+          </ul>
+
+          <h3 class="help-anchor" id="developer-overview"><span class="section-icon"
+              aria-hidden="true">👩‍💻</span>Developer Overview</h3>
+          <ul>
+            <li><strong>Backend:</strong> Node.js + Express; middleware in <code>server/middleware.js</code>.</li>
+            <li><strong>DB:</strong> SQLite (<code>better-sqlite3</code>) in <code>server/database.js</code>.</li>
+            <li><strong>Frontend:</strong> Vanilla JS with modules; API calls go through
+              <code>public/js/modules/api.js</code>.
+            </li>
+          </ul>
+          <div class="code-block">npm install
+            npm run dev
+            npm test</div>
+
+          <h3 class="help-anchor" id="filter-bar-walkthrough"><span class="section-icon"
+              aria-hidden="true">🧰</span>Full-Width Filter Bar - Implementation Walkthrough</h3>
+          <p class="help-at-a-glance"><strong>Overview:</strong> The legacy narrow, fixed-position filter dropdown was
+            reshaped into a full-width filter bar that renders directly below the bookmarks header.
+            It’s designed for fast scanning and quick refinement on larger libraries.</p>
+
+          <ul>
+            <li><strong>Full-width layout:</strong> spans the entire <code>.main-content</code> area.</li>
+            <li><strong>Horizontal sections:</strong> Folders, Tags, and Controls (sort/tag mode/clear).</li>
+            <li><strong>Grid display:</strong> folders/tags render as tiles for quick scanning.</li>
+            <li><strong>Bookmark counts:</strong> each folder/tag shows a live count computed from in-memory state.</li>
+            <li><strong>Pin/auto-hide:</strong> pinned stays open; unpinned closes on click-outside.</li>
+            <li><strong>Professional styling:</strong> implemented with existing theme tokens (no new color system).
+            </li>
+          </ul>
+
+          <h4>Where it lives (frontend)</h4>
+          <ul>
+            <li><strong>UI + behavior:</strong> <code>public/js/modules/filters.js</code> (entry:
+              <code>initFilterDropdown()</code>).</li>
+            <li><strong>Styling:</strong> <code>public/css/styles.css</code> (selectors: <code>.filter-dropdown</code>,
+              <code>.filter-grid</code>, <code>.filter-item</code>).</li>
+          </ul>
+
+          <h4>How it renders (DOM placement)</h4>
+          <ul>
+            <li>The filter bar is created as <code>#filter-dropdown</code> and inserted with
+              <code>bookmarksHeader.insertAdjacentElement('afterend', dropdown)</code> so it appears immediately under
+              <code>#bookmarks-header</code>.
+            </li>
+            <li><code>.main-content</code> is set to <code>position: relative</code> so the bar can be positioned
+              absolutely and span the full width.</li>
+          </ul>
+
+          <h4>Counts + selection logic</h4>
+          <ul>
+            <li><strong>Folder counts:</strong> computed by walking descendants (subfolders included) and counting
+              matches
+              in <code>state.bookmarks</code>.</li>
+            <li><strong>Tag counts:</strong> computed by aggregating tags across bookmarks (comma-separated tag
+              strings).
+            </li>
+            <li><strong>Active state:</strong> folder tile reflects <code>state.currentFolder</code>; tag tiles reflect
+              <code>state.filterConfig.tags</code>.
+            </li>
+          </ul>
+
+          <h4>Pin / auto-hide behavior</h4>
+          <ul>
+            <li><strong>Pin toggle:</strong> <code>#filter-pin-btn</code> flips the in-module flag
+              <code>filterDropdownPinned</code>.
+            </li>
+            <li><strong>Auto-hide:</strong> when not pinned, a document click listener closes the bar if the click
+              target
+              is outside the bar and the Filters button.</li>
+          </ul>
+
+          <h3 class="help-anchor" id="roadmap"><span class="section-icon" aria-hidden="true">🗺️</span>Roadmap</h3>
+          <p>See the repository roadmap/issues for what’s next and what’s in progress.</p>
+        </section>
+      </main>
     </div>
-    
-    <section id="getting-started" class="help-section">
-      <h2>🚀 Getting Started</h2>
-      
-      <h3>Welcome to AnchorMarks</h3>
-      <p>AnchorMarks is a powerful, self-hosted bookmark manager designed to help you organize, search, and access your bookmarks efficiently. Whether you're managing dozens or thousands of bookmarks, AnchorMarks provides the tools you need.</p>
-      
-      <h3>Key Features</h3>
-      <div class="feature-card">
-        <h4>📁 Smart Organization</h4>
-        <p>Organize bookmarks with folders, tags, and smart collections. Create nested folder hierarchies and use color-coding for visual organization.</p>
-      </div>
-      
-      <div class="feature-card">
-        <h4>🔍 Powerful Search</h4>
-        <p>Instantly find any bookmark by title, URL, description, or tags. Advanced filtering options help you narrow down results.</p>
-      </div>
-      
-      <div class="feature-card">
-        <h4>⚡ Keyboard Shortcuts</h4>
-        <p>Navigate and manage bookmarks at lightning speed with comprehensive keyboard shortcuts. Press <kbd>&gt;</kbd> anytime to see all available shortcuts.</p>
-      </div>
-      
-      <div class="feature-card">
-        <h4>🔄 Browser Sync</h4>
-        <p>Install the browser extension to sync bookmarks across Chrome, Edge, and Firefox automatically.</p>
-      </div>
-      
-      <div class="feature-card">
-        <h4>🔌 API Access</h4>
-        <p>Access your bookmarks programmatically with our REST API. Perfect for integrations with Flow Launcher, Alfred, and custom scripts.</p>
-      </div>
-    </section>
-    
-    <section id="bookmarks" class="help-section">
-      <h2>📑 Managing Bookmarks</h2>
-      
-      <h3>Adding Bookmarks</h3>
-      <p>There are several ways to add bookmarks to AnchorMarks:</p>
-      <ol>
-        <li><strong>Manual Entry:</strong> Click the "+" button or press <kbd>Ctrl+N</kbd> (<kbd>Cmd+N</kbd> on Mac)</li>
-        <li><strong>Browser Extension:</strong> Save bookmarks directly from your browser</li>
-        <li><strong>Import:</strong> Import from HTML exports from other browsers</li>
-      </ol>
-      
-      <h3>Editing Bookmarks</h3>
-      <p>Click the edit icon on any bookmark card to modify its details:</p>
-      <ul>
-        <li><strong>Title:</strong> The display name for your bookmark</li>
-        <li><strong>URL:</strong> The web address</li>
-        <li><strong>Description:</strong> Optional notes about the bookmark</li>
-        <li><strong>Folder:</strong> Organize into a specific folder</li>
-        <li><strong>Tags:</strong> Add multiple tags for categorization</li>
-      </ul>
-      
-      <h3>Favorites</h3>
-      <p>Mark important bookmarks as favorites by clicking the star icon. Access all favorites quickly from the sidebar navigation.</p>
-      
-      <h3>Bulk Operations</h3>
-      <p>Select multiple bookmarks to perform batch operations:</p>
-      <ul>
-        <li>Move to folder</li>
-        <li>Add/remove tags</li>
-        <li>Mark as favorite</li>
-        <li>Delete multiple bookmarks</li>
-      </ul>
-      
-      <div class="tip-box">
-        <strong>💡 Tip:</strong> Press <kbd>Ctrl+A</kbd> (<kbd>Cmd+A</kbd> on Mac) to select all visible bookmarks. Use <kbd>Shift+Click</kbd> to select a range.
-      </div>
-    </section>
-    
-    <section id="folders" class="help-section">
-      <h2>📁 Organizing with Folders</h2>
-      
-      <h3>Creating Folders</h3>
-      <p>Create folders to organize bookmarks hierarchically:</p>
-      <ol>
-        <li>Click "Add Folder" in the sidebar</li>
-        <li>Choose a name and color</li>
-        <li>Optionally select a parent folder for nesting</li>
-      </ol>
-      
-      <h3>Folder Features</h3>
-      <ul>
-        <li><strong>Colors:</strong> Assign colors for quick visual identification</li>
-        <li><strong>Nesting:</strong> Create unlimited nested folder levels</li>
-        <li><strong>Drag & Drop:</strong> Move bookmarks between folders by dragging</li>
-        <li><strong>Quick Jump:</strong> Press <kbd>Ctrl+1</kbd> through <kbd>Ctrl+9</kbd> to jump to top-level folders</li>
-      </ul>
-      
-      <h3>Folder Navigation</h3>
-      <p>Navigate folders from the sidebar or use keyboard shortcuts. The folder tree shows bookmark counts and can be collapsed/expanded for cleaner organization.</p>
-    </section>
-    
-    <section id="tags" class="help-section">
-      <h2>🏷️ Using Tags</h2>
-      
-      <h3>Adding Tags</h3>
-      <p>Tags provide flexible categorization beyond folders. Add multiple tags to any bookmark:</p>
-      <ul>
-        <li>Enter tags separated by commas when creating/editing bookmarks</li>
-        <li>Use autocomplete to select existing tags</li>
-        <li>Create hierarchical tags using slashes: <code>dev/javascript</code></li>
-      </ul>
-      
-      <h3>Tag Features</h3>
-      <ul>
-        <li><strong>Hierarchical Tags:</strong> Use <code>parent/child</code> syntax for nested tags</li>
-        <li><strong>Tag Suggestions:</strong> Auto-suggest tags based on bookmark URLs and existing tags</li>
-        <li><strong>Bulk Tagging:</strong> Add or remove tags from multiple bookmarks</li>
-        <li><strong>Tag Renaming:</strong> Rename/merge tags across all bookmarks from Settings</li>
-      </ul>
-      
-      <h3>Tag Management</h3>
-      <p>View tag statistics in Settings → Tags to see usage counts and rename/merge tags. This is useful for cleaning up duplicate or similar tags.</p>
-      
-      <div class="tip-box">
-        <strong>💡 Tip:</strong> Use hierarchical tags for better organization. For example: <code>tech/programming/javascript</code> creates a clear structure.
-      </div>
-    </section>
-
-    <section id="smart-org" class="help-section">
-      <h2>🤖 Smart Organization</h2>
-      
-      <h3>Overview</h3>
-      <p>Smart Organization uses AI-assisted algorithms to automatically suggest tags, create collections, and provide insights about your bookmarks. It learns from your existing bookmarks and usage patterns to make intelligent recommendations.</p>
-      
-      <h3>Smart Tag Suggestions</h3>
-      <p>When adding or editing a bookmark, get intelligent tag suggestions based on three factors:</p>
-      <ul>
-        <li><strong>Domain Analysis:</strong> Tags commonly used for similar websites (e.g., GitHub → dev, code)</li>
-        <li><strong>Activity Patterns:</strong> Tags you've used recently when bookmarking similar content</li>
-        <li><strong>Content Similarity:</strong> Tags from your existing bookmarks with similar titles or descriptions</li>
-      </ul>
-      <p>Each suggestion includes a confidence score (0-100%) and explanation of why it was suggested.</p>
-      
-      <h3>Smart Collections</h3>
-      <p>Auto-generate bookmark collections based on intelligent analysis:</p>
-      <ul>
-        <li><strong>Domain-Based:</strong> Collections for specific websites (GitHub, Stack Overflow, etc.)</li>
-        <li><strong>Activity-Based:</strong> Collections for recent bookmarks, frequently clicked, or unread items</li>
-        <li><strong>Tag Clusters:</strong> Semantic groupings of related tags</li>
-      </ul>
-      <p>Create suggested collections with one click from the Smart Collections widget.</p>
-      
-      <h3>Smart Insights Dashboard</h3>
-      <p>Get a comprehensive analytics view of your bookmark organization:</p>
-      <ul>
-        <li>Total bookmarks, tags, and click statistics</li>
-        <li>Top domains visualization and click patterns</li>
-        <li>Most used tags and tag frequency distribution</li>
-        <li>Activity timeline and engagement metrics</li>
-        <li>Smart suggestions for organization improvements</li>
-      </ul>
-      
-      <h3>How Smart Organization Works</h3>
-      <p>The system uses a 3-factor scoring algorithm:</p>
-      <div class="code-block">Score = (Domain × 35%) + (Activity × 40%) + (Similarity × 25%)</div>
-      <ul>
-        <li><strong>Domain Score:</strong> How frequently a tag is used for similar domains</li>
-        <li><strong>Activity Score:</strong> How recently you've used a tag with similar bookmarks</li>
-        <li><strong>Similarity Score:</strong> How closely a tag matches the bookmark's content</li>
-      </ul>
-      
-      <div class="tip-box">
-        <strong>💡 Tip:</strong> The more bookmarks you have and the more consistently you tag them, the better the suggestions become. Trust the suggestions to save time on organization!
-      </div>
-    </section>
-
-    <section id="dashboard" class="help-section">
-      <h2>📊 Dashboard</h2>
-      
-      <h3>Dashboard Overview</h3>
-      <p>The dashboard provides a visual overview of your bookmarks organized by folders or tags. Switch between modes in Settings → Dashboard.</p>
-      
-      <h3>Dashboard Modes</h3>
-      <ul>
-        <li><strong>Folder Mode:</strong> Display bookmarks grouped by folders in columns</li>
-        <li><strong>Tag Mode:</strong> Show bookmarks grouped by selected tags</li>
-      </ul>
-      
-      <h3>Customizing the Dashboard</h3>
-      <ol>
-        <li>Go to Settings → Dashboard</li>
-        <li>Choose folder or tag mode</li>
-        <li>Select which tags to display (in tag mode)</li>
-        <li>Set bookmark sorting preferences</li>
-      </ol>
-      
-      <h3>Dashboard Widgets</h3>
-      <p>Dashboard supports freeform positioned widgets that you can drag and resize to create your ideal layout.</p>
-    </section>
-    
-    <section id="shortcuts" class="help-section">
-      <h2>⌨️ Keyboard Shortcuts</h2>
-      
-      <p>Press <kbd>&gt;</kbd> anytime to view the shortcuts popup. AnchorMarks provides comprehensive keyboard shortcuts to help you manage your bookmarks efficiently.</p>
-      
-      <h3>Navigation</h3>
-      <div class="shortcuts-grid">
-        <div class="shortcut-item">
-          <span class="shortcut-desc">Go to Dashboard</span>
-          <div class="shortcut-keys">
-            <kbd>Ctrl+Shift+D</kbd> / <kbd>Cmd+Shift+D</kbd>
-          </div>
-        </div>
-        
-        <div class="shortcut-item">
-          <span class="shortcut-desc">Go to Favorites</span>
-          <div class="shortcut-keys">
-            <kbd>Ctrl+Shift+F</kbd> / <kbd>Cmd+Shift+F</kbd>
-          </div>
-        </div>
-        
-        <div class="shortcut-item">
-          <span class="shortcut-desc">Go to All Bookmarks</span>
-          <div class="shortcut-keys">
-            <kbd>Ctrl+Shift+A</kbd> / <kbd>Cmd+Shift+A</kbd>
-          </div>
-        </div>
-        
-        <div class="shortcut-item">
-          <span class="shortcut-desc">Jump to folder 1-9</span>
-          <div class="shortcut-keys">
-            <kbd>Ctrl+1</kbd> to <kbd>Ctrl+9</kbd> / <kbd>Cmd+1</kbd> to <kbd>Cmd+9</kbd>
-          </div>
-        </div>
-      </div>
-      
-      <h3>Bookmarks</h3>
-      <div class="shortcuts-grid">
-        <div class="shortcut-item">
-          <span class="shortcut-desc">Add new bookmark</span>
-          <div class="shortcut-keys">
-            <kbd>Ctrl+N</kbd> / <kbd>Cmd+N</kbd>
-          </div>
-        </div>
-        
-        <div class="shortcut-item">
-          <span class="shortcut-desc">Focus search</span>
-          <div class="shortcut-keys">
-            <kbd>Ctrl+F</kbd> / <kbd>Cmd+F</kbd>
-          </div>
-        </div>
-        
-        <div class="shortcut-item">
-          <span class="shortcut-desc">Focus search (alternative)</span>
-          <div class="shortcut-keys">
-            <kbd>Ctrl+K</kbd> / <kbd>Cmd+K</kbd>
-          </div>
-        </div>
-        
-        <div class="shortcut-item">
-          <span class="shortcut-desc">Select all bookmarks</span>
-          <div class="shortcut-keys">
-            <kbd>Ctrl+A</kbd> / <kbd>Cmd+A</kbd>
-          </div>
-        </div>
-      </div>
-      
-      <h3>General</h3>
-      <div class="shortcuts-grid">
-        <div class="shortcut-item">
-          <span class="shortcut-desc">Open command palette</span>
-          <div class="shortcut-keys">
-            <kbd>Ctrl+Shift+P</kbd> / <kbd>Cmd+Shift+P</kbd>
-          </div>
-        </div>
-        
-        <div class="shortcut-item">
-          <span class="shortcut-desc">Show shortcuts help</span>
-          <div class="shortcut-keys">
-            <kbd>&gt;</kbd>
-          </div>
-        </div>
-        
-        <div class="shortcut-item">
-          <span class="shortcut-desc">Close modals and selections</span>
-          <div class="shortcut-keys">
-            <kbd>Esc</kbd>
-          </div>
-        </div>
-        
-        <div class="shortcut-item">
-          <span class="shortcut-desc">Navigate command palette</span>
-          <div class="shortcut-keys">
-            <kbd>↓</kbd> / <kbd>↑</kbd>
-          </div>
-        </div>
-        
-        <div class="shortcut-item">
-          <span class="shortcut-desc">Execute command</span>
-          <div class="shortcut-keys">
-            <kbd>Enter</kbd>
-          </div>
-        </div>
-      </div>
-      
-      <h3>Tips</h3>
-      <ul>
-        <li><strong>Mac users:</strong> All <kbd>Ctrl</kbd> shortcuts work with <kbd>Cmd</kbd> key instead</li>
-        <li><strong>Folder shortcuts:</strong> Folders are numbered 1-9 in the order they appear in the sidebar</li>
-        <li><strong>Search focus:</strong> Both <kbd>Ctrl+F</kbd> and <kbd>Ctrl+K</kbd> focus the search input</li>
-        <li><strong>Command palette:</strong> Use this to access quick actions and navigate to folders by name</li>
-      </ul>
-    </section>
-    
-    <section id="onboarding" class="help-section">
-      <h2>🎯 Onboarding Tour</h2>
-      
-      <h3>First-Time User Experience</h3>
-      <p>When you first use AnchorMarks (with fewer than 5 bookmarks), you'll see a quick 3-step interactive tour that introduces the core features in under 30 seconds.</p>
-      
-      <h3>Tour Steps</h3>
-      <ol>
-        <li><strong>✨ Add Your First Bookmark:</strong> Shows you where to click to save your first link</li>
-        <li><strong>🔍 Search in Seconds:</strong> Demonstrates the instant search capability with <kbd>Ctrl+K</kbd></li>
-        <li><strong>🏷️ Organize with Tags:</strong> Introduces tagging for flexible organization</li>
-      </ol>
-      
-      <h3>Tour Features</h3>
-      <ul>
-        <li><strong>Automatic:</strong> Shows only to new users with fewer than 5 bookmarks</li>
-        <li><strong>One-time:</strong> Won't appear again once dismissed</li>
-        <li><strong>Skippable:</strong> Click "Skip" at any time to exit the tour</li>
-        <li><strong>Visual Highlights:</strong> Target elements are highlighted with a blue ring</li>
-        <li><strong>Progress Indicator:</strong> See which step you're on (1/2/3)</li>
-      </ul>
-      
-      <h3>Restarting the Tour</h3>
-      <p>If you'd like to see the tour again:</p>
-      <ol>
-        <li>Open browser console (F12)</li>
-        <li>Run: <code>localStorage.removeItem('anchormarks_tour_dismissed')</code></li>
-        <li>Refresh the page</li>
-      </ol>
-      
-      <div class="tip-box">
-        <strong>💡 Tip:</strong> The tour is designed to get you started quickly without overwhelming you. You can explore advanced features at your own pace!
-      </div>
-    </section>
-
-    <section id="search" class="help-section">
-      <h2>🔍 Search & Filter</h2>
-      
-      <h3>Search Bookmarks</h3>
-      <p>Use the search bar (<kbd>Ctrl+F</kbd>) to find bookmarks. Search matches:</p>
-      <ul>
-        <li>Bookmark titles</li>
-        <li>URLs</li>
-        <li>Descriptions</li>
-        <li>Tags</li>
-      </ul>
-      
-      <h3>Advanced Filtering</h3>
-      <p>Click the filter icon to access advanced options:</p>
-      <ul>
-        <li><strong>Sort by:</strong> Date added, date modified, alphabetical, click count</li>
-        <li><strong>Filter by tags:</strong> Select multiple tags to narrow results</li>
-        <li><strong>Tag mode:</strong> Toggle between OR (any tag) and AND (all tags)</li>
-      </ul>
-      
-      <h3>Smart Collections</h3>
-      <p>Create saved searches with complex filter rules. Access from the sidebar to quickly view filtered sets of bookmarks.</p>
-      
-      <h3>Command Palette</h3>
-      <p>Press <kbd>Ctrl+Shift+P</kbd> to open the command palette. Type to search for:</p>
-      <ul>
-        <li>Quick actions (add bookmark, settings, etc.)</li>
-        <li>Navigate to folders by name</li>
-        <li>View-specific commands</li>
-      </ul>
-    </section>
-    
-    <section id="browser-extension" class="help-section">
-      <h2>🔄 Browser Extension</h2>
-      
-      <h3>Installation</h3>
-      <ol>
-        <li>Go to Settings → Browser Sync</li>
-        <li>Download the extension for your browser</li>
-        <li>Install and configure your server URL</li>
-        <li>Enter your API key from Settings → API Access</li>
-      </ol>
-      
-      <h3>Extension Features</h3>
-      <ul>
-        <li>Save current page with one click</li>
-        <li>Auto-fill bookmark details</li>
-        <li>Quick tag suggestions</li>
-        <li>Folder selection</li>
-        <li>Sync across all browsers</li>
-      </ul>
-      
-      <h3>Supported Browsers</h3>
-      <p>The extension works with Chrome, Edge, Firefox, and other Chromium-based browsers.</p>
-    </section>
-    
-    <section id="api" class="help-section">
-      <h2>🔌 API Access</h2>
-      
-      <h3>Getting Your API Key</h3>
-      <ol>
-        <li>Go to Settings → API Access</li>
-        <li>Copy your API key</li>
-        <li>Use it in API requests or third-party integrations</li>
-      </ol>
-      
-      <h3>API Endpoints</h3>
-      
-      <h4>Search Bookmarks</h4>
-      <div class="code-block">GET /api/quick-search?q=query&api_key=YOUR_KEY</div>
-      <p>Returns matching bookmarks optimized for quick search (Flow Launcher).</p>
-      
-      <h4>Get All Bookmarks</h4>
-      <div class="code-block">GET /api/bookmarks?api_key=YOUR_KEY</div>
-      <p>Returns all bookmarks for the authenticated user.</p>
-      
-      <h4>Create Bookmark</h4>
-      <div class="code-block">POST /api/bookmarks?api_key=YOUR_KEY
-Content-Type: application/json
-
-{
-  "url": "https://example.com",
-  "title": "Example",
-  "tags": "tag1,tag2",
-  "folder_id": "folder-uuid"
-}</div>
-      
-      <h4>Get Folders</h4>
-      <div class="code-block">GET /api/folders?api_key=YOUR_KEY</div>
-      
-      <h3>Flow Launcher Plugin</h3>
-      <p>AnchorMarks includes a Flow Launcher plugin for quick bookmark access:</p>
-      <ol>
-        <li>Install Flow Launcher</li>
-        <li>Copy the plugin from <code>flow-launcher-plugin/</code> directory</li>
-        <li>Configure with your server URL and API key</li>
-        <li>Use <code>am query</code> to search bookmarks</li>
-      </ol>
-      
-      <div class="tip-box">
-        <strong>🔒 Security:</strong> Keep your API key secure. It provides full access to your bookmarks. Regenerate it from Settings if compromised.
-      </div>
-    </section>
-    
-    <section id="import-export" class="help-section">
-      <h2>📤 Import & Export</h2>
-      
-      <h3>Importing Bookmarks</h3>
-      <p>Import bookmarks from other bookmark managers or browsers:</p>
-      <ol>
-        <li>Export bookmarks from your browser as HTML</li>
-        <li>Go to Settings → Import/Export</li>
-        <li>Click "Import HTML"</li>
-        <li>Select your exported file</li>
-      </ol>
-      
-      <p>The importer will:</p>
-      <ul>
-        <li>Preserve folder structure</li>
-        <li>Import bookmark titles and URLs</li>
-        <li>Skip duplicates</li>
-        <li>Create folders as needed</li>
-      </ul>
-      
-      <h3>Exporting Bookmarks</h3>
-      <p>Export your bookmarks for backup or migration:</p>
-      <ul>
-        <li><strong>JSON Export:</strong> Full backup with all metadata (tags, descriptions, etc.)</li>
-        <li><strong>HTML Export:</strong> Browser-compatible format for importing to other browsers</li>
-      </ul>
-      
-      <h3>Regular Backups</h3>
-      <p>We recommend exporting your bookmarks regularly:</p>
-      <ol>
-        <li>Go to Settings → Import/Export</li>
-        <li>Click "Export as JSON"</li>
-        <li>Save to a secure location</li>
-        <li>Schedule regular exports</li>
-      </ol>
-      
-      <div class="tip-box">
-        <strong>💡 Tip:</strong> Use JSON export for complete backups including tags and custom metadata. Use HTML export when moving to other browsers.
-      </div>
-    </section>
-    
-    <section id="deployment" class="help-section">
-      <h2>🚀 Deployment & Configuration</h2>
-      
-      <h3>Production Environment Setup</h3>
-      <p>Configure environment variables for production deployment:</p>
-      
-      <h4>Required Variables</h4>
-      <ul>
-        <li><strong>NODE_ENV:</strong> Set to <code>production</code></li>
-        <li><strong>JWT_SECRET:</strong> Strong random string (app refuses to start without this)</li>
-        <li><strong>DB_PATH:</strong> Absolute path to SQLite database (e.g., /data/anchormarks.db)</li>
-        <li><strong>CORS_ORIGIN:</strong> Comma-separated allowed origins (⚠️ cannot be <code>*</code>)</li>
-      </ul>
-      
-      <h4>Optional Variables</h4>
-      <ul>
-        <li><strong>PORT:</strong> Server port (default: 3000)</li>
-        <li><strong>HOST:</strong> Bind address (default: 0.0.0.0)</li>
-        <li><strong>SSL_KEY:</strong> Path to SSL private key (only if not using reverse proxy)</li>
-        <li><strong>SSL_CERT:</strong> Path to SSL certificate</li>
-      </ul>
-      
-      <h3>Docker Deployment</h3>
-      <p>The easiest way to deploy AnchorMarks:</p>
-      
-      <div class="code-block">docker-compose up -d</div>
-      
-      <p>Or manually:</p>
-      <div class="code-block">docker build -t anchormarks:latest .
-docker run -d \
-  --name anchormarks \
-  -p 3000:3000 \
-  -v anchormarks_data:/data \
-  -e NODE_ENV=production \
-  -e JWT_SECRET=your-secret-key \
-  anchormarks:latest</div>
-      
-      <h3>Linux/macOS Direct Installation</h3>
-      <ol>
-        <li>Install Node.js 18+</li>
-        <li>Clone or copy AnchorMarks to /opt/anchormarks</li>
-        <li>Run <code>npm ci --only=production</code></li>
-        <li>Create .env file with production settings</li>
-        <li>Set up systemd service (copy from deploy/anchormarks.service)</li>
-        <li>Enable with <code>sudo systemctl enable anchormarks</code></li>
-        <li>Start with <code>sudo systemctl start anchormarks</code></li>
-      </ol>
-      
-      <h3>Reverse Proxy (Nginx)</h3>
-      <p>Configure Nginx as a reverse proxy for production. A template is included in deploy/nginx.conf.</p>
-      
-      <div class="tip-box">
-        <strong>🔒 Security:</strong> Always use HTTPS with a valid SSL certificate. Configure your reverse proxy to handle SSL termination.
-      </div>
-    </section>
-
-    <section id="api-full" class="help-section">
-      <h2>📡 Complete API Reference</h2>
-      
-      <h3>Authentication</h3>
-      <p>Use your API key in requests:</p>
-      <div class="code-block">X-API-Key: lv_your_api_key</div>
-      
-      <p>Find your API key in Settings → API Access.</p>
-      
-      <h3>Core Endpoints</h3>
-      
-      <h4>Health Check (No Auth)</h4>
-      <div class="code-block">GET /api/health</div>
-      
-      <h4>Search Bookmarks</h4>
-      <div class="code-block">GET /api/quick-search?q=github</div>
-      
-      <h4>Get All Bookmarks</h4>
-      <div class="code-block">GET /api/bookmarks</div>
-      
-      <h4>Create Bookmark</h4>
-      <div class="code-block">POST /api/bookmarks
-Content-Type: application/json
-
-{
-  "url": "https://github.com",
-  "title": "GitHub",
-  "description": "Code collaboration",
-  "tags": ["dev", "code"]
-}</div>
-      
-      <h4>Update Bookmark</h4>
-      <div class="code-block">PUT /api/bookmarks/bookmark-id
-{
-  "title": "New Title",
-  "description": "Updated"
-}</div>
-      
-      <h4>Delete Bookmark</h4>
-      <div class="code-block">DELETE /api/bookmarks/bookmark-id</div>
-      
-      <h4>Get Folders</h4>
-      <div class="code-block">GET /api/folders</div>
-      
-      <h3>Response Format</h3>
-      <p>All successful responses return JSON with the bookmark/folder object containing id, title, url, tags, and metadata.</p>
-    </section>
-
-    <section id="project-structure" class="help-section">
-      <h2>📁 Project Structure</h2>
-      
-      <h3>Directory Layout</h3>
-      <ul>
-        <li><strong>server/</strong> - Backend API and business logic
-          <ul>
-            <li><strong>index.js</strong> - Main Express server with all routes</li>
-            <li><strong>smart-organization.js</strong> - Tag suggestion engine</li>
-            <li><strong>__tests__/</strong> - Test suite</li>
-          </ul>
-        </li>
-        <li><strong>public/</strong> - Frontend files
-          <ul>
-            <li><strong>index.html</strong> - Main application</li>
-            <li><strong>help.html</strong> - This help documentation</li>
-            <li><strong>css/styles.css</strong> - Responsive styles</li>
-            <li><strong>js/</strong> - Frontend JavaScript</li>
-            <li><strong>favicons/</strong> - Cached bookmark favicons</li>
-          </ul>
-        </li>
-        <li><strong>extension/</strong> - Browser extension (Chrome/Edge/Firefox)</li>
-        <li><strong>flow-launcher-plugin/</strong> - Flow Launcher integration</li>
-        <li><strong>deploy/</strong> - Deployment scripts and configs
-          <ul>
-            <li>nginx.conf - Reverse proxy template</li>
-            <li>anchormarks.service - systemd service file</li>
-            <li>install.sh - Automated setup script</li>
-          </ul>
-        </li>
-      </ul>
-    </section>
-
-    <section id="security-guide" class="help-section">
-      <h2>🔐 Security Best Practices</h2>
-      
-      <h3>Built-In Protections</h3>
-      <ul>
-        <li><strong>Password Hashing:</strong> bcryptjs with salt rounds</li>
-        <li><strong>JWT Tokens:</strong> 30-day expiry with httpOnly cookies</li>
-        <li><strong>CSRF Protection:</strong> Tokens required for state mutations</li>
-        <li><strong>User Isolation:</strong> All queries filtered by user_id</li>
-        <li><strong>SSRF Guard:</strong> Private IP blocking on favicon/link checks</li>
-        <li><strong>SQL Injection Prevention:</strong> Parameterized queries throughout</li>
-        <li><strong>Input Validation:</strong> URLs, names, tags sanitized before storage</li>
-      </ul>
-      
-      <h3>Production Security Checklist</h3>
-      <ul>
-        <li>✓ Set NODE_ENV=production</li>
-        <li>✓ Generate strong JWT_SECRET</li>
-        <li>✓ Use HTTPS with valid SSL certificate</li>
-        <li>✓ Set CORS_ORIGIN to your domain(s) - never use *</li>
-        <li>✓ Use absolute DB_PATH (e.g., /data/anchormarks.db)</li>
-        <li>✓ Enable firewall - only expose ports 80, 443</li>
-        <li>✓ Set up automated database backups</li>
-        <li>✓ Rotate API keys periodically</li>
-        <li>✓ Monitor disk space and database size</li>
-      </ul>
-      
-      <h3>Generating JWT_SECRET</h3>
-      <div class="code-block">node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"</div>
-      
-      <div class="tip-box">
-        <strong>🔒 Important:</strong> Never share your JWT_SECRET or API keys. Treat them like passwords. If exposed, regenerate immediately from Settings.
-      </div>
-    </section>
-
-    <section id="advanced" class="help-section">
-      <h2>⚙️ Advanced Features</h2>
-      
-      <h3>Smart Collections</h3>
-      <p>Create saved searches with complex filter rules. Access from the sidebar to quickly view filtered bookmarks with specific tags, folders, or dates.</p>
-      
-      <h3>Bulk Operations</h3>
-      <p>Select multiple bookmarks to perform batch actions:</p>
-      <ul>
-        <li>Move to folder</li>
-        <li>Add/remove tags</li>
-        <li>Mark as favorite</li>
-        <li>Delete multiple items</li>
-      </ul>
-      
-      <h3>Tag Hierarchies</h3>
-      <p>Create nested tags using forward slashes: <code>tech/programming/javascript</code>. This helps organize large tag sets into logical categories.</p>
-      
-      <h3>Click Tracking</h3>
-      <p>AnchorMarks tracks how often you click each bookmark. This data is used for sorting by popularity and helping you identify your most-used bookmarks.</p>
-      
-      <h3>Dashboard Customization</h3>
-      <p>Customize your dashboard to show bookmarks grouped by folders or tags. Drag and resize widgets to create your ideal layout.</p>
-      
-      <h3>Content Type Detection</h3>
-      <p>AnchorMarks automatically detects the type of content when you save a bookmark:</p>
-      <ul>
-        <li><strong>Articles</strong> - Blog posts, news articles, documentation</li>
-        <li><strong>Videos</strong> - YouTube, Vimeo, and other video platforms</li>
-        <li><strong>PDFs</strong> - Documents and research papers</li>
-        <li><strong>Tweets</strong> - Twitter/X posts</li>
-        <li><strong>Code</strong> - GitHub repositories and gists</li>
-      </ul>
-      
-      <h3>Health Tools</h3>
-      <p>Keep your bookmark library clean and organized:</p>
-      <ul>
-        <li><strong>Duplicate Detection</strong> - Find and remove duplicate bookmarks based on URL</li>
-        <li><strong>Dead Link Checker</strong> - Identify broken links that return 404 errors</li>
-        <li><strong>Bulk Cleanup</strong> - Remove multiple duplicates or dead links at once</li>
-      </ul>
-    </section>
-    
-    <section id="roadmap" class="help-section">
-      <h2>🗺️ Upcoming Features</h2>
-      
-      <h3>What's Working Now</h3>
-      <ul>
-        <li>✅ Web application with dark/light mode</li>
-        <li>✅ Bookmark management (create, edit, delete)</li>
-        <li>✅ Folder organization with colors and icons</li>
-        <li>✅ Tag-based organization</li>
-        <li>✅ Multiple view modes (grid, list, compact)</li>
-        <li>✅ Dashboard with folder/tag modes</li>
-        <li>✅ Import/Export (HTML, JSON)</li>
-        <li>✅ Full-text search</li>
-        <li>✅ API access with authentication</li>
-        <li>✅ Favorites system</li>
-        <li>✅ Smart collections</li>
-        <li>✅ Health tools (duplicate detection, dead link checker)</li>
-        <li>✅ Browser extension support</li>
-        <li>✅ Flow Launcher integration</li>
-      </ul>
-      
-      <h3>Coming Soon</h3>
-      
-      <h4>Enhanced Import/Export</h4>
-      <ul>
-        <li>Import from Raindrop.io, Pocket, Pinboard</li>
-        <li>Export to CSV format</li>
-        <li>Scheduled automatic backups</li>
-      </ul>
-      
-      <h4>Better Tagging</h4>
-      <ul>
-        <li>AI-powered tag suggestions based on content</li>
-        <li>Bulk tagging operations</li>
-        <li>Tag merge and rename tools</li>
-        <li>Tag hierarchy visualization</li>
-      </ul>
-      
-      <h4>Reading Experience</h4>
-      <ul>
-        <li>Rich link previews with images</li>
-        <li>Video thumbnails</li>
-        <li>PDF previews</li>
-        <li>Tweet embeds</li>
-        <li>Full-page archival with offline access</li>
-      </ul>
-      
-      <h4>Advanced Search</h4>
-      <ul>
-        <li>Date range filters</li>
-        <li>Natural language search</li>
-        <li>Saved search queries</li>
-        <li>Regular expression support</li>
-      </ul>
-      
-      <h4>Mobile & Desktop Apps</h4>
-      <ul>
-        <li>Progressive Web App (PWA) for mobile</li>
-        <li>Native iOS and Android apps</li>
-        <li>Desktop apps for Windows, Mac, Linux</li>
-      </ul>
-      
-      <h4>Collaboration (Future)</h4>
-      <ul>
-        <li>Shareable collection links</li>
-        <li>Public profile pages</li>
-        <li>Team workspaces</li>
-        <li>Comments and reactions</li>
-      </ul>
-      
-      <div class="tip-box">
-        <strong>💡 Feature Requests:</strong> Have an idea for a new feature? Check the project roadmap on GitHub or contribute to the discussion!
-      </div>
-    </section>
-
-    <section id="troubleshooting" class="help-section">
-      <h2>🔧 Troubleshooting</h2>
-      
-      <h3>Common Issues</h3>
-      
-      <h4>Server won't start</h4>
-      <ul>
-        <li>Check that Node.js 18+ is installed: <code>node --version</code></li>
-        <li>Verify dependencies: <code>npm install</code></li>
-        <li>Check environment variables in .env file</li>
-        <li>Ensure JWT_SECRET is set (production mode)</li>
-      </ul>
-      
-      <h4>Can't access the app</h4>
-      <ul>
-        <li>Verify server is running: <code>curl http://localhost:3000/api/health</code></li>
-        <li>Check firewall settings</li>
-        <li>For remote access, ensure reverse proxy is configured</li>
-        <li>Verify CORS_ORIGIN includes your domain</li>
-      </ul>
-      
-      <h4>Database issues</h4>
-      <ul>
-        <li>If database is locked, restart the server</li>
-        <li>Check file permissions on database file (should be 600)</li>
-        <li>Ensure DB_PATH is an absolute path on production</li>
-        <li>Set up automated backups regularly</li>
-      </ul>
-      
-      <h4>Browser extension not working</h4>
-      <ul>
-        <li>Verify extension is installed in developer mode</li>
-        <li>Check API key is correct in extension settings</li>
-        <li>Ensure server URL is accessible from your browser</li>
-        <li>Check browser console for error messages</li>
-      </ul>
-      
-      <h4>API requests failing</h4>
-      <ul>
-        <li>Verify API key is correct and not expired</li>
-        <li>Check X-API-Key header is included</li>
-        <li>For CORS errors, verify CORS_ORIGIN configuration</li>
-        <li>Check server logs for detailed error information</li>
-      </ul>
-    </section>
-
-    <section class="help-section">
-      <h2>❓ Need More Help?</h2>
-      <p>If you need additional assistance:</p>
-      <ul>
-        <li>Check the project README on GitHub</li>
-        <li>Review SECURITY.md for security best practices</li>
-        <li>Review INSTALL.md for detailed installation steps</li>
-        <li>Check CONTRIBUTING.md for development guidelines</li>
-        <li>Report issues on the GitHub repository</li>
-      </ul>
-      
-      <div class="tip-box">
-        <strong>Quick Tip:</strong> Press <kbd>&gt;</kbd> anytime to view keyboard shortcuts, or <kbd>Ctrl+Shift+P</kbd> to access the command palette.
-      </div>
-    </section>
   </div>
 </body>
+
+<script>
+  (function () {
+    const nav = document.querySelector('.help-nav');
+    const links = Array.from(document.querySelectorAll('.help-nav a[href^="#"]'));
+    const sections = links
+      .map(a => document.querySelector(a.getAttribute('href')))
+      .filter(Boolean);
+
+    if (!nav || links.length === 0 || sections.length === 0) return;
+
+    function setActiveById(id) {
+      links.forEach(a => {
+        const target = a.getAttribute('href').slice(1);
+        a.classList.toggle('active', target === id);
+        if (target === id) a.setAttribute('aria-current', 'true');
+        else a.removeAttribute('aria-current');
+      });
+    }
+
+    // Initial state (hash or top of page)
+    if (location.hash) {
+      const id = location.hash.slice(1);
+      setActiveById(id);
+    } else {
+      setActiveById(sections[0].id);
+    }
+
+    // Keep active state in sync with manual hash changes
+    window.addEventListener('hashchange', () => {
+      if (!location.hash) return;
+      setActiveById(location.hash.slice(1));
+    });
+
+    // Scrollspy: track which section is currently in view.
+    // Uses IntersectionObserver to avoid scroll event spam.
+    let current = null;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Consider only intersecting entries, pick the one closest to the top.
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+        if (visible.length === 0) return;
+        const id = visible[0].target.id;
+        if (id && id !== current) {
+          current = id;
+          setActiveById(id);
+        }
+      },
+      {
+        root: null,
+        // Bias toward "reading position" slightly below the top.
+        rootMargin: '-15% 0px -70% 0px',
+        threshold: [0, 0.1]
+      }
+    );
+
+    sections.forEach(s => observer.observe(s));
+  })();
+</script>
+
 </html>

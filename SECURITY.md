@@ -12,3 +12,9 @@ We currently support security fixes on the latest main branch and the most recen
 - Avoid automated scans against production deployments without consent.
 - Do not attempt to access another user's data.
 - Credit will be given in release notes if desired.
+
+## Auth & CSRF Flow
+
+Developer reference: the authentication and CSRF protection flow is documented in the in-app help page under “Developer: Auth & CSRF”:
+
+- `public/help.html#developer-auth-csrf`

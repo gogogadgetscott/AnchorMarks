@@ -13,6 +13,8 @@ export async function loadSettings() {
         state.setViewMode(settings.view_mode || 'grid');
         state.setHideFavicons(settings.hide_favicons || false);
         state.setHideSidebar(settings.hide_sidebar || false);
+        state.setIncludeChildBookmarks(settings.include_child_bookmarks === 1);
+        state.setSnapToGrid(settings.snap_to_grid !== false);
         state.setDashboardConfig({
             mode: settings.dashboard_mode || 'folder',
             tags: settings.dashboard_tags || [],
@@ -21,6 +23,11 @@ export async function loadSettings() {
         state.setWidgetOrder(settings.widget_order || {});
         state.setDashboardWidgets(settings.dashboard_widgets || []);
         state.setCollapsedSections(settings.collapsed_sections || []);
+
+        // Set current view from settings
+        if (settings.current_view) {
+            state.setCurrentView(settings.current_view);
+        }
 
         // Apply theme
         document.documentElement.setAttribute('data-theme', settings.theme || 'dark');
@@ -72,6 +79,9 @@ export function toggleTheme() {
 export function applyFaviconSetting() {
     const toggle = document.getElementById('hide-favicons-toggle');
     if (toggle) toggle.checked = state.hideFavicons;
+
+    const childToggle = document.getElementById('include-children-toggle');
+    if (childToggle) childToggle.checked = state.includeChildBookmarks;
 }
 
 // Toggle favicons
@@ -80,6 +90,23 @@ export function toggleFavicons() {
     const newValue = toggle?.checked || false;
     state.setHideFavicons(newValue);
     saveSettings({ hide_favicons: newValue });
+}
+
+// Toggle child bookmarks
+export function toggleIncludeChildBookmarks() {
+    const toggle = document.getElementById('include-children-toggle');
+    const newValue = toggle?.checked || false;
+    state.setIncludeChildBookmarks(newValue);
+    saveSettings({ include_child_bookmarks: newValue ? 1 : 0 });
+
+    saveSettings({ include_child_bookmarks: newValue ? 1 : 0 });
+
+    // Reload if necessary
+    if (state.currentView === 'folder' || state.currentView === 'dashboard') {
+        import('./bookmarks.js').then(({ loadBookmarks }) => {
+            loadBookmarks();
+        }).catch(console.error);
+    }
 }
 
 // Toggle sidebar

@@ -29,7 +29,9 @@ function createExampleBookmarks(db, userId, folderId = null, fetchFavicon) {
         `).run(id, userId, folderId, bm.title, bm.url, bm.description, faviconUrl, bm.tags, i + 1);
 
         // Trigger async favicon fetch
-        if (fetchFavicon) fetchFavicon(bm.url, id).catch(console.error);
+        if (fetchFavicon && process.env.NODE_ENV !== 'test') {
+            fetchFavicon(bm.url, id).catch(console.error);
+        }
 
         created.push({ id, ...bm, favicon: faviconUrl });
     }

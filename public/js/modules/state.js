@@ -24,6 +24,8 @@ export let currentFolder = null;
 export let viewMode = 'grid';
 export let hideFavicons = false;
 export let hideSidebar = false;
+export let includeChildBookmarks = false;
+export let snapToGrid = true;
 
 // Dashboard State
 export let dashboardConfig = { mode: 'folder', tags: [], bookmarkSort: 'recently_added' };
@@ -102,6 +104,39 @@ export let showingAllTags = false;
 export const tabColors = ['blue', 'red', 'green', 'gray', 'orange', 'purple', 'teal', 'pink', 'yellow', 'indigo'];
 export const widgetColors = ['blue', 'gold', 'orange', 'teal', 'gray', 'purple', 'red', 'olive', 'green', 'navy', 'maroon', 'brown', 'dark'];
 
+// View-specific toolbar configuration
+export let viewToolbarConfig = {
+    dashboard: {
+        title: 'Dashboard',
+        showViewToggle: false,
+        showSearch: false,
+        showAddButton: true,
+        customActions: ['layout', 'widgets', 'settings']
+    },
+    all: {
+        title: 'Bookmarks',
+        showViewToggle: true,
+        showSearch: true,
+        showFilters: true,
+        customActions: ['bulk-select']
+    },
+    favorites: {
+        title: 'Favorites',
+        showViewToggle: true,
+        showSearch: true,
+        showSort: true,
+        customActions: []
+    },
+    recent: {
+        title: 'Recent',
+        showViewToggle: true,
+        showSearch: true,
+        showTimeRange: true,
+        customActions: []
+    }
+};
+
+
 // State setters (needed because ES modules use live bindings but can't reassign imports)
 export function setAuthToken(val) { authToken = val; }
 export function setCsrfToken(val) { csrfToken = val; }
@@ -116,6 +151,8 @@ export function setCurrentFolder(val) { currentFolder = val; }
 export function setViewMode(val) { viewMode = val; }
 export function setHideFavicons(val) { hideFavicons = val; }
 export function setHideSidebar(val) { hideSidebar = val; }
+export function setIncludeChildBookmarks(val) { includeChildBookmarks = val; }
+export function setSnapToGrid(val) { snapToGrid = val; }
 export function setDashboardConfig(val) { dashboardConfig = val; }
 export function setWidgetOrder(val) { widgetOrder = val; }
 export function setDashboardWidgets(val) { dashboardWidgets = val; }
@@ -144,6 +181,12 @@ export function setPopoutTimeout(val) { popoutTimeout = val; }
 export function setTagSuggestTimeout(val) { tagSuggestTimeout = val; }
 export function setAllSidebarTags(val) { allSidebarTags = val; }
 export function setShowingAllTags(val) { showingAllTags = val; }
+export function setViewToolbarConfig(view, config) {
+    if (viewToolbarConfig[view]) {
+        viewToolbarConfig[view] = { ...viewToolbarConfig[view], ...config };
+    }
+}
+
 
 // Migrate old localStorage keys on load
 (function migrateLocalStorageKeys() {

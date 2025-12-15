@@ -5,7 +5,7 @@
 
 import * as state from './state.js';
 import { api } from './api.js';
-import { escapeHtml, getHostname, parseTagInput } from './utils.js';
+import { escapeHtml, getHostname, getBaseUrl, parseTagInput } from './utils.js';
 import { dom, showToast, closeModals, openModal, updateCounts, getEmptyStateMessage, updateBulkUI, updateActiveNav } from './ui.js';
 
 // Note: renderDashboard, renderSidebarTags, and checkWelcomeTour are loaded dynamically
@@ -18,7 +18,12 @@ export async function loadBookmarks() {
         const params = new URLSearchParams();
 
         if (state.currentView === 'favorites') params.append('favorites', 'true');
-        if (state.currentFolder && state.currentView !== 'dashboard') params.append('folder_id', state.currentFolder);
+        if (state.currentFolder && state.currentView !== 'dashboard') {
+            params.append('folder_id', state.currentFolder);
+            if (state.includeChildBookmarks) {
+                params.append('include_children', 'true');
+            }
+        }
 
         const sortOption = state.filterConfig.sort || state.dashboardConfig.bookmarkSort || 'recently_added';
         params.append('sort', sortOption);
@@ -38,10 +43,20 @@ export async function loadBookmarks() {
         }
         updateCounts();
 
+        // Update active nav to reflect current view
+        updateActiveNav();
+
+        // Initialize bookmark views UI if in bookmark view
+        if (state.currentView !== 'dashboard') {
+            initBookmarkViews();
+        }
+
         // Dynamic imports to avoid circular dependencies
         const { renderSidebarTags } = await import('./search.js');
         const { checkWelcomeTour } = await import('./tour.js');
+        const { renderFolders } = await import('./folders.js');
         renderSidebarTags();
+        renderFolders();
         checkWelcomeTour();
     } catch (err) {
         showToast('Failed to load bookmarks', 'error');
@@ -158,6 +173,8 @@ export function renderBookmarks() {
 export function createBookmarkCard(bookmark, index) {
     const tags = bookmark.tags ? bookmark.tags.split(',').map(t => t.trim()).filter(t => t) : [];
     const hostname = getHostname(bookmark.url);
+    const baseUrl = getBaseUrl(bookmark.url);
+    const displayUrl = state.viewMode === 'list' ? baseUrl : hostname;
     const isSelected = state.selectedBookmarks.has(bookmark.id);
 
     return `
@@ -174,7 +191,7 @@ export function createBookmarkCard(bookmark, index) {
         </div>
         <div class="bookmark-info">
           <div class="bookmark-title">${escapeHtml(bookmark.title)}</div>
-          <div class="bookmark-url">${hostname}</div>
+                    <div class="bookmark-url" data-full-url="${escapeHtml(bookmark.url)}">${escapeHtml(displayUrl)}</div>
         </div>
       </div>
       ${bookmark.description ? `<div class="bookmark-description">${escapeHtml(bookmark.description)}</div>` : ''}
@@ -225,8 +242,9 @@ export function attachBookmarkCardListeners() {
             const id = card.dataset.id;
             const index = parseInt(card.dataset.index, 10);
 
-            if (e.target.closest('.bookmark-select')) return;
+            // Ignore clicks on action buttons or select checkbox
             if (e.target.closest('.bookmark-actions')) return;
+            if (e.target.closest('.bookmark-select')) return;
             if (e.target.closest('.bookmark-tags')) return;
 
             if (state.bulkMode) {
@@ -234,11 +252,32 @@ export function attachBookmarkCardListeners() {
                 return;
             }
 
+            // Get the bookmark from state
             const bookmark = state.bookmarks.find(b => b.id === id);
-            if (bookmark) {
-                trackClick(id);
-                window.open(bookmark.url, '_blank');
+            if (!bookmark) return;
+
+            const url = bookmark.url;
+
+            // Handle special URL schemes
+            if (url.startsWith('view:')) {
+                // Dashboard view shortcut
+                const viewId = url.substring(5);
+                import('./dashboard.js').then(({ restoreView }) => {
+                    restoreView(viewId);
+                });
+                return;
             }
+
+            if (url.startsWith('bookmark-view:')) {
+                // Bookmark view shortcut
+                const viewId = url.substring(14);
+                restoreBookmarkView(viewId);
+                return;
+            }
+
+            // Regular bookmark - track and open
+            trackClick(bookmark.id);
+            window.open(url, '_blank', 'noopener,noreferrer');
         });
 
         const checkbox = card.querySelector('.bookmark-select');
@@ -469,6 +508,268 @@ export function sortBookmarks(list) {
         }
     });
 }
+
+// ============== BOOKMARK VIEWS ==============
+
+// Initialize bookmark views UI
+export function initBookmarkViews() {
+    const headerRight = document.querySelector('.content-header .header-right');
+    if (!headerRight) return;
+
+    // Remove dashboard views button if it exists
+    document.getElementById('dashboard-views-btn')?.remove();
+
+    // Check if button already exists
+    if (document.getElementById('bookmark-views-btn')) return;
+
+    const btn = document.createElement('button');
+    btn.id = 'bookmark-views-btn';
+    btn.className = 'btn btn-secondary';
+    btn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+        </svg>
+        Views
+    `;
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showBookmarkViewsMenu();
+    });
+
+    headerRight.insertBefore(btn, headerRight.firstChild);
+}
+
+// Show bookmark views dropdown menu
+async function showBookmarkViewsMenu() {
+    // Remove existing dropdown if any
+    document.getElementById('bookmark-views-dropdown')?.remove();
+
+    const views = await loadBookmarkViews();
+
+    const dropdown = document.createElement('div');
+    dropdown.id = 'bookmark-views-dropdown';
+    dropdown.className = 'dropdown-menu';
+    dropdown.style.cssText = 'position:absolute;top:3rem;right:1rem;z-index:1000;min-width:250px';
+
+    let html = `
+        <div style="font-weight:600;padding:0.5rem;border-bottom:1px solid var(--border-color);margin-bottom:0.5rem">
+            Bookmark Views
+        </div>
+        <div class="views-list" style="max-height:200px;overflow-y:auto">
+    `;
+
+    if (views.length === 0) {
+        html += `<div style="padding:0.5rem;color:var(--text-tertiary);text-align:center">No saved views</div>`;
+    } else {
+        views.forEach(view => {
+            html += `
+                <div class="dropdown-item view-item" data-view-id="${view.id}" style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem;cursor:pointer;border-radius:4px">
+                    <span class="view-name" style="flex:1">${escapeHtml(view.name)}</span>
+                    <button class="btn-icon small text-danger delete-view-btn" data-view-id="${view.id}" title="Delete">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+            `;
+        });
+    }
+
+    html += `
+        </div>
+        <div style="border-top:1px solid var(--border-color);margin-top:0.5rem;padding-top:0.5rem">
+            <button class="btn btn-primary btn-sm btn-full" id="save-bookmark-view-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;margin-right:4px">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Save Current View
+            </button>
+        </div>
+    `;
+
+    dropdown.innerHTML = html;
+    document.body.appendChild(dropdown);
+
+    // Attach event listeners to view items
+    dropdown.querySelectorAll('.view-item').forEach(item => {
+        const viewId = item.dataset.viewId;
+        const nameSpan = item.querySelector('.view-name');
+        const deleteBtn = item.querySelector('.delete-view-btn');
+
+        // Click on view name to restore
+        if (nameSpan) {
+            nameSpan.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                await restoreBookmarkView(viewId);
+            });
+        }
+
+        // Click on delete button
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                await deleteBookmarkView(viewId);
+            });
+        }
+    });
+
+    // Attach event listener to save button
+    const saveBtn = dropdown.querySelector('#save-bookmark-view-btn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            await saveCurrentBookmarkView();
+        });
+    }
+
+    // Global click to close
+    setTimeout(() => {
+        document.addEventListener('click', closeBookmarkViewsDropdown);
+    }, 0);
+}
+
+function closeBookmarkViewsDropdown(e) {
+    const dropdown = document.getElementById('bookmark-views-dropdown');
+    if (dropdown && !dropdown.contains(e.target) && e.target.id !== 'bookmark-views-btn') {
+        dropdown.remove();
+        document.removeEventListener('click', closeBookmarkViewsDropdown);
+    }
+}
+
+// Save current bookmark view
+async function saveCurrentBookmarkView() {
+    try {
+        const name = prompt('Enter a name for this view:');
+        if (!name) return;
+
+        // Capture current state
+        const config = {
+            search_query: state.filterConfig.search || '',
+            filter_tags: state.filterConfig.tags || [],
+            filter_folder: state.filterConfig.folder || null,
+            sort_order: state.filterConfig.sort || 'recently_added',
+            tag_sort: state.filterConfig.tagSort || 'count_desc',
+            tag_mode: state.filterConfig.tagMode || 'OR'
+        };
+
+        console.log('[Bookmark View] Saving view with config:', config);
+        console.log('[Bookmark View] Current filterConfig state:', state.filterConfig);
+
+        const view = await api('/bookmark/views', {
+            method: 'POST',
+            body: JSON.stringify({ name, config })
+        });
+
+        console.log('[Bookmark View] View saved with ID:', view.id);
+
+        showToast('View saved!', 'success');
+        document.getElementById('bookmark-views-dropdown')?.remove();
+
+        // Prompt to create bookmark shortcut
+        if (confirm('Create a bookmark shortcut for this view?')) {
+            await createBookmark({
+                title: name,
+                url: `bookmark-view:${view.id}`,
+                description: 'Bookmark View Shortcut',
+                tags: 'bookmark-views'
+            });
+        }
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+// Load bookmark views
+async function loadBookmarkViews() {
+    try {
+        return await api('/bookmark/views');
+    } catch {
+        return [];
+    }
+}
+
+// Delete bookmark view
+async function deleteBookmarkView(id) {
+    if (!confirm('Delete this view?')) return;
+    try {
+        await api(`/bookmark/views/${id}`, { method: 'DELETE' });
+        showToast('View deleted', 'success');
+        // Refresh dropdown if open
+        document.getElementById('bookmark-views-dropdown')?.remove();
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+// Restore bookmark view
+async function restoreBookmarkView(id) {
+    try {
+        console.log('[Bookmark View] Restoring view ID:', id);
+
+        const response = await api(`/bookmark/views/${id}/restore`, { method: 'POST' });
+        const config = response.config;
+
+        console.log('[Bookmark View] Received config:', config);
+        console.log('[Bookmark View] Current filterConfig before restore:', state.filterConfig);
+
+        // Ensure we're in bookmark view (not dashboard)
+        if (state.currentView === 'dashboard') {
+            state.setCurrentView('all');
+        }
+
+        // Apply the view configuration to state
+        state.setFilterConfig({
+            search: config.search_query || '',
+            tags: config.filter_tags || [],
+            folder: config.filter_folder || null,
+            sort: config.sort_order || 'recently_added',
+            tagSort: config.tag_sort || 'count_desc',
+            tagMode: config.tag_mode || 'OR'
+        });
+
+        console.log('[Bookmark View] filterConfig after restore:', state.filterConfig);
+
+        // Set current folder if specified
+        if (config.filter_folder) {
+            state.setCurrentFolder(config.filter_folder);
+        } else {
+            state.setCurrentFolder(null);
+        }
+
+        // Update UI controls
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchInput.value = config.search_query || '';
+
+        const sortSelect = document.getElementById('sidebar-filter-sort');
+        if (sortSelect) sortSelect.value = config.sort_order || 'recently_added';
+
+        const tagSortSelect = document.getElementById('sidebar-filter-tag-sort');
+        if (tagSortSelect) tagSortSelect.value = config.tag_sort || 'count_desc';
+
+        console.log('[Bookmark View] Reloading bookmarks...');
+
+        // Reload bookmarks with filters applied (this will fetch from server with filters)
+        await loadBookmarks();
+
+        // Save current view to ensure we stay in bookmark view
+        const { saveSettings } = await import('./settings.js');
+        await saveSettings({ current_view: state.currentView });
+
+        showToast('View restored!', 'success');
+        document.getElementById('bookmark-views-dropdown')?.remove();
+    } catch (err) {
+        console.error('[Bookmark View] Error restoring view:', err);
+        showToast(err.message, 'error');
+    }
+}
+
+// Make restoreBookmarkView global for bookmark shortcuts
+window.restoreBookmarkView = restoreBookmarkView;
 
 export default {
     loadBookmarks,

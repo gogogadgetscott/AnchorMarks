@@ -9,6 +9,7 @@ import { escapeHtml } from './utils.js';
 import { showToast, closeModals, openModal, updateActiveNav } from './ui.js';
 import { loadBookmarks } from './bookmarks.js';
 import { renderActiveFilters } from './search.js';
+import { addDashboardWidget } from './dashboard.js';
 
 // Load folders from server
 export async function loadFolders() {
@@ -43,7 +44,12 @@ export function renderFolders() {
     function renderFolderTree(folderList, level = 0) {
         return folderList.map(f => {
             const children = state.folders.filter(child => child.parent_id === f.id).sort(sorter);
-            const count = state.bookmarks.filter(b => b.folder_id === f.id).length;
+
+            // Recursive count
+            const descIds = getAllChildFolderIds(f.id);
+            const allIds = new Set([f.id, ...descIds]);
+            const count = state.bookmarks.filter(b => allIds.has(b.folder_id)).length;
+
             const isEmpty = count === 0;
             const indentation = level * 12;
 
@@ -83,6 +89,25 @@ export function renderFolders() {
     container.querySelectorAll('.folder-item').forEach(item => {
         item.addEventListener('click', (e) => {
             if (e.defaultPrevented) return;
+
+            // Fix: Allow folder actions (edit/delete) to bubble to global handler
+            if (e.target.closest('.folder-actions')) return;
+
+            e.stopPropagation();
+
+            // Feature: Add to dashboard if in dashboard mode
+            if (state.currentView === 'dashboard') {
+                const existingWidgets = state.dashboardWidgets.length;
+                const x = 50 + (existingWidgets * 30) % 300;
+                const y = 50 + (existingWidgets * 30) % 200;
+
+                try {
+                    addDashboardWidget('folder', item.dataset.folder, x, y);
+                } catch (err) {
+                    showToast('Error adding widget: ' + err.message, 'error');
+                }
+                return;
+            }
 
             state.setCurrentFolder(item.dataset.folder);
             state.setCurrentView('folder');
@@ -259,6 +284,13 @@ export function editFolder(id) {
     updateFolderParentSelect(id);
     document.getElementById('folder-parent').value = folder.parent_id || '';
 
+    // Change button text
+    const form = document.getElementById('folder-form');
+    if (form) {
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn) btn.textContent = 'Save';
+    }
+
     openModal('folder-modal');
 }
 
@@ -282,6 +314,71 @@ export function navigateToFolderByIndex(index) {
     loadBookmarks();
 }
 
+export function getAllChildFolderIds(folderId) {
+    const ids = [folderId];
+    const children = state.folders.filter(f => f.parent_id === folderId);
+    children.forEach(child => {
+        ids.push(...getAllChildFolderIds(child.id));
+    });
+    return ids;
+}
+
+// Render folders for filter dropdown
+export async function renderFoldersForFilter(container) {
+    if (!container) return;
+
+    const folders = state.folders;
+
+    if (folders.length === 0) {
+        container.innerHTML = '<div style="padding:0.5rem;color:var(--text-tertiary);text-align:center;font-size:0.85rem">No folders yet</div>';
+        return;
+    }
+
+    // Build folder tree HTML (similar to sidebar)
+    const buildFolderTree = (parentId = null, level = 0) => {
+        return folders
+            .filter(f => f.parent_id === parentId)
+            .map(folder => {
+                const isActive = state.currentFolder === folder.id;
+                const hasChildren = folders.some(f => f.parent_id === folder.id);
+                const indent = level * 1.25;
+
+                return `
+                    <div class="folder-item ${isActive ? 'active' : ''}" data-folder-id="${folder.id}" style="padding-left: ${indent}rem">
+                        <span class="folder-icon" style="color: ${escapeHtml(folder.color || '#6b7280')}">📁</span>
+                        <span class="folder-name">${escapeHtml(folder.name)}</span>
+                        <span class="folder-count">${folder.bookmark_count || 0}</span>
+                    </div>
+                    ${hasChildren ? buildFolderTree(folder.id, level + 1) : ''}
+                `;
+            }).join('');
+    };
+
+    container.innerHTML = buildFolderTree();
+
+    // Attach click handlers
+    container.querySelectorAll('.folder-item').forEach(item => {
+        item.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const folderId = item.dataset.folderId;
+
+            // Toggle active state
+            container.querySelectorAll('.folder-item').forEach(f => f.classList.remove('active'));
+            item.classList.add('active');
+
+            // Update state and reload
+            state.setCurrentFolder(folderId);
+            state.setFilterConfig({
+                ...state.filterConfig,
+                folder: folderId
+            });
+
+            const { loadBookmarks } = await import('./bookmarks.js');
+            await loadBookmarks();
+        });
+    });
+}
+
 export default {
     loadFolders,
     renderFolders,
@@ -292,5 +389,6 @@ export default {
     updateFolder,
     deleteFolder,
     editFolder,
-    navigateToFolderByIndex
+    navigateToFolderByIndex,
+    getAllChildFolderIds
 };

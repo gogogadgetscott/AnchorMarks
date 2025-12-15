@@ -8,6 +8,7 @@ import { api } from './api.js';
 import { escapeHtml, parseTagInput } from './utils.js';
 import { showToast, updateActiveNav, dom } from './ui.js';
 import { renderBookmarks, loadBookmarks } from './bookmarks.js';
+import { addDashboardWidget } from './dashboard.js';
 
 // Render sidebar tags
 export function renderSidebarTags() {
@@ -141,6 +142,16 @@ export function renderTagsList(tags) {
 
         div.addEventListener('click', (e) => {
             if (e.defaultPrevented) return;
+
+            // Feature: Add to dashboard if in dashboard mode
+            if (state.currentView === 'dashboard') {
+                const existingWidgets = state.dashboardWidgets.length;
+                const x = 50 + (existingWidgets * 30) % 300;
+                const y = 50 + (existingWidgets * 30) % 200;
+                addDashboardWidget('tag', tag.name, x, y);
+                return;
+            }
+
             sidebarFilterTag(tag.name);
         });
 
@@ -410,7 +421,84 @@ export default {
     toggleTagMode,
     removeTagFilter,
     clearSearch,
-    renameTagAcross,
     loadTagStats,
-    updateTagRenameUndoButton
+    renameTagAcross,
+    updateTagRenameUndoButton,
+    renderTagsForFilter
 };
+
+// Render tags for filter dropdown
+export async function renderTagsForFilter(container) {
+    if (!container) return;
+
+    // Calculate tag counts
+    const tagCounts = {};
+    state.bookmarks.forEach(b => {
+        if (b.tags) {
+            b.tags.split(',').forEach(t => {
+                const tag = t.trim();
+                if (tag) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+            });
+        }
+    });
+
+    // Build tags array
+    const allTags = Object.keys(tagCounts)
+        .map(name => ({ name, count: tagCounts[name] }));
+
+    // Sort by count desc
+    allTags.sort((a, b) => b.count - a.count);
+
+    const tagsToShow = allTags.slice(0, 50); // Show top 50
+
+    if (tagsToShow.length === 0) {
+        container.innerHTML = '<div style="padding:0.5rem;color:var(--text-tertiary);text-align:center;font-size:0.85rem">No tags yet</div>';
+        return;
+    }
+
+    container.innerHTML = tagsToShow.map(tag => {
+        const isActive = state.filterConfig.tags.includes(tag.name);
+        return `
+            <div class="tag-item ${isActive ? 'active' : ''}" data-tag="${escapeHtml(tag.name)}" 
+                 style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.35rem 0.6rem;
+                        background:${isActive ? 'var(--primary-500)' : 'var(--bg-tertiary)'};
+                        color:${isActive ? 'white' : 'var(--text-primary)'};
+                        border-radius:var(--radius-md);margin:0.25rem;cursor:pointer;font-size:0.85rem">
+                <span>${escapeHtml(tag.name)}</span>
+                <span style="opacity:0.7;font-size:0.75rem">${tag.count}</span>
+            </div>
+        `;
+    }).join('');
+
+    // Attach click handlers
+    container.querySelectorAll('.tag-item').forEach(item => {
+        item.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const tagName = item.dataset.tag;
+
+            // Toggle tag filter
+            const currentTags = [...state.filterConfig.tags];
+            const index = currentTags.indexOf(tagName);
+
+            if (index > -1) {
+                currentTags.splice(index, 1);
+                item.classList.remove('active');
+                item.style.background = 'var(--bg-tertiary)';
+                item.style.color = 'var(--text-primary)';
+            } else {
+                currentTags.push(tagName);
+                item.classList.add('active');
+                item.style.background = 'var(--primary-500)';
+                item.style.color = 'white';
+            }
+
+            state.setFilterConfig({
+                ...state.filterConfig,
+                tags: currentTags
+            });
+
+            const { loadBookmarks } = await import('./bookmarks.js');
+            await loadBookmarks();
+        });
+    });
+}

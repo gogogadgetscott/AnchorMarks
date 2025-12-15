@@ -18,7 +18,15 @@ export async function importHtml(file) {
             method: 'POST',
             body: JSON.stringify({ html })
         });
+
+        // Reload data
         await loadBookmarks();
+        await loadFolders();
+
+        // Update tag list
+        const { renderSidebarTags } = await import('./search.js');
+        await renderSidebarTags();
+
         showToast(`Imported ${result.imported} bookmarks!`, 'success');
     } catch (err) {
         showToast(err.message, 'error');

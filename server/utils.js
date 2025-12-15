@@ -26,7 +26,9 @@ async function isPrivateAddress(url) {
         const urlObj = new URL(url);
         if (!['http:', 'https:'].includes(urlObj.protocol)) return true; // Disallow non-http(s)
 
-        const hostname = urlObj.hostname;
+        const hostname = (urlObj.hostname.startsWith('[') && urlObj.hostname.endsWith(']'))
+            ? urlObj.hostname.slice(1, -1)
+            : urlObj.hostname;
         if (hostname === 'localhost') return true;
         if (net.isIP(hostname)) return isPrivateIp(hostname);
 
@@ -61,6 +63,9 @@ async function fetchFavicon(url, bookmarkId, db, FAVICONS_DIR, NODE_ENV) {
                 .run(publicPath, publicPath, bookmarkId);
             return publicPath;
         }
+
+        // In tests we avoid network activity, but still allow cached favicons above.
+        if (NODE_ENV === 'test') return null;
 
         // Check if already being fetched
         if (faviconFetchQueue.has(domain)) {

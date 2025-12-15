@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="300" viewBox="0 0 900 300" role="img" aria-label="Auth and CSRF request flow">
+  <defs>
+    <style>
+      .label { font: 14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; fill: #111; }
+      .small { font-size: 12px; fill: #111; }
+      .box { fill: #fff; stroke: #111; stroke-width: 2; }
+      .line { stroke: #111; stroke-width: 2; }
+      .dash { stroke: #111; stroke-width: 2; stroke-dasharray: 6 6; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 z" fill="#111" />
+    </marker>
+  </defs>
+
+  <!-- Participants -->
+  <rect class="box" x="70" y="30" width="240" height="44" rx="8" />
+  <text class="label" x="190" y="58" text-anchor="middle">Browser (SPA)</text>
+
+  <rect class="box" x="590" y="30" width="240" height="44" rx="8" />
+  <text class="label" x="710" y="58" text-anchor="middle">Server (Express)</text>
+
+  <!-- Lifelines -->
+  <line class="dash" x1="190" y1="80" x2="190" y2="270" />
+  <line class="dash" x1="710" y1="80" x2="710" y2="270" />
+
+  <!-- Message 1: login/register -->
+  <line class="line" x1="210" y1="110" x2="690" y2="110" marker-end="url(#arrow)" />
+  <text class="small" x="450" y="102" text-anchor="middle">POST /api/auth/login (or /api/auth/register)</text>
+  <text class="small" x="450" y="126" text-anchor="middle">JSON: { email, password }</text>
+
+  <!-- Message 2: set cookies + csrf in body -->
+  <line class="line" x1="690" y1="155" x2="210" y2="155" marker-end="url(#arrow)" />
+  <text class="small" x="450" y="147" text-anchor="middle">200 OK + Set-Cookie</text>
+  <text class="small" x="450" y="171" text-anchor="middle">token (httpOnly), csrfToken + JSON: { user, csrfToken }</text>
+
+  <!-- Local step -->
+  <text class="small" x="190" y="198" text-anchor="middle">Store csrfToken in memory</text>
+
+  <!-- Message 3: state-changing request -->
+  <line class="line" x1="210" y1="230" x2="690" y2="230" marker-end="url(#arrow)" />
+  <text class="small" x="450" y="222" text-anchor="middle">POST/PUT/DELETE /api/* (credentials: include)</text>
+  <text class="small" x="450" y="246" text-anchor="middle">Header: X-CSRF-Token: &lt;csrfToken&gt; (cookie token sent automatically)</text>
+
+  <!-- Footer note -->
+  <text class="small" x="450" y="285" text-anchor="middle">Server validates JWT cookie + CSRF token match; rejects with 401/403 on failure.</text>
+</svg>
