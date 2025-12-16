@@ -33,8 +33,8 @@ npm run dev
 ### Docker (Easiest for Production)
 
 ```bash
-# Start with Docker Compose
-docker-compose up -d
+# Start with Docker Compose (compose file is in `packages/docker`)
+docker compose -f packages/docker/docker-compose.yml up -d
 
 # Open http://localhost:3000
 ```
@@ -144,19 +144,22 @@ Choose the installation method that best suits your needs:
 3. **Start Services**
 
    ```bash
-   docker-compose up -d
+   # From project root
+   docker compose -f packages/docker/docker-compose.yml up -d
+   # OR from the packages/docker directory
+   # cd packages/docker && docker compose up -d
    ```
 
 4. **Verify**
 
    ```bash
-   docker-compose logs -f anchormarks
+   docker compose -f packages/docker/docker-compose.yml logs -f anchormarks
    curl http://localhost:3000/api/health
    ```
 
 5. **Stop Services**
    ```bash
-   docker-compose down
+   docker compose -f packages/docker/docker-compose.yml down
    ```
 
 ### Option 2: Manual Docker Build
@@ -164,7 +167,8 @@ Choose the installation method that best suits your needs:
 1. **Build Image**
 
    ```bash
-   docker build -t anchormarks:latest .
+   # Build using the Dockerfile in packages/docker
+   docker build -t anchormarks:latest packages/docker
    ```
 
 2. **Create Data Volume** (optional, recommended)
@@ -507,7 +511,7 @@ sudo systemctl disable anchormarks
 4. **Build and Run**
 
    ```powershell
-   docker-compose up -d
+   docker compose -f packages/docker/docker-compose.yml up -d
    ```
 
 5. **Verify**
@@ -517,7 +521,7 @@ sudo systemctl disable anchormarks
    docker ps
 
    # View logs
-   docker-compose logs -f
+   docker compose -f packages/docker/docker-compose.yml logs -f
    ```
 
 ### Option 3: Using Windows Services (Advanced)
@@ -532,7 +536,7 @@ sudo systemctl disable anchormarks
 2. **Install as Service**
 
    ```powershell
-   nssm install AnchorMarks "C:\Program Files\nodejs\node.exe" "C:\path\to\anchormarks\server\index.js"
+   nssm install AnchorMarks "C:\Program Files\nodejs\node.exe" "C:\path\to\anchormarks\server\app.js"
    nssm set AnchorMarks AppDirectory "C:\path\to\anchormarks"
    nssm set AnchorMarks AppEnvironmentExtra NODE_ENV=production
    nssm start AnchorMarks
@@ -688,8 +692,9 @@ docker inspect anchormarks
 
 # Remove and rebuild
 docker rm anchormarks
-docker build -t anchormarks:latest .
-docker-compose up -d
+# Build using the Dockerfile in packages/docker
+docker build -t anchormarks:latest packages/docker
+docker compose -f packages/docker/docker-compose.yml up -d
 ```
 
 ---

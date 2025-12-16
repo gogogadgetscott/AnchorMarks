@@ -4,12 +4,9 @@ node_modules/
 *.db-shm
 .env
 .DS_Store
-Thumbs.db
-public/favicons/*.png
-public/favicons/*.ico
 *.log
-
-# Test coverage output
-coverage/
 *.lcov
-.nyc_output/
+Thumbs.db
+database/
+favicons/
+coverage/

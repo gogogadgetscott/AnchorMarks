@@ -13,7 +13,7 @@
 
 ### Core Components
 
-1. **`server/index.js`** (2385 lines) – Single monolithic Express app handling:
+1. **`apps/server/app.js`** (entry) – Single monolithic Express app handling:
    - Authentication endpoints (`/api/auth/*`)
    - Bookmark CRUD (`/api/bookmarks/*`)
    - Folder management (`/api/folders/*`)
@@ -22,14 +22,14 @@
    - Health tools (duplicate detection, dead link checker)
    - Settings persistence (`/api/settings`)
 
-2. **`public/js/app.js`** (3418 lines) – Frontend state machine:
+2. **`apps/public/js/app.js`** (3418 lines) – Frontend state machine:
    - UI rendering (grid/list/compact views)
    - Dashboard with freeform widgets
    - Search, filtering, sorting logic
    - Local state: `bookmarks[]`, `folders[]`, `currentUser`, `dashboardConfig`, `filterConfig`
    - API calls via `api()` helper (handles CSRF tokens, JWT via cookies)
 
-3. **`server/smart-organization.js`** – Tag suggestion engine:
+3. **`apps/server/smart-organization.js`** – Tag suggestion engine:
    - Domain-based categorization (GitHub → dev tags)
    - Tag co-occurrence analysis
    - Used in bookmark creation/import workflows
@@ -70,7 +70,7 @@
 
 ### Database Access Pattern
 
-- All queries in `server/index.js` use `db.prepare().all()` or `db.prepare().run()` (synchronous)
+- All queries in `apps/server/**/*.js` use `db.prepare().all()` or `db.prepare().run()` (synchronous)
 - No ORM; raw SQL with parameterized queries (prevent SQL injection)
 - User isolation: **every query filters by `user_id`** (critical for security)
 - Transactions for multi-step operations (e.g., bulk tag rename)
@@ -104,15 +104,15 @@ npm run test:coverage      # Coverage report
 
 ```bash
 npm run lint               # Run ESLint to check code style
-node --check server/index.js
+node --check apps/server/app.js
 node --check public/js/app.js
 ```
 
 ### Docker
 
 ```bash
-npm run docker:build       # Build image
-npm run docker:compose     # Start containers (docker-compose.yml)
+npm run docker:build       # Build image (uses packages/docker)
+npm run docker:up          # Start containers (packages/docker/docker-compose.yml)
 ```
 
 ## Project-Specific Conventions
@@ -193,7 +193,7 @@ async function saveBookmark(bookmark) {
 **URL/SSRF Validation**:
 
 ```javascript
-// In server/index.js before fetching favicon:
+// In apps/server/app.js before fetching favicon:
 const isSafe = !(await isPrivateAddress(req.body.url));
 if (!isSafe && NODE_ENV === "production") {
   return res.status(403).json({ error: "Private networks not allowed" });
@@ -202,7 +202,7 @@ if (!isSafe && NODE_ENV === "production") {
 
 ## File Organization
 
-- `server/index.js` – All API routes, middleware, DB logic (monolithic by design)
+- `apps/server/app.js` – All API routes, middleware, DB logic (monolithic by design)
 - `server/smart-organization.js` – Pluggable tag suggestion module
 - `server/__tests__/` – Jest test files
 - `public/js/app.js` – All frontend logic, rendering, state

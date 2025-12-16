@@ -86,3 +86,24 @@ MIT License - use, modify, and distribute freely.
 ---
 
 **[View full documentation in Help →](public/help.html)**
+
+## 🛳️ Deployment Notes
+
+- Docker compose file: `packages/docker/docker-compose.yml` (use from project root)
+- Environment file: `apps/.env` — `docker:up` parses `PORT` from this file and the compose stack uses `env_file` to inject runtime variables.
+- If host bind-mounted `data/` directory lacks correct permissions, run the helper before starting:
+
+```bash
+npm run docker:fix-perms   # requires sudo
+npm run docker:up
+```
+
+- For production servers, prefer fixing host permissions (chown to UID 1001) and removing the need for sudo in automation.
+
+### Running tests in container
+
+To run the test suite inside a container (installs dev dependencies temporarily):
+
+```bash
+docker compose -f packages/docker/docker-compose.yml run --rm anchormarks sh -c "npm install && npm test"
+```
