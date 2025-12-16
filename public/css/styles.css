@@ -1442,8 +1442,10 @@ body.sidebar-collapsed .nav-section-header {
 .favorites-header,
 .recents-header {
   display: none;
-  height: 78px;
   position: relative;
+  /* Allow header to grow when wrapped */
+  min-height: 60px;
+  height: auto;
   /* For absolute positioning of filter dropdown */
 }
 
@@ -2126,7 +2128,12 @@ body.sidebar-collapsed .nav-section-header {
   background: var(--border-color);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  /* Constrain to viewport width and prevent horizontal overflow */
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .bookmarks-compact .bookmark-card {
@@ -3099,6 +3106,178 @@ body.sidebar-collapsed .nav-section-header {
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
+  /* Ensure the main app uses full viewport width on mobile */
+  .main-app,
+  .main-content,
+  .dashboard-view,
+  .dashboard-content {
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  /* Reduce horizontal padding in headers to reclaim space */
+  .content-header {
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+    /* Let header grow vertically on mobile to prevent overlap */
+    min-height: 90px;
+    height: auto;
+  }
+
+  /* Stack header sections on mobile */
+  .header-left,
+  .header-right {
+    flex: 1 1 100%;
+  }
+
+  .header-left {
+    margin-bottom: 0.5rem;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  /* Compact view toggle buttons for small widths */
+  .view-toggle .view-btn {
+    padding: 0.4rem 0.6rem;
+  }
+
+  /* Ensure header actions wrap nicely */
+  .time-range-controls,
+  .view-toggle,
+  .header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* Prevent overflow of header title */
+  .header-left h1 {
+    font-size: 1.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Dashboard columns collapse nicely */
+  .dashboard-columns {
+    grid-template-columns: 1fr;
+  }
+  /* Sidebar becomes an off-canvas overlay drawer on mobile */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    transform: translateX(-100%);
+    width: 280px;
+    max-width: 85vw;
+    height: 100vh;
+    z-index: 1000;
+    transition: transform var(--transition-fast);
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Show sidebar when mobile menu is open */
+  body.mobile-sidebar-open .sidebar {
+    transform: translateX(0%);
+  }
+
+  /* Prevent background scroll when mobile sidebar is open */
+  body.mobile-sidebar-open {
+    overflow: hidden;
+  }
+
+  /* Main content takes full width on mobile */
+  .main-content {
+    margin-left: 0 !important;
+    width: 100%;
+  }
+
+  /* Sidebar backdrop overlay */
+  .sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+
+  body.mobile-sidebar-open .sidebar-backdrop {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Disable collapsed state on mobile - sidebar is always full width when shown */
+  body.sidebar-collapsed .sidebar {
+    width: 280px;
+    max-width: 85vw;
+  }
+
+  body.sidebar-collapsed .main-content {
+    margin-left: 0 !important;
+  }
+
+  /* Show all sidebar content on mobile (no collapsed state) */
+  body.sidebar-collapsed .sidebar .logo-text,
+  body.sidebar-collapsed .sidebar .nav-item span:not(.collapsed-tooltip),
+  body.sidebar-collapsed .sidebar .nav-section-header span,
+  body.sidebar-collapsed .sidebar .user-info,
+  body.sidebar-collapsed .sidebar .folder-actions,
+  body.sidebar-collapsed .sidebar .tag-item span,
+  body.sidebar-collapsed .sidebar .folder-name,
+  body.sidebar-collapsed .sidebar .badge,
+  body.sidebar-collapsed .sidebar .section-badge,
+  body.sidebar-collapsed .sidebar .chevron,
+  body.sidebar-collapsed .sidebar .section-actions,
+  body.sidebar-collapsed .sidebar .stats-bar,
+  body.sidebar-collapsed .sidebar .sidebar-tags-search {
+    display: unset;
+  }
+
+  body.sidebar-collapsed .sidebar-search,
+  body.sidebar-collapsed .nav-section.collapsible,
+  body.sidebar-collapsed .active-filters-section {
+    display: block;
+  }
+
+  body.sidebar-collapsed .sidebar-header {
+    padding: 1rem;
+    justify-content: flex-start;
+  }
+
+  body.sidebar-collapsed .sidebar-actions {
+    padding: 0 1rem;
+  }
+
+  body.sidebar-collapsed .sidebar-actions .btn-primary {
+    width: 100%;
+    height: auto;
+    padding: 0.5rem 1.5rem;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    gap: 0.5rem;
+  }
+
+  body.sidebar-collapsed .nav-item {
+    padding: 0.75rem 1rem;
+    justify-content: flex-start;
+    margin: 0;
+  }
+
+  body.sidebar-collapsed .nav-section:not(.collapsible) {
+    padding: 0.5rem 0;
+  }
+
+  /* Widget sidebar adjustments for mobile */
   .widget-sidebar {
     max-height: 70vh;
   }
@@ -3412,7 +3591,7 @@ body.dragging-widget .widget-sidebar-overlay {
 
 .command-item:hover,
 .command-item.active {
-  background: var(--primary-50);
+  background: var(--bg-hover);
 }
 
 [data-theme="dark"] .command-item:hover,
@@ -4802,8 +4981,10 @@ body.dragging-widget .widget-sidebar-overlay {
 .shortcuts-popup {
   position: fixed;
   inset: 0;
-  display: none;
+  display: flex;
   z-index: 1001;
+  align-items: center;
+  justify-content: center;
 }
 
 .shortcuts-popup.hidden {
@@ -4911,7 +5092,6 @@ body.dragging-widget .widget-sidebar-overlay {
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--text-primary);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .shortcut-label {
@@ -5287,13 +5467,6 @@ body.dragging-widget .widget-sidebar-overlay {
   overflow-y: auto;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
 /* Responsive adjustments for header search */
 @media (max-width: 768px) {
   .header-search-bar {
@@ -5373,4 +5546,10 @@ body.dragging-widget .widget-sidebar-overlay {
   flex-shrink: 0;
   font-weight: bold;
   color: var(--primary-500);
+}
+
+/* Panel item hover: avoid white hover, keep theme-friendly */
+.command-palette-panel li:hover,
+.command-palette-panel li.active {
+  background: rgba(255, 255, 255, 0.08);
 }

@@ -253,7 +253,11 @@ function handleKeyboard(e) {
 
   // Escape key
   if (key === "escape") {
-    if (state.commandPaletteOpen) {
+    const shortcutsPopup = document.getElementById("shortcuts-popup");
+    if (shortcutsPopup && !shortcutsPopup.classList.contains("hidden")) {
+      e.preventDefault();
+      closeShortcutsPopup();
+    } else if (state.commandPaletteOpen) {
       e.preventDefault();
       closeCommandPalette();
     } else if (state.bulkMode) {
@@ -354,24 +358,42 @@ function handleKeyboard(e) {
     loadBookmarks();
   }
 
-  // Shift+/: Shortcuts help
-  if ((e.shiftKey && key === "/") || key === ">") {
+  // ?: Shortcuts help
+  if (key === "?" || e.key === "?") {
     if (["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
     e.preventDefault();
     openShortcutsPopup();
   }
 
-  // Command palette navigation
+  // Command palette navigation (avoid double-handling when input is focused)
   if (state.commandPaletteOpen) {
-    if (key === "arrowdown") {
-      e.preventDefault();
-      updateCommandPaletteActive(1);
-    } else if (key === "arrowup") {
-      e.preventDefault();
-      updateCommandPaletteActive(-1);
-    } else if (key === "enter") {
-      e.preventDefault();
-      runActiveCommand();
+    const isPaletteInputFocused =
+      document.activeElement && document.activeElement.id === "command-palette-input";
+    if (!isPaletteInputFocused) {
+      if (key === "arrowdown") {
+        e.preventDefault();
+        updateCommandPaletteActive(1);
+      } else if (key === "arrowup") {
+        e.preventDefault();
+        updateCommandPaletteActive(-1);
+      } else if (key === "pagedown") {
+        e.preventDefault();
+        updateCommandPaletteActive(5);
+      } else if (key === "pageup") {
+        e.preventDefault();
+        updateCommandPaletteActive(-5);
+      } else if (key === "home") {
+        e.preventDefault();
+        const delta = -state.commandPaletteActiveIndex;
+        updateCommandPaletteActive(delta);
+      } else if (key === "end") {
+        e.preventDefault();
+        const delta = (state.commandPaletteEntries.length - 1) - state.commandPaletteActiveIndex;
+        updateCommandPaletteActive(delta);
+      } else if (key === "enter") {
+        e.preventDefault();
+        runActiveCommand();
+      }
     }
   }
 }
@@ -481,6 +503,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Keyboard shortcuts
   document.addEventListener("keydown", handleKeyboard);
 
+  // Robustness: rebind/ensure shortcuts after tab focus returns
+  window.addEventListener("focus", () => {
+    // If handler was removed or page lost focus, ensure it's attached
+    document.addEventListener("keydown", handleKeyboard);
+  });
+
   // Filter controls
   document.getElementById("filter-sort")?.addEventListener("change", (e) => {
     state.filterConfig.sort = e.target.value;
@@ -551,6 +579,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       updateCommandPaletteActive(-1);
+    } else if (e.key === "PageDown") {
+      e.preventDefault();
+      updateCommandPaletteActive(5);
+    } else if (e.key === "PageUp") {
+      e.preventDefault();
+      updateCommandPaletteActive(-5);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      const delta = -state.commandPaletteActiveIndex;
+      updateCommandPaletteActive(delta);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      const delta = (state.commandPaletteEntries.length - 1) - state.commandPaletteActiveIndex;
+      updateCommandPaletteActive(delta);
     } else if (e.key === "Enter") {
       e.preventDefault();
       runActiveCommand();
@@ -771,6 +813,40 @@ document.addEventListener("DOMContentLoaded", async () => {
   document
     .getElementById("toggle-sidebar-btn-recents")
     ?.addEventListener("click", toggleSidebar);
+
+  // Mobile sidebar backdrop - close sidebar when clicking backdrop
+  document.getElementById("sidebar-backdrop")?.addEventListener("click", () => {
+    if (window.innerWidth <= 768) {
+      document.body.classList.remove("mobile-sidebar-open");
+    }
+  });
+
+  // Close mobile sidebar when clicking on navigation items
+  document.querySelectorAll(".sidebar .nav-item").forEach((item) => {
+    item.addEventListener("click", () => {
+      if (window.innerWidth <= 768) {
+        document.body.classList.remove("mobile-sidebar-open");
+      }
+    });
+  });
+
+  // Close overlays/modals on Escape key
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    // Close mobile sidebar if open
+    if (window.innerWidth <= 768) {
+      document.body.classList.remove("mobile-sidebar-open");
+    }
+    // Close any open modal (e.g., settings modal)
+    closeModals();
+  });
+
+  // Close mobile sidebar when window is resized to desktop
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 768) {
+      document.body.classList.remove("mobile-sidebar-open");
+    }
+  });
 
   // Dashboard-specific controls
   document
@@ -1239,7 +1315,16 @@ window.AnchorMarks = {
   loadSettings,
 };
 
-// Make filter functions available globally
-window.toggleFilterTag = toggleFilterTag;
-window.toggleTagMode = toggleTagMode;
-window.filterDashboardBookmarks = filterDashboardBookmarks;
+// Function to launch bookmark from command palette
+function launchBookmarkFromPalette(bookmarkId) {
+    // Logic to launch the bookmark
+    const bookmark = bookmarks.find(b => b.id === bookmarkId);
+    if (bookmark) {
+        window.open(bookmark.url, '_blank');
+    }
+}
+
+// Integrate search into command palette
+function searchBookmarks(query) {
+    return bookmarks.filter(b => b.title.includes(query) || b.url.includes(query));
+}

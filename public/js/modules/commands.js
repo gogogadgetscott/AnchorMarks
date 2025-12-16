@@ -1,3 +1,81 @@
+// Outside-click-to-close for command palette
+// Assumes markup includes elements with classes: .command-palette and .command-palette-backdrop
+// Provides a fallback close behavior if module close function isn't available
+(function initCommandPaletteInteractions() {
+  const panel = document.querySelector('.command-palette');
+  const backdrop = document.querySelector('.command-palette-backdrop');
+  if (!backdrop) return; // nothing to wire
+
+  function hidePalette() {
+    try {
+      if (typeof window.closeCommandPalette === 'function') {
+        window.closeCommandPalette();
+        return;
+      }
+    } catch (_) {}
+    if (panel) panel.style.display = 'none';
+    backdrop.style.display = 'none';
+  }
+
+  // Sync backdrop position/size to exactly match the panel
+  function syncBackdropToPanel() {
+    if (!panel || !backdrop) return;
+    const rect = panel.getBoundingClientRect();
+    // Position backdrop to overlay the panel area
+    backdrop.style.top = `${rect.top}px`;
+    backdrop.style.left = `${rect.left}px`;
+    backdrop.style.width = `${rect.width}px`;
+    backdrop.style.height = `${rect.height}px`;
+    // Match panel border radius visually
+    const radius = window.getComputedStyle(panel).borderRadius;
+    backdrop.style.borderRadius = radius || '8px';
+  }
+
+  // Observe size/visibility changes
+  let syncInterval = null;
+  function startSync() {
+    if (syncInterval) return;
+    syncBackdropToPanel();
+    syncInterval = window.setInterval(syncBackdropToPanel, 100);
+  }
+  function stopSync() {
+    if (!syncInterval) return;
+    window.clearInterval(syncInterval);
+    syncInterval = null;
+  }
+
+  // Start syncing when panel is shown; stop when hidden
+  const observer = new MutationObserver(() => {
+    const isVisible = panel && panel.offsetParent !== null && panel.style.display !== 'none';
+    if (isVisible) {
+      startSync();
+    } else {
+      stopSync();
+    }
+  });
+  if (panel) {
+    observer.observe(panel, { attributes: true, attributeFilter: ['style', 'class'] });
+    // Initial sync if already visible
+    const initiallyVisible = panel.offsetParent !== null && panel.style.display !== 'none';
+    if (initiallyVisible) startSync();
+  }
+
+  window.addEventListener('resize', syncBackdropToPanel, { passive: true });
+
+  // Only backdrop clicks close; clicks inside panel should not
+  backdrop.addEventListener('click', function onBackdropClick(e) {
+    // If click originated inside panel, ignore
+    if (panel && panel.contains(e.target)) return;
+    hidePalette();
+  }, { passive: true });
+
+  // ESC-to-close
+  window.addEventListener('keydown', function onKeydown(e) {
+    if (e.key === 'Escape') {
+      hidePalette();
+    }
+  }, { passive: true });
+})();
 /**
  * AnchorMarks - Commands Module
  * Handles command palette functionality
@@ -87,10 +165,13 @@ export function openCommandPalette() {
 // Close command palette
 export function closeCommandPalette() {
   const palette = document.getElementById("command-palette");
+  const input = document.getElementById("command-palette-input");
   if (!palette) return;
 
   state.setCommandPaletteOpen(false);
   palette.classList.add("hidden");
+  // Ensure focus returns to the app so global shortcuts work
+  try { input?.blur(); } catch (_) {}
 }
 
 // Render command palette list
