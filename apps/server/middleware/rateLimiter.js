@@ -4,6 +4,13 @@ const RATE_LIMIT_MAX = 100; // requests per minute
 
 function rateLimiter(req, res, next) {
   try {
+    // Skip rate limiting for static asset requests (favicons, thumbnails, JS/CSS/images)
+    if (
+      req.method === "GET" &&
+      (req.path.startsWith("/favicons") || req.path.startsWith("/thumbnails") || /\.(png|jpg|jpeg|svg|gif|ico|css|js)$/.test(req.path))
+    ) {
+      return next();
+    }
     const now = Date.now();
     const key =
       req.ip ||

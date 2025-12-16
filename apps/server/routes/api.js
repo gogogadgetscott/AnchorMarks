@@ -44,6 +44,53 @@ function setupApiRoutes(app, db, helpers) {
     validateCsrfTokenMiddleware,
   });
 
+  // Save/update user settings
+  const userSettingsModel = require("../models/userSettings");
+  app.put(
+    "/api/settings",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      try {
+        userSettingsModel.upsertUserSettings(db, req.user.id, req.body);
+
+        const settings = db
+          .prepare("SELECT * FROM user_settings WHERE user_id = ?")
+          .get(req.user.id);
+
+        if (!settings) return res.json({});
+
+        res.json({
+          view_mode: settings.view_mode || "grid",
+          hide_favicons: settings.hide_favicons === 1,
+          hide_sidebar: settings.hide_sidebar === 1,
+          ai_suggestions_enabled: settings.ai_suggestions_enabled !== 0,
+          theme: settings.theme || "dark",
+          dashboard_mode: settings.dashboard_mode || "folder",
+          dashboard_tags: settings.dashboard_tags
+            ? JSON.parse(settings.dashboard_tags)
+            : [],
+          dashboard_sort: settings.dashboard_sort || "updated_desc",
+          widget_order: settings.widget_order
+            ? JSON.parse(settings.widget_order)
+            : {},
+          dashboard_widgets: settings.dashboard_widgets
+            ? JSON.parse(settings.dashboard_widgets)
+            : [],
+          collapsed_sections: settings.collapsed_sections
+            ? JSON.parse(settings.collapsed_sections)
+            : [],
+          include_child_bookmarks: settings.include_child_bookmarks || 0,
+          current_view: settings.current_view || "all",
+          snap_to_grid: settings.snap_to_grid === 1,
+        });
+      } catch (err) {
+        console.error("Error saving settings:", err);
+        res.status(500).json({ error: "Failed to save settings" });
+      }
+    },
+  );
+
   // Maintenance routes
   const setupMaintenanceRoutes = require("./maintenance");
   app.use(

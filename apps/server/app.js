@@ -1,8 +1,10 @@
 const path = require("path");
+
 // Load environment from repository `apps/.env` explicitly so running from
 // project root still picks up the correct file.
 const _envPath = path.join(__dirname, "..", ".env");
 require("dotenv").config({ path: _envPath, quiet: true });
+
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
@@ -49,6 +51,7 @@ const fetchFaviconWrapper = makeFetchFaviconWrapper(
   FAVICONS_DIR,
   config.NODE_ENV,
 );
+
 const bg = createBackgroundJobs({
   db,
   ensureDirectories,
@@ -57,10 +60,9 @@ const bg = createBackgroundJobs({
   config,
 });
 
-// Rate limiter moved to its own module
+// Rate limiter
 const rateLimiter = require("./middleware/rateLimiter");
 
-// ============== DASHBOARD VIEWS =============
 // Middleware registration
 app.use(helmet());
 app.use(cors({ origin: true, credentials: true }));
@@ -86,6 +88,7 @@ const {
   parseTagsDetailed,
   normalizeTagColorOverrides,
 } = tagHelpersLocal;
+
 // Route groups are delegated to route modules under apps/server/routes/
 const setupDashboardRoutes = require("./routes/dashboard");
 const setupBookmarkViewsRoutes = require("./routes/bookmarkViews");
@@ -94,6 +97,7 @@ const setupBookmarksRoutes = require("./routes/bookmarks");
 const setupTagsRoutes = require("./routes/tags");
 const controllerTags = require("./controllers/tags");
 const setupImportExportRoutes = require("./routes/importExport");
+
 // Register authentication routes (login/register/me/logout)
 setupAuthRoutes(app, db, authenticateTokenMiddleware, fetchFaviconWrapper);
 const setupSyncRoutes = require("./routes/sync");
@@ -148,16 +152,6 @@ setupHealthRoutes(app, db, {
   fetchFaviconWrapper,
 });
 
-// Example bookmarks are provided by the auth controller (`controllers/auth.js`).
-
-// ============== HELPER FUNCTIONS ==============
-
-// const cheerio = require('cheerio'); // Removed as not available
-// Since we don't have cheerio, we'll stick to regex/parsing but handle nesting.
-// The previous logic flatten import.
-// To support nesting, we need to respect the <DL> hierarchy.
-// Netscape bookmark file format uses recursive <DL><p><DT><H3>...</H3><DL>...</DL></DT> ... </DL>
-
 // Smart organization routes moved to `routes/smartOrganization.js`
 const setupSmartOrganizationRoutes = require("./routes/smartOrganization");
 setupSmartOrganizationRoutes(app, db, {
@@ -183,35 +177,6 @@ process.on("SIGTERM", () => {
   console.log("\nClosing database connection...");
   db.close();
   process.exit(0);
-});
-
-app.listen(config.PORT, config.HOST, () => {
-  console.log(
-    `\n╔═════════════════════════════════════════════════════════════════╗`,
-  );
-  console.log(
-    `║                                                                 ║`,
-  );
-  console.log(
-    `║   AnchorMarks v1.0.0                                            ║`,
-  );
-  console.log(
-    `║                                                                 ║`,
-  );
-  console.log(
-    `║   Server:   http://${config.HOST === "0.0.0.0" ? "localhost" : config.HOST}:${config.PORT}                               ║`,
-  );
-  console.log(
-    `║   API:      http://${config.HOST === "0.0.0.0" ? "localhost" : config.HOST}:${config.PORT}/api                           ║`,
-  );
-  console.log(`║   Mode:     ${config.NODE_ENV.padEnd(52)}║`);
-  console.log(`║   Database: ${config.DB_PATH.padEnd(52)}║`);
-  console.log(
-    `║                                                                 ║`,
-  );
-  console.log(
-    `╚═════════════════════════════════════════════════════════════════╝\n`,
-  );
 });
 
 // Expose helpers for tests
