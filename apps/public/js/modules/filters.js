@@ -111,40 +111,28 @@ export function initFilterDropdown() {
 
 // Toggle filter dropdown
 export function toggleFilterDropdown() {
-  console.log("toggleFilterDropdown called");
 
   // Only allow filter dropdown in bookmarks views
   const bookmarksViews = ["all", "folder", "collection"];
   if (!bookmarksViews.includes(state.currentView)) {
-    console.log(
-      "Filter dropdown only available in bookmarks view. Current view:",
-      state.currentView,
-    );
     return;
   }
 
   const existing = document.getElementById("filter-dropdown");
-  console.log("Existing dropdown:", existing);
   if (existing) {
     closeFilterDropdown();
   } else {
-    console.log("Showing filter dropdown...");
     showFilterDropdown();
   }
 }
 
 // Show filter dropdown
 export async function showFilterDropdown() {
-  console.log("showFilterDropdown started");
-
+  
   // Only show filter dropdown in bookmarks view (all, folder, collection)
   // Hide for dashboard, favorites, recent
   const bookmarksViews = ["all", "folder", "collection"];
   if (!bookmarksViews.includes(state.currentView)) {
-    console.log(
-      "Filter dropdown only available in bookmarks view. Current view:",
-      state.currentView,
-    );
     return;
   }
 
@@ -247,8 +235,6 @@ export async function showFilterDropdown() {
 
     // Find the bookmarks header and insert after it
     const bookmarksHeader = document.getElementById("bookmarks-header");
-    console.log("Bookmarks header found:", bookmarksHeader);
-    console.log("Bookmarks header display:", bookmarksHeader?.style.display);
 
     if (bookmarksHeader && bookmarksHeader.style.display !== "none") {
       // Set bookmarks header to position relative so dropdown positions correctly
@@ -256,22 +242,7 @@ export async function showFilterDropdown() {
 
       // Insert as next sibling of bookmarks header
       bookmarksHeader.insertAdjacentElement("afterend", dropdown);
-      console.log("Dropdown inserted after bookmarks header");
-      console.log("Dropdown element:", dropdown);
-      console.log(
-        "Dropdown in DOM:",
-        document.getElementById("filter-dropdown"),
-      );
 
-      // Check computed styles
-      const computedStyle = window.getComputedStyle(dropdown);
-      console.log("Dropdown computed display:", computedStyle.display);
-      console.log("Dropdown computed position:", computedStyle.position);
-      console.log("Dropdown computed top:", computedStyle.top);
-      console.log("Dropdown computed visibility:", computedStyle.visibility);
-      console.log("Dropdown computed opacity:", computedStyle.opacity);
-      console.log("Dropdown computed z-index:", computedStyle.zIndex);
-      console.log("Dropdown bounding rect:", dropdown.getBoundingClientRect());
     } else {
       // Fallback: append to body if header not found
       console.log("Bookmarks header not visible, appending to body");
@@ -279,11 +250,8 @@ export async function showFilterDropdown() {
     }
 
     // Render folders and tags in dropdown containers
-    console.log("Rendering folders...");
     await renderFoldersInDropdown();
-    console.log("Rendering tags...");
     await renderTagsInDropdown();
-    console.log("Rendering collections...");
     await renderCollectionsInDropdown();
 
     // Render active filters
@@ -299,7 +267,6 @@ export async function showFilterDropdown() {
     if (tagModeSelect) tagModeSelect.value = state.filterConfig.tagMode || "OR";
 
     // Attach event listeners
-    console.log("Attaching event listeners...");
     attachFilterDropdownListeners();
 
     // Setup auto-hide (if not pinned)
@@ -308,8 +275,6 @@ export async function showFilterDropdown() {
         document.addEventListener("click", handleFilterDropdownClickOutside);
       }, 0);
     }
-
-    console.log("showFilterDropdown completed successfully");
   } catch (error) {
     console.error("Error in showFilterDropdown:", error);
   }
@@ -799,15 +764,8 @@ function attachFilterDropdownListeners() {
 
 // Handle click outside to close (if not pinned)
 function handleFilterDropdownClickOutside(e) {
-  console.log("Click detected, checking if outside dropdown...");
   const dropdown = document.getElementById("filter-dropdown");
   const btn = document.getElementById("bookmarks-filter-btn");
-
-  console.log("Dropdown:", dropdown);
-  console.log("Button:", btn);
-  console.log("Click target:", e.target);
-  console.log("Contains check:", dropdown?.contains(e.target));
-  console.log("Is pinned:", filterDropdownPinned);
 
   if (
     dropdown &&
@@ -815,10 +773,7 @@ function handleFilterDropdownClickOutside(e) {
     e.target !== btn &&
     !btn?.contains(e.target)
   ) {
-    console.log("Closing dropdown (clicked outside)");
     closeFilterDropdown();
-  } else {
-    console.log("Not closing - clicked inside or on button");
   }
 }
 
