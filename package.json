@@ -15,7 +15,7 @@
   },
   "license": "MIT",
   "author": "",
-  "main": "apps/server/app.js",
+  "main": "apps/server",
   "repository": {
     "type": "git",
     "url": "https://github.com/gogogadgetscott/AnchorMarks.git"
@@ -24,8 +24,8 @@
     "apps"
   ],
   "scripts": {
-    "dev": "NODE_ENV=development node apps/server/server.js",
-    "prod": "NODE_ENV=production node apps/server/server.js",
+    "dev": "NODE_ENV=development node apps/server",
+    "prod": "NODE_ENV=production node apps/server",
     "start": "npm run dev",
     "stop": ". ./apps/.env 2>/dev/null || true; PORT=$(printf '%s' \"${PORT:-3000}\" | tr -d '\\r'); PID=$(lsof -ti:$PORT 2>/dev/null); if [ -n \"$PID\" ]; then kill -9 $PID && echo \"Stopped process $PID on port $PORT\"; else echo \"No process found on port $PORT\"; fi",
     "restart": "npm run stop && npm run start",

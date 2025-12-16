@@ -2,7 +2,10 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const { JWT_SECRET, NODE_ENV } = require("../config");
-const { ensureTagsExist, updateBookmarkTags } = require("../tag-helpers");
+const {
+  ensureTagsExist,
+  updateBookmarkTags,
+} = require("../helpers/tag-helpers");
 
 function generateCsrfToken() {
   return uuidv4().replace(/-/g, "");
@@ -10,11 +13,36 @@ function generateCsrfToken() {
 
 function createExampleBookmarks(db, userId, folderId = null, fetchFavicon) {
   const EXAMPLE_BOOKMARKS = [
-    { title: "GitHub", url: "https://github.com", description: "Code hosting and collaboration platform", tags: "dev,git" },
-    { title: "Stack Overflow", url: "https://stackoverflow.com", description: "Q&A for programmers", tags: "dev,help" },
-    { title: "MDN Web Docs", url: "https://developer.mozilla.org", description: "Web development documentation", tags: "dev,docs" },
-    { title: "Hacker News", url: "https://news.ycombinator.com", description: "Tech news and discussion", tags: "news,tech" },
-    { title: "Reddit", url: "https://reddit.com", description: "Social news aggregation", tags: "social,news" },
+    {
+      title: "GitHub",
+      url: "https://github.com",
+      description: "Code hosting and collaboration platform",
+      tags: "dev,git",
+    },
+    {
+      title: "Stack Overflow",
+      url: "https://stackoverflow.com",
+      description: "Q&A for programmers",
+      tags: "dev,help",
+    },
+    {
+      title: "MDN Web Docs",
+      url: "https://developer.mozilla.org",
+      description: "Web development documentation",
+      tags: "dev,docs",
+    },
+    {
+      title: "Hacker News",
+      url: "https://news.ycombinator.com",
+      description: "Tech news and discussion",
+      tags: "news,tech",
+    },
+    {
+      title: "Reddit",
+      url: "https://reddit.com",
+      description: "Social news aggregation",
+      tags: "social,news",
+    },
   ];
 
   const created = [];
@@ -26,7 +54,16 @@ function createExampleBookmarks(db, userId, folderId = null, fetchFavicon) {
 
     db.prepare(
       `INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(id, userId, folderId, bm.title, bm.url, bm.description, faviconUrl, i + 1);
+    ).run(
+      id,
+      userId,
+      folderId,
+      bm.title,
+      bm.url,
+      bm.description,
+      faviconUrl,
+      i + 1,
+    );
 
     if (bm.tags) {
       const tagIds = ensureTagsExist(db, userId, bm.tags);
@@ -50,28 +87,49 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
       const { email, password } = req.body;
       const normalizedEmail = (email || "").trim().toLowerCase();
 
-      if (!normalizedEmail || !password) return res.status(400).json({ error: "All fields are required" });
-      if (password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+      if (!normalizedEmail || !password)
+        return res.status(400).json({ error: "All fields are required" });
+      if (password.length < 6)
+        return res
+          .status(400)
+          .json({ error: "Password must be at least 6 characters" });
 
-      const existingUser = db.prepare("SELECT * FROM users WHERE email = ?").get(normalizedEmail);
-      if (existingUser) return res.status(400).json({ error: "User already exists" });
+      const existingUser = db
+        .prepare("SELECT * FROM users WHERE email = ?")
+        .get(normalizedEmail);
+      if (existingUser)
+        return res.status(400).json({ error: "User already exists" });
 
       const hashedPassword = await bcrypt.hash(password, 12);
       const userId = uuidv4();
       const apiKey = "lv_" + uuidv4().replace(/-/g, "");
 
-      db.prepare("INSERT INTO users (id, email, password, api_key) VALUES (?, ?, ?, ?)").run(userId, normalizedEmail, hashedPassword, apiKey);
+      db.prepare(
+        "INSERT INTO users (id, email, password, api_key) VALUES (?, ?, ?, ?)",
+      ).run(userId, normalizedEmail, hashedPassword, apiKey);
 
       const defaultFolderId = uuidv4();
-      db.prepare("INSERT INTO folders (id, user_id, name, color, icon) VALUES (?, ?, ?, ?, ?)").run(defaultFolderId, userId, "My Bookmarks", "#6366f1", "folder");
+      db.prepare(
+        "INSERT INTO folders (id, user_id, name, color, icon) VALUES (?, ?, ?, ?, ?)",
+      ).run(defaultFolderId, userId, "My Bookmarks", "#6366f1", "folder");
 
       createExampleBookmarks(db, userId, defaultFolderId, fetchFavicon);
 
       const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: "30d" });
       const csrfToken = generateCsrfToken();
 
-      res.cookie("token", token, { httpOnly: true, secure: NODE_ENV === "production", sameSite: "strict", maxAge: 30 * 24 * 60 * 60 * 1000 });
-      res.cookie("csrfToken", csrfToken, { httpOnly: false, secure: NODE_ENV === "production", sameSite: "strict", maxAge: 30 * 24 * 60 * 60 * 1000 });
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+      res.cookie("csrfToken", csrfToken, {
+        httpOnly: false,
+        secure: NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
 
       res.json({ user: { id: userId, email, api_key: apiKey }, csrfToken });
     } catch (err) {
@@ -86,19 +144,37 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
       const { email, password } = req.body;
       const normalizedEmail = (email || "").trim().toLowerCase();
 
-      const user = db.prepare("SELECT * FROM users WHERE email = ?").get(normalizedEmail);
+      const user = db
+        .prepare("SELECT * FROM users WHERE email = ?")
+        .get(normalizedEmail);
       if (!user) return res.status(400).json({ error: "Invalid credentials" });
 
       const validPassword = await bcrypt.compare(password, user.password);
-      if (!validPassword) return res.status(400).json({ error: "Invalid credentials" });
+      if (!validPassword)
+        return res.status(400).json({ error: "Invalid credentials" });
 
-      const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "30d" });
+      const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
+        expiresIn: "30d",
+      });
       const csrfToken = generateCsrfToken();
 
-      res.cookie("token", token, { httpOnly: true, secure: NODE_ENV === "production", sameSite: "strict", maxAge: 30 * 24 * 60 * 60 * 1000 });
-      res.cookie("csrfToken", csrfToken, { httpOnly: false, secure: NODE_ENV === "production", sameSite: "strict", maxAge: 30 * 24 * 60 * 60 * 1000 });
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+      res.cookie("csrfToken", csrfToken, {
+        httpOnly: false,
+        secure: NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
 
-      res.json({ user: { id: user.id, email: user.email, api_key: user.api_key }, csrfToken });
+      res.json({
+        user: { id: user.id, email: user.email, api_key: user.api_key },
+        csrfToken,
+      });
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: "Server error" });
@@ -107,7 +183,14 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
 
   // Get current user
   app.get("/api/auth/me", authenticateToken, (req, res) => {
-    res.json({ user: { id: req.user.id, email: req.user.email, api_key: req.user.api_key }, csrfToken: req.cookies.csrfToken });
+    res.json({
+      user: {
+        id: req.user.id,
+        email: req.user.email,
+        api_key: req.user.api_key,
+      },
+      csrfToken: req.cookies.csrfToken,
+    });
   });
 
   // Logout
@@ -120,7 +203,10 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
   // Regenerate API key
   app.post("/api/auth/regenerate-key", authenticateToken, (req, res) => {
     const newApiKey = "lv_" + uuidv4().replace(/-/g, "");
-    db.prepare("UPDATE users SET api_key = ? WHERE id = ?").run(newApiKey, req.user.id);
+    db.prepare("UPDATE users SET api_key = ? WHERE id = ?").run(
+      newApiKey,
+      req.user.id,
+    );
     res.json({ api_key: newApiKey });
   });
 
@@ -130,10 +216,15 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
       const { email } = req.body;
       if (!email) return res.status(400).json({ error: "Email is required" });
 
-      const existing = db.prepare("SELECT id FROM users WHERE email = ? AND id != ?").get(email.toLowerCase(), req.user.id);
-      if (existing) return res.status(400).json({ error: "Email already in use" });
+      const existing = db
+        .prepare("SELECT id FROM users WHERE email = ? AND id != ?")
+        .get(email.toLowerCase(), req.user.id);
+      if (existing)
+        return res.status(400).json({ error: "Email already in use" });
 
-      db.prepare("UPDATE users SET email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(email.toLowerCase(), req.user.id);
+      db.prepare(
+        "UPDATE users SET email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+      ).run(email.toLowerCase(), req.user.id);
       res.json({ success: true, email: email.toLowerCase() });
     } catch (err) {
       console.error("Update profile error:", err);
@@ -145,15 +236,29 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
   app.put("/api/auth/password", authenticateToken, async (req, res) => {
     try {
       const { currentPassword, newPassword } = req.body;
-      if (!currentPassword || !newPassword) return res.status(400).json({ error: "Both current and new passwords are required" });
-      if (newPassword.length < 6) return res.status(400).json({ error: "New password must be at least 6 characters" });
+      if (!currentPassword || !newPassword)
+        return res
+          .status(400)
+          .json({ error: "Both current and new passwords are required" });
+      if (newPassword.length < 6)
+        return res
+          .status(400)
+          .json({ error: "New password must be at least 6 characters" });
 
-      const user = db.prepare("SELECT password FROM users WHERE id = ?").get(req.user.id);
-      const validPassword = await bcrypt.compare(currentPassword, user.password);
-      if (!validPassword) return res.status(400).json({ error: "Incorrect current password" });
+      const user = db
+        .prepare("SELECT password FROM users WHERE id = ?")
+        .get(req.user.id);
+      const validPassword = await bcrypt.compare(
+        currentPassword,
+        user.password,
+      );
+      if (!validPassword)
+        return res.status(400).json({ error: "Incorrect current password" });
 
       const hashedPassword = await bcrypt.hash(newPassword, 12);
-      db.prepare("UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(hashedPassword, req.user.id);
+      db.prepare(
+        "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+      ).run(hashedPassword, req.user.id);
       res.json({ success: true });
     } catch (err) {
       console.error("Change password error:", err);

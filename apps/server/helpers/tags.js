@@ -46,7 +46,10 @@ function normalizeTagColorOverrides(raw, tagMap = {}) {
   if (Array.isArray(raw)) {
     raw.forEach((entry) => {
       if (entry && typeof entry === "object") {
-        assignOverride(entry.name || entry.tag, entry.color || entry.color_override);
+        assignOverride(
+          entry.name || entry.tag,
+          entry.color || entry.color_override,
+        );
       }
     });
   } else if (typeof raw === "object") {

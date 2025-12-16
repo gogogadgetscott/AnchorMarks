@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require("uuid");
 
 function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
   const imported = [];
@@ -12,7 +12,9 @@ function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
       : null;
 
     const existing = db
-      .prepare('SELECT id FROM folders WHERE user_id = ? AND name = ? AND (parent_id = ? OR (? IS NULL AND parent_id IS NULL))')
+      .prepare(
+        "SELECT id FROM folders WHERE user_id = ? AND name = ? AND (parent_id = ? OR (? IS NULL AND parent_id IS NULL))",
+      )
       .get(userId, folder.name, mappedParent, mappedParent);
 
     if (existing) {
@@ -21,13 +23,24 @@ function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
     }
 
     const maxPos = db
-      .prepare('SELECT MAX(position) as max FROM folders WHERE user_id = ? AND (parent_id = ? OR (? IS NULL AND parent_id IS NULL))')
+      .prepare(
+        "SELECT MAX(position) as max FROM folders WHERE user_id = ? AND (parent_id = ? OR (? IS NULL AND parent_id IS NULL))",
+      )
       .get(userId, mappedParent, mappedParent);
     const position = (maxPos.max || 0) + 1;
 
     const newId = uuidv4();
-    db.prepare('INSERT INTO folders (id, user_id, parent_id, name, color, icon, position) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .run(newId, userId, mappedParent, folder.name || 'Imported', folder.color || '#6366f1', folder.icon || 'folder', position);
+    db.prepare(
+      "INSERT INTO folders (id, user_id, parent_id, name, color, icon, position) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    ).run(
+      newId,
+      userId,
+      mappedParent,
+      folder.name || "Imported",
+      folder.color || "#6366f1",
+      folder.icon || "folder",
+      position,
+    );
 
     folderIdMap.set(folder.id, newId);
     return newId;
@@ -38,8 +51,14 @@ function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
   let guard = 0;
   while (pending.length && guard < 1000) {
     const next = pending.shift();
-    const parentMapped = next.parent_id ? folderIdMap.get(next.parent_id) : null;
-    if (next.parent_id && next.parent_id !== null && parentMapped === undefined) {
+    const parentMapped = next.parent_id
+      ? folderIdMap.get(next.parent_id)
+      : null;
+    if (
+      next.parent_id &&
+      next.parent_id !== null &&
+      parentMapped === undefined
+    ) {
       pending.push(next);
     } else {
       ensureFolder(next);
@@ -51,14 +70,29 @@ function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
     const id = uuidv4();
     const faviconUrl = null;
 
-    const mappedFolder = bm.folder_id ? folderIdMap.get(bm.folder_id) || null : null;
+    const mappedFolder = bm.folder_id
+      ? folderIdMap.get(bm.folder_id) || null
+      : null;
 
-    db.prepare('INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .run(id, userId, mappedFolder, bm.title || bm.url, bm.url, bm.description || null, faviconUrl);
+    db.prepare(
+      "INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    ).run(
+      id,
+      userId,
+      mappedFolder,
+      bm.title || bm.url,
+      bm.url,
+      bm.description || null,
+      faviconUrl,
+    );
 
-    const normalizedTags = bm.tags ? (Array.isArray(bm.tags) ? bm.tags.join(',') : bm.tags) : null;
+    const normalizedTags = bm.tags
+      ? Array.isArray(bm.tags)
+        ? bm.tags.join(",")
+        : bm.tags
+      : null;
     if (normalizedTags) {
-      const tagHelpers = require('../tag-helpers');
+      const tagHelpers = require("../helpers/tag-helpers");
       const tagIds = tagHelpers.ensureTagsExist(db, userId, normalizedTags);
       tagHelpers.updateBookmarkTags(db, id, tagIds);
     }
@@ -71,7 +105,8 @@ function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
 
 function exportData(db, userId) {
   const bookmarks = db
-    .prepare(`
+    .prepare(
+      `
       SELECT 
         b.*, 
         COALESCE(tags_joined.tags, '') as tags,
@@ -94,10 +129,13 @@ function exportData(db, userId) {
         GROUP BY bt.bookmark_id
       ) tags_joined ON tags_joined.bookmark_id = b.id
       WHERE b.user_id = ?
-  `)
+  `,
+    )
     .all(userId, userId);
 
-  const folders = db.prepare('SELECT * FROM folders WHERE user_id = ?').all(userId);
+  const folders = db
+    .prepare("SELECT * FROM folders WHERE user_id = ?")
+    .all(userId);
 
   return { bookmarks, folders };
 }

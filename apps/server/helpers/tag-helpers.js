@@ -1,17 +1,5 @@
-/**
- * Tag Helper Functions for Normalized Tag System
- * Manages tags and bookmark-tag relationships
- */
-
 const { v4: uuidv4 } = require("uuid");
 
-/**
- * Parse tag string (comma-separated) and ensure all tags exist
- * @param {object} db - Database instance
- * @param {string} userId - User ID
- * @param {string} tagsString - Comma-separated tag names
- * @returns {Array} Array of tag IDs
- */
 function ensureTagsExist(db, userId, tagsInput, options = {}) {
   const returnMap = options.returnMap === true;
 
@@ -34,13 +22,11 @@ function ensureTagsExist(db, userId, tagsInput, options = {}) {
   const tagMap = {};
 
   for (const tagName of tagNames) {
-    // Check if tag exists
     let tag = db
       .prepare("SELECT id FROM tags WHERE user_id = ? AND name = ?")
       .get(userId, tagName);
 
     if (!tag) {
-      // Create new tag
       const tagId = uuidv4();
       db.prepare(
         "INSERT INTO tags (id, user_id, name, color, icon) VALUES (?, ?, ?, ?, ?)",
@@ -56,18 +42,10 @@ function ensureTagsExist(db, userId, tagsInput, options = {}) {
   return returnMap ? { tagIds, tagMap } : tagIds;
 }
 
-/**
- * Update bookmark-tag relationships
- * @param {object} db - Database instance
- * @param {string} bookmarkId - Bookmark ID
- * @param {Array} tagIds - Array of tag IDs
- */
 function updateBookmarkTags(db, bookmarkId, tagIds, options = {}) {
   const colorOverridesByTagId = options.colorOverridesByTagId || {};
-  // Delete existing relationships
   db.prepare("DELETE FROM bookmark_tags WHERE bookmark_id = ?").run(bookmarkId);
 
-  // Create new relationships
   if (tagIds && tagIds.length > 0) {
     const stmt = db.prepare(
       "INSERT INTO bookmark_tags (bookmark_id, tag_id, color_override) VALUES (?, ?, ?)",
@@ -79,12 +57,6 @@ function updateBookmarkTags(db, bookmarkId, tagIds, options = {}) {
   }
 }
 
-/**
- * Get tags for a bookmark as comma-separated string
- * @param {object} db - Database instance
- * @param {string} bookmarkId - Bookmark ID
- * @returns {string} Comma-separated tag names
- */
 function getBookmarkTagsString(db, bookmarkId) {
   const tags = db
     .prepare(
@@ -101,12 +73,6 @@ function getBookmarkTagsString(db, bookmarkId) {
   return tags.map((t) => t.name).join(", ");
 }
 
-/**
- * Get all tags for a user with bookmark counts
- * @param {object} db - Database instance
- * @param {string} userId - User ID
- * @returns {Array} Array of tags with metadata
- */
 function getUserTags(db, userId) {
   return db
     .prepare(
@@ -179,4 +145,61 @@ function getTagsForDomain(db, userId, domain) {
     .map((r) => r.tag);
 }
 
-module.exports = require("./helpers/tag-helpers");
+function renameOrMergeTag(db, userId, from, to) {
+  const sourceTag = db
+    .prepare("SELECT * FROM tags WHERE user_id = ? AND name = ?")
+    .get(userId, from);
+  if (!sourceTag) return { error: "not_found" };
+
+  const destinationTag = db
+    .prepare("SELECT * FROM tags WHERE user_id = ? AND name = ?")
+    .get(userId, to);
+  const sourceRelations = db
+    .prepare(
+      "SELECT bookmark_id, color_override FROM bookmark_tags WHERE tag_id = ?",
+    )
+    .all(sourceTag.id);
+  let updated = 0;
+
+  const runMerge = db.transaction(() => {
+    if (destinationTag) {
+      const insertRel = db.prepare(
+        "INSERT OR IGNORE INTO bookmark_tags (bookmark_id, tag_id, color_override) VALUES (?, ?, ?)",
+      );
+      sourceRelations.forEach((rel) => {
+        const info = insertRel.run(
+          rel.bookmark_id,
+          destinationTag.id,
+          rel.color_override || null,
+        );
+        if (info.changes > 0) updated += 1;
+      });
+      db.prepare("DELETE FROM bookmark_tags WHERE tag_id = ?").run(
+        sourceTag.id,
+      );
+      db.prepare("DELETE FROM tags WHERE id = ? AND user_id = ?").run(
+        sourceTag.id,
+        userId,
+      );
+    } else {
+      db.prepare(
+        "UPDATE tags SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
+      ).run(to, sourceTag.id, userId);
+      updated = sourceRelations.length;
+    }
+  });
+
+  runMerge();
+  return { updated };
+}
+
+module.exports = {
+  ensureTagsExist,
+  updateBookmarkTags,
+  getBookmarkTagsString,
+  getUserTags,
+  getTagUsageCounts,
+  getTagCooccurrence,
+  getTagsForDomain,
+  renameOrMergeTag,
+};

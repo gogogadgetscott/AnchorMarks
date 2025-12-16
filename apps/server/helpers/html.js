@@ -11,7 +11,10 @@ function decodeHtmlEntities(text) {
     "&#x2F;": "/",
     "&nbsp;": " ",
   };
-  return (text || "").replace(/&[a-z0-9#]+;/gi, (match) => entities[match] || match);
+  return (text || "").replace(
+    /&[a-z0-9#]+;/gi,
+    (match) => entities[match] || match,
+  );
 }
 
 function parseHtmlMetadata(html, url) {
@@ -27,36 +30,52 @@ function parseHtmlMetadata(html, url) {
   }
 
   const descMatch =
-    html.match(/<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i) ||
+    html.match(
+      /<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i,
+    ) ||
     html.match(/<meta\s+content=["']([^"']+)["']\s+name=["']description["']/i);
   if (descMatch) {
     metadata.description = decodeHtmlEntities(descMatch[1].trim());
   }
 
   const ogTitleMatch =
-    html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i) ||
+    html.match(
+      /<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i,
+    ) ||
     html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:title["']/i);
   if (ogTitleMatch && !metadata.title) {
     metadata.title = decodeHtmlEntities(ogTitleMatch[1].trim());
   }
 
   const ogDescMatch =
-    html.match(/<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i) ||
-    html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:description["']/i);
+    html.match(
+      /<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i,
+    ) ||
+    html.match(
+      /<meta\s+content=["']([^"']+)["']\s+property=["']og:description["']/i,
+    );
   if (ogDescMatch && !metadata.description) {
     metadata.description = decodeHtmlEntities(ogDescMatch[1].trim());
   }
 
   const twitterTitleMatch =
-    html.match(/<meta\s+name=["']twitter:title["']\s+content=["']([^"']+)["']/i) ||
-    html.match(/<meta\s+content=["']([^"']+)["']\s+name=["']twitter:title["']/i);
+    html.match(
+      /<meta\s+name=["']twitter:title["']\s+content=["']([^"']+)["']/i,
+    ) ||
+    html.match(
+      /<meta\s+content=["']([^"']+)["']\s+name=["']twitter:title["']/i,
+    );
   if (twitterTitleMatch && !metadata.title) {
     metadata.title = decodeHtmlEntities(twitterTitleMatch[1].trim());
   }
 
   const twitterDescMatch =
-    html.match(/<meta\s+name=["']twitter:description["']\s+content=["']([^"']+)["']/i) ||
-    html.match(/<meta\s+content=["']([^"']+)["']\s+name=["']twitter:description["']/i);
+    html.match(
+      /<meta\s+name=["']twitter:description["']\s+content=["']([^"']+)["']/i,
+    ) ||
+    html.match(
+      /<meta\s+content=["']([^"']+)["']\s+name=["']twitter:description["']/i,
+    );
   if (twitterDescMatch && !metadata.description) {
     metadata.description = decodeHtmlEntities(twitterDescMatch[1].trim());
   }
@@ -84,4 +103,8 @@ function generateBookmarkHtml(bookmarks, folders) {
   return html;
 }
 
-module.exports = { parseHtmlMetadata, decodeHtmlEntities, generateBookmarkHtml };
+module.exports = {
+  parseHtmlMetadata,
+  decodeHtmlEntities,
+  generateBookmarkHtml,
+};

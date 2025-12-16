@@ -1,7 +1,7 @@
 const { v4: uuidv4 } = require("uuid");
 const bookmarkModel = require("../models/bookmark");
 const folderModel = require("../models/folder");
-const { ensureTagsExist, updateBookmarkTags } = require("../tag-helpers");
+const { ensureTagsExist, updateBookmarkTags } = require("./tag-helpers");
 const tagHelpers = require("./tags");
 const { parseTags, stringifyTags } = tagHelpers;
 
@@ -93,8 +93,14 @@ async function parseBookmarkHtml(db, html, userId, fetchFaviconWrapper) {
               updateBookmarkTags(db, created.id, tagIds);
             }
 
-            if (fetchFaviconWrapper) fetchFaviconWrapper(url, created.id).catch(console.error);
-            imported.push({ id: created.id, title, url, tags: tagsString || null });
+            if (fetchFaviconWrapper)
+              fetchFaviconWrapper(url, created.id).catch(console.error);
+            imported.push({
+              id: created.id,
+              title,
+              url,
+              tags: tagsString || null,
+            });
           }
         }
         i = aEnd + 4;

@@ -29,7 +29,7 @@
    - Local state: `bookmarks[]`, `folders[]`, `currentUser`, `dashboardConfig`, `filterConfig`
    - API calls via `api()` helper (handles CSRF tokens, JWT via cookies)
 
-3. **`apps/server/smart-organization.js`** – Tag suggestion engine:
+3. **`apps/server/helpers/smart-organization.js`** – Tag suggestion engine:
    - Domain-based categorization (GitHub → dev tags)
    - Tag co-occurrence analysis
    - Used in bookmark creation/import workflows
@@ -203,7 +203,7 @@ if (!isSafe && NODE_ENV === "production") {
 ## File Organization
 
 - `apps/server/app.js` – All API routes, middleware, DB logic (monolithic by design)
-- `server/smart-organization.js` – Pluggable tag suggestion module
+- `server/helpers/smart-organization.js` – Pluggable tag suggestion module
 - `server/__tests__/` – Jest test files
 - `public/js/app.js` – All frontend logic, rendering, state
 - `public/css/styles.css` – UI styles

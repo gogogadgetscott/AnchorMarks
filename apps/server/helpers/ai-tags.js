@@ -2,12 +2,6 @@ const smartOrg = require("./smart-organization");
 
 /**
  * AI Tag Suggestion Provider
- *
- * Supports optional providers via environment configuration:
- * - provider: 'openai' | 'ollama' | 'none'
- * - apiUrl: base URL for provider
- * - apiKey: API key (if required)
- * - model: model name
  */
 async function suggestTagsAI(
   { url, title, limit = 10, userTags = [] },
@@ -48,7 +42,11 @@ function buildPrompt({ url, title, userTags, limit }) {
       noDuplicates: true,
     },
   };
-  return `You are a bookmarking assistant. Given this JSON, propose up to ${limit} concise tags relevant to the page. Prioritize items from preferredTags when fitting. Return ONLY a JSON object: {\n  \"tags\": [\"...\"]\n} with lowercase tags, hyphenated where natural (e.g., web-dev), no spaces, no punctuation, no emojis.\n\nInput:\n${JSON.stringify(data, null, 2)}`;
+  return `You are a bookmarking assistant. Given this JSON, propose up to ${limit} concise tags relevant to the page. Prioritize items from preferredTags when fitting. Return ONLY a JSON object: {\n  "tags": ["..."]\n} with lowercase tags, hyphenated where natural (e.g., web-dev), no spaces, no punctuation, no emojis.\n\nInput:\n${JSON.stringify(
+    data,
+    null,
+    2,
+  )}`;
 }
 
 async function callOpenAI(prompt, aiConfig, limit) {
@@ -136,7 +134,6 @@ function extractTagsFromContent(content, limit) {
     const raw = Array.isArray(obj?.tags) ? obj.tags : [];
     return sanitizeTags(raw).slice(0, limit);
   } catch {
-    // Fallback: parse comma/line separated
     const candidates = content
       .split(/[,\n]/)
       .map((t) => t.trim())

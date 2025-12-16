@@ -8,7 +8,7 @@ Type=simple
 User=anchormarks
 Group=anchormarks
 WorkingDirectory=/opt/anchormarks
-ExecStart=/usr/bin/node /opt/anchormarks/apps/server/app.js
+ExecStart=/usr/bin/node /opt/anchormarks/apps/server
 Restart=on-failure
 RestartSec=10
 

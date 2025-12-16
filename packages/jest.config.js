@@ -7,7 +7,6 @@ module.exports = {
     "apps/server/**/*.js",
     "!apps/server/**/*.test.js",
     "!apps/server/app.js",
-    "!apps/server/smart-organization-endpoints.js",
   ],
   coverageThreshold: {
     global: {

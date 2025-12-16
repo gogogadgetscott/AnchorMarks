@@ -3,7 +3,7 @@ const https = require("https");
 const { parseHtmlMetadata } = require("./html");
 
 const config = require("../config");
-const { isPrivateAddress } = require("../utils");
+const { isPrivateAddress } = require("./utils.js");
 
 async function fetchUrlMetadata(url, redirectCount = 0) {
   if (redirectCount > 5) {
@@ -31,7 +31,10 @@ async function fetchUrlMetadata(url, redirectCount = 0) {
         response.headers.location
       ) {
         try {
-          const redirectUrl = new URL(response.headers.location, url).toString();
+          const redirectUrl = new URL(
+            response.headers.location,
+            url,
+          ).toString();
           return fetchUrlMetadata(redirectUrl, redirectCount + 1)
             .then(resolve)
             .catch(reject);
@@ -65,7 +68,10 @@ async function fetchUrlMetadata(url, redirectCount = 0) {
       response.on("end", async () => {
         try {
           // SSRF guard in production
-          if (config.NODE_ENV === "production" && (await isPrivateAddress(url))) {
+          if (
+            config.NODE_ENV === "production" &&
+            (await isPrivateAddress(url))
+          ) {
             return resolve(null);
           }
           const metadata = parseHtmlMetadata(html, url);
@@ -124,7 +130,11 @@ function detectContentType(url) {
       return "article";
     }
 
-    if (hostname.includes("docs.") || pathname.includes("/docs/") || pathname.includes("/documentation/")) {
+    if (
+      hostname.includes("docs.") ||
+      pathname.includes("/docs/") ||
+      pathname.includes("/documentation/")
+    ) {
       return "docs";
     }
 
