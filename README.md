@@ -20,7 +20,7 @@ A modern, self-hosted bookmark manager with browser sync, Flow Launcher integrat
 
 |                                          Dashboard                                          |                                        Search                                         |                                        Mobile                                         |
 | :-----------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------: |
-| <img src="screenshots/anchormarks_dashboard_1765737807089.png" width="300" alt="Dashboard"> | <img src="screenshots/anchormarks_search_1765737823968.png" width="300" alt="Search"> | <img src="screenshots/anchormarks_mobile_1765737840238.png" width="200" alt="Mobile"> |
+| <img src="apps/public/images/anchormarks_dashboard_1765737807089.png" width="300" alt="Dashboard"> | <img src="apps/public/images/anchormarks_search_1765737823968.png" width="300" alt="Search"> | <img src="apps/public/images/anchormarks_mobile_1765737840238.png" width="200" alt="Mobile"> |
 
 ## 🚀 Quick Start
 

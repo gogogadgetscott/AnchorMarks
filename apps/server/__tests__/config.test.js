@@ -7,7 +7,7 @@ function loadConfigWithEnv(env) {
   return require("../config");
 }
 
-describe("server/config.js", () => {
+describe("server/config", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {

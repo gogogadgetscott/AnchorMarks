@@ -129,9 +129,78 @@ function getUserTags(db, userId) {
     .all(userId);
 }
 
+  function getTagUsageCounts(db, userId) {
+    return db.prepare(`
+      SELECT t.name, COUNT(bt.tag_id) as count
+      FROM tags t
+      LEFT JOIN bookmark_tags bt ON bt.tag_id = t.id
+      WHERE t.user_id = ?
+      GROUP BY t.id
+      ORDER BY count DESC
+    `).all(userId);
+  }
+
+  function getTagCooccurrence(db, userId) {
+    return db.prepare(`
+      SELECT 
+        t1.name AS tag_name_a,
+        t2.name AS tag_name_b,
+        COUNT(*) AS count
+      FROM bookmark_tags bt1
+      JOIN bookmark_tags bt2 ON bt1.bookmark_id = bt2.bookmark_id AND bt1.tag_id < bt2.tag_id
+      JOIN tags t1 ON t1.id = bt1.tag_id
+      JOIN tags t2 ON t2.id = bt2.tag_id
+      WHERE t1.user_id = ? AND t2.user_id = ?
+      GROUP BY bt1.tag_id, bt2.tag_id
+      ORDER BY count DESC
+    `).all(userId, userId);
+  }
+
+  function getTagsForDomain(db, userId, domain) {
+    return db.prepare(`
+      SELECT DISTINCT t.name as tag
+      FROM bookmarks b
+      JOIN bookmark_tags bt ON bt.bookmark_id = b.id
+      JOIN tags t ON t.id = bt.tag_id
+      WHERE b.user_id = ? AND b.url LIKE ?
+    `).all(userId, `%${domain}%`).map(r => r.tag);
+  }
+
 module.exports = {
   ensureTagsExist,
   updateBookmarkTags,
   getBookmarkTagsString,
   getUserTags,
 };
+
+module.exports.renameOrMergeTag = renameOrMergeTag;
+module.exports.getTagUsageCounts = getTagUsageCounts;
+module.exports.getTagCooccurrence = getTagCooccurrence;
+module.exports.getTagsForDomain = getTagsForDomain;
+
+function renameOrMergeTag(db, userId, from, to) {
+  const sourceTag = db.prepare('SELECT * FROM tags WHERE user_id = ? AND name = ?').get(userId, from);
+  if (!sourceTag) return { error: 'not_found' };
+
+  const destinationTag = db.prepare('SELECT * FROM tags WHERE user_id = ? AND name = ?').get(userId, to);
+  const sourceRelations = db.prepare('SELECT bookmark_id, color_override FROM bookmark_tags WHERE tag_id = ?').all(sourceTag.id);
+  let updated = 0;
+
+  const runMerge = db.transaction(() => {
+    if (destinationTag) {
+      const insertRel = db.prepare('INSERT OR IGNORE INTO bookmark_tags (bookmark_id, tag_id, color_override) VALUES (?, ?, ?)');
+      sourceRelations.forEach((rel) => {
+        const info = insertRel.run(rel.bookmark_id, destinationTag.id, rel.color_override || null);
+        if (info.changes > 0) updated += 1;
+      });
+      db.prepare('DELETE FROM bookmark_tags WHERE tag_id = ?').run(sourceTag.id);
+      db.prepare('DELETE FROM tags WHERE id = ? AND user_id = ?').run(sourceTag.id, userId);
+    } else {
+      db.prepare('UPDATE tags SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?').run(to, sourceTag.id, userId);
+      updated = sourceRelations.length;
+    }
+  });
+
+  runMerge();
+  return { updated };
+}

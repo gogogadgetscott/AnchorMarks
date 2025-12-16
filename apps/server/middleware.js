@@ -1,3 +1,115 @@
+const path = require("path");
+const express = require("express");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const helmet = require("helmet");
+
+function setupMiddleware(app, { config, validateCsrfTokenMiddleware }) {
+  const cspDirectives = {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'"],
+    scriptSrcAttr: ["'self'"],
+    styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+    fontSrc: [
+      "'self'",
+      "https://fonts.gstatic.com",
+      "data:",
+      "https://r2cdn.perplexity.ai",
+    ],
+    imgSrc: ["'self'", "data:", "blob:", "https:", "http:"],
+    connectSrc: ["'self'"],
+    frameAncestors: ["'none'"],
+    objectSrc: ["'none'"],
+  };
+
+  app.use(
+    helmet({
+      contentSecurityPolicy: { directives: cspDirectives },
+      referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    }),
+  );
+
+  if (config.NODE_ENV === "production") {
+    app.use((req, res, next) => {
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("X-Frame-Options", "DENY");
+      res.setHeader("X-XSS-Protection", "1; mode=block");
+      res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+      next();
+    });
+  }
+
+  const corsOptions = {
+    origin: config.resolveCorsOrigin(),
+    credentials: true,
+    allowedHeaders: ["Content-Type", "X-CSRF-Token"],
+  };
+  app.use(cors(corsOptions));
+  app.use(cookieParser());
+
+  // Rate limiting for API
+  const requestCounts = new Map();
+  const RATE_LIMIT_WINDOW = 60000; // 1 minute
+  const RATE_LIMIT_MAX = 100; // requests per minute
+
+  function rateLimiter(req, res, next) {
+    if (config.NODE_ENV !== "production") return next();
+
+    const key = req.ip;
+    const now = Date.now();
+
+    if (!requestCounts.has(key)) {
+      requestCounts.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    } else {
+      const record = requestCounts.get(key);
+      if (now > record.resetTime) {
+        record.count = 1;
+        record.resetTime = now + RATE_LIMIT_WINDOW;
+      } else {
+        record.count++;
+        if (record.count > RATE_LIMIT_MAX) {
+          return res.status(429).json({ error: "Too many requests" });
+        }
+      }
+    }
+    next();
+  }
+
+  app.use("/api", rateLimiter);
+  app.use(express.json({ limit: "10mb" }));
+
+  // Request logging
+  app.use((req, res, next) => {
+    if (config.NODE_ENV === "development") {
+      console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
+    }
+    next();
+  });
+
+  app.use(
+    express.static(path.join(__dirname, "../public"), {
+      maxAge: config.NODE_ENV === "production" ? "1d" : 0,
+    }),
+  );
+
+  // Apply CSRF validation to state-changing operations (skip auth endpoints)
+  app.use("/api", (req, res, next) => {
+    const unauthenticatedPaths = ["/auth/login", "/auth/register", "/health"];
+
+    if (
+      unauthenticatedPaths.some((p) => req.url === p || req.url.startsWith(p))
+    ) {
+      return next();
+    }
+
+    if (["POST", "PUT", "DELETE", "PATCH"].includes(req.method)) {
+      return validateCsrfTokenMiddleware(req, res, next);
+    }
+    next();
+  });
+}
+
+// Export middleware setup and auth helpers
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET, isApiKeyAllowed } = require("./config");
 
@@ -72,6 +184,7 @@ function validateCsrfToken(db) {
 }
 
 module.exports = {
+  setupMiddleware,
   authenticateToken,
   validateCsrfToken,
 };
