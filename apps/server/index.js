@@ -1,9 +1,19 @@
 const fs = require("fs");
+const path = require("path");
 const http = require("http");
 const https = require("https");
 const app = require("./app");
 const config = require("./config");
-const { version } = require("../../package.json");
+let version = "unknown";
+try {
+    // Attempt to load root package.json (may not be present in some container builds)
+    // Resolve relative to this file to match previous behavior
+    const pkg = require(path.join(__dirname, "..", "..", "package.json"));
+    version = (pkg && pkg.version) || "unknown";
+} catch (err) {
+    // Fallback: leave version as 'unknown' and continue
+    console.warn("package.json not found, version unknown");
+}
 
 let server;
 let usingSsl = false;

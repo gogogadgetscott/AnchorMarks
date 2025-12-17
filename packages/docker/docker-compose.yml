@@ -2,23 +2,18 @@ services:
   anchormarks:
     build:
       context: ../..
-      dockerfile: packages/docker/Dockerfile
-    container_name: anchormarks
+      dockerfile: ./packages/docker/Dockerfile
     env_file:
-      - ../../apps/.env
+      - .env    
+    container_name: anchormarks
     restart: unless-stopped
     ports:
       - "${PORT:-3000}:${PORT:-3000}"
     volumes:
       - ../../apps/server:/apps/server
       - ../../apps/public:/apps/public
-      - ../../apps/data:/apps/data
-    environment:
-      - NODE_ENV=${NODE_ENV:-production}
-      - PORT=${PORT:-3000}
-      - HOST=${HOST:-0.0.0.0}
-      - DB_PATH=${DB_PATH:-/apps/data/database/anchormarks.db}
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
+      - ../../apps/database:/apps/database
+      - ../../apps/ssl:/apps/ssl
     healthcheck:
       test:
         [
@@ -27,7 +22,7 @@ services:
           "--no-verbose",
           "--tries=1",
           "--spider",
-          "http://localhost:${PORT:-3000}/api/health",
+          "http://${HOST:-0.0.0.0}:${PORT:-3000}/api/health",
         ]
       interval: 30s
       timeout: 10s
