@@ -25,14 +25,22 @@ A modern, self-hosted bookmark manager with browser sync, Flow Launcher integrat
 ## 🚀 Quick Start
 
 ```bash
-# Install and start development server
+# Install dependencies
 npm install
-npm run dev
 
+# Development (two options):
+
+# Option 1: Traditional (Express serves everything)
+npm run dev
 # Visit http://localhost:3000
+
+# Option 2: Vite dev server (faster HMR)
+npm run dev:vite  # Frontend on port 5173
+npm run dev       # API on port 3000 (in another terminal)
+# Visit http://localhost:5173
 ```
 
-📘 **[View full documentation →](public/help.html)** | [Installation Guide](INSTALL.md)
+📘 **[View full documentation →](public/help.html)** | [Installation Guide](INSTALL.md) | [Vite Migration](VITE_MIGRATION.md)
 
 ## 🔧 Configuration
 
@@ -56,6 +64,7 @@ See [INSTALL.md](INSTALL.md) for detailed deployment options.
 
 - **[Help & Documentation](public/help.html)** - Complete user guide with all features (in-app)
 - **[INSTALL.md](INSTALL.md)** - Installation and quick start guide
+- **[VITE_MIGRATION.md](VITE_MIGRATION.md)** - ✨ Vite build system and migration guide
 - **[SECURITY.md](SECURITY.md)** - Security policy and best practices
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development guidelines
 - **Auth & CSRF Flow** - Developer reference: [public/help.html#developer-auth-csrf](public/help.html#developer-auth-csrf)
