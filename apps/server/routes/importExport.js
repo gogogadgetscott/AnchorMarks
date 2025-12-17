@@ -8,10 +8,10 @@ function setupImportExportRoutes(
   db,
   { authenticateTokenMiddleware, fetchFaviconWrapper },
 ) {
-  app.post("/api/import/html", authenticateTokenMiddleware, (req, res) => {
+  app.post("/api/import/html", authenticateTokenMiddleware, async (req, res) => {
     try {
       const { html } = req.body;
-      const parsed = parseBookmarkHtml(
+      const parsed = await parseBookmarkHtml(
         db,
         html,
         req.user.id,

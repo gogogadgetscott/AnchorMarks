@@ -1,8 +1,16 @@
 import { defineConfig } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load environment variables from .env file
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+
+// Get backend port from environment or default to 3000
+const BACKEND_PORT = process.env.PORT || 3000;
+const BACKEND_URL = `http://localhost:${BACKEND_PORT}`;
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -21,22 +29,22 @@ export default defineConfig({
     sourcemap: true,
   },
   server: {
-    port: 5173,
+    port: parseInt(process.env.VITE_PORT) || 5173,
     strictPort: false,
     // Proxy API requests to Express backend
     proxy: {
       "/api": {
-        target: "http://localhost:3000",
+        target: BACKEND_URL,
         changeOrigin: true,
         secure: false,
       },
       "/favicons": {
-        target: "http://localhost:3000",
+        target: BACKEND_URL,
         changeOrigin: true,
         secure: false,
       },
       "/thumbnails": {
-        target: "http://localhost:3000",
+        target: BACKEND_URL,
         changeOrigin: true,
         secure: false,
       },

@@ -29,8 +29,8 @@
     "dev:full": "concurrently \"npm run dev\" \"npm run dev:vite\"",
     "build": "cd apps && npm run build:vite",
     "prod": "NODE_ENV=production node apps/server",
-    "start": "npm run dev",
-    "stop": ". ./apps/.env 2>/dev/null || true; PORT=$(printf '%s' \"${PORT:-3000}\" | tr -d '\\r'); PID=$(lsof -ti:$PORT 2>/dev/null); if [ -n \"$PID\" ]; then kill -9 $PID && echo \"Stopped process $PID on port $PORT\"; else echo \"No process found on port $PORT\"; fi",
+    "start": "npm run dev:full",
+    "stop": ". ./apps/.env 2>/dev/null || true; PORT=$(printf '%s' \"${PORT:-3000}\" | tr -d '\\r'); VITE_PORT=$(printf '%s' \"${VITE_PORT:-5173}\" | tr -d '\\r'); BACKEND_PID=$(lsof -ti:$PORT 2>/dev/null); VITE_PID=$(lsof -ti:$VITE_PORT 2>/dev/null); [ -n \"$BACKEND_PID\" ] && kill -9 $BACKEND_PID && echo \"Stopped backend process $BACKEND_PID on port $PORT\" || echo \"No backend process found on port $PORT\"; [ -n \"$VITE_PID\" ] && kill -9 $VITE_PID && echo \"Stopped Vite process $VITE_PID on port $VITE_PORT\" || echo \"No Vite process found on port $VITE_PORT\"",
     "restart": "npm run stop && npm run start",
     "test": "jest --config packages/jest.config.js",
     "test:watch": "jest --config packages/jest.config.js --watch",
@@ -45,9 +45,13 @@
     "docker:down": "docker compose -f packages/docker/docker-compose.yml down",
     "docker:logs": "docker compose -f packages/docker/docker-compose.yml logs -f",
     "docker:shell": "docker compose -f packages/docker/docker-compose.yml exec -it anchormarks /bin/sh",
+    "deploy:install": "sudo bash packages/deploy/install.sh",
     "help": "echo 'Available scripts:' && npm run --list"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

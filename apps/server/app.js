@@ -18,7 +18,7 @@ const { v4: uuidv4 } = require("uuid");
 
 const config = require("./config");
 const { initializeDatabase, ensureDirectories } = require("./models/database");
-const { authenticateToken, validateCsrfToken } = require("./middleware");
+const { authenticateToken, validateCsrfToken } = require("./middleware/index");
 const { setupAuthRoutes } = require("./routes/auth");
 const { isPrivateAddress, fetchFavicon } = require("./helpers/utils.js");
 const {

@@ -1,15 +1,31 @@
+# Node modules
 node_modules/
+
+# Local databases and their WAL/shm files
 *.db
 *.db-wal
 *.db-shm
+
+# Environment files (secrets)
 .env
+
+# macOS/Windows cruft
 .DS_Store
+Thumbs.db
+
+# Logs and coverage artifacts
 *.log
 *.lcov
-Thumbs.db
+coverage/
+
+# Application directories that should not be committed
 database/
 favicons/
-coverage/
+apps/dist/
 dist/
 .vite/
-apps/dist/
+
+# SSL certs/keys (can be generated locally or provided by deploy scripts)
+# Keep these out of the repo for security; the installer may create apps/ssl/
+ssl/
+*.pem

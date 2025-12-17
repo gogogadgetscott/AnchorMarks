@@ -95,4 +95,5 @@ module.exports = {
   deleteFolder,
   deleteAllForUser,
   createFolder,
+  ensureFolder,
 };

@@ -1,5 +1,17 @@
+/**
+ * Tag Helper Functions for Normalized Tag System
+ * Manages tags and bookmark-tag relationships
+ */
+
 const { v4: uuidv4 } = require("uuid");
 
+/**
+ * Parse tag string (comma-separated) and ensure all tags exist
+ * @param {object} db - Database instance
+ * @param {string} userId - User ID
+ * @param {string} tagsString - Comma-separated tag names
+ * @returns {Array} Array of tag IDs
+ */
 function ensureTagsExist(db, userId, tagsInput, options = {}) {
   const returnMap = options.returnMap === true;
 
@@ -14,19 +26,21 @@ function ensureTagsExist(db, userId, tagsInput, options = {}) {
   const tagNames = Array.isArray(tagsInput)
     ? tagsInput.map((t) => String(t))
     : tagsInput
-        .split(",")
-        .map((t) => t.trim())
-        .filter((t) => t.length > 0);
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
 
   const tagIds = [];
   const tagMap = {};
 
   for (const tagName of tagNames) {
+    // Check if tag exists
     let tag = db
       .prepare("SELECT id FROM tags WHERE user_id = ? AND name = ?")
       .get(userId, tagName);
 
     if (!tag) {
+      // Create new tag
       const tagId = uuidv4();
       db.prepare(
         "INSERT INTO tags (id, user_id, name, color, icon) VALUES (?, ?, ?, ?, ?)",
@@ -42,10 +56,18 @@ function ensureTagsExist(db, userId, tagsInput, options = {}) {
   return returnMap ? { tagIds, tagMap } : tagIds;
 }
 
+/**
+ * Update bookmark-tag relationships
+ * @param {object} db - Database instance
+ * @param {string} bookmarkId - Bookmark ID
+ * @param {Array} tagIds - Array of tag IDs
+ */
 function updateBookmarkTags(db, bookmarkId, tagIds, options = {}) {
   const colorOverridesByTagId = options.colorOverridesByTagId || {};
+  // Delete existing relationships
   db.prepare("DELETE FROM bookmark_tags WHERE bookmark_id = ?").run(bookmarkId);
 
+  // Create new relationships
   if (tagIds && tagIds.length > 0) {
     const stmt = db.prepare(
       "INSERT INTO bookmark_tags (bookmark_id, tag_id, color_override) VALUES (?, ?, ?)",
@@ -57,6 +79,12 @@ function updateBookmarkTags(db, bookmarkId, tagIds, options = {}) {
   }
 }
 
+/**
+ * Get tags for a bookmark as comma-separated string
+ * @param {object} db - Database instance
+ * @param {string} bookmarkId - Bookmark ID
+ * @returns {string} Comma-separated tag names
+ */
 function getBookmarkTagsString(db, bookmarkId) {
   const tags = db
     .prepare(
@@ -73,6 +101,12 @@ function getBookmarkTagsString(db, bookmarkId) {
   return tags.map((t) => t.name).join(", ");
 }
 
+/**
+ * Get all tags for a user with bookmark counts
+ * @param {object} db - Database instance
+ * @param {string} userId - User ID
+ * @returns {Array} Array of tags with metadata
+ */
 function getUserTags(db, userId) {
   return db
     .prepare(
