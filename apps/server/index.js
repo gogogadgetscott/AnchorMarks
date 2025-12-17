@@ -49,6 +49,12 @@ server.listen(config.PORT, config.HOST, () => {
     lines.push(`Server: ${serverUrl}`);
     lines.push(`API:    ${apiUrl}`);
     lines.push(`Mode:   ${config.NODE_ENV}`);
+
+    // Confirm .env file location
+    const envPath = path.join(__dirname, "..", ".env");
+    const envExists = fs.existsSync(envPath);
+    lines.push(`ENV file: ${envPath} ${envExists ? "✓" : "✗ (not found)"}`);
+
     lines.push(`Database: ${config.DB_PATH}`);
     lines.push(
         `Background jobs: ${config.ENABLE_BACKGROUND_JOBS ? "enabled" : "disabled"}`,
