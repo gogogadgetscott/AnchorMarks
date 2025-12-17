@@ -46,40 +46,46 @@ server.listen(config.PORT, config.HOST, () => {
     } catch (e) {
         lines.push("AnchorMarks v(unknown)");
     }
-    lines.push(`Server: ${serverUrl}`);
-    lines.push(`API:    ${apiUrl}`);
-    lines.push(`Mode:   ${config.NODE_ENV}`);
+    lines.push(`Server:                   ${serverUrl}`);
+    lines.push(`API:                      ${apiUrl}`);
+    lines.push(`Mode:                     ${config.NODE_ENV}`);
 
     // Confirm .env file location
     const envPath = path.join(__dirname, "..", ".env");
     const envExists = fs.existsSync(envPath);
-    lines.push(`ENV file: ${envPath} ${envExists ? "✓" : "✗ (not found)"}`);
+    lines.push(`ENV file:                 ${envPath} ${envExists ? "✓" : "✗ (not found)"}`);
 
-    lines.push(`Database: ${config.DB_PATH}`);
-    lines.push(
-        `Background jobs: ${config.ENABLE_BACKGROUND_JOBS ? "enabled" : "disabled"}`,
-    );
-    lines.push(
-        `Favicon background jobs: ${config.ENABLE_FAVICON_BACKGROUND_JOBS ? "enabled" : "disabled"}`,
-    );
+    // SSL configuration
+    if (config.SSL_ENABLED) {
+        const sslKeyExists = config.SSL_KEY && fs.existsSync(config.SSL_KEY);
+        const sslCertExists = config.SSL_CERT && fs.existsSync(config.SSL_CERT);
+        lines.push(`SSL Key:                  ${config.SSL_KEY || "(not set)"} ${sslKeyExists ? "✓" : "✗"}`);
+        lines.push(`SSL Cert:                 ${config.SSL_CERT || "(not set)"} ${sslCertExists ? "✓" : "✗"}`);
+    }
+
+
+    const dbExists = config.DB_PATH && fs.existsSync(config.DB_PATH);
+    lines.push(`Database:                 ${config.DB_PATH || "(not set)"} ${dbExists ? "✓" : "✗"}`);
+    lines.push(`Background jobs:          ${config.ENABLE_BACKGROUND_JOBS ? "enabled" : "disabled"}`);
+    lines.push(`Favicon background jobs:  ${config.ENABLE_FAVICON_BACKGROUND_JOBS ? "enabled" : "disabled"}`);
 
     // AI config
     try {
         const ai = config.getAIConfig();
         const aiProvider = ai.provider || "none";
         const aiModel = ai.model || "-";
-        lines.push(`AI: ${aiProvider}${aiProvider !== "none" ? ` (${aiModel})` : ""}`);
+        lines.push(`AI:                       ${aiProvider}${aiProvider !== "none" ? ` (${aiModel})` : ""}`);
     } catch (e) {
-        lines.push(`AI: (error reading config)`);
+        lines.push(`AI:                       (error reading config)`);
     }
 
     // CORS origin
     try {
         const cors = config.resolveCorsOrigin();
-        if (Array.isArray(cors)) lines.push(`CORS allowed origins: ${cors.join(", ")}`);
-        else lines.push(`CORS allowed origins: ${String(cors)}`);
+        if (Array.isArray(cors)) lines.push(`CORS allowed origins:     ${cors.join(", ")}`);
+        else lines.push(`CORS allowed origins:     ${String(cors)}`);
     } catch (e) {
-        lines.push(`CORS allowed origins: (invalid in production)`);
+        lines.push(`CORS allowed origins:     (invalid in production)`);
     }
 
     // JWT secret status (don't print the secret)
@@ -89,7 +95,7 @@ server.listen(config.PORT, config.HOST, () => {
     if (config.NODE_ENV === "production" && (!jwtEnv || jwtEnv.length < 20)) {
         jwtStatus = "WARNING: insecure or missing (set JWT_SECRET in env)";
     }
-    lines.push(`JWT secret: ${jwtStatus}`);
+    lines.push(`JWT secret:               ${jwtStatus}`);
 
     // Format box
     const maxWidth = Math.max(...lines.map((l) => l.length)) + 4;

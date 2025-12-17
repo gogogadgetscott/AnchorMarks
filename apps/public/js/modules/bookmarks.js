@@ -227,17 +227,17 @@ export function renderBookmarks() {
 export function createBookmarkCard(bookmark, index) {
   const tagsFromString = bookmark.tags
     ? bookmark.tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter((t) => t)
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => t)
     : [];
 
   const tagEntries = Array.isArray(bookmark.tags_detailed)
     ? bookmark.tags_detailed.map((t) => ({
-        name: t.name,
-        color: t.color,
-        color_override: t.color_override,
-      }))
+      name: t.name,
+      color: t.color,
+      color_override: t.color_override,
+    }))
     : tagsFromString.map((name) => ({ name }));
   const hostname = getHostname(bookmark.url);
   const baseUrl = getBaseUrl(bookmark.url);
@@ -251,11 +251,10 @@ export function createBookmarkCard(bookmark, index) {
       </label>
       <div class="bookmark-header">
         <div class="bookmark-favicon">
-          ${
-            !state.hideFavicons && bookmark.favicon
-              ? `<img src="${bookmark.favicon}" alt="" onerror="this.parentElement.innerHTML='<svg viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><path d=\\'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\\'/><path d=\\'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\\'/></svg>'">`
-              : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
-          }
+          ${!state.hideFavicons && bookmark.favicon
+      ? `<img src="${bookmark.favicon}" alt="" class="bookmark-favicon-img" data-fallback="true">`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
+    }
         </div>
         <div class="bookmark-info">
           <div class="bookmark-title">${escapeHtml(bookmark.title)}</div>
@@ -263,19 +262,18 @@ export function createBookmarkCard(bookmark, index) {
         </div>
       </div>
       ${bookmark.description ? `<div class="bookmark-description">${escapeHtml(bookmark.description)}</div>` : ""}
-      ${
-        tagEntries.length
-          ? `<div class="bookmark-tags">${tagEntries
-              .map((tag) => {
-                const tagName = tag.name;
-                const tagMeta = state.tagMetadata[tagName] || {};
-                const tagColor =
-                  tag.color_override || tag.color || tagMeta.color || "#f59e0b";
-                return `<span class="tag" data-action="toggle-filter-tag" data-tag="${escapeHtml(tagName)}" style="--tag-color: ${tagColor}">${escapeHtml(tagName)}</span>`;
-              })
-              .join("")}</div>`
-          : ""
-      }
+      ${tagEntries.length
+      ? `<div class="bookmark-tags">${tagEntries
+        .map((tag) => {
+          const tagName = tag.name;
+          const tagMeta = state.tagMetadata[tagName] || {};
+          const tagColor =
+            tag.color_override || tag.color || tagMeta.color || "#f59e0b";
+          return `<span class="tag" data-action="toggle-filter-tag" data-tag="${escapeHtml(tagName)}" style="--tag-color: ${tagColor}">${escapeHtml(tagName)}</span>`;
+        })
+        .join("")}</div>`
+      : ""
+    }
       <div class="bookmark-actions">
         <button class="bookmark-action-btn primary" data-action="open-bookmark" data-url="${escapeHtml(bookmark.url)}" title="Open bookmark">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -367,6 +365,17 @@ export function attachBookmarkCardListeners() {
         const id = card.dataset.id;
         const index = parseInt(card.dataset.index, 10);
         toggleBookmarkSelection(id, index, e.shiftKey, true);
+      });
+    }
+
+    // Handle favicon image errors with proper event listener
+    const faviconImg = card.querySelector(".bookmark-favicon-img");
+    if (faviconImg && faviconImg.dataset.fallback === "true") {
+      faviconImg.addEventListener("error", (e) => {
+        const parent = e.target.parentElement;
+        if (parent) {
+          parent.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+        }
       });
     }
   });

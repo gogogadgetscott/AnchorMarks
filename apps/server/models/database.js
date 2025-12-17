@@ -142,70 +142,64 @@ function initializeDatabase(DB_PATH) {
 
       CREATE INDEX IF NOT EXISTS idx_bookmark_views_user ON bookmark_views(user_id);
     `);
-    } catch (err) {
-      console.error(`Failed to initialize database at ${DB_PATH}:`, err);
-      throw err;
-    }
-
-    if (wasNew) {
-      console.log(`Created new database at ${DB_PATH}`);
-    } else {
-      console.log(`Opened existing database at ${DB_PATH}`);
-    }
+  } catch (err) {
+    console.error(`Failed to initialize database at ${DB_PATH}:`, err);
+    throw err;
+  }
 
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN hide_sidebar INTEGER DEFAULT 0",
     ).run();
-  } catch (err) {}
+  } catch (err) { }
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN dashboard_widgets TEXT",
     ).run();
-  } catch (err) {}
+  } catch (err) { }
   try {
     db.prepare("ALTER TABLE bookmarks ADD COLUMN thumbnail_local TEXT").run();
-  } catch (err) {}
+  } catch (err) { }
   try {
     db.prepare(
       "ALTER TABLE bookmark_tags ADD COLUMN color_override TEXT",
     ).run();
-  } catch (err) {}
+  } catch (err) { }
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN include_child_bookmarks INTEGER DEFAULT 0",
     ).run();
-  } catch (err) {}
+  } catch (err) { }
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN dashboard_mode TEXT DEFAULT 'folder'",
     ).run();
-  } catch (err) {}
+  } catch (err) { }
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN dashboard_tags TEXT",
     ).run();
-  } catch (err) {}
+  } catch (err) { }
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN dashboard_sort TEXT DEFAULT 'recently_added'",
     ).run();
-  } catch (err) {}
+  } catch (err) { }
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN collapsed_sections TEXT",
     ).run();
-  } catch (err) {}
+  } catch (err) { }
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN current_view TEXT DEFAULT 'all'",
     ).run();
-  } catch (err) {}
+  } catch (err) { }
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN snap_to_grid INTEGER DEFAULT 1",
     ).run();
-  } catch (err) {}
+  } catch (err) { }
 
   return db;
 }
