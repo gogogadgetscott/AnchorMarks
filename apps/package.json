@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "AnchorMarks application (server and public frontend)",
   "private": true,
-  "type": "module",
   "scripts": {
     "dev:vite": "vite",
     "build:vite": "vite build",
