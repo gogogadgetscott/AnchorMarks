@@ -42,6 +42,7 @@
     "docker:down": "docker compose -f packages/docker/docker-compose.yml down",
     "docker:logs": "docker compose -f packages/docker/docker-compose.yml logs -f",
     "docker:shell": "docker compose -f packages/docker/docker-compose.yml exec -it anchormarks /bin/sh",
+    "deploy:install": "sudo bash packages/deploy/install.sh",
     "help": "echo 'Available scripts:' && npm run --list"
   },
   "engines": {

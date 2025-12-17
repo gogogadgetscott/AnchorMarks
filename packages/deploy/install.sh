@@ -8,7 +8,7 @@ echo "🔗 AnchorMarks Deployment Script"
 echo "==============================="
 
 # Configuration
-ROOT_DIR="../.."
+ROOT_DIR="."
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Use a system user with UID 1001 to match the container's node user
@@ -53,12 +53,41 @@ EOF
   echo "✅ Generated .env file with secure JWT secret"
 fi
 
+# Generate self-signed SSL certs (for initial setup) and set env vars
+SSL_DIR="$ROOT_DIR/apps/ssl"
+SSL_KEY_PATH="$SSL_DIR/privkey.pem"
+SSL_CERT_PATH="$SSL_DIR/fullchain.pem"
+if [ ! -f "$SSL_KEY_PATH" ] || [ ! -f "$SSL_CERT_PATH" ]; then
+  mkdir -p "$SSL_DIR"
+  echo "🔐 Generating self-signed SSL certificate for initial setup..."
+  CN="${HOST:-$(hostname -f 2>/dev/null || hostname)}"
+  openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout "$SSL_KEY_PATH" -out "$SSL_CERT_PATH" \
+    -subj "/CN=${CN}"
+  echo "✅ Generated self-signed cert and key in $SSL_DIR"
+fi
+
+# Append SSL paths to .env if they are not already present
+if [ -f "$ROOT_DIR/apps/.env" ]; then
+  if ! grep -q '^SSL_KEY=' "$ROOT_DIR/apps/.env" 2>/dev/null; then
+    echo "SSL_KEY=$SSL_KEY_PATH" >> "$ROOT_DIR/apps/.env"
+  fi
+  if ! grep -q '^SSL_CERT=' "$ROOT_DIR/apps/.env" 2>/dev/null; then
+    echo "SSL_CERT=$SSL_CERT_PATH" >> "$ROOT_DIR/apps/.env"
+  fi
+fi
+
 echo "👤 Setting permissions on application directories..."
 # Ensure data and server directories are owned by UID 1001 so container's node user can write
 chown -R 1001:1001 $ROOT_DIR/apps || chown -R $APP_USER:$APP_USER $ROOT_DIR/apps || true
 chown -R 1001:1001 $ROOT_DIR/apps/database || true
 if [ -f $ROOT_DIR/apps/.env ]; then
   chmod 600 $ROOT_DIR/apps/.env
+fi
+if [ -d "$ROOT_DIR/apps/ssl" ]; then
+  chown -R 1001:1001 "$ROOT_DIR/apps/ssl" || true
+  chmod 644 "$ROOT_DIR/apps/ssl/fullchain.pem" 2>/dev/null || true
+  chmod 600 "$ROOT_DIR/apps/ssl/privkey.pem" 2>/dev/null || true
 fi
 
 echo "🚀 Setting up systemd service..."
@@ -95,5 +124,5 @@ echo ""
 echo "📋 Next steps:"
 echo "   1. Configure Nginx (see deploy/nginx.conf)"
 echo "   2. Set up SSL with Let's Encrypt"
-echo "   3. Update CORS_ORIGIN in $ROOT_DIR.env"
+echo "   3. Update CORS_ORIGIN in $ROOT_DIR/.env"
 echo ""

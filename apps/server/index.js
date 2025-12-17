@@ -1,13 +1,34 @@
+const fs = require("fs");
+const http = require("http");
+const https = require("https");
 const app = require("./app");
 const config = require("./config");
 const { version } = require("../../package.json");
 
-app.listen(config.PORT, config.HOST, () => {
+let server;
+let usingSsl = false;
+if (config.SSL_ENABLED) {
+    try {
+        const key = fs.readFileSync(config.SSL_KEY);
+        const cert = fs.readFileSync(config.SSL_CERT);
+        server = https.createServer({ key, cert }, app);
+        usingSsl = true;
+    } catch (err) {
+        console.warn("⚠️  Failed to read SSL key/cert, falling back to HTTP:", err.message);
+        server = http.createServer(app);
+        usingSsl = false;
+    }
+} else {
+    server = http.createServer(app);
+}
+
+server.listen(config.PORT, config.HOST, () => {
     const lines = [];
 
+    const protocol = usingSsl ? "https" : "http";
     const hostDisplay = config.HOST === "0.0.0.0" ? "localhost" : config.HOST;
-    const apiUrl = `http://${hostDisplay}:${config.PORT}/api`;
-    const serverUrl = `http://${hostDisplay}:${config.PORT}`;
+    const apiUrl = `${protocol}://${hostDisplay}:${config.PORT}/api`;
+    const serverUrl = `${protocol}://${hostDisplay}:${config.PORT}`;
 
     // Gather config info
     try {

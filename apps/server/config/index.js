@@ -4,6 +4,9 @@ const path = require("path");
 const NODE_ENV = process.env.NODE_ENV || "development";
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
+const SSL_KEY = process.env.SSL_KEY || null;
+const SSL_CERT = process.env.SSL_CERT || null;
+const SSL_ENABLED = Boolean(SSL_KEY && SSL_CERT);
 const DEFAULT_JWT_SECRET = "anchormarks-secret-key-change-in-production";
 const INSECURE_SECRETS = [
   DEFAULT_JWT_SECRET,
@@ -77,6 +80,9 @@ module.exports = {
   NODE_ENV,
   PORT,
   HOST,
+  SSL_KEY,
+  SSL_CERT,
+  SSL_ENABLED,
   JWT_SECRET,
   DB_PATH,
   ENABLE_BACKGROUND_JOBS,

@@ -5,9 +5,12 @@ const fs = require("fs");
 function initializeDatabase(DB_PATH) {
   const dbDir = path.dirname(DB_PATH);
   if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-  const db = new Database(DB_PATH);
-  db.pragma("journal_mode = WAL");
-  db.exec(`
+  const wasNew = !fs.existsSync(DB_PATH);
+  let db;
+  try {
+    db = new Database(DB_PATH);
+    db.pragma("journal_mode = WAL");
+    db.exec(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         email TEXT UNIQUE NOT NULL,
@@ -139,6 +142,16 @@ function initializeDatabase(DB_PATH) {
 
       CREATE INDEX IF NOT EXISTS idx_bookmark_views_user ON bookmark_views(user_id);
     `);
+    } catch (err) {
+      console.error(`Failed to initialize database at ${DB_PATH}:`, err);
+      throw err;
+    }
+
+    if (wasNew) {
+      console.log(`Created new database at ${DB_PATH}`);
+    } else {
+      console.log(`Opened existing database at ${DB_PATH}`);
+    }
 
   try {
     db.prepare(
