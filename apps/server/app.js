@@ -159,8 +159,19 @@ setupSmartOrganizationRoutes(app, db, {
   validateCsrfTokenMiddleware,
 });
 
-// Serve frontend assets from apps/public (CSS/JS/images)
-app.use(express.static(path.join(__dirname, "..", "public")));
+// Serve frontend assets
+// In development: Vite dev server runs on port 5173, Express serves API on port 3000
+// In production: Express serves built Vite assets from dist/
+const staticDir =
+  config.NODE_ENV === "production" &&
+  fs.existsSync(path.join(__dirname, "..", "dist"))
+    ? path.join(__dirname, "..", "dist")
+    : path.join(__dirname, "..", "public");
+
+console.log(
+  `Serving frontend from: ${staticDir} (${config.NODE_ENV} mode)`,
+);
+app.use(express.static(staticDir));
 
 // Serve frontend for all other routes (static catch-all)
 const setupStaticRoutes = require("./routes/static");

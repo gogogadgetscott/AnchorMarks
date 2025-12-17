@@ -10,3 +10,6 @@ Thumbs.db
 database/
 favicons/
 coverage/
+dist/
+.vite/
+apps/dist/

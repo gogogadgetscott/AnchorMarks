@@ -25,6 +25,9 @@
   ],
   "scripts": {
     "dev": "NODE_ENV=development node apps/server",
+    "dev:vite": "cd apps && npm run dev:vite",
+    "dev:full": "concurrently \"npm run dev\" \"npm run dev:vite\"",
+    "build": "cd apps && npm run build:vite",
     "prod": "NODE_ENV=production node apps/server",
     "start": "npm run dev",
     "stop": ". ./apps/.env 2>/dev/null || true; PORT=$(printf '%s' \"${PORT:-3000}\" | tr -d '\\r'); PID=$(lsof -ti:$PORT 2>/dev/null); if [ -n \"$PID\" ]; then kill -9 $PID && echo \"Stopped process $PID on port $PORT\"; else echo \"No process found on port $PORT\"; fi",
@@ -35,7 +38,7 @@
     "test:coverage": "jest --config packages/jest.config.js --coverage",
     "lint": "eslint \"**/*.js\" --config packages/eslint.config.cjs --fix && prettier . --write",
     "lint-check": "eslint \"**/*.js\" --config packages/eslint.config.cjs && prettier . --check",
-    "clean": "rm -rf node_modules coverage",
+    "clean": "rm -rf node_modules coverage apps/dist",
     "reinstall": "npm run clean && npm install",
     "docker:build": "docker compose -f packages/docker/docker-compose.yml build",
     "docker:up": "[ -f ./apps/.env ] && export PORT=$(grep -E '^PORT=' ./apps/.env | cut -d'=' -f2- | tr -d '\\r') || true && docker compose -f packages/docker/docker-compose.yml up -d",
