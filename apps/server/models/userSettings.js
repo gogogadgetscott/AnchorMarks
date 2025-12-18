@@ -72,6 +72,8 @@ function upsertUserSettings(db, userId, body = {}) {
       pushIf("snap_to_grid", body.snap_to_grid ? 1 : 0);
     if (body.current_view !== undefined)
       pushIf("current_view", body.current_view);
+    if (body.tour_completed !== undefined)
+      pushIf("tour_completed", body.tour_completed ? 1 : 0);
 
     if (updates.length > 0) {
       updates.push("updated_at = CURRENT_TIMESTAMP");
@@ -91,8 +93,8 @@ function upsertUserSettings(db, userId, body = {}) {
       `
     INSERT INTO user_settings (
       user_id, view_mode, hide_favicons, hide_sidebar, ai_suggestions_enabled, theme, dashboard_mode,
-      dashboard_tags, dashboard_sort, widget_order, dashboard_widgets, collapsed_sections, include_child_bookmarks
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      dashboard_tags, dashboard_sort, widget_order, dashboard_widgets, collapsed_sections, include_child_bookmarks, tour_completed
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     )
     .run(
@@ -114,6 +116,7 @@ function upsertUserSettings(db, userId, body = {}) {
       body.dashboard_widgets ? JSON.stringify(body.dashboard_widgets) : null,
       body.collapsed_sections ? JSON.stringify(body.collapsed_sections) : null,
       body.include_child_bookmarks || 0,
+      body.tour_completed ? 1 : 0,
     );
 }
 

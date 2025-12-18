@@ -6,12 +6,31 @@
 import * as state from "@features/state.ts";
 import { showToast } from "@utils/ui-helpers.ts";
 
+// Save tour completed state to server
+async function saveTourCompleted(): Promise<void> {
+  try {
+    const { saveSettings } = await import("@features/bookmarks/settings.ts");
+    await saveSettings({ tour_completed: true });
+    state.setTourCompleted(true);
+  } catch (err) {
+    console.error("Failed to save tour completed state:", err);
+  }
+}
+
 // Check if welcome tour should be shown
 export function checkWelcomeTour(): void {
   if (!state.isInitialLoad) return;
 
+  // Check server-side setting (synced across devices)
+  if (state.tourCompleted) return;
+
+  // Also check localStorage for backward compatibility
   const dismissed = localStorage.getItem("anchormarks_tour_dismissed");
-  if (dismissed) return;
+  if (dismissed) {
+    // Migrate localStorage setting to server
+    saveTourCompleted();
+    return;
+  }
 
   // Show tour for new users (fewer than 20 bookmarks)
   if (state.bookmarks.length < 20) {
@@ -145,7 +164,11 @@ export function endTour(): void {
   if (popover) popover.classList.add("hidden");
 
   state.tourState.active = false;
+  
+  // Save to server (also keeps localStorage for backward compatibility)
+  saveTourCompleted();
   localStorage.setItem("anchormarks_tour_dismissed", "true");
+  
   showToast("🎉 Tour complete! Happy bookmarking!");
 }
 
@@ -164,7 +187,12 @@ export function skipTour(): void {
   if (popover) popover.classList.add("hidden");
 
   state.tourState.active = false;
+  
+  // Save to server (also keeps localStorage for backward compatibility)
+  saveTourCompleted();
   localStorage.setItem("anchormarks_tour_dismissed", "true");
+  
+  showToast("Tour skipped. You can restart it from Settings anytime!");
 }
 
 export default {

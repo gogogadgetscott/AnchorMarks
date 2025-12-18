@@ -24,6 +24,7 @@ export async function loadSettings(): Promise<void> {
     state.setWidgetOrder(settings.widget_order || {});
     state.setDashboardWidgets(settings.dashboard_widgets || []);
     state.setCollapsedSections(settings.collapsed_sections || []);
+    state.setTourCompleted(settings.tour_completed || false);
 
     // Load tag sort preference
     if (settings.tag_sort) {

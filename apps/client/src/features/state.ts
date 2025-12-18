@@ -40,6 +40,7 @@ export let hideSidebar: boolean = false;
 export let aiSuggestionsEnabled: boolean = true;
 export let includeChildBookmarks: boolean = false;
 export let snapToGrid: boolean = true;
+export let tourCompleted: boolean = false;
 
 // Dashboard State
 export let dashboardConfig = {
@@ -245,6 +246,9 @@ export function setIncludeChildBookmarks(val: boolean) {
 }
 export function setSnapToGrid(val: boolean) {
   snapToGrid = val;
+}
+export function setTourCompleted(val: boolean) {
+  tourCompleted = val;
 }
 export function setDashboardConfig(val: any) {
   dashboardConfig = val;

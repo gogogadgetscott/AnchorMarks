@@ -17,12 +17,33 @@ try {
 
 let server;
 let usingSsl = false;
+let httpRedirectServer = null;
+
 if (config.SSL_ENABLED) {
   try {
     const key = fs.readFileSync(config.SSL_KEY);
     const cert = fs.readFileSync(config.SSL_CERT);
     server = https.createServer({ key, cert }, app);
     usingSsl = true;
+
+    // Create HTTP server to redirect to HTTPS
+    const httpRedirectPort = config.NODE_ENV === "production" ? 80 : parseInt(config.PORT) - 1;
+    httpRedirectServer = http.createServer((req, res) => {
+      const host = req.headers.host?.replace(`:${httpRedirectPort}`, `:${config.PORT}`) || `localhost:${config.PORT}`;
+      const redirectUrl = `https://${host}${req.url}`;
+      res.writeHead(301, { Location: redirectUrl });
+      res.end();
+    });
+
+    httpRedirectServer.listen(httpRedirectPort, config.HOST, () => {
+      console.log(`HTTP → HTTPS redirect server running on port ${httpRedirectPort}`);
+    }).on("error", (err) => {
+      if (err.code === "EADDRINUSE" || err.code === "EACCES") {
+        console.log(`ℹ️  HTTP redirect port ${httpRedirectPort} not available (${err.code}), skipping redirect server`);
+      } else {
+        console.warn("⚠️  Failed to start HTTP redirect server:", err.message);
+      }
+    });
   } catch (err) {
     console.warn(
       "⚠️  Failed to read SSL key/cert, falling back to HTTP:",

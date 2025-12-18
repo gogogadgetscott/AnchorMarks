@@ -83,6 +83,7 @@ function setupApiRoutes(app, db, helpers) {
           include_child_bookmarks: settings.include_child_bookmarks || 0,
           current_view: settings.current_view || "all",
           snap_to_grid: settings.snap_to_grid === 1,
+          tour_completed: settings.tour_completed === 1,
         });
       } catch (err) {
         console.error("Error saving settings:", err);
@@ -116,6 +117,7 @@ function setupApiRoutes(app, db, helpers) {
           dashboard_sort: "updated_desc",
           widget_order: {},
           collapsed_sections: [],
+          tour_completed: false,
         });
         return;
       }
@@ -143,6 +145,7 @@ function setupApiRoutes(app, db, helpers) {
         include_child_bookmarks: settings.include_child_bookmarks || 0,
         current_view: settings.current_view || "all",
         snap_to_grid: settings.snap_to_grid === 1,
+        tour_completed: settings.tour_completed === 1,
       });
     } catch (err) {
       console.error("Error fetching settings:", err);
@@ -182,25 +185,127 @@ function setupApiRoutes(app, db, helpers) {
 
         // Create example bookmarks
         const exampleBookmarks = [
+          // Getting Started
           {
             title: "AnchorMarks Documentation",
             url: "https://github.com/gogogadgetscott/AnchorMarks",
             description: "Official documentation and source code for AnchorMarks",
+            tags: "docs,anchormarks",
             folder_id: folderId,
           },
+          // Productivity
           {
             title: "Google",
             url: "https://www.google.com",
             description: "Search the web",
+            tags: "search,productivity",
             folder_id: null,
           },
           {
+            title: "Gmail",
+            url: "https://mail.google.com",
+            description: "Google email service",
+            tags: "email,productivity",
+            folder_id: null,
+          },
+          {
+            title: "Google Calendar",
+            url: "https://calendar.google.com",
+            description: "Manage your schedule",
+            tags: "calendar,productivity",
+            folder_id: null,
+          },
+          {
+            title: "Google Drive",
+            url: "https://drive.google.com",
+            description: "Cloud storage and collaboration",
+            tags: "storage,productivity",
+            folder_id: null,
+          },
+          {
+            title: "Notion",
+            url: "https://www.notion.so",
+            description: "All-in-one workspace",
+            tags: "notes,productivity",
+            folder_id: null,
+          },
+          // Development
+          {
             title: "GitHub",
             url: "https://github.com",
-            description: "Where the world builds software",
+            description: "Code hosting and collaboration",
+            tags: "development,git",
+            folder_id: null,
+          },
+          {
+            title: "Stack Overflow",
+            url: "https://stackoverflow.com",
+            description: "Programming Q&A community",
+            tags: "development,help",
+            folder_id: null,
+          },
+          {
+            title: "MDN Web Docs",
+            url: "https://developer.mozilla.org",
+            description: "Web development documentation",
+            tags: "development,docs",
+            folder_id: null,
+          },
+          {
+            title: "CodePen",
+            url: "https://codepen.io",
+            description: "Frontend code playground",
+            tags: "development,sandbox",
+            folder_id: null,
+          },
+          // Learning
+          {
+            title: "Wikipedia",
+            url: "https://www.wikipedia.org",
+            description: "Free encyclopedia",
+            tags: "learning,reference",
+            folder_id: null,
+          },
+          {
+            title: "YouTube",
+            url: "https://www.youtube.com",
+            description: "Video streaming platform",
+            tags: "learning,entertainment",
+            folder_id: null,
+          },
+          {
+            title: "Coursera",
+            url: "https://www.coursera.org",
+            description: "Online courses and degrees",
+            tags: "learning,education",
+            folder_id: null,
+          },
+          // News & Social
+          {
+            title: "Reddit",
+            url: "https://www.reddit.com",
+            description: "Social news and discussion",
+            tags: "social,news",
+            folder_id: null,
+          },
+          {
+            title: "Hacker News",
+            url: "https://news.ycombinator.com",
+            description: "Tech news and discussion",
+            tags: "news,tech",
+            folder_id: null,
+          },
+          {
+            title: "Twitter / X",
+            url: "https://twitter.com",
+            description: "Social microblogging",
+            tags: "social,news",
             folder_id: null,
           },
         ];
+
+        // Tag helper functions
+        const { ensureTagsExist, updateBookmarkTags } = require("../helpers/tag-helpers");
 
         let bookmarksCreated = 0;
         for (const bm of exampleBookmarks) {
@@ -209,6 +314,15 @@ function setupApiRoutes(app, db, helpers) {
             `INSERT INTO bookmarks (id, user_id, folder_id, title, url, description) 
              VALUES (?, ?, ?, ?, ?, ?)`,
           ).run(id, userId, bm.folder_id, bm.title, bm.url, bm.description);
+
+          // Add tags if present
+          if (bm.tags) {
+            const tagNames = bm.tags.split(",").map((t) => t.trim()).filter(Boolean);
+            if (tagNames.length > 0) {
+              const tagIds = ensureTagsExist(db, userId, tagNames);
+              updateBookmarkTags(db, id, tagIds);
+            }
+          }
 
           // Fetch favicon in background
           if (fetchFaviconWrapper) {
