@@ -20,4 +20,4 @@ We currently support security fixes on the latest main branch and the most recen
 
 Developer reference: the authentication and CSRF protection flow is documented in the in-app help page under “Developer: Auth & CSRF”:
 
-- `public/help.html#developer-auth-csrf`
+- `help.html#developer-auth-csrf`

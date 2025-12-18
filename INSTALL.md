@@ -43,7 +43,7 @@ docker compose -f tooling/docker/docker-compose.yml up -d
 
 ```bash
 # Run automated installer
-sudo bash deploy/install.sh
+sudo bash tooling/deploy/install.sh
 
 # Follow prompts for domain setup
 ```
@@ -54,7 +54,7 @@ sudo bash deploy/install.sh
 2. Add your first bookmark (click "+ New Bookmark")
 3. Organize with folders and tags
 
-📘 **[View full documentation →](public/help.html)**
+📘 **[View full documentation →](help.html)**
 
 ---
 
@@ -328,7 +328,7 @@ sudo chmod 700 /var/lib/anchormarks
 
 ```bash
 # Copy service file
-sudo cp deploy/anchormarks.service /etc/systemd/system/
+sudo cp tooling/deploy/anchormarks.service /etc/systemd/system/
 
 # Edit if needed
 sudo nano /etc/systemd/system/anchormarks.service
@@ -353,7 +353,7 @@ sudo journalctl -u anchormarks -f
 1. **Copy configuration**
 
    ```bash
-   sudo cp deploy/nginx.conf /etc/nginx/sites-available/anchormarks
+   sudo cp tooling/deploy/nginx.conf /etc/nginx/sites-available/anchormarks
    ```
 
 2. **Edit configuration**

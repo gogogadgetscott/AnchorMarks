@@ -6,7 +6,7 @@ A modern, self-hosted bookmark manager with browser sync, Flow Launcher integrat
 
 - **📚 Organize Bookmarks** - Create folders with custom colors
 - **🔍 Fast Search** - Full-text search with intelligent ranking
-- **🎯 Advanced Filtering** - Full-width filter bar with folder/tag counts (see [Help](public/help.html#search))
+- **🎯 Advanced Filtering** - Full-width filter bar with folder/tag counts (see [Help](help.html#search))
 - **⭐ Favorites** - Quick access to important bookmarks
 - **🏷️ Tags** - Categorize and filter bookmarks
 - **🌙 Dark Mode** - Beautiful light and dark themes
@@ -20,7 +20,7 @@ A modern, self-hosted bookmark manager with browser sync, Flow Launcher integrat
 
 |                                             Dashboard                                              |                                            Search                                            |                                            Mobile                                            |
 | :------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------: |
-| <img src="apps/public/images/anchormarks_dashboard_1765737807089.png" width="300" alt="Dashboard"> | <img src="apps/public/images/anchormarks_search_1765737823968.png" width="300" alt="Search"> | <img src="apps/public/images/anchormarks_mobile_1765737840238.png" width="200" alt="Mobile"> |
+| <img src="apps/client/public/images/anchormarks_dashboard_1765737807089.png" width="300" alt="Dashboard"> | <img src="apps/client/public/images/anchormarks_search_1765737823968.png" width="300" alt="Search"> | <img src="apps/client/public/images/anchormarks_mobile_1765737840238.png" width="200" alt="Mobile"> |
 
 ## 🚀 Quick Start
 
@@ -40,7 +40,7 @@ npm run dev       # API on port 3000 (in another terminal)
 # Visit http://localhost:5173
 ```
 
-📘 **[View full documentation →](public/help.html)** | [Installation Guide](INSTALL.md) | [Vite Migration](VITE_MIGRATION.md)
+📘 **[View full documentation →](help.html)** | [Installation Guide](INSTALL.md) | [Vite Migration](VITE_MIGRATION.md)
 
 ## 🔧 Configuration
 
@@ -62,12 +62,12 @@ See [INSTALL.md](INSTALL.md) for detailed deployment options.
 
 ## 📝 Documentation
 
-- **[Help & Documentation](public/help.html)** - Complete user guide with all features (in-app)
+- **[Help & Documentation](help.html)** - Complete user guide with all features (in-app)
 - **[INSTALL.md](INSTALL.md)** - Installation and quick start guide
 - **[VITE_MIGRATION.md](VITE_MIGRATION.md)** - ✨ Vite build system and migration guide
 - **[SECURITY.md](SECURITY.md)** - Security policy and best practices
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development guidelines
-- **Auth & CSRF Flow** - Developer reference: [public/help.html#developer-auth-csrf](public/help.html#developer-auth-csrf)
+- **Auth & CSRF Flow** - Developer reference: [help.html#developer-auth-csrf](help.html#developer-auth-csrf)
 
 ## 🧪 Testing
 
@@ -94,7 +94,7 @@ MIT License - use, modify, and distribute freely.
 
 ---
 
-**[View full documentation in Help →](public/help.html)**
+**[View full documentation in Help →](help.html)**
 
 ## 🛳️ Deployment Notes
 

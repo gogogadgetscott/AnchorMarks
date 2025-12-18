@@ -39,7 +39,7 @@
     "test:coverage": "jest --config tooling/jest.config.js --coverage",
     "lint": "eslint \"**/*.js\" --config tooling/eslint.config.cjs --fix && prettier . --write",
     "lint-check": "eslint \"**/*.js\" --config tooling/eslint.config.cjs && prettier . --check",
-    "clean": "rm -rf node_modules coverage apps/dist",
+    "clean": "rm -rf node_modules coverage apps/client/dist",
     "reinstall": "npm run clean && npm install",
     "docker:build": "docker compose -f tooling/docker/docker-compose.yml build",
     "docker:up": "[ -f ./apps/.env ] && export PORT=$(grep -E '^PORT=' ./apps/.env | cut -d'=' -f2- | tr -d '\\r') || true && docker compose -f tooling/docker/docker-compose.yml up -d",
