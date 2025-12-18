@@ -1238,7 +1238,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         state.setCurrentCollection(null);
         state.setCurrentView("all");
         updateActiveNav();
-        document.getElementById("view-title").textContent = "Bookmarks";
+        const viewTitle = document.getElementById("view-title");
+        if (viewTitle) viewTitle.textContent = "Bookmarks";
         renderActiveFilters();
         loadBookmarks();
         break;
@@ -1246,7 +1247,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         state.setCurrentCollection(null);
         state.setCurrentView("all");
         updateActiveNav();
-        document.getElementById("view-title").textContent = "Bookmarks";
+        const viewTitleEl = document.getElementById("view-title");
+        if (viewTitleEl) viewTitleEl.textContent = "Bookmarks";
         renderActiveFilters();
         loadBookmarks();
         break;
