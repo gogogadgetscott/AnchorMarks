@@ -7,11 +7,9 @@ import * as state from "@features/state.js";
 import { api } from "@services/api.js";
 import { escapeHtml, parseTagInput } from "@utils/index.js";
 import { showToast, updateActiveNav, dom } from "@utils/ui-helpers.js";
-import {
-  renderBookmarks,
-  loadBookmarks,
-} from "@features/bookmarks/bookmarks.js";
+import { renderBookmarks, loadBookmarks } from "@features/bookmarks/bookmarks.js";
 import { addDashboardWidget } from "@features/bookmarks/dashboard.js";
+import { Badge, TagChip, Icon } from "@components/index.js";
 
 // Render sidebar tags
 export function renderSidebarTags() {
@@ -54,8 +52,7 @@ export function renderSidebarTags() {
   });
 
   state.setAllSidebarTags(allTags);
-
-  if (countBadge) countBadge.textContent = allTags.length;
+  if (countBadge) countBadge.innerHTML = Badge(allTags.length, { id: "tags-count" });
 
   // Show "show more" if more than 15 tags
   if (showMoreBtn) {
@@ -163,7 +160,7 @@ export function renderTagsList(tags) {
     div.dataset.tagCount = tag.count;
     div.innerHTML = `
             <span class="tag-name">${escapeHtml(tag.name)}</span>
-            <span class="tag-count">${tag.count}</span>
+            ${Badge(tag.count, { className: "tag-count" })}
         `;
 
     div.addEventListener("click", (e) => {
@@ -261,14 +258,10 @@ export function renderActiveFilters() {
   if (currentFolder && folderName) {
     html += `
             <div class="filter-chip folder-chip">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                </svg>
+                ${Icon("folder", { size: 12 })}
                 <span>${escapeHtml(folderName)}</span>
                 <button data-action="clear-folder-filter" title="Remove">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
+                    ${Icon("close", { size: 12 })}
                 </button>
             </div>
         `;
@@ -491,7 +484,7 @@ function renderTagStatsList(tags) {
                         ${path}
                     </div>
                     <div style="display:flex; align-items:center; gap:0.5rem;">
-                         <span class="badge">${t.count}</span>
+                         ${Badge(t.count)}
                          <button class="btn-icon btn-sm edit-tag-btn" data-id="${t.id}" data-name="${escapeHtml(t.name)}" data-color="${t.color || ""}" title="Edit Tag">
                             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                          </button>

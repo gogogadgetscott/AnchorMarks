@@ -1,6 +1,12 @@
 import authScreen from "./fragments/auth-screen.html?raw";
 import sidebar from "./fragments/sidebar.html?raw";
 import mainContent from "./fragments/main-content.html?raw";
+import dashboardHeader from "./fragments/dashboard-header.html?raw";
+import bookmarksHeader from "./fragments/bookmarks-header.html?raw";
+import favoritesHeader from "./fragments/favorites-header.html?raw";
+import recentsHeader from "./fragments/recents-header.html?raw";
+import bulkBar from "./fragments/bulk-bar.html?raw";
+import emptyState from "./fragments/empty-state.html?raw";
 import bookmarkModal from "./fragments/bookmark-modal.html?raw";
 import tagModal from "./fragments/tag-modal.html?raw";
 import folderModal from "./fragments/folder-modal.html?raw";
@@ -45,8 +51,32 @@ export function loadComponents() {
   // Main Content
   const contentTemp = document.createElement("div");
   contentTemp.innerHTML = mainContent;
-  mainApp.appendChild(contentTemp.firstElementChild);
+  const mainContentEl = contentTemp.firstElementChild;
 
+  // Inject Headers
+  const headersContainer = mainContentEl.querySelector("#headers-container");
+  if (headersContainer) {
+    headersContainer.innerHTML = [
+      dashboardHeader,
+      bookmarksHeader,
+      favoritesHeader,
+      recentsHeader,
+    ].join("\n");
+  }
+
+  // Inject Bulk Bar
+  const bulkBarContainer = mainContentEl.querySelector("#bulk-bar-container");
+  if (bulkBarContainer) {
+    bulkBarContainer.innerHTML = bulkBar;
+  }
+
+  // Inject Empty State
+  const emptyStateContainer = mainContentEl.querySelector("#empty-state-container");
+  if (emptyStateContainer) {
+    emptyStateContainer.innerHTML = emptyState;
+  }
+
+  mainApp.appendChild(mainContentEl);
   app.appendChild(mainApp);
 
   // 3. Modals and Overlays

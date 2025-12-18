@@ -15,6 +15,7 @@ import {
 import { loadBookmarks } from "@features/bookmarks/bookmarks.js";
 import { renderActiveFilters } from "@features/bookmarks/search.js";
 import { addDashboardWidget } from "@features/bookmarks/dashboard.js";
+import { Badge } from "@components/index.js";
 
 // Load folders from server
 export async function loadFolders() {
@@ -72,7 +73,7 @@ export function renderFolders() {
                  style="padding-left: ${12 + indentation}px; cursor: grab;">
                 <span class="folder-color" style="background: ${f.color}"></span>
                 <span class="folder-name">${escapeHtml(f.name)}</span>
-                ${count > 0 ? `<span class="badge">${count}</span>` : ""}
+                ${count > 0 ? Badge(count) : ""}
                 <div class="folder-actions">
                     <button class="btn-icon" data-action="edit-folder" data-id="${f.id}" title="Edit">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">

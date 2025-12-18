@@ -22,6 +22,8 @@ import {
   updateActiveNav,
 } from "@utils/ui-helpers.js";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.js";
+import { BookmarkCard as createBookmarkCard } from "@components/index.js";
+export { createBookmarkCard };
 
 // Note: renderDashboard, renderSidebarTags, and checkWelcomeTour are loaded dynamically
 // to avoid circular dependencies
@@ -229,91 +231,7 @@ export function renderBookmarks() {
   updateCounts();
 }
 
-// Create bookmark card HTML
-export function createBookmarkCard(bookmark, index) {
-  const tagsFromString = bookmark.tags
-    ? bookmark.tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter((t) => t)
-    : [];
 
-  const tagEntries = Array.isArray(bookmark.tags_detailed)
-    ? bookmark.tags_detailed.map((t) => ({
-        name: t.name,
-        color: t.color,
-        color_override: t.color_override,
-      }))
-    : tagsFromString.map((name) => ({ name }));
-  const hostname = getHostname(bookmark.url);
-  const baseUrl = getBaseUrl(bookmark.url);
-  const displayUrl = state.viewMode === "list" ? baseUrl : hostname;
-  const isSelected = state.selectedBookmarks.has(bookmark.id);
-
-  return `
-    <div class="bookmark-card ${isSelected ? "selected" : ""}" data-id="${bookmark.id}" data-index="${index}">
-      <label class="bookmark-select">
-        <input type="checkbox" ${isSelected ? "checked" : ""}>
-      </label>
-      <div class="bookmark-header">
-        <div class="bookmark-favicon">
-          ${
-            !state.hideFavicons && bookmark.favicon
-              ? `<img src="${bookmark.favicon}" alt="" class="bookmark-favicon-img" data-fallback="true">`
-              : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
-          }
-        </div>
-        <div class="bookmark-info">
-          <div class="bookmark-title">${escapeHtml(bookmark.title)}</div>
-                    <div class="bookmark-url" data-full-url="${escapeHtml(bookmark.url)}">${escapeHtml(displayUrl)}</div>
-        </div>
-      </div>
-      ${bookmark.description ? `<div class="bookmark-description">${escapeHtml(bookmark.description)}</div>` : ""}
-      ${
-        tagEntries.length
-          ? `<div class="bookmark-tags">${tagEntries
-              .map((tag) => {
-                const tagName = tag.name;
-                const tagMeta = state.tagMetadata[tagName] || {};
-                const tagColor =
-                  tag.color_override || tag.color || tagMeta.color || "#f59e0b";
-                return `<span class="tag" data-action="toggle-filter-tag" data-tag="${escapeHtml(tagName)}" style="--tag-color: ${tagColor}">${escapeHtml(tagName)}</span>`;
-              })
-              .join("")}</div>`
-          : ""
-      }
-      <div class="bookmark-actions">
-        <button class="bookmark-action-btn primary" data-action="open-bookmark" data-url="${escapeHtml(bookmark.url)}" title="Open bookmark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-            <polyline points="15 3 21 3 21 9"/>
-            <line x1="10" y1="14" x2="21" y2="3"/>
-          </svg>
-          <span>Open</span>
-        </button>
-        <button class="bookmark-action-btn" data-action="edit-bookmark" data-id="${bookmark.id}" title="Edit bookmark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-          </svg>
-          <span>Edit</span>
-        </button>
-        <button class="bookmark-action-btn" data-action="copy-link" data-url="${escapeHtml(bookmark.url)}" title="Copy link">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-          </svg>
-        </button>
-        <button class="bookmark-action-btn danger" data-action="delete-bookmark" data-id="${bookmark.id}" title="Delete bookmark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-    `;
-}
 
 // Attach event listeners to bookmark cards
 export function attachBookmarkCardListeners() {
