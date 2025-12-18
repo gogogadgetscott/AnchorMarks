@@ -33,8 +33,8 @@ npm run dev
 ### Docker (Easiest for Production)
 
 ```bash
-# Start with Docker Compose (compose file is in `packages/docker`)
-docker compose -f packages/docker/docker-compose.yml up -d
+# Start with Docker Compose (compose file is in `tooling/docker`)
+docker compose -f tooling/docker/docker-compose.yml up -d
 
 # Open http://localhost:3000
 ```
@@ -145,21 +145,21 @@ Choose the installation method that best suits your needs:
 
    ```bash
    # From project root
-   docker compose -f packages/docker/docker-compose.yml up -d
-   # OR from the packages/docker directory
-   # cd packages/docker && docker compose up -d
+   docker compose -f tooling/docker/docker-compose.yml up -d
+   # OR from the tooling/docker directory
+   # cd tooling/docker && docker compose up -d
    ```
 
 4. **Verify**
 
    ```bash
-   docker compose -f packages/docker/docker-compose.yml logs -f anchormarks
+   docker compose -f tooling/docker/docker-compose.yml logs -f anchormarks
    curl http://localhost:3000/api/health
    ```
 
 5. **Stop Services**
    ```bash
-   docker compose -f packages/docker/docker-compose.yml down
+   docker compose -f tooling/docker/docker-compose.yml down
    ```
 
 ### Option 2: Manual Docker Build
@@ -167,8 +167,8 @@ Choose the installation method that best suits your needs:
 1. **Build Image**
 
    ```bash
-   # Build using the Dockerfile in packages/docker
-   docker build -t anchormarks:latest packages/docker
+   # Build using the Dockerfile in tooling/docker
+   docker build -t anchormarks:latest tooling/docker
    ```
 
 2. **Create Data Volume** (optional, recommended)
@@ -511,7 +511,7 @@ sudo systemctl disable anchormarks
 4. **Build and Run**
 
    ```powershell
-   docker compose -f packages/docker/docker-compose.yml up -d
+   docker compose -f tooling/docker/docker-compose.yml up -d
    ```
 
 5. **Verify**
@@ -521,7 +521,7 @@ sudo systemctl disable anchormarks
    docker ps
 
    # View logs
-   docker compose -f packages/docker/docker-compose.yml logs -f
+   docker compose -f tooling/docker/docker-compose.yml logs -f
    ```
 
 ### Option 3: Using Windows Services (Advanced)
@@ -692,9 +692,9 @@ docker inspect anchormarks
 
 # Remove and rebuild
 docker rm anchormarks
-# Build using the Dockerfile in packages/docker
-docker build -t anchormarks:latest packages/docker
-docker compose -f packages/docker/docker-compose.yml up -d
+# Build using the Dockerfile in tooling/docker
+docker build -t anchormarks:latest tooling/docker
+docker compose -f tooling/docker/docker-compose.yml up -d
 ```
 
 ---

@@ -98,7 +98,7 @@ MIT License - use, modify, and distribute freely.
 
 ## 🛳️ Deployment Notes
 
-- Docker compose file: `packages/docker/docker-compose.yml` (use from project root)
+- Docker compose file: `tooling/docker/docker-compose.yml` (use from project root)
 - Environment file: `apps/.env` — `docker:up` parses `PORT` from this file and the compose stack uses `env_file` to inject runtime variables.
 - If host bind-mounted `data/` directory lacks correct permissions, run the helper before starting:
 
@@ -114,5 +114,5 @@ npm run docker:up
 To run the test suite inside a container (installs dev dependencies temporarily):
 
 ```bash
-docker compose -f packages/docker/docker-compose.yml run --rm anchormarks sh -c "npm install && npm test"
+docker compose -f tooling/docker/docker-compose.yml run --rm anchormarks sh -c "npm install && npm test"
 ```

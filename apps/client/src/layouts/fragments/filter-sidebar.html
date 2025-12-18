@@ -1,0 +1,74 @@
+<div class="filter-sidebar" id="filter-sidebar">
+  <div class="filter-header">
+    <h3>Filters & Sort</h3>
+    <button class="btn-icon" id="close-filter-sidebar">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
+  </div>
+  <div class="filter-content">
+    <div class="filter-section">
+      <h4>Sort bookmarks</h4>
+      <select id="filter-sort" class="form-input">
+        <option value="recently_added">Recently added</option>
+        <option value="oldest_first">Oldest first</option>
+        <option value="most_visited">Most visited</option>
+        <option value="a_z">A – Z</option>
+        <option value="z_a">Z – A</option>
+      </select>
+    </div>
+
+    <div class="filter-section">
+      <h4>Sort tags</h4>
+      <select
+        id="filter-tag-sort"
+        class="form-input"
+        title="Sort tags by how often they're used"
+      >
+        <option value="count_desc">Most used first</option>
+        <option value="count_asc">Least used first</option>
+        <option value="name_asc">A → Z</option>
+      </select>
+    </div>
+
+    <div class="filter-section">
+      <h4>Active filters</h4>
+      <div class="selected-tags" id="filter-selected-tags">
+        <!-- Selected tags will appear here -->
+        <span
+          class="text-tertiary"
+          style="font-size: 0.875rem; font-style: italic"
+          id="filter-no-tags"
+          >No filters active</span
+        >
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <h4>Filter by tag</h4>
+      <input
+        type="text"
+        id="filter-tag-search"
+        class="form-input"
+        placeholder="Search tags..."
+        style="margin-bottom: 0.75rem"
+      />
+      <div id="filter-available-tags" class="available-tags-list">
+        <!-- Available tags list -->
+      </div>
+      <div id="filter-tags-empty" class="tags-empty-state hidden">
+        <p>No tags created yet</p>
+        <p class="text-tertiary">
+          Add tags to your bookmarks to filter by them
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

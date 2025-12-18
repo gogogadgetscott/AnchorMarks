@@ -164,13 +164,11 @@ setupSmartOrganizationRoutes(app, db, {
 // In production: Express serves built Vite assets from dist/
 const staticDir =
   config.NODE_ENV === "production" &&
-  fs.existsSync(path.join(__dirname, "..", "dist"))
-    ? path.join(__dirname, "..", "dist")
-    : path.join(__dirname, "..", "public");
+  fs.existsSync(path.join(__dirname, "..", "client", "dist"))
+    ? path.join(__dirname, "..", "client", "dist")
+    : path.join(__dirname, "..", "client");
 
-console.log(
-  `Serving frontend from: ${staticDir} (${config.NODE_ENV} mode)`,
-);
+console.log(`Serving frontend from: ${staticDir} (${config.NODE_ENV} mode)`);
 app.use(express.static(staticDir));
 
 // Serve frontend for all other routes (static catch-all)

@@ -1,0 +1,31 @@
+<div id="tour-overlay" class="tour-overlay hidden"></div>
+<div id="tour-popover" class="tour-popover hidden">
+  <div class="tour-header">
+    <div class="tour-steps">
+      <span class="tour-step" id="tour-step-1">1</span>
+      <span class="tour-step" id="tour-step-2">2</span>
+      <span class="tour-step" id="tour-step-3">3</span>
+    </div>
+    <button class="btn-icon tour-close" data-action="skip-tour">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
+  </div>
+  <div class="tour-content">
+    <h3 id="tour-title"></h3>
+    <p id="tour-description"></p>
+  </div>
+  <div class="tour-actions">
+    <button class="btn btn-secondary tour-skip" data-action="skip-tour">
+      Skip
+    </button>
+    <button class="btn btn-primary tour-next" id="tour-next-btn">Next</button>
+  </div>
+</div>

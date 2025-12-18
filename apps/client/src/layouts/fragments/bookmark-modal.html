@@ -1,0 +1,117 @@
+<div id="bookmark-modal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="bookmark-modal-title">Add Bookmark</h2>
+      <button class="btn-icon modal-close">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+    <form id="bookmark-form">
+      <input type="hidden" id="bookmark-id" />
+      <div class="form-group">
+        <label for="bookmark-url">URL *</label>
+        <div style="display: flex; gap: 0.5rem">
+          <input
+            type="url"
+            id="bookmark-url"
+            required
+            placeholder="https://example.com"
+            style="flex: 1"
+          />
+          <button
+            type="button"
+            id="fetch-metadata-btn"
+            class="btn btn-secondary"
+            title="Auto-fetch title and description"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              style="width: 16px; height: 16px"
+            >
+              <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path d="M9 12l2 2 4-4" />
+            </svg>
+            Fetch Info
+          </button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="bookmark-title">Title</label>
+        <input
+          type="text"
+          id="bookmark-title"
+          placeholder="My Awesome Website"
+        />
+      </div>
+      <div class="form-group">
+        <label for="bookmark-description">Description</label>
+        <textarea
+          id="bookmark-description"
+          rows="2"
+          placeholder="A brief description..."
+        ></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="bookmark-folder">Folder</label>
+          <div style="display: flex; gap: 0.5rem; align-items: center">
+            <select id="bookmark-folder">
+              <option value="">None</option>
+            </select>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="bookmark-new-folder-btn"
+              style="height: 38px; white-space: nowrap"
+            >
+              + New Folder
+            </button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="bookmark-tags-input">Tags</label>
+          <div class="tags-input-container" id="tags-input-container">
+            <div class="selected-tags" id="selected-tags"></div>
+            <input
+              type="text"
+              id="bookmark-tags-input"
+              placeholder="Add tags..."
+              autocomplete="off"
+            />
+            <input type="hidden" id="bookmark-tags" />
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <div
+          class="tag-autocomplete"
+          id="tag-autocomplete"
+          style="display: none"
+        ></div>
+        <div
+          class="smart-suggestions"
+          id="smart-collections-suggestions"
+          style="display: none"
+        ></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary modal-cancel">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary">Save Bookmark</button>
+      </div>
+    </form>
+  </div>
+</div>

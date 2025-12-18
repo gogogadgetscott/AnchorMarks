@@ -14,11 +14,13 @@ The AnchorMarks frontend has been successfully migrated to use Vite as the build
 ### 1. Build System
 
 **Before:**
+
 - Direct serving of static HTML/CSS/JS files
 - Manual dependency management
 - No build step
 
 **After:**
+
 - Vite dev server for development (port 5173)
 - Production builds to `apps/dist/` directory
 - Automatic asset optimization and bundling
@@ -85,12 +87,14 @@ npm run preview           # Preview production build locally
 ### Option 1: Vite Dev Server (Recommended for Frontend Work)
 
 1. Start the Vite dev server:
+
    ```bash
    cd apps
    npm run dev:vite
    ```
 
 2. In another terminal, start the Express API server:
+
    ```bash
    npm run dev
    ```
@@ -100,6 +104,7 @@ npm run preview           # Preview production build locally
    - API requests proxy to Express on port 3000
 
 **Advantages:**
+
 - Instant updates on file changes (HMR)
 - Fast refresh without losing application state
 - Better error messages
@@ -107,6 +112,7 @@ npm run preview           # Preview production build locally
 ### Option 2: Express Server Only (Traditional)
 
 1. Start the Express server:
+
    ```bash
    npm run dev
    ```
@@ -116,6 +122,7 @@ npm run preview           # Preview production build locally
    - Manual page refresh required for changes
 
 **Use this when:**
+
 - Testing server-side rendering
 - Debugging API issues
 - Working on backend-only features
@@ -125,6 +132,7 @@ npm run preview           # Preview production build locally
 ### Build Process
 
 1. Build the frontend:
+
    ```bash
    npm run build
    ```
@@ -136,6 +144,7 @@ npm run preview           # Preview production build locally
    - Cache-busted filenames (e.g., `main-abc123.js`)
 
 2. Set environment variables:
+
    ```bash
    export JWT_SECRET="your-strong-secret-key"
    export CORS_ORIGIN="https://yourdomain.com"
@@ -143,6 +152,7 @@ npm run preview           # Preview production build locally
    ```
 
 3. Start the production server:
+
    ```bash
    npm run prod
    ```
@@ -195,9 +205,10 @@ The server now serves from different directories based on environment:
 ```javascript
 // Development: serve from public/
 // Production: serve from dist/
-const staticDir = NODE_ENV === 'production' && fs.existsSync('dist')
-  ? path.join(__dirname, '..', 'dist')
-  : path.join(__dirname, '..', 'public');
+const staticDir =
+  NODE_ENV === "production" && fs.existsSync("dist")
+    ? path.join(__dirname, "..", "dist")
+    : path.join(__dirname, "..", "public");
 ```
 
 ## Future Improvements
@@ -205,17 +216,20 @@ const staticDir = NODE_ENV === 'production' && fs.existsSync('dist')
 The migration follows the "30-year pro" philosophy: pragmatic, incremental improvements.
 
 ### Phase 1: ✅ Complete
+
 - Vite setup and configuration
 - Build pipeline working
 - Development and production modes
 
 ### Phase 2: Planned
+
 - Split the 2001-line `index.html` into logical components
 - Extract reusable HTML templates (auth, modals, headers)
 - Create component library for repeated UI elements
 - Optimize bundle size with code splitting
 
 ### Phase 3: Optional
+
 - TypeScript migration for type safety
 - Component framework (Vue/React) if complexity warrants it
 - Advanced optimizations (lazy loading, preloading)
@@ -235,12 +249,14 @@ You may see warnings about dynamic imports during build:
 ### Port Already in Use
 
 If port 5173 is taken:
+
 ```bash
 cd apps
 npx vite --port 5174
 ```
 
 Or update `vite.config.js`:
+
 ```javascript
 server: {
   port: 5174,
@@ -257,6 +273,7 @@ server: {
 ### CSS Not Loading in Dev
 
 If styles don't load with Vite dev server:
+
 1. Verify `js/main.js` imports: `import "../css/styles.css"`
 2. Check browser console for errors
 3. Try clearing Vite cache: `rm -rf apps/.vite`

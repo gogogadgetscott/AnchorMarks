@@ -20,11 +20,11 @@ Don't split prematurely. Split when you experience:
 
 1. **Modal Templates** (lines 800-1500)
    - Bookmark modal
-   - Folder modal  
+   - Folder modal
    - Tag modal
    - Settings modal
    - Filter sidebar
-   
+
    **Why:** Highly repetitive, used conditionally, good candidates for lazy loading
 
 2. **Repeated UI Patterns**
@@ -41,7 +41,7 @@ Don't split prematurely. Split when you experience:
    - Favorites header
    - Recent header
    - Search header
-   
+
    **Why:** Different but similar structure, share common elements
 
 4. **Sidebar** (lines 171-366)
@@ -49,7 +49,7 @@ Don't split prematurely. Split when you experience:
    - Folder tree
    - User menu
    - Stats bar
-   
+
    **Why:** Fairly independent, but rendered on every page
 
 ### Low Priority (Do Last or Never)
@@ -78,16 +78,18 @@ export function createBookmarkModal() {
 }
 
 // In main app initialization
-import { createBookmarkModal } from './components/bookmark-modal.js';
-document.body.insertAdjacentHTML('beforeend', createBookmarkModal());
+import { createBookmarkModal } from "./components/bookmark-modal.js";
+document.body.insertAdjacentHTML("beforeend", createBookmarkModal());
 ```
 
 **Pros:**
+
 - Simple, no framework needed
 - Works with existing code
 - Easy to understand
 
 **Cons:**
+
 - No reactivity
 - Manual DOM updates
 - String-based (no syntax highlighting in most editors)
@@ -96,15 +98,19 @@ document.body.insertAdjacentHTML('beforeend', createBookmarkModal());
 
 ```javascript
 // Load HTML partial
-const html = await fetch('/components/bookmark-modal.html').then(r => r.text());
-document.body.insertAdjacentHTML('beforeend', html);
+const html = await fetch("/components/bookmark-modal.html").then((r) =>
+  r.text(),
+);
+document.body.insertAdjacentHTML("beforeend", html);
 ```
 
 **Pros:**
+
 - Actual HTML files (better IDE support)
 - Clean separation
 
 **Cons:**
+
 - Network request (can be mitigated with bundler)
 - Async loading complexity
 - Not standard Vite approach
@@ -119,11 +125,13 @@ Use a Vite plugin like `vite-plugin-html` or `vite-plugin-handlebars`:
 ```
 
 **Pros:**
+
 - Compile-time includes
 - No runtime overhead
 - Standard template syntax
 
 **Cons:**
+
 - Additional dependency
 - Build step required
 - Learning curve
@@ -140,6 +148,7 @@ Use a Vite plugin like `vite-plugin-html` or `vite-plugin-handlebars`:
 6. **Stop when you've solved the problem** - don't split everything
 
 **Why this approach:**
+
 - Minimal dependencies
 - Works with existing code
 - Can be done incrementally
@@ -149,6 +158,7 @@ Use a Vite plugin like `vite-plugin-html` or `vite-plugin-handlebars`:
 ## Example: Splitting Bookmark Modal
 
 ### Before (in index.html)
+
 ```html
 <!-- Bookmark Modal -->
 <div id="bookmark-modal" class="modal hidden">
@@ -159,6 +169,7 @@ Use a Vite plugin like `vite-plugin-html` or `vite-plugin-handlebars`:
 ### After
 
 **File: `src/components/modals/bookmark-modal.js`**
+
 ```javascript
 export function createBookmarkModal() {
   return `
@@ -173,20 +184,22 @@ export function createBookmarkModal() {
 ```
 
 **File: `js/main.js`**
+
 ```javascript
-import { createBookmarkModal } from '../src/components/modals/bookmark-modal.js';
+import { createBookmarkModal } from "../src/components/modals/bookmark-modal.js";
 
 // Initialize modals on page load
-document.addEventListener('DOMContentLoaded', () => {
-  document.body.insertAdjacentHTML('beforeend', createBookmarkModal());
+document.addEventListener("DOMContentLoaded", () => {
+  document.body.insertAdjacentHTML("beforeend", createBookmarkModal());
   // ... other modals
 });
 
 // Then import app.js as before
-import './app.js';
+import "./app.js";
 ```
 
 **File: `index.html`**
+
 ```html
 <!-- Modals now loaded via JavaScript -->
 ```
@@ -194,21 +207,25 @@ import './app.js';
 ## What NOT to Do
 
 ❌ **Don't:** Split everything into tiny components
+
 - Overhead outweighs benefits
 - Makes code harder to follow
 - "Death by a thousand files"
 
 ❌ **Don't:** Introduce a framework just to split HTML
+
 - React/Vue/Svelte are overkill for this
 - Adds complexity and dependencies
 - Existing vanilla JS works fine
 
 ❌ **Don't:** Split Auth Screen
+
 - It's shown once per session
 - Self-contained and simple
 - No duplication or reuse needed
 
 ❌ **Don't:** Create a custom templating system
+
 - Use standard tools or keep it simple
 - Don't reinvent the wheel
 

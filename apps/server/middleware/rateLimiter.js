@@ -7,7 +7,9 @@ function rateLimiter(req, res, next) {
     // Skip rate limiting for static asset requests (favicons, thumbnails, JS/CSS/images)
     if (
       req.method === "GET" &&
-      (req.path.startsWith("/favicons") || req.path.startsWith("/thumbnails") || /\.(png|jpg|jpeg|svg|gif|ico|css|js)$/.test(req.path))
+      (req.path.startsWith("/favicons") ||
+        req.path.startsWith("/thumbnails") ||
+        /\.(png|jpg|jpeg|svg|gif|ico|css|js)$/.test(req.path))
     ) {
       return next();
     }

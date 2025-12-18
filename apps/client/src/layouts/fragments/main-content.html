@@ -1,0 +1,402 @@
+<main class="main-content">
+  <!-- Dashboard Header -->
+  <header
+    class="content-header dashboard-header"
+    id="dashboard-header"
+    style="display: none"
+  >
+    <div class="header-left">
+      <button class="btn-icon" id="toggle-sidebar-btn" title="Toggle Sidebar">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+      <h1>Dashboard</h1>
+    </div>
+    <div class="header-right">
+      <button
+        class="btn btn-secondary"
+        id="dashboard-add-widget-btn"
+        title="Add Widget"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          style="width: 16px; height: 16px"
+        >
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Add Widget
+      </button>
+      <button
+        class="btn-icon"
+        id="dashboard-layout-btn"
+        title="Layout Settings"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <rect x="3" y="3" width="7" height="9" />
+          <rect x="14" y="3" width="7" height="5" />
+          <rect x="14" y="12" width="7" height="9" />
+          <rect x="3" y="16" width="7" height="5" />
+        </svg>
+      </button>
+      <button
+        class="btn-icon"
+        id="dashboard-settings-btn"
+        title="Dashboard Settings"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="12" cy="12" r="3" />
+          <path
+            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+          />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Bookmarks Header -->
+  <header
+    class="content-header bookmarks-header"
+    id="bookmarks-header"
+    style="display: none"
+  >
+    <div class="header-left">
+      <button
+        class="btn-icon"
+        id="toggle-sidebar-btn-bookmarks"
+        title="Toggle Sidebar"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+      <h1 id="view-title">Bookmarks</h1>
+      <span class="bookmark-count" id="bookmarks-view-count">0 bookmarks</span>
+    </div>
+    <div class="header-right">
+      <div class="header-search-bar">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+        </svg>
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Search bookmarks..."
+        />
+        <kbd>Ctrl+K</kbd>
+      </div>
+      <div class="view-toggle">
+        <button class="view-btn active" data-view-mode="grid" title="Grid View">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+          </svg>
+        </button>
+        <button class="view-btn" data-view-mode="list" title="List View">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="8" y1="6" x2="21" y2="6" />
+            <line x1="8" y1="12" x2="21" y2="12" />
+            <line x1="8" y1="18" x2="21" y2="18" />
+            <line x1="3" y1="6" x2="3.01" y2="6" />
+            <line x1="3" y1="12" x2="3.01" y2="12" />
+            <line x1="3" y1="18" x2="3.01" y2="18" />
+          </svg>
+        </button>
+        <button class="view-btn" data-view-mode="compact" title="Compact List">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="4" y1="6" x2="20" y2="6" />
+            <line x1="4" y1="10" x2="20" y2="10" />
+            <line x1="4" y1="14" x2="20" y2="14" />
+            <line x1="4" y1="18" x2="20" y2="18" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Favorites Header -->
+  <header
+    class="content-header favorites-header"
+    id="favorites-header"
+    style="display: none"
+  >
+    <div class="header-left">
+      <button
+        class="btn-icon"
+        id="toggle-sidebar-btn-favorites"
+        title="Toggle Sidebar"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+      <h1>Favorites</h1>
+      <span class="bookmark-count" id="favorites-view-count">0 favorites</span>
+    </div>
+    <div class="header-right">
+      <div class="sort-controls">
+        <label for="favorites-sort">Sort by</label>
+        <select id="favorites-sort" class="form-select">
+          <option value="recently_added">Recently Added</option>
+          <option value="most_visited">Most Visited</option>
+          <option value="a_z">A – Z</option>
+          <option value="z_a">Z – A</option>
+        </select>
+      </div>
+      <div class="view-toggle">
+        <button class="view-btn active" data-view-mode="grid" title="Grid View">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+          </svg>
+        </button>
+        <button class="view-btn" data-view-mode="list" title="List View">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="8" y1="6" x2="21" y2="6" />
+            <line x1="8" y1="12" x2="21" y2="12" />
+            <line x1="8" y1="18" x2="21" y2="18" />
+            <line x1="3" y1="6" x2="3.01" y2="6" />
+            <line x1="3" y1="12" x2="3.01" y2="12" />
+            <line x1="3" y1="18" x2="3.01" y2="18" />
+          </svg>
+        </button>
+        <button class="view-btn" data-view-mode="compact" title="Compact List">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="4" y1="6" x2="20" y2="6" />
+            <line x1="4" y1="10" x2="20" y2="10" />
+            <line x1="4" y1="14" x2="20" y2="14" />
+            <line x1="4" y1="18" x2="20" y2="18" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Recents Header -->
+  <header
+    class="content-header recents-header"
+    id="recents-header"
+    style="display: none"
+  >
+    <div class="header-left">
+      <button
+        class="btn-icon"
+        id="toggle-sidebar-btn-recents"
+        title="Toggle Sidebar"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+      <h1>Recent</h1>
+      <span class="bookmark-count" id="recents-view-count">0 recent</span>
+    </div>
+    <div class="header-right">
+      <div class="time-range-controls">
+        <label for="recents-range">Time Range</label>
+        <select id="recents-range" class="form-select">
+          <option value="today">Today</option>
+          <option value="week">Last Week</option>
+          <option value="month">Last Month</option>
+          <option value="all">All Time</option>
+        </select>
+      </div>
+      <div class="view-toggle">
+        <button class="view-btn active" data-view-mode="grid" title="Grid View">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+          </svg>
+        </button>
+        <button class="view-btn" data-view-mode="list" title="List View">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="8" y1="6" x2="21" y2="6" />
+            <line x1="8" y1="12" x2="21" y2="12" />
+            <line x1="8" y1="18" x2="21" y2="18" />
+            <line x1="3" y1="6" x2="3.01" y2="6" />
+            <line x1="3" y1="12" x2="3.01" y2="12" />
+            <line x1="3" y1="18" x2="3.01" y2="18" />
+          </svg>
+        </button>
+        <button class="view-btn" data-view-mode="compact" title="Compact List">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="4" y1="6" x2="20" y2="6" />
+            <line x1="4" y1="10" x2="20" y2="10" />
+            <line x1="4" y1="14" x2="20" y2="14" />
+            <line x1="4" y1="18" x2="20" y2="18" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div id="bulk-bar" class="bulk-bar hidden">
+    <div class="bulk-left">
+      <span id="bulk-count">0 selected</span>
+      <button
+        class="btn-link"
+        id="bulk-select-all-btn"
+        style="margin-left: 1rem; font-size: 0.85rem"
+        data-action="bulk-select-all"
+      >
+        Select All
+      </button>
+      <button
+        class="btn-link"
+        id="bulk-unselect-all-btn"
+        style="margin-left: 0.5rem; font-size: 0.85rem"
+        data-action="bulk-unselect-all"
+      >
+        Unselect All
+      </button>
+    </div>
+    <div class="bulk-actions">
+      <button class="btn btn-ghost" id="bulk-favorite-btn">Favorite</button>
+      <button class="btn btn-secondary" id="bulk-tag-btn">Tag</button>
+      <button class="btn btn-ghost" id="bulk-untag-btn">Remove Tags</button>
+      <div class="bulk-move">
+        <select id="bulk-move-select"></select>
+        <button class="btn btn-secondary" id="bulk-move-btn">Move</button>
+      </div>
+      <button class="btn btn-danger" id="bulk-delete-btn">Delete</button>
+      <button class="btn btn-ghost" id="bulk-clear-btn">Clear</button>
+    </div>
+  </div>
+
+  <div class="content-body">
+    <div
+      id="smart-insights-widget"
+      class="smart-insights-widget"
+      style="display: none"
+    ></div>
+    <div id="bookmarks-container" class="bookmarks-grid">
+      <!-- Bookmarks will be rendered here -->
+    </div>
+
+    <div id="empty-state" class="empty-state hidden">
+      <div class="empty-icon">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+        </svg>
+      </div>
+      <h3>No bookmarks yet</h3>
+      <p>Add your first bookmark to get started</p>
+      <button class="btn btn-primary" id="empty-add-btn">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        <span>Add Bookmark</span>
+      </button>
+    </div>
+  </div>
+</main>

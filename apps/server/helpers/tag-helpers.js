@@ -26,9 +26,9 @@ function ensureTagsExist(db, userId, tagsInput, options = {}) {
   const tagNames = Array.isArray(tagsInput)
     ? tagsInput.map((t) => String(t))
     : tagsInput
-      .split(",")
-      .map((t) => t.trim())
-      .filter((t) => t.length > 0);
+        .split(",")
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0);
 
   const tagIds = [];
   const tagMap = {};
