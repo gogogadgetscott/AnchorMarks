@@ -454,7 +454,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Don't clear current folder - treat it as a filter
       state.setDisplayedCount(state.BOOKMARKS_PER_PAGE);
       updateActiveNav();
-      renderActiveFilters();
+      import("@features/bookmarks/search.ts").then(({ renderActiveFilters }) =>
+        renderActiveFilters(),
+      );
       updateFilterButtonVisibility();
 
       if ((item as HTMLElement).dataset.view === "dashboard") {
