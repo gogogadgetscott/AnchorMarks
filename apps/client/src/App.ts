@@ -4,30 +4,22 @@
  */
 
 // Import state
-import * as state from "@features/state.js";
+import * as state from "@features/state.ts";
+
+declare global {
+  interface Window {
+    AnchorMarks: any;
+  }
+}
 
 // Import API
-import { api } from "@services/api.js";
+import { api } from "@services/api.ts";
 
 // Import utilities
-import { escapeHtml, getHostname, parseTagInput } from "@utils/index.js";
+import { escapeHtml, getHostname, parseTagInput } from "@utils/index.ts";
 
-// Import UI functions
-import {
-  dom,
-  initDom,
-  showToast,
-  openModal,
-  closeModals,
-  resetForms,
-  addTagToInput,
-  updateViewHeader,
-  updateActiveNav,
-  updateCounts,
-  updateStats,
-  getEmptyStateMessage,
-  updateBulkUI,
-} from "@utils/ui-helpers.js";
+// Import layout components
+
 
 // Import auth functions
 import {
@@ -35,12 +27,11 @@ import {
   register,
   logout,
   checkAuth,
-  showAuthScreen,
   showMainApp,
   updateUserInfo,
   updateProfile,
   updatePassword,
-} from "@features/auth/auth.js";
+} from "@features/auth/auth.ts";
 
 // Import settings
 import {
@@ -53,17 +44,12 @@ import {
   toggleSidebar,
   toggleSection,
   toggleIncludeChildBookmarks,
-} from "@features/bookmarks/settings.js";
+} from "@features/bookmarks/settings.ts";
 
 // Import bookmark functions
 import {
   loadBookmarks,
   renderBookmarks,
-  createBookmarkCard,
-  attachBookmarkCardListeners,
-  toggleBookmarkSelection,
-  clearSelections,
-  selectAllBookmarks,
   createBookmark,
   updateBookmark,
   deleteBookmark,
@@ -71,32 +57,28 @@ import {
   trackClick,
   editBookmark,
   filterByTag,
-  sortBookmarks,
-} from "@features/bookmarks/bookmarks.js";
+  selectAllBookmarks,
+  clearSelections,
+} from "@features/bookmarks/bookmarks.ts";
 
 // Import folder functions
 import {
   loadFolders,
   renderFolders,
-  updateFolderSelect,
   updateFolderParentSelect,
-  populateBulkMoveSelect,
   createFolder,
   updateFolder,
   deleteFolder,
   editFolder,
   navigateToFolderByIndex,
-} from "@features/bookmarks/folders.js";
+} from "@features/bookmarks/folders.ts";
 
 // Import dashboard functions
 import {
   renderDashboard,
-  initDashboardDragDrop,
-  addDashboardWidget,
-  removeDashboardWidget,
   filterDashboardBookmarks,
   toggleLayoutSettings,
-} from "@features/bookmarks/dashboard.js";
+} from "@features/bookmarks/dashboard.ts";
 
 // Import search functions
 import {
@@ -114,7 +96,7 @@ import {
   clearAllFilters,
   handleTagSubmit,
   createNewTag,
-} from "@features/bookmarks/search.js";
+} from "@features/bookmarks/search.ts";
 
 // Import bulk operations
 import {
@@ -123,7 +105,7 @@ import {
   bulkMove,
   bulkAddTags,
   bulkRemoveTags,
-} from "@features/bookmarks/bulk-ops.js";
+} from "@features/bookmarks/bulk-ops.ts";
 
 // Import import/export
 import {
@@ -132,7 +114,7 @@ import {
   exportHtml,
   exportDashboardViews,
   importDashboardViews,
-} from "@features/bookmarks/import-export.js";
+} from "@features/bookmarks/import-export.ts";
 
 // Import command palette
 import {
@@ -143,7 +125,17 @@ import {
   runActiveCommand,
   openShortcutsPopup,
   closeShortcutsPopup,
-} from "@features/bookmarks/commands.js";
+} from "@features/bookmarks/commands.ts";
+
+// Import UI helpers (needed for global export)
+import {
+  showToast,
+  openModal,
+  closeModals,
+  addTagToInput,
+  initDom,
+  updateActiveNav,
+} from "@utils/ui-helpers.ts";
 
 // Import filters
 import {
@@ -151,69 +143,68 @@ import {
   toggleFilterDropdown,
   updateFilterButtonVisibility,
   updateFilterButtonText,
-} from "@features/bookmarks/filters.js";
+} from "@features/bookmarks/filters.ts";
 
 // Import tag input
 import {
   initTagInput,
   loadTagsFromInput,
-} from "@features/bookmarks/tag-input.js";
+} from "@features/bookmarks/tag-input.ts";
 
 // Import tour
 import {
-  checkWelcomeTour,
   startTour,
   skipTour,
   nextTourStep,
-} from "@features/bookmarks/tour.js";
+} from "@features/bookmarks/tour.ts";
 
 // Import Smart Organization UI
-import SmartOrg from "@features/bookmarks/smart-organization-ui.js";
+import SmartOrg from "@features/bookmarks/smart-organization-ui.ts";
 
 // Import widget picker
 import {
-  toggleWidgetPicker,
   openWidgetPicker,
-} from "@features/bookmarks/widget-picker.js";
+} from "@features/bookmarks/widget-picker.ts";
 
 // Set view mode
-function setViewMode(mode) {
-  state.setViewMode(mode);
+function setViewMode(mode: string): void {
+  state.setViewMode(mode as any);
   document.querySelectorAll(".view-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.viewMode === mode);
+    btn.classList.toggle("active", (btn as HTMLElement).dataset.viewMode === mode);
   });
   saveSettings({ view_mode: mode });
   renderBookmarks();
 }
 
 // Show all folders
-function showAllFolders() {
+function showAllFolders(): void {
   const btn = document.getElementById("folders-show-more");
   if (btn) btn.classList.add("hidden");
-  renderFolders(true);
+  renderFolders();
 }
 
 // API Key functions
-async function regenerateApiKey() {
+async function regenerateApiKey(): Promise<void> {
   if (!confirm("Regenerate API key? Old keys will stop working.")) return;
 
   try {
     const data = await api("/auth/regenerate-key", { method: "POST" });
-    state.currentUser.api_key = data.api_key;
-    document.getElementById("api-key-value").textContent = data.api_key;
+    if (state.currentUser) state.currentUser.api_key = data.api_key;
+    const apiKeyEl = document.getElementById("api-key-value");
+    if (apiKeyEl) apiKeyEl.textContent = data.api_key;
     showToast("API key regenerated!", "success");
-  } catch (err) {
+  } catch (err: any) {
     showToast(err.message, "error");
   }
 }
 
-function copyApiKey() {
-  navigator.clipboard.writeText(state.currentUser.api_key);
+function copyApiKey(): void {
+  navigator.clipboard.writeText(state.currentUser?.api_key || "");
   showToast("API key copied!", "success");
 }
 
 // Reset Bookmarks
-async function resetBookmarks() {
+async function resetBookmarks(): Promise<void> {
   if (
     !confirm(
       "Reset all bookmarks? This will delete all your bookmarks and folders, and restore the example bookmarks. This cannot be undone!",
@@ -234,13 +225,13 @@ async function resetBookmarks() {
       `Bookmarks reset! ${data.bookmarks_created} example bookmarks created.`,
       "success",
     );
-  } catch (err) {
+  } catch (err: any) {
     showToast(err.message, "error");
   }
 }
 
 // Initialize application
-async function initializeApp() {
+async function initializeApp(): Promise<void> {
   updateUserInfo();
   await Promise.all([loadFolders(), loadBookmarks()]);
   setViewMode(state.viewMode);
@@ -248,15 +239,14 @@ async function initializeApp() {
   updateFilterButtonVisibility();
 
   // Initialize sidebar filter controls with current state
-  const settingsTagSort = document.getElementById("settings-tag-sort");
+  const settingsTagSort = document.getElementById("settings-tag-sort") as HTMLSelectElement;
   if (settingsTagSort)
     settingsTagSort.value = state.filterConfig.tagSort || "count_desc";
 }
 
 // Keyboard handler
-function handleKeyboard(e) {
+function handleKeyboard(e: KeyboardEvent): void {
   const key = (e.key || "").toLowerCase();
-  const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
   const modifier = e.ctrlKey || e.metaKey;
 
   // Escape key
@@ -276,9 +266,11 @@ function handleKeyboard(e) {
 
   // Ctrl+N: Add new bookmark
   if (modifier && key === "n") {
+    const activeEl = document.activeElement;
     if (
-      !["INPUT", "TEXTAREA"].includes(document.activeElement.tagName) ||
-      document.activeElement.id === "command-palette-input"
+      !activeEl ||
+      !["INPUT", "TEXTAREA"].includes(activeEl.tagName) ||
+      activeEl.id === "command-palette-input"
     ) {
       e.preventDefault();
       openModal("bookmark-modal");
@@ -287,8 +279,9 @@ function handleKeyboard(e) {
 
   // Ctrl+F: Focus search
   if (modifier && key === "f") {
+    const activeEl = document.activeElement;
     if (
-      ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName) ||
+      (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) ||
       e.shiftKey
     )
       return; // Shift+F is for favorites
@@ -314,67 +307,74 @@ function handleKeyboard(e) {
 
   // Ctrl+A: Select all
   if (modifier && key === "a") {
-    if (["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+    const activeEl = document.activeElement;
+    if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
     selectAllBookmarks();
   }
 
   // Ctrl+1 to 9: Navigate to folders
   if (modifier && !e.shiftKey && key >= "1" && key <= "9") {
-    if (["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+    const activeEl = document.activeElement;
+    if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
     navigateToFolderByIndex(parseInt(key) - 1);
   }
 
   // Ctrl+Shift+D: Dashboard
   if (modifier && e.shiftKey && key === "d") {
-    if (["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+    const activeEl = document.activeElement;
+    if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
     state.setCurrentFolder(null);
     switchView("dashboard");
   }
 
-  async function switchView(view) {
+  async function switchView(view: string): Promise<void> {
     state.setCurrentView(view);
     updateActiveNav();
 
     // Save current view to persist across refreshes
     await saveSettings({ current_view: view });
 
-    if (view === "dashboard") {
-      const { renderDashboard } =
-        await import("@features/bookmarks/dashboard.js");
+    if (state.currentView === "dashboard") {
+      const { renderDashboard } = await import("@features/bookmarks/dashboard.ts");
       renderDashboard();
     } else {
       const { loadBookmarks } =
-        await import("@features/bookmarks/bookmarks.js");
+        await import("@features/bookmarks/bookmarks.ts");
       loadBookmarks();
     }
   }
   // Ctrl+Shift+F: Favorites
   if (modifier && e.shiftKey && key === "f") {
-    if (["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+    const activeEl = document.activeElement;
+    if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
     state.setCurrentFolder(null);
     updateActiveNav();
-    document.getElementById("view-title").textContent = "Favorites";
+    const viewTitle = document.getElementById("view-title");
+    if (viewTitle) viewTitle.textContent = "Favorites";
     loadBookmarks();
   }
 
   // Ctrl+Shift+A: All bookmarks
   if (modifier && e.shiftKey && key === "a") {
-    if (["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+    const activeEl = document.activeElement;
+    if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
     state.setCurrentView("all");
     state.setCurrentFolder(null);
     updateActiveNav();
-    document.getElementById("view-title").textContent = "Bookmarks";
+    const viewTitle = document.getElementById("view-title");
+    if (viewTitle) viewTitle.textContent = "Bookmarks";
     loadBookmarks();
   }
 
   // ?: Shortcuts help
   if (key === "?" || e.key === "?") {
-    if (["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+    const activeEl = document.activeElement;
+    if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
     openShortcutsPopup();
   }
@@ -428,7 +428,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const savedTheme = localStorage.getItem("anchormarks_theme");
   if (savedTheme) {
     document.documentElement.setAttribute("data-theme", savedTheme);
-    const themeSelect = document.getElementById("theme-select");
+    const themeSelect = document.getElementById("theme-select") as HTMLSelectElement;
     if (themeSelect) themeSelect.value = savedTheme;
   }
 
@@ -451,22 +451,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         .querySelectorAll(".auth-tab")
         .forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");
-      document
-        .getElementById("login-form")
-        ?.classList.toggle("hidden", tab.dataset.tab !== "login");
-      document
-        .getElementById("register-form")
-        ?.classList.toggle("hidden", tab.dataset.tab !== "register");
+      const loginForm = document.getElementById("login-form");
+      if (loginForm) loginForm.classList.toggle("hidden", (tab as HTMLElement).dataset.tab !== "login");
+      const registerForm = document.getElementById("register-form");
+      if (registerForm) registerForm.classList.toggle("hidden", (tab as HTMLElement).dataset.tab !== "register");
     });
   });
 
   // Auth forms
   document
     .getElementById("login-form")
-    ?.addEventListener("submit", async (e) => {
+    ?.addEventListener("submit", async (e: Event) => {
       e.preventDefault();
-      const email = document.getElementById("login-email").value;
-      const password = document.getElementById("login-password").value;
+      const emailEl = document.getElementById("login-email") as HTMLInputElement;
+      const passEl = document.getElementById("login-password") as HTMLInputElement;
+      const email = emailEl?.value || "";
+      const password = passEl?.value || "";
       if (await login(email, password)) {
         await loadSettings();
         await initializeApp();
@@ -475,10 +475,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document
     .getElementById("register-form")
-    ?.addEventListener("submit", async (e) => {
+    ?.addEventListener("submit", async (e: Event) => {
       e.preventDefault();
-      const email = document.getElementById("register-email").value;
-      const password = document.getElementById("register-password").value;
+      const emailEl = document.getElementById("register-email") as HTMLInputElement;
+      const passEl = document.getElementById("register-password") as HTMLInputElement;
+      const email = emailEl?.value || "";
+      const password = passEl?.value || "";
       if (await register(email, password)) {
         await loadSettings();
         await initializeApp();
@@ -488,9 +490,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Navigation
   document.querySelectorAll(".nav-item[data-view]").forEach((item) => {
     item.addEventListener("click", () => {
-      state.setCurrentView(item.dataset.view);
+      state.setCurrentView((item as HTMLElement).dataset.view || "all");
       // Leaving collection view should clear the active collection selection
-      if (item.dataset.view !== "collection") {
+      if ((item as HTMLElement).dataset.view !== "collection") {
         state.setCurrentCollection(null);
       }
       // Don't clear current folder - treat it as a filter
@@ -499,7 +501,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       renderActiveFilters();
       updateFilterButtonVisibility();
 
-      if (item.dataset.view === "dashboard") {
+      if ((item as HTMLElement).dataset.view === "dashboard") {
         renderDashboard();
       } else {
         loadBookmarks();
@@ -508,9 +510,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Search
-  let searchTimeout;
+  let searchTimeout: ReturnType<typeof setTimeout> | undefined;
   document.getElementById("search-input")?.addEventListener("input", () => {
-    clearTimeout(searchTimeout);
+    if (searchTimeout) clearTimeout(searchTimeout);
     state.setDisplayedCount(state.BOOKMARKS_PER_PAGE);
     searchTimeout = setTimeout(() => {
       renderBookmarks();
@@ -529,7 +531,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Filter controls
   document.getElementById("filter-sort")?.addEventListener("change", (e) => {
-    state.filterConfig.sort = e.target.value;
+    state.filterConfig.sort = (e.target as HTMLSelectElement).value;
     renderBookmarks();
   });
 
@@ -547,13 +549,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   document
     .getElementById("settings-tag-sort")
     ?.addEventListener("change", (e) => {
-      state.filterConfig.tagSort = e.target.value;
+      state.filterConfig.tagSort = (e.target as HTMLSelectElement).value;
       // Also update the filter dropdown if it exists
       const filterTagSort = document.getElementById("filter-tag-sort");
-      if (filterTagSort) filterTagSort.value = e.target.value;
+      if (filterTagSort) (filterTagSort as HTMLSelectElement).value = (e.target as HTMLSelectElement).value;
 
       // Save to settings to persist
-      saveSettings({ tag_sort: e.target.value });
+      saveSettings({ tag_sort: (e.target as HTMLSelectElement).value });
 
       // Re-render things that depend on tag sort
       renderSidebarTags();
@@ -564,7 +566,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document
     .getElementById("tag-search-input")
     ?.addEventListener("input", (e) => {
-      filterTagStats(e.target.value);
+      filterTagStats((e.target as HTMLInputElement).value);
     });
 
   // Bulk actions
@@ -588,7 +590,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Command palette
   const commandPaletteInput = document.getElementById("command-palette-input");
   commandPaletteInput?.addEventListener("input", () =>
-    renderCommandPaletteList(commandPaletteInput.value),
+    renderCommandPaletteList((commandPaletteInput as HTMLInputElement).value || ""),
   );
   commandPaletteInput?.addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown") {
@@ -626,9 +628,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   document
     .getElementById("command-palette-list")
     ?.addEventListener("click", (e) => {
-      const item = e.target.closest(".command-item");
+      const item = (e.target as HTMLElement).closest(".command-item");
       if (!item) return;
-      const idx = parseInt(item.dataset.index, 10);
+      const idx = parseInt((item as HTMLElement).dataset.index || "0", 10);
       if (!Number.isNaN(idx)) {
         state.setCommandPaletteActiveIndex(idx);
         runActiveCommand();
@@ -636,7 +638,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
   document.getElementById("command-palette")?.addEventListener("click", (e) => {
-    if (e.target.classList.contains("command-palette-backdrop")) {
+    if ((e.target as HTMLElement).classList.contains("command-palette-backdrop")) {
       closeCommandPalette();
     }
   });
@@ -650,42 +652,37 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Add Bookmark buttons
-  document.getElementById("add-bookmark-btn")?.addEventListener("click", () => {
-    document.getElementById("bookmark-modal-title").textContent =
-      "Add Bookmark";
-    document.getElementById("bookmark-form").reset();
+  const resetAndOpenBookmarkModal = () => {
+    const modalTitle = document.getElementById("bookmark-modal-title");
+    if (modalTitle) modalTitle.textContent = "Add Bookmark";
+    (document.getElementById("bookmark-form") as HTMLFormElement).reset();
     loadTagsFromInput(""); // Clear tags
     openModal("bookmark-modal");
-  });
-  document
-    .getElementById("sidebar-add-bookmark-btn")
-    ?.addEventListener("click", () => {
-      document.getElementById("bookmark-modal-title").textContent =
-        "Add Bookmark";
-      document.getElementById("bookmark-form").reset();
-      loadTagsFromInput(""); // Clear tags
-      openModal("bookmark-modal");
-    });
-  document.getElementById("empty-add-btn")?.addEventListener("click", () => {
-    document.getElementById("bookmark-modal-title").textContent =
-      "Add Bookmark";
-    document.getElementById("bookmark-form").reset();
-    loadTagsFromInput(""); // Clear tags
-    openModal("bookmark-modal");
-  });
+  };
+
+  document.getElementById("add-bookmark-btn")?.addEventListener("click", resetAndOpenBookmarkModal);
+  document.getElementById("sidebar-add-bookmark-btn")?.addEventListener("click", resetAndOpenBookmarkModal);
+  document.getElementById("empty-add-btn")?.addEventListener("click", resetAndOpenBookmarkModal);
+
 
   // Bookmark Form
-  document.getElementById("bookmark-form")?.addEventListener("submit", (e) => {
+  document.getElementById("bookmark-form")?.addEventListener("submit", (e: Event) => {
     e.preventDefault();
-    const id = document.getElementById("bookmark-id").value;
-    const tagsValue = document.getElementById("bookmark-tags").value;
+    const idEl = document.getElementById("bookmark-id") as HTMLInputElement;
+    const tagsEl = document.getElementById("bookmark-tags") as HTMLInputElement;
+    const urlEl = document.getElementById("bookmark-url") as HTMLInputElement;
+    const titleEl = document.getElementById("bookmark-title") as HTMLInputElement;
+    const descEl = document.getElementById("bookmark-description") as HTMLInputElement;
+    const folderEl = document.getElementById("bookmark-folder") as HTMLSelectElement;
+
+    const id = idEl?.value;
+    const tagsValue = tagsEl?.value;
     console.log("[Bookmark Form] Tags value:", tagsValue);
     const data = {
-      url: document.getElementById("bookmark-url").value,
-      title: document.getElementById("bookmark-title").value || undefined,
-      description:
-        document.getElementById("bookmark-description").value || undefined,
-      folder_id: document.getElementById("bookmark-folder").value || undefined,
+      url: urlEl?.value,
+      title: titleEl?.value || undefined,
+      description: descEl?.value || undefined,
+      folder_id: folderEl?.value || undefined,
       tags: tagsValue || undefined,
     };
     console.log("[Bookmark Form] Submitting data:", data);
@@ -710,7 +707,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
 
       if (folder?.id) {
-        document.getElementById("bookmark-folder").value = folder.id;
+        (document.getElementById("bookmark-folder") as HTMLSelectElement).value = folder.id;
       }
     });
 
@@ -718,7 +715,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document
     .getElementById("fetch-metadata-btn")
     ?.addEventListener("click", async () => {
-      const urlInput = document.getElementById("bookmark-url");
+      const urlInput = document.getElementById("bookmark-url") as HTMLInputElement;
       const url = urlInput?.value.trim();
 
       if (!url) {
@@ -735,14 +732,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       const btn = document.getElementById("fetch-metadata-btn");
+      if (!btn) return;
+
       const originalContent = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = `
+      (btn as HTMLButtonElement).disabled = true;
+      (btn as HTMLButtonElement).innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;animation:spin 1s linear infinite">
                 <path d="M21 12a9 9 0 11-6.219-8.56"/>
             </svg>
             Fetching...
-        `;
+      `;
 
       try {
         const metadata = await api("/bookmarks/fetch-metadata", {
@@ -750,32 +749,35 @@ document.addEventListener("DOMContentLoaded", async () => {
           body: JSON.stringify({ url }),
         });
 
-        const titleInput = document.getElementById("bookmark-title");
-        if (!titleInput.value && metadata.title) {
+        const titleInput = document.getElementById("bookmark-title") as HTMLInputElement;
+        if (titleInput && !titleInput.value && metadata.title) {
           titleInput.value = metadata.title;
         }
 
-        const descInput = document.getElementById("bookmark-description");
-        if (!descInput.value && metadata.description) {
+        const descInput = document.getElementById("bookmark-description") as HTMLInputElement;
+        if (descInput && !descInput.value && metadata.description) {
           descInput.value = metadata.description;
         }
 
         showToast("Metadata fetched successfully!", "success");
       } catch (err) {
-        showToast(err.message || "Failed to fetch metadata", "error");
+        showToast((err as Error).message || "Failed to fetch metadata", "error");
       } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalContent;
+        (btn as HTMLButtonElement).disabled = false;
+        (btn as HTMLButtonElement).innerHTML = originalContent;
       }
     });
 
   // Add Folder
   document.getElementById("add-folder-btn")?.addEventListener("click", (e) => {
     e.stopPropagation();
-    document.getElementById("folder-modal-title").textContent = "New Folder";
-    document.getElementById("folder-form").reset();
-    document.getElementById("folder-id").value = "";
-    document.getElementById("folder-color").value = "#6366f1";
+    const modalTitle = document.getElementById("folder-modal-title");
+    if (modalTitle) modalTitle.textContent = "New Folder";
+    (document.getElementById("folder-form") as HTMLFormElement).reset();
+    const idInput = document.getElementById("folder-id") as HTMLInputElement;
+    if (idInput) idInput.value = "";
+    const colorInput = document.getElementById("folder-color") as HTMLInputElement;
+    if (colorInput) colorInput.value = "#6366f1";
 
     // Reset button text
     const form = document.getElementById("folder-form");
@@ -789,13 +791,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Folder Form
-  document.getElementById("folder-form")?.addEventListener("submit", (e) => {
+  document.getElementById("folder-form")?.addEventListener("submit", (e: Event) => {
     e.preventDefault();
-    const id = document.getElementById("folder-id").value;
+    const idEl = document.getElementById("folder-id") as HTMLInputElement;
+    const nameEl = document.getElementById("folder-name") as HTMLInputElement;
+    const colorEl = document.getElementById("folder-color") as HTMLInputElement;
+    const parentEl = document.getElementById("folder-parent") as HTMLSelectElement;
+
+    const id = idEl?.value;
     const data = {
-      name: document.getElementById("folder-name").value,
-      color: document.getElementById("folder-color").value,
-      parent_id: document.getElementById("folder-parent").value || null,
+      name: nameEl?.value,
+      color: colorEl?.value,
+      parent_id: parentEl?.value || null,
     };
 
     if (id) {
@@ -812,13 +819,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         .querySelectorAll(".color-option")
         .forEach((o) => o.classList.remove("active"));
       opt.classList.add("active");
-      document.getElementById("folder-color").value = opt.dataset.color;
+      const colorInput = document.getElementById("folder-color") as HTMLInputElement;
+      if (colorInput) colorInput.value = (opt as HTMLElement).dataset.color || "#6366f1";
     });
   });
 
   // View Mode
   document.querySelectorAll(".view-btn").forEach((btn) => {
-    btn.addEventListener("click", () => setViewMode(btn.dataset.viewMode));
+    btn.addEventListener("click", () => setViewMode((btn as HTMLElement).dataset.viewMode || "grid"));
   });
 
   // Sidebar toggle buttons for all views
@@ -852,7 +860,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Close overlays/modals on Escape key
-  document.addEventListener("keydown", (e) => {
+  document.addEventListener("keydown", (e: KeyboardEvent) => {
     if (e.key !== "Escape") return;
     // Close mobile sidebar if open
     if (window.innerWidth <= 768) {
@@ -889,13 +897,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Favorites-specific controls
-  document.getElementById("favorites-sort")?.addEventListener("change", (e) => {
-    state.filterConfig.sort = e.target.value;
+  document.getElementById("favorites-sort")?.addEventListener("change", (e: Event) => {
+    state.filterConfig.sort = (e.target as HTMLSelectElement).value;
     renderBookmarks();
   });
 
   // Recents-specific controls
-  document.getElementById("recents-range")?.addEventListener("change", (e) => {
+  document.getElementById("recents-range")?.addEventListener("change", () => {
     // Filter by time range - will need to implement range filtering
     loadBookmarks();
   });
@@ -915,16 +923,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         .forEach((p) => p.classList.remove("active"));
       tab.classList.add("active");
       document
-        .getElementById(`settings-${tab.dataset.settingsTab}`)
+        .getElementById(`settings-${(tab as HTMLElement).dataset.settingsTab}`)
         ?.classList.add("active");
 
-      if (tab.dataset.settingsTab === "tags") loadTagStats();
+      if ((tab as HTMLElement).dataset.settingsTab === "tags") loadTagStats();
     });
   });
 
   document
     .getElementById("theme-select")
-    ?.addEventListener("change", (e) => setTheme(e.target.value));
+    ?.addEventListener("change", (e: Event) => setTheme((e.target as HTMLSelectElement).value));
   document
     .getElementById("hide-favicons-toggle")
     ?.addEventListener("change", toggleFavicons);
@@ -962,25 +970,26 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Profile Settings
   document
     .getElementById("profile-email-form")
-    ?.addEventListener("submit", async (e) => {
+    ?.addEventListener("submit", async (e: Event) => {
       e.preventDefault();
-      const email = document.getElementById("profile-email").value;
+      const emailInput = document.getElementById("profile-email") as HTMLInputElement;
+      const email = emailInput.value;
       if (await updateProfile(email)) {
-        document.getElementById("profile-email").value = "";
+        emailInput.value = "";
       }
     });
 
   document
     .getElementById("profile-password-form")
-    ?.addEventListener("submit", async (e) => {
+    ?.addEventListener("submit", async (e: Event) => {
       e.preventDefault();
-      const currentPassword = document.getElementById(
-        "profile-current-password",
-      ).value;
-      const newPassword = document.getElementById("profile-new-password").value;
+      const currentPassInput = document.getElementById("profile-current-password") as HTMLInputElement;
+      const newPassInput = document.getElementById("profile-new-password") as HTMLInputElement;
+      const currentPassword = currentPassInput.value;
+      const newPassword = newPassInput.value;
       if (await updatePassword(currentPassword, newPassword)) {
-        document.getElementById("profile-current-password").value = "";
-        document.getElementById("profile-new-password").value = "";
+        currentPassInput.value = "";
+        newPassInput.value = "";
       }
     });
 
@@ -995,7 +1004,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         .querySelectorAll(".color-option-tag")
         .forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
-      document.getElementById("tag-color").value = btn.dataset.color;
+      const tagColorInput = document.getElementById("tag-color") as HTMLInputElement;
+      if (tagColorInput) tagColorInput.value = (btn as HTMLElement).dataset.color || "#f59e0b";
     });
   });
 
@@ -1005,8 +1015,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   document
     .getElementById("import-html-file")
-    ?.addEventListener("change", (e) => {
-      if (e.target.files[0]) importHtml(e.target.files[0]);
+    ?.addEventListener("change", (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files && target.files[0]) importHtml(target.files[0]);
     });
   document
     .getElementById("export-json-btn")
@@ -1026,16 +1037,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   document
     .getElementById("import-dashboard-views-file")
-    ?.addEventListener("change", (e) => {
-      if (e.target.files[0]) importDashboardViews(e.target.files[0]);
+    ?.addEventListener("change", (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files && target.files[0]) importDashboardViews(target.files[0]);
     });
 
   // Tag rename
   document
     .getElementById("tag-rename-btn")
     ?.addEventListener("click", async () => {
-      const from = document.getElementById("tag-rename-from")?.value.trim();
-      const to = document.getElementById("tag-rename-to")?.value.trim();
+      const fromInput = document.getElementById("tag-rename-from") as HTMLInputElement;
+      const toInput = document.getElementById("tag-rename-to") as HTMLInputElement;
+      const from = fromInput?.value.trim();
+      const to = toInput?.value.trim();
       if (!from || !to) {
         showToast("Enter both tags to rename", "error");
         return;
@@ -1043,7 +1057,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!confirm(`Rename tag "${from}" to "${to}"?`)) return;
       try {
         await renameTagAcross(from, to);
-      } catch (err) {
+      } catch (err: any) {
         showToast(err.message || "Rename failed", "error");
       }
     });
@@ -1059,7 +1073,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         state.setLastTagRenameAction(null);
         updateTagRenameUndoButton();
         showToast("Undo complete", "success");
-      } catch (err) {
+      } catch (err: any) {
         showToast(err.message || "Undo failed", "error");
       }
     });
@@ -1068,8 +1082,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   document
     .getElementById("add-new-tag-btn")
     ?.addEventListener("click", async () => {
-      const nameInput = document.getElementById("new-tag-name");
-      const colorInput = document.getElementById("new-tag-color");
+      const nameInput = document.getElementById("new-tag-name") as HTMLInputElement;
+      const colorInput = document.getElementById("new-tag-color") as HTMLInputElement;
 
       const name = nameInput?.value.trim();
       const color = colorInput?.value || "#f59e0b";
@@ -1091,7 +1105,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
   // Enter key support for new tag input
-  document.getElementById("new-tag-name")?.addEventListener("keypress", (e) => {
+  document.getElementById("new-tag-name")?.addEventListener("keypress", (e: KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
       document.getElementById("add-new-tag-btn")?.click();
@@ -1101,8 +1115,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Sidebar tag search
   document
     .getElementById("sidebar-tag-search")
-    ?.addEventListener("input", (e) => {
-      filterSidebarTags(e.target.value);
+    ?.addEventListener("input", (e: Event) => {
+      filterSidebarTags((e.target as HTMLInputElement).value);
     });
 
   document
@@ -1115,7 +1129,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Section Toggles
   document.querySelectorAll("[data-toggle-section]").forEach((header) => {
     header.addEventListener("click", () => {
-      toggleSection(header.dataset.toggleSection);
+      toggleSection((header as HTMLElement).dataset.toggleSection || "");
     });
   });
 
@@ -1133,22 +1147,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Global Event Delegation
-  document.body.addEventListener("input", (e) => {
-    const target = e.target.closest("[data-action]");
+  document.body.addEventListener("input", (e: Event) => {
+    const target = (e.target as HTMLElement).closest("[data-action]") as HTMLElement;
     if (!target) return;
 
     if (target.dataset.action === "filter-dashboard-bookmarks") {
-      filterDashboardBookmarks(target.value);
+      filterDashboardBookmarks((target as HTMLInputElement).value);
     }
   });
 
-  document.body.addEventListener("click", (e) => {
-    const target = e.target.closest("[data-action]");
+  document.body.addEventListener("click", (e: Event) => {
+    const target = (e.target as HTMLElement).closest("[data-action]") as HTMLElement;
     if (!target) return;
 
     const action = target.dataset.action;
-    const id = target.dataset.id;
-    const tag = target.dataset.tag;
+    const id = target.dataset.id || "";
+    const tag = target.dataset.tag || "";
     const modal = target.dataset.modalTarget;
 
     switch (action) {
@@ -1212,7 +1226,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (tag) removeTagFilter(tag);
         break;
       case "clear-search":
-        clearSearch();
+        const searchInput = document.getElementById("search-input") as HTMLInputElement;
+        if (searchInput) {
+          searchInput.value = "";
+          state.filterConfig.search = "";
+          renderBookmarks();
+        }
         break;
       case "clear-folder-filter":
         state.setCurrentFolder(null);
@@ -1337,17 +1356,21 @@ window.AnchorMarks = {
 };
 
 // Function to launch bookmark from command palette
-function launchBookmarkFromPalette(bookmarkId) {
+function launchBookmarkFromPalette(bookmarkId: string): void {
   // Logic to launch the bookmark
-  const bookmark = bookmarks.find((b) => b.id === bookmarkId);
+  const bookmark = state.bookmarks.find((b) => b.id === bookmarkId);
   if (bookmark) {
     window.open(bookmark.url, "_blank");
   }
 }
 
 // Integrate search into command palette
-function searchBookmarks(query) {
-  return bookmarks.filter(
+function searchBookmarks(query: string): any[] {
+  return state.bookmarks.filter(
     (b) => b.title.includes(query) || b.url.includes(query),
   );
 }
+
+// Make globally available
+(window as any).launchBookmarkFromPalette = launchBookmarkFromPalette;
+(window as any).searchBookmarks = searchBookmarks;

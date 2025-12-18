@@ -3,16 +3,16 @@
  * Handles tag input with badges and autocomplete
  */
 
-import * as state from "@features/state.js";
-import { escapeHtml } from "@utils/index.js";
+import * as state from "@features/state.ts";
+import { escapeHtml } from "@utils/index.ts";
 
-let selectedTags = [];
+let selectedTags: string[] = [];
 let autocompleteIndex = -1;
 
 // Initialize tag input
-export function initTagInput() {
+export function initTagInput(): void {
   const container = document.getElementById("tags-input-container");
-  const input = document.getElementById("bookmark-tags-input");
+  const input = document.getElementById("bookmark-tags-input") as HTMLInputElement;
   const hiddenInput = document.getElementById("bookmark-tags");
   const autocomplete = document.getElementById("tag-autocomplete");
 
@@ -27,8 +27,8 @@ export function initTagInput() {
   });
 
   // Input event - show autocomplete
-  input.addEventListener("input", (e) => {
-    const value = e.target.value.trim();
+  input.addEventListener("input", (e: Event) => {
+    const value = (e.target as HTMLInputElement).value.trim();
     if (value.length > 0) {
       showAutocomplete(value, autocomplete);
     } else {
@@ -44,7 +44,7 @@ export function initTagInput() {
         ".tag-autocomplete-item.active",
       );
       if (activeItem) {
-        const tagName = activeItem.dataset.tag;
+        const tagName = (activeItem as HTMLElement).dataset.tag || "";
         addTag(tagName);
       } else if (input.value.trim()) {
         addTag(input.value.trim());
@@ -74,14 +74,14 @@ export function initTagInput() {
 
   // Click outside to close autocomplete
   document.addEventListener("click", (e) => {
-    if (!container.contains(e.target) && !autocomplete.contains(e.target)) {
+    if (!container.contains(e.target as Node) && !autocomplete.contains(e.target as Node)) {
       hideAutocomplete(autocomplete);
     }
   });
 }
 
 // Load tags from input value
-export function loadTagsFromInput(tagsString) {
+export function loadTagsFromInput(tagsString: string): void {
   selectedTags = [];
   if (tagsString) {
     const tags = tagsString
@@ -94,7 +94,7 @@ export function loadTagsFromInput(tagsString) {
 }
 
 // Add a tag
-function addTag(tagName, updateInput = true) {
+function addTag(tagName: string, updateInput: boolean = true): void {
   const normalizedTag = tagName.trim();
   if (!normalizedTag || selectedTags.includes(normalizedTag)) {
     return;
@@ -104,7 +104,7 @@ function addTag(tagName, updateInput = true) {
   renderSelectedTags();
 
   if (updateInput) {
-    const input = document.getElementById("bookmark-tags-input");
+    const input = document.getElementById("bookmark-tags-input") as HTMLInputElement;
     if (input) {
       input.value = "";
       input.focus();
@@ -119,14 +119,14 @@ function addTag(tagName, updateInput = true) {
 }
 
 // Remove a tag
-function removeTag(tagName) {
+function removeTag(tagName: string): void {
   selectedTags = selectedTags.filter((t) => t !== tagName);
   renderSelectedTags();
   updateHiddenInput();
 }
 
 // Render selected tags as badges
-function renderSelectedTags() {
+function renderSelectedTags(): void {
   const container = document.getElementById("selected-tags");
   if (!container) return;
 
@@ -152,21 +152,21 @@ function renderSelectedTags() {
   container.querySelectorAll(".selected-tag-remove").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      removeTag(btn.dataset.tag);
+      removeTag((btn as HTMLElement).dataset.tag || "");
     });
   });
 }
 
 // Update hidden input with comma-separated tags
-function updateHiddenInput() {
-  const hiddenInput = document.getElementById("bookmark-tags");
+function updateHiddenInput(): void {
+  const hiddenInput = document.getElementById("bookmark-tags") as HTMLInputElement;
   if (hiddenInput) {
     hiddenInput.value = selectedTags.join(", ");
   }
 }
 
 // Show autocomplete suggestions
-function showAutocomplete(searchTerm, autocomplete) {
+function showAutocomplete(searchTerm: string, autocomplete: HTMLElement): void {
   if (!autocomplete) return;
 
   // Get all tags from tagMetadata
@@ -196,7 +196,7 @@ function showAutocomplete(searchTerm, autocomplete) {
       return `
         <div class="tag-autocomplete-item ${index === 0 ? "active" : ""}" data-tag="${escapeHtml(tag)}">
           <span class="tag-autocomplete-name">${escapeHtml(tag)}</span>
-          <span class="tag-autocomplete-count">${tagMeta.count || 0}</span>
+          <span class="tag-autocomplete-count">${(tagMeta as any).count || 0}</span>
         </div>
       `;
     })
@@ -208,13 +208,13 @@ function showAutocomplete(searchTerm, autocomplete) {
   // Add click listeners
   autocomplete.querySelectorAll(".tag-autocomplete-item").forEach((item) => {
     item.addEventListener("click", () => {
-      addTag(item.dataset.tag);
+      addTag((item as HTMLElement).dataset.tag || "");
     });
   });
 }
 
 // Hide autocomplete
-function hideAutocomplete(autocomplete) {
+function hideAutocomplete(autocomplete: HTMLElement): void {
   if (autocomplete) {
     autocomplete.style.display = "none";
     autocompleteIndex = -1;
@@ -222,7 +222,7 @@ function hideAutocomplete(autocomplete) {
 }
 
 // Navigate autocomplete with keyboard
-function navigateAutocomplete(direction, autocomplete) {
+function navigateAutocomplete(direction: number, autocomplete: HTMLElement): void {
   const items = autocomplete.querySelectorAll(".tag-autocomplete-item");
   if (items.length === 0) return;
 

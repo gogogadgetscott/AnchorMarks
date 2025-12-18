@@ -20,7 +20,7 @@ import toast from "./fragments/toast.html?raw";
 /**
  * Loads and injects HTML components into the DOM
  */
-export function loadComponents() {
+export function loadComponents(): void {
   const app = document.getElementById("app");
   if (!app) return;
 
@@ -30,7 +30,9 @@ export function loadComponents() {
   // 1. Auth Screen
   const authContainer = document.createElement("div");
   authContainer.innerHTML = authScreen;
-  app.appendChild(authContainer.firstElementChild);
+  if (authContainer.firstElementChild) {
+    app.appendChild(authContainer.firstElementChild);
+  }
 
   // 2. Main App Container
   const mainApp = document.createElement("div");
@@ -46,37 +48,43 @@ export function loadComponents() {
   // Sidebar
   const sidebarTemp = document.createElement("div");
   sidebarTemp.innerHTML = sidebar;
-  mainApp.appendChild(sidebarTemp.firstElementChild);
+  if (sidebarTemp.firstElementChild) {
+    mainApp.appendChild(sidebarTemp.firstElementChild);
+  }
 
   // Main Content
   const contentTemp = document.createElement("div");
   contentTemp.innerHTML = mainContent;
   const mainContentEl = contentTemp.firstElementChild;
 
-  // Inject Headers
-  const headersContainer = mainContentEl.querySelector("#headers-container");
-  if (headersContainer) {
-    headersContainer.innerHTML = [
-      dashboardHeader,
-      bookmarksHeader,
-      favoritesHeader,
-      recentsHeader,
-    ].join("\n");
-  }
+  if (mainContentEl) {
+    // Inject Headers
+    const headersContainer = mainContentEl.querySelector("#headers-container");
+    if (headersContainer) {
+      headersContainer.innerHTML = [
+        dashboardHeader,
+        bookmarksHeader,
+        favoritesHeader,
+        recentsHeader,
+      ].join("\n");
+    }
 
-  // Inject Bulk Bar
-  const bulkBarContainer = mainContentEl.querySelector("#bulk-bar-container");
-  if (bulkBarContainer) {
-    bulkBarContainer.innerHTML = bulkBar;
-  }
+    // Inject Bulk Bar
+    const bulkBarContainer = mainContentEl.querySelector("#bulk-bar-container");
+    if (bulkBarContainer) {
+      bulkBarContainer.innerHTML = bulkBar;
+    }
 
-  // Inject Empty State
-  const emptyStateContainer = mainContentEl.querySelector("#empty-state-container");
-  if (emptyStateContainer) {
-    emptyStateContainer.innerHTML = emptyState;
-  }
+    // Inject Empty State
+    const emptyStateContainer = mainContentEl.querySelector(
+      "#empty-state-container",
+    );
+    if (emptyStateContainer) {
+      emptyStateContainer.innerHTML = emptyState;
+    }
 
-  mainApp.appendChild(mainContentEl);
+    mainApp.appendChild(mainContentEl);
+  }
   app.appendChild(mainApp);
 
   // 3. Modals and Overlays

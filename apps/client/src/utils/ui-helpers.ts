@@ -3,11 +3,36 @@
  * Handles modals, toasts, and general UI functions
  */
 
-import * as state from "@features/state.js";
-import { escapeHtml, parseTagInput } from "@utils/index.js";
+import * as state from "@features/state.ts";
+import { escapeHtml, parseTagInput } from "@utils/index.ts";
 
 // DOM Element references (initialized on DOMContentLoaded)
-export const dom = {
+export const dom: {
+  authScreen: HTMLElement | null;
+  mainApp: HTMLElement | null;
+  loginForm: HTMLFormElement | null;
+  registerForm: HTMLFormElement | null;
+  authTabs: NodeListOf<HTMLElement> | null;
+  bookmarksContainer: HTMLElement | null;
+  emptyState: HTMLElement | null;
+  searchInput: HTMLInputElement | null;
+  viewTitle: HTMLElement | null;
+  viewCount: HTMLElement | null;
+  bulkBar: HTMLElement | null;
+  bulkMoveSelect: HTMLSelectElement | null;
+  bulkCount: HTMLElement | null;
+  commandPalette: HTMLElement | null;
+  commandPaletteInput: HTMLInputElement | null;
+  commandPaletteList: HTMLElement | null;
+  bookmarkUrlInput: HTMLInputElement | null;
+  bookmarkTagsInput: HTMLInputElement | null;
+  tagSuggestions: HTMLElement | null;
+  tagStatsList: HTMLElement | null;
+  tagRenameFrom: HTMLInputElement | null;
+  tagRenameTo: HTMLInputElement | null;
+  tagRenameBtn: HTMLButtonElement | null;
+  tagRenameUndoBtn: HTMLButtonElement | null;
+} = {
   authScreen: null,
   mainApp: null,
   loginForm: null,
@@ -35,35 +60,35 @@ export const dom = {
 };
 
 // Initialize DOM references
-export function initDom() {
+export function initDom(): void {
   dom.authScreen = document.getElementById("auth-screen");
   dom.mainApp = document.getElementById("main-app");
-  dom.loginForm = document.getElementById("login-form");
-  dom.registerForm = document.getElementById("register-form");
+  dom.loginForm = document.getElementById("login-form") as HTMLFormElement;
+  dom.registerForm = document.getElementById("register-form") as HTMLFormElement;
   dom.authTabs = document.querySelectorAll(".auth-tab");
   dom.bookmarksContainer = document.getElementById("bookmarks-container");
   dom.emptyState = document.getElementById("empty-state");
-  dom.searchInput = document.getElementById("search-input");
+  dom.searchInput = document.getElementById("search-input") as HTMLInputElement;
   dom.viewTitle = document.getElementById("view-title");
   dom.viewCount = document.getElementById("view-count");
   dom.bulkBar = document.getElementById("bulk-bar");
-  dom.bulkMoveSelect = document.getElementById("bulk-move-select");
+  dom.bulkMoveSelect = document.getElementById("bulk-move-select") as HTMLSelectElement;
   dom.bulkCount = document.getElementById("bulk-count");
   dom.commandPalette = document.getElementById("command-palette");
-  dom.commandPaletteInput = document.getElementById("command-palette-input");
+  dom.commandPaletteInput = document.getElementById("command-palette-input") as HTMLInputElement;
   dom.commandPaletteList = document.getElementById("command-palette-list");
-  dom.bookmarkUrlInput = document.getElementById("bookmark-url");
-  dom.bookmarkTagsInput = document.getElementById("bookmark-tags");
+  dom.bookmarkUrlInput = document.getElementById("bookmark-url") as HTMLInputElement;
+  dom.bookmarkTagsInput = document.getElementById("bookmark-tags") as HTMLInputElement;
   dom.tagSuggestions = document.getElementById("tag-suggestions");
   dom.tagStatsList = document.getElementById("tag-stats-list");
-  dom.tagRenameFrom = document.getElementById("tag-rename-from");
-  dom.tagRenameTo = document.getElementById("tag-rename-to");
-  dom.tagRenameBtn = document.getElementById("tag-rename-btn");
-  dom.tagRenameUndoBtn = document.getElementById("tag-rename-undo-btn");
+  dom.tagRenameFrom = document.getElementById("tag-rename-from") as HTMLInputElement;
+  dom.tagRenameTo = document.getElementById("tag-rename-to") as HTMLInputElement;
+  dom.tagRenameBtn = document.getElementById("tag-rename-btn") as HTMLButtonElement;
+  dom.tagRenameUndoBtn = document.getElementById("tag-rename-undo-btn") as HTMLButtonElement;
 }
 
 // Show toast notification
-export function showToast(message, type = "") {
+export function showToast(message: string, type: string = ""): void {
   const toast = document.getElementById("toast");
   if (!toast) return;
   const msgEl = toast.querySelector(".toast-message");
@@ -74,13 +99,13 @@ export function showToast(message, type = "") {
 }
 
 // Open modal
-export function openModal(id) {
+export function openModal(id: string): void {
   const modal = document.getElementById(id);
   if (modal) modal.classList.remove("hidden");
 }
 
 // Close all modals
-export function closeModals() {
+export function closeModals(): void {
   document.querySelectorAll(".modal").forEach((m) => m.classList.add("hidden"));
   resetForms();
 
@@ -89,7 +114,7 @@ export function closeModals() {
   if (importProgress) {
     importProgress.innerHTML = "";
   }
-  const importBtn = document.getElementById("import-html-btn");
+  const importBtn = document.getElementById("import-html-btn") as HTMLButtonElement;
   if (importBtn) {
     importBtn.disabled = false;
     importBtn.removeAttribute("aria-busy");
@@ -97,15 +122,15 @@ export function closeModals() {
 }
 
 // Reset forms
-export function resetForms() {
-  const bookmarkForm = document.getElementById("bookmark-form");
-  const folderForm = document.getElementById("folder-form");
+export function resetForms(): void {
+  const bookmarkForm = document.getElementById("bookmark-form") as HTMLFormElement;
+  const folderForm = document.getElementById("folder-form") as HTMLFormElement;
 
   if (bookmarkForm) bookmarkForm.reset();
   if (folderForm) folderForm.reset();
 
-  const bookmarkId = document.getElementById("bookmark-id");
-  const folderId = document.getElementById("folder-id");
+  const bookmarkId = document.getElementById("bookmark-id") as HTMLInputElement;
+  const folderId = document.getElementById("folder-id") as HTMLInputElement;
   if (bookmarkId) bookmarkId.value = "";
   if (folderId) folderId.value = "";
 
@@ -118,14 +143,14 @@ export function resetForms() {
     opt.classList.toggle("active", i === 0);
   });
 
-  const folderColor = document.getElementById("folder-color");
+  const folderColor = document.getElementById("folder-color") as HTMLInputElement;
   if (folderColor) folderColor.value = "#6366f1";
 
   if (dom.tagSuggestions) dom.tagSuggestions.innerHTML = "";
 }
 
 // Add tag to input field
-export function addTagToInput(tag) {
+export function addTagToInput(tag: string): void {
   if (!dom.bookmarkTagsInput) return;
   const current = new Set(parseTagInput(dom.bookmarkTagsInput.value));
   current.add(tag);
@@ -133,7 +158,7 @@ export function addTagToInput(tag) {
 }
 
 // Show/hide view-specific headers
-export function updateViewHeader() {
+export function updateViewHeader(): void {
   // Hide all headers
   [
     "dashboard-header",
@@ -169,7 +194,7 @@ export function updateViewHeader() {
 }
 
 // Update active navigation
-export function updateActiveNav() {
+export function updateActiveNav(): void {
   document.querySelectorAll(".nav-item").forEach((item) => {
     item.classList.remove("active");
   });
@@ -211,7 +236,7 @@ export function updateActiveNav() {
 }
 
 // Update counts display
-export function updateCounts() {
+export function updateCounts(): void {
   const hasFullData =
     !state.currentFolder &&
     state.currentView !== "favorites" &&
@@ -222,7 +247,6 @@ export function updateCounts() {
   const favCountEl = document.getElementById("fav-count");
   const recentCountEl = document.getElementById("recent-count");
   const dashboardCountEl = document.getElementById("dashboard-count");
-  const viewCountEl = document.getElementById("view-count");
 
   // 1. Calculate Dashboard Count
   let dashboardVal = 0;
@@ -294,18 +318,18 @@ export function updateCounts() {
 
   // Update Badges
   if (dashboardCountEl && (state.currentView === "dashboard" || hasFullData)) {
-    dashboardCountEl.textContent = dashboardVal;
+    dashboardCountEl.textContent = dashboardVal.toString();
   }
 
   if (recentCountEl && (state.currentView === "recent" || hasFullData)) {
-    recentCountEl.textContent = recentVal;
+    recentCountEl.textContent = recentVal.toString();
   }
 
   if (favCountEl) {
     // Use logic: if we are in favorites view, use rendered count (effectively).
     // If not, use calculated favVal if hasFullData.
     if (state.currentView === "favorites" || hasFullData) {
-      favCountEl.textContent = favVal;
+      favCountEl.textContent = favVal.toString();
     }
   }
 
@@ -315,7 +339,7 @@ export function updateCounts() {
       state.currentView === "folder" ||
       hasFullData
     ) {
-      bookmarkCountEl.textContent = bookmarkVal;
+      bookmarkCountEl.textContent = bookmarkVal.toString();
     }
   }
 
@@ -352,7 +376,7 @@ export function updateCounts() {
 }
 
 // Update stats
-export function updateStats() {
+export function updateStats(): void {
   const statBookmarks = document.getElementById("stat-bookmarks");
   const statFolders = document.getElementById("stat-folders");
   const statTags = document.getElementById("stat-tags");
@@ -402,16 +426,16 @@ export function updateStats() {
     bCount = displayedIds.size;
   }
 
-  if (statBookmarks) statBookmarks.textContent = bCount;
-  if (statFolders) statFolders.textContent = fCount;
-  if (statTags) statTags.textContent = tCount;
+  if (statBookmarks) statBookmarks.textContent = bCount.toString();
+  if (statFolders) statFolders.textContent = fCount.toString();
+  if (statTags) statTags.textContent = tCount.toString();
 
   // Sidebar badge always shows total folders
-  if (foldersCount) foldersCount.textContent = state.folders.length;
+  if (foldersCount) foldersCount.textContent = state.folders.length.toString();
 }
 
 // Get contextual empty state message
-export function getEmptyStateMessage() {
+export function getEmptyStateMessage(): string {
   if (state.currentView === "favorites") {
     return `
             <div class="empty-state-content">
@@ -477,7 +501,7 @@ export function getEmptyStateMessage() {
 }
 
 // Update bulk selection UI
-export function updateBulkUI() {
+export function updateBulkUI(): void {
   if (!dom.bulkBar) return;
   if (state.selectedBookmarks.size === 0) {
     dom.bulkBar.classList.add("hidden");

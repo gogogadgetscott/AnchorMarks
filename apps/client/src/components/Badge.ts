@@ -6,7 +6,7 @@
  *   @param {string} options.className - Additional CSS classes.
  * @returns {string} - HTML string of the badge.
  */
-export function Badge(content, options = {}) {
+export function Badge(content: string | number, options: { id?: string; className?: string } = {}): string {
     const { id = "", className = "" } = options;
     const idAttr = id ? `id="${id}"` : "";
 

@@ -2,17 +2,17 @@
 // Assumes markup includes elements with classes: .command-palette and .command-palette-backdrop
 // Provides a fallback close behavior if module close function isn't available
 (function initCommandPaletteInteractions() {
-  const panel = document.querySelector(".command-palette");
-  const backdrop = document.querySelector(".command-palette-backdrop");
+  const panel = document.querySelector(".command-palette") as HTMLElement;
+  const backdrop = document.querySelector(".command-palette-backdrop") as HTMLElement;
   if (!backdrop) return; // nothing to wire
 
   function hidePalette() {
     try {
-      if (typeof window.closeCommandPalette === "function") {
-        window.closeCommandPalette();
+      if (typeof (window as any).closeCommandPalette === "function") {
+        (window as any).closeCommandPalette();
         return;
       }
-    } catch (_) {}
+    } catch (_) { }
     if (panel) panel.style.display = "none";
     backdrop.style.display = "none";
   }
@@ -32,7 +32,7 @@
   }
 
   // Observe size/visibility changes
-  let syncInterval = null;
+  let syncInterval: number | null = null;
   function startSync() {
     if (syncInterval) return;
     syncBackdropToPanel();
@@ -72,7 +72,7 @@
     "click",
     function onBackdropClick(e) {
       // If click originated inside panel, ignore
-      if (panel && panel.contains(e.target)) return;
+      if (panel && panel.contains(e.target as Node)) return;
       hidePalette();
     },
     { passive: true },
@@ -94,18 +94,21 @@
  * Handles command palette functionality
  */
 
-import * as state from "@features/state.js";
-import { escapeHtml } from "@utils/index.js";
-import { openModal, updateActiveNav } from "@utils/ui-helpers.js";
-import { loadBookmarks } from "@features/bookmarks/bookmarks.js";
+import * as state from "@features/state.ts";
+import { escapeHtml } from "@utils/index.ts";
+import { openModal, updateActiveNav } from "@utils/ui-helpers.ts";
+import { loadBookmarks } from "@features/bookmarks/bookmarks.ts";
+import { Command } from "@/types";
+
+
 
 // Get command palette commands
-export function getCommandPaletteCommands() {
-  const baseCommands = [
+export function getCommandPaletteCommands(): Command[] {
+  const baseCommands: Command[] = [
     { label: "Add bookmark", action: () => openModal("bookmark-modal") },
     {
       label: "Focus search",
-      action: () => document.getElementById("search-input")?.focus(),
+      action: () => (document.getElementById("search-input") as HTMLInputElement)?.focus(),
     },
     {
       label: "Show dashboard",
@@ -143,7 +146,7 @@ export function getCommandPaletteCommands() {
     { label: "Open settings", action: () => openModal("settings-modal") },
   ];
 
-  const folderCommands = state.folders
+  const folderCommands: Command[] = state.folders
     .filter((f) => !f.parent_id)
     .map((f) => ({
       label: `Go to ${f.name}`,
@@ -161,9 +164,9 @@ export function getCommandPaletteCommands() {
 }
 
 // Open command palette
-export function openCommandPalette() {
+export function openCommandPalette(): void {
   const palette = document.getElementById("command-palette");
-  const input = document.getElementById("command-palette-input");
+  const input = document.getElementById("command-palette-input") as HTMLInputElement;
 
   if (!palette) return;
 
@@ -176,9 +179,9 @@ export function openCommandPalette() {
 }
 
 // Close command palette
-export function closeCommandPalette() {
+export function closeCommandPalette(): void {
   const palette = document.getElementById("command-palette");
-  const input = document.getElementById("command-palette-input");
+  const input = document.getElementById("command-palette-input") as HTMLInputElement;
   if (!palette) return;
 
   state.setCommandPaletteOpen(false);
@@ -186,16 +189,16 @@ export function closeCommandPalette() {
   // Ensure focus returns to the app so global shortcuts work
   try {
     input?.blur();
-  } catch (_) {}
+  } catch (_) { }
 }
 
 // Render command palette list
-export function renderCommandPaletteList(filterText) {
+export function renderCommandPaletteList(filterText: string): void {
   const list = document.getElementById("command-palette-list");
   if (!list) return;
 
   const term = (filterText || "").toLowerCase();
-  const entries = getCommandPaletteCommands().filter((cmd) =>
+  const entries: Command[] = getCommandPaletteCommands().filter((cmd) =>
     cmd.label.toLowerCase().includes(term),
   );
   state.setCommandPaletteEntries(entries);
@@ -218,7 +221,7 @@ export function renderCommandPaletteList(filterText) {
 }
 
 // Update command palette active item
-export function updateCommandPaletteActive(direction) {
+export function updateCommandPaletteActive(direction: number): void {
   const list = document.getElementById("command-palette-list");
   if (!list || state.commandPaletteEntries.length === 0) return;
 
@@ -240,8 +243,8 @@ export function updateCommandPaletteActive(direction) {
 }
 
 // Run active command
-export function runActiveCommand() {
-  const cmd = state.commandPaletteEntries[state.commandPaletteActiveIndex];
+export function runActiveCommand(): void {
+  const cmd = state.commandPaletteEntries[state.commandPaletteActiveIndex] as Command | undefined;
   if (!cmd) return;
 
   closeCommandPalette();
@@ -249,13 +252,13 @@ export function runActiveCommand() {
 }
 
 // Shortcuts help popup
-export function openShortcutsPopup() {
+export function openShortcutsPopup(): void {
   const popup = document.getElementById("shortcuts-popup");
   if (!popup) return;
   popup.classList.remove("hidden");
 }
 
-export function closeShortcutsPopup() {
+export function closeShortcutsPopup(): void {
   const popup = document.getElementById("shortcuts-popup");
   if (!popup) return;
   popup.classList.add("hidden");

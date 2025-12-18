@@ -27,6 +27,29 @@ export default defineConfig({
       input: {
         main: path.resolve(__dirname, "index.html"),
       },
+      output: {
+        manualChunks: {
+          auth: ["src/features/auth/auth.js"],
+          bookmarks: [
+            "src/features/bookmarks/bookmarks.js",
+            "src/features/bookmarks/folders.js",
+            "src/features/bookmarks/search.js",
+            "src/features/bookmarks/bulk-ops.js",
+          ],
+          dashboard: ["src/features/bookmarks/dashboard.js"],
+          commands: ["src/features/bookmarks/commands.js"],
+          extras: [
+            "src/features/bookmarks/import-export.js",
+            "src/features/bookmarks/tour.js",
+            "src/features/bookmarks/widget-picker.js",
+          ],
+          ui: [
+            "src/utils/ui-helpers.js",
+            "src/layouts/loader.js",
+            "src/components/index.js",
+          ],
+        },
+      },
     },
     // Generate source maps for easier debugging
     sourcemap: true,

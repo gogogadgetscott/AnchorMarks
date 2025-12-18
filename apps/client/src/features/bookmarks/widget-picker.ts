@@ -3,10 +3,10 @@
  * Handles the add widget dropdown for dashboard
  */
 
-import * as state from "@features/state.js";
-import { escapeHtml } from "@utils/index.js";
-import { showToast } from "@utils/ui-helpers.js";
-import { addDashboardWidget } from "@features/bookmarks/dashboard.js";
+import * as state from "@features/state.ts";
+import { escapeHtml } from "@utils/index.ts";
+import { showToast } from "@utils/ui-helpers.ts";
+import { addDashboardWidget } from "@features/bookmarks/dashboard.ts";
 
 // Track if dropdown is pinned
 let widgetDropdownPinned = false;
@@ -101,8 +101,8 @@ export function closeWidgetPicker() {
 }
 
 // Filter folders in widget picker based on search term
-function filterWidgetPickerFolders(searchTerm) {
-  const container = document.getElementById("widget-folders-container");
+function filterWidgetPickerFolders(searchTerm: string): void {
+  const container = document.getElementById("widget-folders-container") as HTMLElement & { _allFolders: any[], _originalHTML: string };
   if (!container || !container._allFolders) return;
 
   const term = searchTerm.toLowerCase().trim();
@@ -154,8 +154,8 @@ function filterWidgetPickerFolders(searchTerm) {
 }
 
 // Filter tags in widget picker based on search term
-function filterWidgetPickerTags(searchTerm) {
-  const container = document.getElementById("widget-tags-container");
+function filterWidgetPickerTags(searchTerm: string): void {
+  const container = document.getElementById("widget-tags-container") as HTMLElement & { _allTags: any[], _originalHTML: string };
   if (!container || !container._allTags) return;
 
   const term = searchTerm.toLowerCase().trim();
@@ -223,8 +223,8 @@ function attachWidgetFolderListeners() {
   if (!container) return;
 
   container.querySelectorAll(".widget-picker-item").forEach((item) => {
-    const type = item.dataset.type;
-    const id = item.dataset.id;
+    const type = (item as HTMLElement).dataset.type || "";
+    const id = (item as HTMLElement).dataset.id || "";
     const isAdded = item.classList.contains("added");
 
     if (isAdded) return;
@@ -232,11 +232,17 @@ function attachWidgetFolderListeners() {
     // Click to add
     item.addEventListener("click", () => {
       const dropZone = document.getElementById("dashboard-drop-zone");
-      const rect = dropZone ? dropZone.getBoundingClientRect() : null;
+      if (!dropZone) return; // Guard clause
+      const rect = dropZone.getBoundingClientRect();
       const x = rect ? rect.width / 2 - 160 : 100;
       const y = rect ? 50 + dropZone.scrollTop : 50;
 
-      addDashboardWidget(type, id, x, y);
+      // Fix type mismatch for Tag Analytics
+      if (type === "tag-analytics") {
+        addDashboardWidget(type as "tag", id, x, y);
+      } else {
+        addDashboardWidget(type as "tag" | "folder", id, x, y);
+      }
 
       if (!widgetDropdownPinned) {
         closeWidgetPicker();
@@ -248,16 +254,19 @@ function attachWidgetFolderListeners() {
     });
 
     // Drag and drop
-    item.addEventListener("dragstart", (e) => {
+    item.addEventListener("dragstart", (e: Event) => {
+      const dragEvent = e as DragEvent;
+      if (!dragEvent.dataTransfer) return;
+
       state.setDraggedSidebarItem({ type, id });
-      e.dataTransfer.effectAllowed = "copy";
-      e.dataTransfer.setData("text/plain", JSON.stringify({ type, id }));
-      item.style.opacity = "0.5";
+      dragEvent.dataTransfer.effectAllowed = "copy";
+      dragEvent.dataTransfer.setData("text/plain", JSON.stringify({ type, id }));
+      (item as HTMLElement).style.opacity = "0.5";
       document.body.classList.add("dragging-widget");
     });
 
-    item.addEventListener("dragend", (e) => {
-      item.style.opacity = "1";
+    item.addEventListener("dragend", (e: Event) => {
+      (item as HTMLElement).style.opacity = "1";
       document.body.classList.remove("dragging-widget");
     });
   });
@@ -269,8 +278,8 @@ function attachWidgetTagListeners() {
   if (!container) return;
 
   container.querySelectorAll(".widget-picker-item").forEach((item) => {
-    const type = item.dataset.type;
-    const id = item.dataset.id;
+    const type = (item as HTMLElement).dataset.type || "";
+    const id = (item as HTMLElement).dataset.id || "";
     const isAdded = item.classList.contains("added");
 
     if (isAdded) return;
@@ -278,11 +287,14 @@ function attachWidgetTagListeners() {
     // Click to add
     item.addEventListener("click", () => {
       const dropZone = document.getElementById("dashboard-drop-zone");
-      const rect = dropZone ? dropZone.getBoundingClientRect() : null;
+      if (!dropZone) return;
+      const rect = dropZone.getBoundingClientRect();
       const x = rect ? rect.width / 2 - 160 : 100;
       const y = rect ? 50 + dropZone.scrollTop : 50;
 
-      addDashboardWidget(type, id, x, y);
+      // Fix type mismatch for Tag Analytics
+      const widgetType = type === "tag-analytics" ? "tag" : type;
+      addDashboardWidget(widgetType as "tag", id, x, y);
 
       if (!widgetDropdownPinned) {
         closeWidgetPicker();
@@ -294,16 +306,19 @@ function attachWidgetTagListeners() {
     });
 
     // Drag and drop
-    item.addEventListener("dragstart", (e) => {
+    item.addEventListener("dragstart", (e: Event) => {
+      const dragEvent = e as DragEvent;
+      if (!dragEvent.dataTransfer) return;
+
       state.setDraggedSidebarItem({ type, id });
-      e.dataTransfer.effectAllowed = "copy";
-      e.dataTransfer.setData("text/plain", JSON.stringify({ type, id }));
-      item.style.opacity = "0.5";
+      dragEvent.dataTransfer.effectAllowed = "copy";
+      dragEvent.dataTransfer.setData("text/plain", JSON.stringify({ type, id }));
+      (item as HTMLElement).style.opacity = "0.5";
       document.body.classList.add("dragging-widget");
     });
 
-    item.addEventListener("dragend", (e) => {
-      item.style.opacity = "1";
+    item.addEventListener("dragend", (e: Event) => {
+      (item as HTMLElement).style.opacity = "1";
       document.body.classList.remove("dragging-widget");
     });
   });
@@ -338,15 +353,16 @@ function toggleWidgetPin() {
 }
 
 // Handle click outside to close (if not pinned)
-function handleWidgetPickerClickOutside(e) {
+function handleWidgetPickerClickOutside(e: Event) {
   const dropdown = document.getElementById("widget-dropdown");
   const btn = document.getElementById("dashboard-add-widget-btn");
+  const target = e.target as Node;
 
   if (
     dropdown &&
-    !dropdown.contains(e.target) &&
+    !dropdown.contains(target) &&
     e.target !== btn &&
-    !btn?.contains(e.target)
+    !btn?.contains(target)
   ) {
     closeWidgetPicker();
   }
@@ -373,25 +389,25 @@ function attachWidgetPickerListeners() {
   }
 
   // Folder search input
-  const folderSearchInput = document.getElementById("widget-folders-search");
+  const folderSearchInput = document.getElementById("widget-folders-search") as HTMLInputElement;
   if (folderSearchInput) {
-    folderSearchInput.addEventListener("input", (e) => {
-      filterWidgetPickerFolders(e.target.value);
+    folderSearchInput.addEventListener("input", (e: Event) => {
+      filterWidgetPickerFolders((e.target as HTMLInputElement).value);
     });
   }
 
   // Tag search input
-  const tagSearchInput = document.getElementById("widget-tags-search");
+  const tagSearchInput = document.getElementById("widget-tags-search") as HTMLInputElement;
   if (tagSearchInput) {
-    tagSearchInput.addEventListener("input", (e) => {
-      filterWidgetPickerTags(e.target.value);
+    tagSearchInput.addEventListener("input", (e: Event) => {
+      filterWidgetPickerTags((e.target as HTMLInputElement).value);
     });
   }
 }
 
 // Render folders in widget picker
-export function renderWidgetPickerFolders() {
-  const container = document.getElementById("widget-folders-container");
+export function renderWidgetPickerFolders(): void {
+  const container = document.getElementById("widget-folders-container") as HTMLElement & { _allFolders: any[], _originalHTML: string };
   if (!container) return;
 
   const folders = state.folders.filter((f) => {
@@ -444,12 +460,12 @@ export function renderWidgetPickerFolders() {
 }
 
 // Render tags in widget picker
-export function renderWidgetPickerTags() {
-  const container = document.getElementById("widget-tags-container");
+export function renderWidgetPickerTags(): void {
+  const container = document.getElementById("widget-tags-container") as HTMLElement & { _allTags: any[], _originalHTML: string };
   if (!container) return;
 
   // Collect all unique tags with counts
-  const tagCounts = {};
+  const tagCounts: Record<string, number> = {};
   state.bookmarks.forEach((bookmark) => {
     if (bookmark.tags) {
       bookmark.tags.split(",").forEach((tag) => {

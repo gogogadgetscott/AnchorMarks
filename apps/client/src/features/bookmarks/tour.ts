@@ -3,11 +3,11 @@
  * Handles onboarding tour functionality
  */
 
-import * as state from "@features/state.js";
-import { showToast } from "@utils/ui-helpers.js";
+import * as state from "@features/state.ts";
+import { showToast } from "@utils/ui-helpers.ts";
 
 // Check if welcome tour should be shown
-export function checkWelcomeTour() {
+export function checkWelcomeTour(): void {
   if (!state.isInitialLoad) return;
 
   const dismissed = localStorage.getItem("anchormarks_tour_dismissed");
@@ -24,7 +24,7 @@ export function checkWelcomeTour() {
 }
 
 // Start tour
-export function startTour() {
+export function startTour(): void {
   if (state.tourState.active) return;
 
   state.tourState.active = true;
@@ -33,7 +33,7 @@ export function startTour() {
 }
 
 // Show current tour step
-export function showTourStep() {
+export function showTourStep(): void {
   const step = state.tourState.steps[state.tourState.currentStep];
   if (!step) return;
 
@@ -73,7 +73,7 @@ export function showTourStep() {
 }
 
 // Position popover
-function positionPopover(popover, target, position) {
+function positionPopover(popover: HTMLElement, target: HTMLElement, position: string): void {
   const rect = target.getBoundingClientRect();
   const popoverRect = popover.getBoundingClientRect();
   const gap = 16;
@@ -109,7 +109,7 @@ function positionPopover(popover, target, position) {
 }
 
 // Next tour step
-export function nextTourStep() {
+export function nextTourStep(): void {
   // Remove highlight from current target
   const currentStep = state.tourState.steps[state.tourState.currentStep];
   const targetEl = document.getElementById(currentStep?.target);
@@ -127,7 +127,7 @@ export function nextTourStep() {
 }
 
 // End tour
-export function endTour() {
+export function endTour(): void {
   const overlay = document.getElementById("tour-overlay");
   const popover = document.getElementById("tour-popover");
 
@@ -146,7 +146,7 @@ export function endTour() {
 }
 
 // Skip tour
-export function skipTour() {
+export function skipTour(): void {
   const overlay = document.getElementById("tour-overlay");
   const popover = document.getElementById("tour-popover");
 

@@ -6,12 +6,12 @@
  */
 
 // Get reference to main app API
-function getAPI() {
-  return window.AnchorMarks || window;
+function getAPI(): any {
+  return (window as any).AnchorMarks || window;
 }
 
 // Helper to safely call API
-async function api(endpoint, options) {
+async function api(endpoint: string, options?: RequestInit): Promise<any> {
   const AM = getAPI();
   if (AM.api) {
     return AM.api(endpoint, options);
@@ -26,7 +26,7 @@ async function api(endpoint, options) {
 }
 
 // Helper functions
-function escapeHtml(text) {
+function escapeHtml(text: string): string {
   const AM = getAPI();
   if (AM.escapeHtml) return AM.escapeHtml(text);
   if (!text) return "";
@@ -35,17 +35,17 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-function showToast(message, type) {
+function showToast(message: string, type?: string): void {
   const AM = getAPI();
   if (AM.showToast) AM.showToast(message, type);
 }
 
-function addTagToInput(tag) {
+function addTagToInput(tag: string): void {
   const AM = getAPI();
   if (AM.addTagToInput) {
     AM.addTagToInput(tag);
   } else {
-    const input = document.getElementById("bookmark-tags");
+    const input = document.getElementById("bookmark-tags") as HTMLInputElement;
     if (input) {
       const current = input.value
         ? input.value.split(",").map((t) => t.trim())
@@ -58,16 +58,16 @@ function addTagToInput(tag) {
   }
 }
 
-function loadFolders() {
+function loadFolders(): void {
   const AM = getAPI();
   if (AM.loadFolders) AM.loadFolders();
 }
 
 // ============== SMART TAG SUGGESTIONS ==============
 
-let smartTagSuggestTimeout;
+let smartTagSuggestTimeout: ReturnType<typeof setTimeout> | undefined;
 
-async function showSmartTagSuggestions(url) {
+async function showSmartTagSuggestions(url: string): Promise<void> {
   const tagSuggestions = document.getElementById("tag-suggestions");
   if (!tagSuggestions || !url) {
     renderTagSuggestions([]);
@@ -109,7 +109,7 @@ async function showSmartTagSuggestions(url) {
   }, 400);
 }
 
-function renderTagSuggestions(list) {
+function renderTagSuggestions(list: string[]): void {
   const tagSuggestions = document.getElementById("tag-suggestions");
   if (!tagSuggestions) return;
 
@@ -121,7 +121,7 @@ function renderTagSuggestions(list) {
 
   tagSuggestions.innerHTML = list
     .map(
-      (tag) => `
+      (tag: string) => `
     <button type="button" class="tag-suggestion" data-tag="${escapeHtml(tag)}">
       ${escapeHtml(tag)}
     </button>
@@ -132,12 +132,12 @@ function renderTagSuggestions(list) {
   // Add click handlers
   tagSuggestions.querySelectorAll(".tag-suggestion").forEach((btn) => {
     btn.addEventListener("click", () => {
-      addTagToInput(btn.dataset.tag);
+      addTagToInput((btn as HTMLElement).dataset.tag || "");
     });
   });
 }
 
-function renderSmartTagSuggestions(suggestions, domainInfo) {
+function renderSmartTagSuggestions(suggestions: any[], domainInfo: any): void {
   const tagSuggestions = document.getElementById("tag-suggestions");
   if (!tagSuggestions) return;
 
@@ -148,13 +148,13 @@ function renderSmartTagSuggestions(suggestions, domainInfo) {
   }
 
   const html = suggestions
-    .map((sugg) => {
+    .map((sugg: any) => {
       const sourceIcon =
-        {
+        ({
           domain: "🌐",
           activity: "📊",
           similar: "🔗",
-        }[sugg.source] || "✨";
+        } as Record<string, string>)[sugg.source] || "✨";
 
       return `
       <div class="smart-tag-suggestion" data-tag="${escapeHtml(sugg.tag)}" title="${escapeHtml(sugg.reason)}">
@@ -173,8 +173,10 @@ function renderSmartTagSuggestions(suggestions, domainInfo) {
   // Add click handlers
   tagSuggestions.querySelectorAll(".tag-suggestion-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const tag = btn.closest(".smart-tag-suggestion").dataset.tag;
-      addTagToInput(tag);
+      const container = btn.closest(".smart-tag-suggestion") as HTMLElement;
+      if (container) {
+        addTagToInput(container.dataset.tag || "");
+      }
     });
   });
 
@@ -192,7 +194,7 @@ function renderSmartTagSuggestions(suggestions, domainInfo) {
   }
 }
 
-function appendAISuggestions(suggestions) {
+function appendAISuggestions(suggestions: any[]): void {
   const tagSuggestions = document.getElementById("tag-suggestions");
   if (!tagSuggestions || !suggestions || !suggestions.length) return;
 
@@ -203,7 +205,7 @@ function appendAISuggestions(suggestions) {
   tagSuggestions.appendChild(header);
 
   const html = suggestions
-    .map((sugg) => {
+    .map((sugg: any) => {
       const name = typeof sugg === "string" ? sugg : sugg.tag;
       return `
         <div class="smart-tag-suggestion" data-tag="${escapeHtml(name)}" title="AI-generated">
@@ -222,8 +224,10 @@ function appendAISuggestions(suggestions) {
 
   wrapper.querySelectorAll(".tag-suggestion-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const tag = btn.closest(".smart-tag-suggestion").dataset.tag;
-      addTagToInput(tag);
+      const container = btn.closest(".smart-tag-suggestion") as HTMLElement;
+      if (container) {
+        addTagToInput(container.dataset.tag || "");
+      }
     });
   });
 }
@@ -246,7 +250,7 @@ async function loadSmartCollections() {
   }
 }
 
-function renderSmartCollectionSuggestions(collections) {
+function renderSmartCollectionSuggestions(collections: any[]): void {
   const container = document.getElementById("smart-collections-suggestions");
   if (!container) return;
 
@@ -263,8 +267,8 @@ function renderSmartCollectionSuggestions(collections) {
     </div>
     <div class="smart-collections-list">
       ${collections
-        .map(
-          (coll) => `
+      .map(
+        (coll) => `
         <div class="smart-collection-card">
           <div class="collection-header">
             <span class="collection-icon" style="font-size:1.5rem;">${getCollectionIcon(coll.icon)}</span>
@@ -277,26 +281,25 @@ function renderSmartCollectionSuggestions(collections) {
             <span class="collection-count">📚 ${coll.bookmark_count}</span>
             <span class="collection-type">${escapeHtml(coll.type)}</span>
           </div>
-          ${
-            coll.tags
-              ? `
-            <div class="collection-tags">
-              ${coll.tags
-                .slice(0, 3)
-                .map((t) => `<span class="tag-badge">${escapeHtml(t)}</span>`)
-                .join("")}
-              ${coll.tags.length > 3 ? `<span class="tag-badge more">+${coll.tags.length - 3}</span>` : ""}
-            </div>
-          `
-              : ""
+          ${coll.tags
+            ? `
+              <div class="collection-tags">
+                ${coll.tags
+              .slice(0, 3)
+              .map((t: string) => `<span class="tag-badge">${escapeHtml(t)}</span>`)
+              .join("")}
+                ${coll.tags.length > 3 ? `<span class="tag-badge more">+${coll.tags.length - 3}</span>` : ""}
+              </div>
+            `
+            : ""
           }
           <button class="btn btn-secondary create-collection-btn" data-collection='${escapeHtml(JSON.stringify(coll))}'>
             Create Collection
           </button>
         </div>
       `,
-        )
-        .join("")}
+      )
+      .join("")}
     </div>
   `;
 
@@ -309,13 +312,13 @@ function renderSmartCollectionSuggestions(collections) {
 
   container.querySelectorAll(".create-collection-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      createSmartCollectionFromSuggestion(btn.dataset.collection);
+      createSmartCollectionFromSuggestion((btn as HTMLElement).dataset.collection || "");
     });
   });
 }
 
-function getCollectionIcon(icon) {
-  const iconMap = {
+function getCollectionIcon(icon: string): string {
+  const iconMap: Record<string, string> = {
     clock: "🕐",
     "trending-up": "📈",
     "eye-off": "👁️",
@@ -328,7 +331,7 @@ function getCollectionIcon(icon) {
   return iconMap[icon] || "📌";
 }
 
-async function createSmartCollectionFromSuggestion(collectionJson) {
+async function createSmartCollectionFromSuggestion(collectionJson: string): Promise<void> {
   try {
     const collection = JSON.parse(collectionJson);
 
@@ -340,10 +343,10 @@ async function createSmartCollectionFromSuggestion(collectionJson) {
     if (response.id) {
       showToast(`Created collection: ${collection.name}`, "success");
       loadFolders();
-      document.getElementById("smart-collections-suggestions").style.display =
-        "none";
+      const suggestionsEl = document.getElementById("smart-collections-suggestions");
+      if (suggestionsEl) suggestionsEl.style.display = "none";
     }
-  } catch (err) {
+  } catch (err: any) {
     showToast(`Failed to create collection: ${err.message}`, "error");
   }
 }
@@ -363,7 +366,7 @@ async function loadSmartInsights() {
   }
 }
 
-function renderSmartInsights(insights) {
+function renderSmartInsights(insights: any): void {
   const container = document.getElementById("smart-insights-widget");
   if (!container || !insights) return;
 
@@ -386,16 +389,15 @@ function renderSmartInsights(insights) {
         </div>
       </div>
 
-      ${
-        insights.top_domains?.length > 0
-          ? `
+      ${insights.top_domains?.length > 0
+      ? `
         <div class="insights-section">
           <h4>Top Domains</h4>
           <div class="insights-list">
             ${insights.top_domains
-              .slice(0, 5)
-              .map(
-                (d) => `
+        .slice(0, 5)
+        .map(
+          (d: any) => `
               <div class="insight-item">
                 <span class="item-name">${escapeHtml(d.domain)}</span>
                 <div class="item-bar">
@@ -404,39 +406,37 @@ function renderSmartInsights(insights) {
                 <span class="item-count">${d.count}</span>
               </div>
             `,
-              )
-              .join("")}
+        )
+        .join("")}
           </div>
         </div>
       `
-          : ""
-      }
+      : ""
+    }
 
-      ${
-        insights.top_tags?.length > 0
-          ? `
+      ${insights.top_tags?.length > 0
+      ? `
         <div class="insights-section">
           <h4>Top Tags</h4>
           <div class="insights-tags">
             ${insights.top_tags
-              .slice(0, 8)
-              .map(
-                (t) => `
+        .slice(0, 8)
+        .map(
+          (t: any) => `
               <span class="tag-badge-small" title="${t.count} bookmarks">
                 ${escapeHtml(t.tag)} (${t.count})
               </span>
             `,
-              )
-              .join("")}
+        )
+        .join("")}
           </div>
         </div>
       `
-          : ""
-      }
+      : ""
+    }
 
-      ${
-        insights.recent_activity
-          ? `
+      ${insights.recent_activity
+      ? `
         <div class="insights-section">
           <h4>📈 Activity</h4>
           <div class="insights-stats">
@@ -451,26 +451,26 @@ function renderSmartInsights(insights) {
           </div>
         </div>
       `
-          : ""
-      }
+      : ""
+    }
     </div>
   `;
 }
 
 // ============== DOMAIN STATISTICS ==============
 
-async function showDomainStats(domain) {
+async function showDomainStats(domain: string): Promise<void> {
   try {
     const stats = await api(
       `/smart-collections/domain-stats?domain=${encodeURIComponent(domain)}`,
     );
     displayDomainStatsModal(stats);
-  } catch (err) {
+  } catch (err: any) {
     showToast(`Failed to load domain stats: ${err.message}`, "error");
   }
 }
 
-function displayDomainStatsModal(stats) {
+function displayDomainStatsModal(stats: any): void {
   if (!stats) return;
 
   const modal = document.createElement("div");
@@ -505,10 +505,10 @@ function displayDomainStatsModal(stats) {
   // Close handlers
   modal
     .querySelector(".modal-close")
-    .addEventListener("click", () => modal.remove());
+    ?.addEventListener("click", () => modal.remove());
   modal
     .querySelector(".modal-backdrop")
-    .addEventListener("click", () => modal.remove());
+    ?.addEventListener("click", () => modal.remove());
 
   document.body.appendChild(modal);
   modal.classList.add("show");
@@ -521,8 +521,8 @@ export function init() {
 
   // Attach smart tag suggestions to URL input
   if (bookmarkUrlInput) {
-    bookmarkUrlInput.addEventListener("input", (e) => {
-      showSmartTagSuggestions(e.target.value);
+    bookmarkUrlInput.addEventListener("input", (e: Event) => {
+      showSmartTagSuggestions((e.target as HTMLInputElement).value);
     });
   }
 
