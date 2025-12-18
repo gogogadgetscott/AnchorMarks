@@ -6,9 +6,12 @@
  *   @param {string} options.className - Additional CSS classes.
  * @returns {string} - HTML string of the badge.
  */
-export function Badge(content: string | number, options: { id?: string; className?: string } = {}): string {
-    const { id = "", className = "" } = options;
-    const idAttr = id ? `id="${id}"` : "";
+export function Badge(
+  content: string | number,
+  options: { id?: string; className?: string } = {},
+): string {
+  const { id = "", className = "" } = options;
+  const idAttr = id ? `id="${id}"` : "";
 
-    return `<span ${idAttr} class="badge ${className}">${content}</span>`;
+  return `<span ${idAttr} class="badge ${className}">${content}</span>`;
 }

@@ -12,7 +12,9 @@ let autocompleteIndex = -1;
 // Initialize tag input
 export function initTagInput(): void {
   const container = document.getElementById("tags-input-container");
-  const input = document.getElementById("bookmark-tags-input") as HTMLInputElement;
+  const input = document.getElementById(
+    "bookmark-tags-input",
+  ) as HTMLInputElement;
   const hiddenInput = document.getElementById("bookmark-tags");
   const autocomplete = document.getElementById("tag-autocomplete");
 
@@ -74,7 +76,10 @@ export function initTagInput(): void {
 
   // Click outside to close autocomplete
   document.addEventListener("click", (e) => {
-    if (!container.contains(e.target as Node) && !autocomplete.contains(e.target as Node)) {
+    if (
+      !container.contains(e.target as Node) &&
+      !autocomplete.contains(e.target as Node)
+    ) {
       hideAutocomplete(autocomplete);
     }
   });
@@ -104,7 +109,9 @@ function addTag(tagName: string, updateInput: boolean = true): void {
   renderSelectedTags();
 
   if (updateInput) {
-    const input = document.getElementById("bookmark-tags-input") as HTMLInputElement;
+    const input = document.getElementById(
+      "bookmark-tags-input",
+    ) as HTMLInputElement;
     if (input) {
       input.value = "";
       input.focus();
@@ -159,7 +166,9 @@ function renderSelectedTags(): void {
 
 // Update hidden input with comma-separated tags
 function updateHiddenInput(): void {
-  const hiddenInput = document.getElementById("bookmark-tags") as HTMLInputElement;
+  const hiddenInput = document.getElementById(
+    "bookmark-tags",
+  ) as HTMLInputElement;
   if (hiddenInput) {
     hiddenInput.value = selectedTags.join(", ");
   }
@@ -222,7 +231,10 @@ function hideAutocomplete(autocomplete: HTMLElement): void {
 }
 
 // Navigate autocomplete with keyboard
-function navigateAutocomplete(direction: number, autocomplete: HTMLElement): void {
+function navigateAutocomplete(
+  direction: number,
+  autocomplete: HTMLElement,
+): void {
   const items = autocomplete.querySelectorAll(".tag-autocomplete-item");
   if (items.length === 0) return;
 

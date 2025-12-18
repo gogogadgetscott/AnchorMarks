@@ -73,7 +73,11 @@ export function showTourStep(): void {
 }
 
 // Position popover
-function positionPopover(popover: HTMLElement, target: HTMLElement, position: string): void {
+function positionPopover(
+  popover: HTMLElement,
+  target: HTMLElement,
+  position: string,
+): void {
   const rect = target.getBoundingClientRect();
   const popoverRect = popover.getBoundingClientRect();
   const gap = 16;

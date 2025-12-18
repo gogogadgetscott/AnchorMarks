@@ -64,7 +64,9 @@ export function initDom(): void {
   dom.authScreen = document.getElementById("auth-screen");
   dom.mainApp = document.getElementById("main-app");
   dom.loginForm = document.getElementById("login-form") as HTMLFormElement;
-  dom.registerForm = document.getElementById("register-form") as HTMLFormElement;
+  dom.registerForm = document.getElementById(
+    "register-form",
+  ) as HTMLFormElement;
   dom.authTabs = document.querySelectorAll(".auth-tab");
   dom.bookmarksContainer = document.getElementById("bookmarks-container");
   dom.emptyState = document.getElementById("empty-state");
@@ -72,19 +74,35 @@ export function initDom(): void {
   dom.viewTitle = document.getElementById("view-title");
   dom.viewCount = document.getElementById("view-count");
   dom.bulkBar = document.getElementById("bulk-bar");
-  dom.bulkMoveSelect = document.getElementById("bulk-move-select") as HTMLSelectElement;
+  dom.bulkMoveSelect = document.getElementById(
+    "bulk-move-select",
+  ) as HTMLSelectElement;
   dom.bulkCount = document.getElementById("bulk-count");
   dom.commandPalette = document.getElementById("command-palette");
-  dom.commandPaletteInput = document.getElementById("command-palette-input") as HTMLInputElement;
+  dom.commandPaletteInput = document.getElementById(
+    "command-palette-input",
+  ) as HTMLInputElement;
   dom.commandPaletteList = document.getElementById("command-palette-list");
-  dom.bookmarkUrlInput = document.getElementById("bookmark-url") as HTMLInputElement;
-  dom.bookmarkTagsInput = document.getElementById("bookmark-tags") as HTMLInputElement;
+  dom.bookmarkUrlInput = document.getElementById(
+    "bookmark-url",
+  ) as HTMLInputElement;
+  dom.bookmarkTagsInput = document.getElementById(
+    "bookmark-tags",
+  ) as HTMLInputElement;
   dom.tagSuggestions = document.getElementById("tag-suggestions");
   dom.tagStatsList = document.getElementById("tag-stats-list");
-  dom.tagRenameFrom = document.getElementById("tag-rename-from") as HTMLInputElement;
-  dom.tagRenameTo = document.getElementById("tag-rename-to") as HTMLInputElement;
-  dom.tagRenameBtn = document.getElementById("tag-rename-btn") as HTMLButtonElement;
-  dom.tagRenameUndoBtn = document.getElementById("tag-rename-undo-btn") as HTMLButtonElement;
+  dom.tagRenameFrom = document.getElementById(
+    "tag-rename-from",
+  ) as HTMLInputElement;
+  dom.tagRenameTo = document.getElementById(
+    "tag-rename-to",
+  ) as HTMLInputElement;
+  dom.tagRenameBtn = document.getElementById(
+    "tag-rename-btn",
+  ) as HTMLButtonElement;
+  dom.tagRenameUndoBtn = document.getElementById(
+    "tag-rename-undo-btn",
+  ) as HTMLButtonElement;
 }
 
 // Show toast notification
@@ -114,7 +132,9 @@ export function closeModals(): void {
   if (importProgress) {
     importProgress.innerHTML = "";
   }
-  const importBtn = document.getElementById("import-html-btn") as HTMLButtonElement;
+  const importBtn = document.getElementById(
+    "import-html-btn",
+  ) as HTMLButtonElement;
   if (importBtn) {
     importBtn.disabled = false;
     importBtn.removeAttribute("aria-busy");
@@ -123,7 +143,9 @@ export function closeModals(): void {
 
 // Reset forms
 export function resetForms(): void {
-  const bookmarkForm = document.getElementById("bookmark-form") as HTMLFormElement;
+  const bookmarkForm = document.getElementById(
+    "bookmark-form",
+  ) as HTMLFormElement;
   const folderForm = document.getElementById("folder-form") as HTMLFormElement;
 
   if (bookmarkForm) bookmarkForm.reset();
@@ -143,7 +165,9 @@ export function resetForms(): void {
     opt.classList.toggle("active", i === 0);
   });
 
-  const folderColor = document.getElementById("folder-color") as HTMLInputElement;
+  const folderColor = document.getElementById(
+    "folder-color",
+  ) as HTMLInputElement;
   if (folderColor) folderColor.value = "#6366f1";
 
   if (dom.tagSuggestions) dom.tagSuggestions.innerHTML = "";

@@ -150,11 +150,13 @@ function renderSmartTagSuggestions(suggestions: any[], domainInfo: any): void {
   const html = suggestions
     .map((sugg: any) => {
       const sourceIcon =
-        ({
-          domain: "🌐",
-          activity: "📊",
-          similar: "🔗",
-        } as Record<string, string>)[sugg.source] || "✨";
+        (
+          {
+            domain: "🌐",
+            activity: "📊",
+            similar: "🔗",
+          } as Record<string, string>
+        )[sugg.source] || "✨";
 
       return `
       <div class="smart-tag-suggestion" data-tag="${escapeHtml(sugg.tag)}" title="${escapeHtml(sugg.reason)}">
@@ -267,8 +269,8 @@ function renderSmartCollectionSuggestions(collections: any[]): void {
     </div>
     <div class="smart-collections-list">
       ${collections
-      .map(
-        (coll) => `
+        .map(
+          (coll) => `
         <div class="smart-collection-card">
           <div class="collection-header">
             <span class="collection-icon" style="font-size:1.5rem;">${getCollectionIcon(coll.icon)}</span>
@@ -281,25 +283,29 @@ function renderSmartCollectionSuggestions(collections: any[]): void {
             <span class="collection-count">📚 ${coll.bookmark_count}</span>
             <span class="collection-type">${escapeHtml(coll.type)}</span>
           </div>
-          ${coll.tags
-            ? `
+          ${
+            coll.tags
+              ? `
               <div class="collection-tags">
                 ${coll.tags
-              .slice(0, 3)
-              .map((t: string) => `<span class="tag-badge">${escapeHtml(t)}</span>`)
-              .join("")}
+                  .slice(0, 3)
+                  .map(
+                    (t: string) =>
+                      `<span class="tag-badge">${escapeHtml(t)}</span>`,
+                  )
+                  .join("")}
                 ${coll.tags.length > 3 ? `<span class="tag-badge more">+${coll.tags.length - 3}</span>` : ""}
               </div>
             `
-            : ""
+              : ""
           }
           <button class="btn btn-secondary create-collection-btn" data-collection='${escapeHtml(JSON.stringify(coll))}'>
             Create Collection
           </button>
         </div>
       `,
-      )
-      .join("")}
+        )
+        .join("")}
     </div>
   `;
 
@@ -312,7 +318,9 @@ function renderSmartCollectionSuggestions(collections: any[]): void {
 
   container.querySelectorAll(".create-collection-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      createSmartCollectionFromSuggestion((btn as HTMLElement).dataset.collection || "");
+      createSmartCollectionFromSuggestion(
+        (btn as HTMLElement).dataset.collection || "",
+      );
     });
   });
 }
@@ -331,7 +339,9 @@ function getCollectionIcon(icon: string): string {
   return iconMap[icon] || "📌";
 }
 
-async function createSmartCollectionFromSuggestion(collectionJson: string): Promise<void> {
+async function createSmartCollectionFromSuggestion(
+  collectionJson: string,
+): Promise<void> {
   try {
     const collection = JSON.parse(collectionJson);
 
@@ -343,7 +353,9 @@ async function createSmartCollectionFromSuggestion(collectionJson: string): Prom
     if (response.id) {
       showToast(`Created collection: ${collection.name}`, "success");
       loadFolders();
-      const suggestionsEl = document.getElementById("smart-collections-suggestions");
+      const suggestionsEl = document.getElementById(
+        "smart-collections-suggestions",
+      );
       if (suggestionsEl) suggestionsEl.style.display = "none";
     }
   } catch (err: any) {
@@ -389,15 +401,16 @@ function renderSmartInsights(insights: any): void {
         </div>
       </div>
 
-      ${insights.top_domains?.length > 0
-      ? `
+      ${
+        insights.top_domains?.length > 0
+          ? `
         <div class="insights-section">
           <h4>Top Domains</h4>
           <div class="insights-list">
             ${insights.top_domains
-        .slice(0, 5)
-        .map(
-          (d: any) => `
+              .slice(0, 5)
+              .map(
+                (d: any) => `
               <div class="insight-item">
                 <span class="item-name">${escapeHtml(d.domain)}</span>
                 <div class="item-bar">
@@ -406,37 +419,39 @@ function renderSmartInsights(insights: any): void {
                 <span class="item-count">${d.count}</span>
               </div>
             `,
-        )
-        .join("")}
+              )
+              .join("")}
           </div>
         </div>
       `
-      : ""
-    }
+          : ""
+      }
 
-      ${insights.top_tags?.length > 0
-      ? `
+      ${
+        insights.top_tags?.length > 0
+          ? `
         <div class="insights-section">
           <h4>Top Tags</h4>
           <div class="insights-tags">
             ${insights.top_tags
-        .slice(0, 8)
-        .map(
-          (t: any) => `
+              .slice(0, 8)
+              .map(
+                (t: any) => `
               <span class="tag-badge-small" title="${t.count} bookmarks">
                 ${escapeHtml(t.tag)} (${t.count})
               </span>
             `,
-        )
-        .join("")}
+              )
+              .join("")}
           </div>
         </div>
       `
-      : ""
-    }
+          : ""
+      }
 
-      ${insights.recent_activity
-      ? `
+      ${
+        insights.recent_activity
+          ? `
         <div class="insights-section">
           <h4>📈 Activity</h4>
           <div class="insights-stats">
@@ -451,8 +466,8 @@ function renderSmartInsights(insights: any): void {
           </div>
         </div>
       `
-      : ""
-    }
+          : ""
+      }
     </div>
   `;
 }

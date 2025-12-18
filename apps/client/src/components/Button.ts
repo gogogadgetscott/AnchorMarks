@@ -42,7 +42,9 @@ export function Button(text: string, options: ButtonOptions = {}): string {
     .map(([key, value]) => `data-${key}="${value}"`)
     .join(" ");
 
-  const iconHtml = icon ? Icon(icon, { size: variant === "icon" ? 20 : 16 }) : "";
+  const iconHtml = icon
+    ? Icon(icon, { size: variant === "icon" ? 20 : 16 })
+    : "";
   const textHtml = text ? `<span>${text}</span>` : "";
 
   return `

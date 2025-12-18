@@ -102,7 +102,9 @@ export function closeWidgetPicker() {
 
 // Filter folders in widget picker based on search term
 function filterWidgetPickerFolders(searchTerm: string): void {
-  const container = document.getElementById("widget-folders-container") as HTMLElement & { _allFolders: any[], _originalHTML: string };
+  const container = document.getElementById(
+    "widget-folders-container",
+  ) as HTMLElement & { _allFolders: any[]; _originalHTML: string };
   if (!container || !container._allFolders) return;
 
   const term = searchTerm.toLowerCase().trim();
@@ -155,7 +157,9 @@ function filterWidgetPickerFolders(searchTerm: string): void {
 
 // Filter tags in widget picker based on search term
 function filterWidgetPickerTags(searchTerm: string): void {
-  const container = document.getElementById("widget-tags-container") as HTMLElement & { _allTags: any[], _originalHTML: string };
+  const container = document.getElementById(
+    "widget-tags-container",
+  ) as HTMLElement & { _allTags: any[]; _originalHTML: string };
   if (!container || !container._allTags) return;
 
   const term = searchTerm.toLowerCase().trim();
@@ -260,7 +264,10 @@ function attachWidgetFolderListeners() {
 
       state.setDraggedSidebarItem({ type, id });
       dragEvent.dataTransfer.effectAllowed = "copy";
-      dragEvent.dataTransfer.setData("text/plain", JSON.stringify({ type, id }));
+      dragEvent.dataTransfer.setData(
+        "text/plain",
+        JSON.stringify({ type, id }),
+      );
       (item as HTMLElement).style.opacity = "0.5";
       document.body.classList.add("dragging-widget");
     });
@@ -312,7 +319,10 @@ function attachWidgetTagListeners() {
 
       state.setDraggedSidebarItem({ type, id });
       dragEvent.dataTransfer.effectAllowed = "copy";
-      dragEvent.dataTransfer.setData("text/plain", JSON.stringify({ type, id }));
+      dragEvent.dataTransfer.setData(
+        "text/plain",
+        JSON.stringify({ type, id }),
+      );
       (item as HTMLElement).style.opacity = "0.5";
       document.body.classList.add("dragging-widget");
     });
@@ -389,7 +399,9 @@ function attachWidgetPickerListeners() {
   }
 
   // Folder search input
-  const folderSearchInput = document.getElementById("widget-folders-search") as HTMLInputElement;
+  const folderSearchInput = document.getElementById(
+    "widget-folders-search",
+  ) as HTMLInputElement;
   if (folderSearchInput) {
     folderSearchInput.addEventListener("input", (e: Event) => {
       filterWidgetPickerFolders((e.target as HTMLInputElement).value);
@@ -397,7 +409,9 @@ function attachWidgetPickerListeners() {
   }
 
   // Tag search input
-  const tagSearchInput = document.getElementById("widget-tags-search") as HTMLInputElement;
+  const tagSearchInput = document.getElementById(
+    "widget-tags-search",
+  ) as HTMLInputElement;
   if (tagSearchInput) {
     tagSearchInput.addEventListener("input", (e: Event) => {
       filterWidgetPickerTags((e.target as HTMLInputElement).value);
@@ -407,7 +421,9 @@ function attachWidgetPickerListeners() {
 
 // Render folders in widget picker
 export function renderWidgetPickerFolders(): void {
-  const container = document.getElementById("widget-folders-container") as HTMLElement & { _allFolders: any[], _originalHTML: string };
+  const container = document.getElementById(
+    "widget-folders-container",
+  ) as HTMLElement & { _allFolders: any[]; _originalHTML: string };
   if (!container) return;
 
   const folders = state.folders.filter((f) => {
@@ -461,7 +477,9 @@ export function renderWidgetPickerFolders(): void {
 
 // Render tags in widget picker
 export function renderWidgetPickerTags(): void {
-  const container = document.getElementById("widget-tags-container") as HTMLElement & { _allTags: any[], _originalHTML: string };
+  const container = document.getElementById(
+    "widget-tags-container",
+  ) as HTMLElement & { _allTags: any[]; _originalHTML: string };
   if (!container) return;
 
   // Collect all unique tags with counts

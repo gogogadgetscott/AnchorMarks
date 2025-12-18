@@ -5,9 +5,7 @@
 
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
-import {
-  escapeHtml,
-} from "@utils/index.ts";
+import { escapeHtml } from "@utils/index.ts";
 import {
   dom,
   showToast,
@@ -85,7 +83,8 @@ export async function loadBookmarks(): Promise<void> {
     }
 
     if (state.currentView === "dashboard") {
-      const { renderDashboard } = await import("@features/bookmarks/dashboard.ts");
+      const { renderDashboard } =
+        await import("@features/bookmarks/dashboard.ts");
       renderDashboard();
     } else {
       renderBookmarks();
@@ -136,7 +135,8 @@ export function renderBookmarks(): void {
   };
   container.className = classMap[state.viewMode] || "bookmarks-grid";
 
-  const searchTerm = (searchInput as HTMLInputElement)?.value.toLowerCase() || "";
+  const searchTerm =
+    (searchInput as HTMLInputElement)?.value.toLowerCase() || "";
   let filtered = [...state.bookmarks];
 
   // Apply search filter
@@ -152,7 +152,11 @@ export function renderBookmarks(): void {
   // Apply view-specific filters
   if (state.currentView === "recent") {
     filtered = filtered
-      .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.created_at || 0).getTime() -
+          new Date(a.created_at || 0).getTime(),
+      )
       .slice(0, 20);
   } else {
     // Apply tag filter
@@ -183,11 +187,17 @@ export function renderBookmarks(): void {
           return (b.click_count || 0) - (a.click_count || 0);
         case "oldest_first":
         case "created_asc":
-          return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+          return (
+            new Date(a.created_at || 0).getTime() -
+            new Date(b.created_at || 0).getTime()
+          );
         case "recently_added":
         case "created_desc":
         default:
-          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+          return (
+            new Date(b.created_at || 0).getTime() -
+            new Date(a.created_at || 0).getTime()
+          );
       }
     });
   }
@@ -227,8 +237,6 @@ export function renderBookmarks(): void {
   updateBulkUI();
   updateCounts();
 }
-
-
 
 // Attach event listeners to bookmark cards
 export function attachBookmarkCardListeners(): void {
@@ -362,7 +370,12 @@ function loadMoreBookmarks(allFiltered: Bookmark[]): void {
 }
 
 // Toggle bookmark selection
-export function toggleBookmarkSelection(id: string, index: number, isShift: boolean, isMulti: boolean): void {
+export function toggleBookmarkSelection(
+  id: string,
+  index: number,
+  isShift: boolean,
+  isMulti: boolean,
+): void {
   if (
     isShift &&
     state.lastSelectedIndex !== null &&
@@ -425,7 +438,10 @@ export async function createBookmark(data: Partial<Bookmark>): Promise<void> {
 }
 
 // Update bookmark
-export async function updateBookmark(id: string, data: Partial<Bookmark>): Promise<void> {
+export async function updateBookmark(
+  id: string,
+  data: Partial<Bookmark>,
+): Promise<void> {
   try {
     const bookmark = await api(`/bookmarks/${id}`, {
       method: "PUT",
@@ -489,18 +505,24 @@ export async function editBookmark(id: string): Promise<void> {
   const bookmark = state.bookmarks.find((b) => b.id === id);
   if (!bookmark) return;
 
-  document.getElementById("bookmark-modal-title")!.textContent = "Edit Bookmark";
+  document.getElementById("bookmark-modal-title")!.textContent =
+    "Edit Bookmark";
   (document.getElementById("bookmark-id") as HTMLInputElement).value = id;
-  (document.getElementById("bookmark-url") as HTMLInputElement).value = bookmark.url;
-  (document.getElementById("bookmark-title") as HTMLInputElement).value = bookmark.title;
+  (document.getElementById("bookmark-url") as HTMLInputElement).value =
+    bookmark.url;
+  (document.getElementById("bookmark-title") as HTMLInputElement).value =
+    bookmark.title;
   (document.getElementById("bookmark-description") as HTMLInputElement).value =
     bookmark.description || "";
-  (document.getElementById("bookmark-folder") as HTMLSelectElement).value = bookmark.folder_id || "";
-  (document.getElementById("bookmark-tags") as HTMLInputElement).value = bookmark.tags || "";
+  (document.getElementById("bookmark-folder") as HTMLSelectElement).value =
+    bookmark.folder_id || "";
+  (document.getElementById("bookmark-tags") as HTMLInputElement).value =
+    bookmark.tags || "";
 
   // Load tags into the new tag input system
   // @ts-ignore
-  const { loadTagsFromInput } = await import("@features/bookmarks/tag-input.ts");
+  const { loadTagsFromInput } =
+    await import("@features/bookmarks/tag-input.ts");
   loadTagsFromInput(bookmark.tags || "");
 
   openModal("bookmark-modal");
@@ -508,7 +530,9 @@ export async function editBookmark(id: string): Promise<void> {
 
 // Filter by tag
 export function filterByTag(tag: string): void {
-  const searchInput = document.getElementById("search-input") as HTMLInputElement;
+  const searchInput = document.getElementById(
+    "search-input",
+  ) as HTMLInputElement;
   const viewTitle = document.getElementById("view-title");
 
   if (searchInput) searchInput.value = tag;
@@ -536,11 +560,17 @@ export function sortBookmarks(list: Bookmark[]): Bookmark[] {
         return (b.click_count || 0) - (a.click_count || 0);
       case "oldest_first":
       case "created_asc":
-        return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+        return (
+          new Date(a.created_at || 0).getTime() -
+          new Date(b.created_at || 0).getTime()
+        );
       case "recently_added":
       case "created_desc":
       default:
-        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+        return (
+          new Date(b.created_at || 0).getTime() -
+          new Date(a.created_at || 0).getTime()
+        );
     }
   });
 }
@@ -794,10 +824,14 @@ async function restoreBookmarkView(id: string) {
     }
 
     // Update UI controls
-    const searchInput = document.getElementById("search-input") as HTMLInputElement;
+    const searchInput = document.getElementById(
+      "search-input",
+    ) as HTMLInputElement;
     if (searchInput) searchInput.value = config.search_query || "";
 
-    const tagSortSelect = document.getElementById("sidebar-filter-tag-sort") as HTMLSelectElement;
+    const tagSortSelect = document.getElementById(
+      "sidebar-filter-tag-sort",
+    ) as HTMLSelectElement;
     if (tagSortSelect) tagSortSelect.value = config.tag_sort || "count_desc";
 
     console.log("[Bookmark View] Reloading bookmarks...");
