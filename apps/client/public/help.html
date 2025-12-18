@@ -1516,8 +1516,8 @@
                 entry: <code>apps/server/index.js</code>)
               </li>
               <li>
-                <strong>apps/client/src/</strong> — frontend JS source code
-                (<code>apps/client/src/App.js</code>, modules in
+                <strong>apps/client/src/</strong> — frontend TypeScript source
+                code (<code>apps/client/src/App.ts</code>, modules in
                 <code>apps/client/src/features/</code>)
               </li>
               <li>
@@ -1557,8 +1557,9 @@
                 <code>apps/server/models/database.js</code>.
               </li>
               <li>
-                <strong>Frontend:</strong> Vanilla JS with modules; API calls go
-                through <code>apps/client/src/services/api.js</code>.
+                <strong>Frontend:</strong> TypeScript (Vanilla DOM) with
+                modules; API calls go through
+                <code>apps/client/src/services/api.ts</code>.
               </li>
               <li>
                 <strong>Build Tool:</strong> Vite for frontend development with
@@ -1575,7 +1576,7 @@
             <ul>
               <li>
                 <strong>Express Backend:</strong> Runs on port
-                <code>3001</code> (configurable via <code>PORT</code> in
+                <code>3000</code> (configurable via <code>PORT</code> in
                 <code>apps/.env</code>)
               </li>
               <li>
@@ -1601,7 +1602,7 @@
               <strong>Development Mode:</strong> Access the app at
               <code>http://localhost:5173</code> (Vite dev server). All API
               requests are automatically proxied to the Express backend on port
-              3001. Changes to frontend code trigger instant HMR updates without
+              3000. Changes to frontend code trigger instant HMR updates without
               full page reloads.
             </div>
 
@@ -1610,14 +1611,14 @@
               <code>npm run build</code> to compile the frontend into
               <code>apps/client/dist</code>. Then
               <code>npm run prod</code> serves everything from the Express
-              server on a single port (3001 by default). No Vite dev server
+              server on a single port (3000 by default). No Vite dev server
               needed in production.
             </div>
 
             <h4>Port Configuration</h4>
             <p>Edit <code>apps/.env</code> to customize ports:</p>
             <div class="code-block">
-              # Backend server port PORT=3001 # Vite dev server port
+              # Backend server port PORT=3000 # Vite dev server port
               VITE_PORT=5173
             </div>
             <p>

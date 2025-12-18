@@ -63,7 +63,7 @@ import SmartOrg from "@features/bookmarks/smart-organization-ui.ts";
 import { openWidgetPicker } from "@features/bookmarks/widget-picker.ts";
 
 // Set view mode
-async function setViewMode(mode: string): Promise<void> {
+async function setViewMode(mode: string, save = true): Promise<void> {
   state.setViewMode(mode as any);
   document.querySelectorAll(".view-btn").forEach((btn) => {
     btn.classList.toggle(
@@ -71,11 +71,19 @@ async function setViewMode(mode: string): Promise<void> {
       (btn as HTMLElement).dataset.viewMode === mode,
     );
   });
-  import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
-    saveSettings({ view_mode: mode }),
-  );
-  const { renderBookmarks } = await import("@features/bookmarks/bookmarks.ts");
-  renderBookmarks();
+  if (save) {
+    import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
+      saveSettings({ view_mode: mode }),
+    );
+  }
+
+  // Only render bookmarks if we're not in dashboard view
+  // (otherwise we might overwrite the dashboard with the bookmarks list)
+  if (state.currentView !== "dashboard") {
+    const { renderBookmarks } =
+      await import("@features/bookmarks/bookmarks.ts");
+    renderBookmarks();
+  }
 }
 
 // Show all folders
@@ -148,7 +156,7 @@ async function initializeApp(): Promise<void> {
 
   updateUserInfo();
   await Promise.all([loadFolders(), loadBookmarks()]);
-  setViewMode(state.viewMode);
+  setViewMode(state.viewMode, false);
   initFilterDropdown();
   updateFilterButtonVisibility();
 
@@ -444,11 +452,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
   // Navigation
+  // Navigation
   document.querySelectorAll(".nav-item[data-view]").forEach((item) => {
     item.addEventListener("click", () => {
-      state.setCurrentView((item as HTMLElement).dataset.view || "all");
+      const view = (item as HTMLElement).dataset.view || "all";
+      state.setCurrentView(view);
+
+      // Save current view preference
+      import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
+        saveSettings({ current_view: view }),
+      );
+
       // Leaving collection view should clear the active collection selection
-      if ((item as HTMLElement).dataset.view !== "collection") {
+      if (view !== "collection") {
         state.setCurrentCollection(null);
       }
       // Don't clear current folder - treat it as a filter
@@ -459,7 +475,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
       updateFilterButtonVisibility();
 
-      if ((item as HTMLElement).dataset.view === "dashboard") {
+      if (view === "dashboard") {
         import("@features/bookmarks/dashboard.ts").then(({ renderDashboard }) =>
           renderDashboard(),
         );
@@ -718,6 +734,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const trimmed = name ? name.trim() : "";
       if (!trimmed) return;
 
+      const { createFolder } = await import("@features/bookmarks/folders.ts");
       const folder = await createFolder(
         { name: trimmed, color: "#6366f1", parent_id: null },
         { closeModal: false },
@@ -797,28 +814,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
   // Add Folder
-  document.getElementById("add-folder-btn")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const modalTitle = document.getElementById("folder-modal-title");
-    if (modalTitle) modalTitle.textContent = "New Folder";
-    (document.getElementById("folder-form") as HTMLFormElement).reset();
-    const idInput = document.getElementById("folder-id") as HTMLInputElement;
-    if (idInput) idInput.value = "";
-    const colorInput = document.getElementById(
-      "folder-color",
-    ) as HTMLInputElement;
-    if (colorInput) colorInput.value = "#6366f1";
+  document
+    .getElementById("add-folder-btn")
+    ?.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const modalTitle = document.getElementById("folder-modal-title");
+      if (modalTitle) modalTitle.textContent = "New Folder";
+      (document.getElementById("folder-form") as HTMLFormElement).reset();
+      const idInput = document.getElementById("folder-id") as HTMLInputElement;
+      if (idInput) idInput.value = "";
+      const colorInput = document.getElementById(
+        "folder-color",
+      ) as HTMLInputElement;
+      if (colorInput) colorInput.value = "#6366f1";
 
-    // Reset button text
-    const form = document.getElementById("folder-form");
-    if (form) {
-      const btn = form.querySelector('button[type="submit"]');
-      if (btn) btn.textContent = "Create Folder";
-    }
+      // Reset button text
+      const form = document.getElementById("folder-form");
+      if (form) {
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn) btn.textContent = "Create Folder";
+      }
 
-    updateFolderParentSelect();
-    openModal("folder-modal");
-  });
+      const { updateFolderParentSelect } =
+        await import("@features/bookmarks/folders.ts");
+      updateFolderParentSelect();
+      openModal("folder-modal");
+    });
 
   // Folder Form
   document
@@ -1134,6 +1155,74 @@ document.addEventListener("DOMContentLoaded", async () => {
         );
       }
     });
+
+  // Global error handler for broken favicons (capture phase)
+  // Uses a queue to avoid overwhelming the server with refresh requests
+  const faviconRefreshQueue: Array<{
+    id: string;
+    target: HTMLImageElement;
+  }> = [];
+  let faviconRefreshRunning = false;
+
+  async function processFaviconQueue() {
+    if (faviconRefreshRunning || faviconRefreshQueue.length === 0) return;
+    faviconRefreshRunning = true;
+
+    while (faviconRefreshQueue.length > 0) {
+      const item = faviconRefreshQueue.shift();
+      if (!item) continue;
+
+      try {
+        const res = await api(`/bookmarks/${item.id}/refresh-favicon`, {
+          method: "POST",
+        });
+        if (res && res.favicon && item.target.parentElement) {
+          // Check if fallback already shown, update if parent still has icon container
+          const parent = item.target.parentElement;
+          if (parent && parent.classList.contains("bookmark-favicon")) {
+            parent.innerHTML = `<img src="${res.favicon}?t=${Date.now()}" alt="" class="bookmark-favicon-img" loading="lazy">`;
+          }
+        }
+      } catch {
+        // Silently fail - fallback is already shown
+      }
+
+      // Small delay between requests to avoid rate limiting
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    faviconRefreshRunning = false;
+  }
+
+  document.addEventListener(
+    "error",
+    (e) => {
+      const target = e.target as HTMLElement;
+      if (
+        target instanceof HTMLImageElement &&
+        target.classList.contains("bookmark-favicon-img")
+      ) {
+        // Immediately show fallback icon
+        const iconHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon icon-link" style="width: 24px; height: 24px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
+        if (target.parentElement) {
+          target.parentElement.innerHTML = iconHtml;
+        }
+
+        // Queue background refresh if not already attempted
+        if (target.dataset.retryAttempted !== "true") {
+          target.dataset.retryAttempted = "true";
+          const card = target.closest(".bookmark-card") as HTMLElement;
+          const id = card?.dataset.id;
+
+          if (id) {
+            faviconRefreshQueue.push({ id, target });
+            processFaviconQueue();
+          }
+        }
+      }
+    },
+    true,
+  );
   document.getElementById("export-json-btn")?.addEventListener("click", () => {
     import("@features/bookmarks/import-export.ts").then(({ exportJson }) =>
       exportJson(),

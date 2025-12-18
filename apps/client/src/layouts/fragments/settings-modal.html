@@ -4,12 +4,20 @@
     <div class="modal-header">
       <h2>Settings</h2>
       <div style="display: flex; gap: 0.75rem; align-items: center">
-        <button class="btn btn-sm btn-outline-danger" id="logout-btn"
-          style="padding: 0.25rem 0.75rem; font-size: 0.8rem">
+        <button
+          class="btn btn-sm btn-outline-danger"
+          id="logout-btn"
+          style="padding: 0.25rem 0.75rem; font-size: 0.8rem"
+        >
           Sign Out
         </button>
         <button class="btn-icon modal-close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
@@ -44,37 +52,67 @@
             <p>Change your email address</p>
           </div>
           <form id="profile-email-form" style="display: flex; gap: 0.5rem">
-            <input type="email" id="profile-email" required autocomplete="email" placeholder="New email address"
-              style="flex: 1" />
+            <input
+              type="email"
+              id="profile-email"
+              required
+              autocomplete="email"
+              placeholder="New email address"
+              style="flex: 1"
+            />
             <button type="submit" class="btn btn-primary">Update</button>
           </form>
         </div>
 
-        <div style="
+        <div
+          style="
             margin-bottom: 1.5rem;
             border-top: 1px solid var(--border-color);
             padding-top: 1.5rem;
-          ">
+          "
+        >
           <div class="setting-info" style="margin-bottom: 0.5rem">
             <h4>Change Password</h4>
             <p>Ensure your account stays secure</p>
           </div>
           <form id="profile-password-form">
             <!-- Accessibility Fix: Hidden Username -->
-            <input type="text" name="username" autocomplete="username" style="display: none" />
-            <div style="
+            <input
+              type="text"
+              name="username"
+              autocomplete="username"
+              style="display: none"
+            />
+            <div
+              style="
                 display: flex;
                 gap: 1rem;
                 flex-wrap: wrap;
                 margin-bottom: 1rem;
-              ">
+              "
+            >
               <div class="form-group" style="flex: 1; min-width: 200px">
-                <label for="profile-current-password" style="font-size: 0.85rem">Current Password</label>
-                <input type="password" id="profile-current-password" required autocomplete="current-password" />
+                <label for="profile-current-password" style="font-size: 0.85rem"
+                  >Current Password</label
+                >
+                <input
+                  type="password"
+                  id="profile-current-password"
+                  required
+                  autocomplete="current-password"
+                />
               </div>
               <div class="form-group" style="flex: 1; min-width: 200px">
-                <label for="profile-new-password" style="font-size: 0.85rem">New Password</label>
-                <input type="password" id="profile-new-password" required minlength="6" autocomplete="new-password" />
+                <label for="profile-new-password" style="font-size: 0.85rem"
+                  >New Password</label
+                >
+                <input
+                  type="password"
+                  id="profile-new-password"
+                  required
+                  minlength="6"
+                  autocomplete="new-password"
+                />
               </div>
             </div>
             <div style="display: flex; justify-content: flex-end">
@@ -92,13 +130,16 @@
             <h4>Theme</h4>
             <p>Choose your preferred color theme</p>
           </div>
-          <select id="theme-select" style="
+          <select
+            id="theme-select"
+            style="
               padding: 0.5rem;
               border: 1px solid var(--border-color);
               border-radius: var(--radius-md);
               background: var(--bg-primary);
               color: var(--text-primary);
-            ">
+            "
+          >
             <option value="light">Light</option>
             <option value="dark">Dark</option>
             <option value="ocean">Ocean</option>
@@ -201,7 +242,12 @@
       <div class="settings-panel" id="settings-sync">
         <div class="sync-info">
           <div class="sync-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
               <path d="M21 12a9 9 0 11-6.219-8.56" />
               <polyline points="21 3 21 9 15 9" />
             </svg>
@@ -212,23 +258,41 @@
           </p>
           <div class="extension-buttons">
             <a href="#" class="btn btn-secondary" target="_blank">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+              <svg
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                width="18"
+                height="18"
+              >
                 <path
-                  d="M12 0C8.21 0 4.831 1.757 2.632 4.501l3.953 6.848A5.454 5.454 0 0 1 12 6.545h10.691A12 12 0 0 0 12 0zM1.931 5.47A11.943 11.943 0 0 0 0 12c0 6.012 4.42 10.991 10.189 11.864l3.953-6.847a5.45 5.45 0 0 1-6.865-2.29zm13.342 2.166a5.446 5.446 0 0 1 1.45 7.09l.002.001h-.002l-3.952 6.848a12.014 12.014 0 0 0 9.229-4.364 11.963 11.963 0 0 0 2-9.575zm-3.091 1.637a2.727 2.727 0 1 0 0 5.454 2.727 2.727 0 0 0 0-5.454z" />
+                  d="M12 0C8.21 0 4.831 1.757 2.632 4.501l3.953 6.848A5.454 5.454 0 0 1 12 6.545h10.691A12 12 0 0 0 12 0zM1.931 5.47A11.943 11.943 0 0 0 0 12c0 6.012 4.42 10.991 10.189 11.864l3.953-6.847a5.45 5.45 0 0 1-6.865-2.29zm13.342 2.166a5.446 5.446 0 0 1 1.45 7.09l.002.001h-.002l-3.952 6.848a12.014 12.014 0 0 0 9.229-4.364 11.963 11.963 0 0 0 2-9.575zm-3.091 1.637a2.727 2.727 0 1 0 0 5.454 2.727 2.727 0 0 0 0-5.454z"
+                />
               </svg>
               Chrome
             </a>
             <a href="#" class="btn btn-secondary" target="_blank">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+              <svg
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                width="18"
+                height="18"
+              >
                 <path
-                  d="M21.86 17.86q.14 0 .25.12.1.13.1.25t-.11.33l-.32.46-.43.53-.44.5q-.21.25-.38.42l-.22.23q-.58.53-1.34 1.04-.76.51-1.6.88-.86.38-1.74.59-.87.21-1.63.21-1.78 0-3.35-.68-1.58-.68-2.79-1.88-1.21-1.21-1.9-2.79Q6.3 15.63 6.3 13.85q0-1.88.7-3.53.71-1.66 1.93-2.92Q10.16 6.14 11.82 5.38q1.66-.75 3.54-.76.88 0 1.75.22.88.21 1.74.59.85.38 1.61.89.76.51 1.34 1.05.57.53.66.63.15.15.15.33 0 .13-.1.25-.1.12-.25.12h-9.6q-.38 0-.71.16-.33.15-.58.43-.24.27-.38.64-.14.36-.14.77 0 .41.14.78.14.37.38.64.25.27.58.43.33.16.71.16z" />
+                  d="M21.86 17.86q.14 0 .25.12.1.13.1.25t-.11.33l-.32.46-.43.53-.44.5q-.21.25-.38.42l-.22.23q-.58.53-1.34 1.04-.76.51-1.6.88-.86.38-1.74.59-.87.21-1.63.21-1.78 0-3.35-.68-1.58-.68-2.79-1.88-1.21-1.21-1.9-2.79Q6.3 15.63 6.3 13.85q0-1.88.7-3.53.71-1.66 1.93-2.92Q10.16 6.14 11.82 5.38q1.66-.75 3.54-.76.88 0 1.75.22.88.21 1.74.59.85.38 1.61.89.76.51 1.34 1.05.57.53.66.63.15.15.15.33 0 .13-.1.25-.1.12-.25.12h-9.6q-.38 0-.71.16-.33.15-.58.43-.24.27-.38.64-.14.36-.14.77 0 .41.14.78.14.37.38.64.25.27.58.43.33.16.71.16z"
+                />
               </svg>
               Edge
             </a>
             <a href="#" class="btn btn-secondary" target="_blank">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+              <svg
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                width="18"
+                height="18"
+              >
                 <path
-                  d="M12.006 16.52c-.263 0-.526-.017-.788-.054a5.606 5.606 0 01-3.039-1.586l-.078-.071a5.536 5.536 0 01-1.188-1.735 5.516 5.516 0 01-.433-2.136 5.606 5.606 0 011.586-3.905l.071-.078a5.536 5.536 0 011.735-1.188c.688-.3 1.41-.452 2.136-.452a5.606 5.606 0 013.905 1.586l.078.071a5.536 5.536 0 011.188 1.735c.3.688.452 1.41.452 2.136a5.606 5.606 0 01-1.586 3.905l-.071.078a5.536 5.536 0 01-1.735 1.188 5.516 5.516 0 01-2.136.452c-.003.054-.097.054-.097.054z" />
+                  d="M12.006 16.52c-.263 0-.526-.017-.788-.054a5.606 5.606 0 01-3.039-1.586l-.078-.071a5.536 5.536 0 01-1.188-1.735 5.516 5.516 0 01-.433-2.136 5.606 5.606 0 011.586-3.905l.071-.078a5.536 5.536 0 011.735-1.188c.688-.3 1.41-.452 2.136-.452a5.606 5.606 0 013.905 1.586l.078.071a5.536 5.536 0 011.188 1.735c.3.688.452 1.41.452 2.136a5.606 5.606 0 01-1.586 3.905l-.071.078a5.536 5.536 0 01-1.735 1.188 5.516 5.516 0 01-2.136.452c-.003.054-.097.054-.097.054z"
+                />
               </svg>
               Firefox
             </a>
@@ -242,16 +306,30 @@
           <p>Import bookmarks from your browser or other bookmark managers</p>
           <div class="import-options">
             <div class="import-option">
-              <input type="file" id="import-html-file" accept=".html,.htm" hidden />
+              <input
+                type="file"
+                id="import-html-file"
+                accept=".html,.htm"
+                hidden
+              />
               <button class="btn btn-secondary" id="import-html-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
                 Import HTML (Browser Export)
               </button>
-              <div id="import-html-progress" class="import-progress" aria-live="polite"></div>
+              <div
+                id="import-html-progress"
+                class="import-progress"
+                aria-live="polite"
+              ></div>
             </div>
           </div>
         </div>
@@ -260,7 +338,12 @@
           <p>Download your bookmarks for backup or transfer</p>
           <div class="export-options">
             <button class="btn btn-secondary" id="export-json-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
@@ -268,7 +351,12 @@
               Export as JSON
             </button>
             <button class="btn btn-secondary" id="export-html-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
@@ -282,23 +370,42 @@
           <p>Export or import your saved dashboard layouts</p>
           <div class="export-options">
             <button class="btn btn-secondary" id="export-dashboard-views-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
               Export Dashboard Views
             </button>
-            <input type="file" id="import-dashboard-views-file" accept=".json" hidden />
+            <input
+              type="file"
+              id="import-dashboard-views-file"
+              accept=".json"
+              hidden
+            />
             <button class="btn btn-secondary" id="import-dashboard-views-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
               Import Dashboard Views
             </button>
-            <div id="import-dashboard-views-progress" class="import-progress" aria-live="polite"></div>
+            <div
+              id="import-dashboard-views-progress"
+              class="import-progress"
+              aria-live="polite"
+            ></div>
           </div>
         </div>
       </div>
@@ -309,8 +416,13 @@
             <h4>Tag Overview</h4>
             <p>See your tags, counts, and nested paths</p>
           </div>
-          <input type="text" id="tag-search-input" class="form-input" placeholder="Search tags..."
-            style="margin-bottom: 10px" />
+          <input
+            type="text"
+            id="tag-search-input"
+            class="form-input"
+            placeholder="Search tags..."
+            style="margin-bottom: 10px"
+          />
           <div id="tag-stats-list" class="tag-stats-list"></div>
 
           <div class="setting-item" style="margin-top: 1.5rem">
@@ -318,18 +430,36 @@
               <h4>Add New Tag</h4>
               <p>Create a new tag to organize your bookmarks.</p>
             </div>
-            <div style="
+            <div
+              style="
                 display: flex;
                 gap: 0.5rem;
                 align-items: center;
                 flex-wrap: wrap;
-              ">
-              <input type="text" id="new-tag-name" class="form-input" placeholder="Tag name" style="width: 200px" />
-              <input type="color" id="new-tag-color" class="form-input" value="#f59e0b"
-                style="width: 60px; height: 38px; padding: 2px" />
+              "
+            >
+              <input
+                type="text"
+                id="new-tag-name"
+                class="form-input"
+                placeholder="Tag name"
+                style="width: 200px"
+              />
+              <input
+                type="color"
+                id="new-tag-color"
+                class="form-input"
+                value="#f59e0b"
+                style="width: 60px; height: 38px; padding: 2px"
+              />
               <button class="btn btn-primary" id="add-new-tag-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                  style="width: 16px; height: 16px">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  style="width: 16px; height: 16px"
+                >
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
@@ -343,7 +473,11 @@
               <h4>Sort Tags</h4>
               <p>Choose your preferred order for the tag list.</p>
             </div>
-            <select id="settings-tag-sort" class="form-input" style="width: auto">
+            <select
+              id="settings-tag-sort"
+              class="form-input"
+              style="width: auto"
+            >
               <option value="count_desc">Most used first</option>
               <option value="count_asc">Least used first</option>
               <option value="name_asc">A → Z</option>
@@ -368,7 +502,11 @@
             </div>
             <div class="form-group">
               <label for="tag-rename-to">To</label>
-              <input type="text" id="tag-rename-to" placeholder="new tag (can be nested)" />
+              <input
+                type="text"
+                id="tag-rename-to"
+                placeholder="new tag (can be nested)"
+              />
             </div>
           </div>
           <div style="display: flex; gap: 0.5rem; align-items: center">
@@ -378,7 +516,9 @@
             <button class="btn btn-ghost" id="tag-rename-undo-btn" disabled>
               Undo last rename
             </button>
-            <span class="text-tertiary" style="font-size: 0.9rem">Example: dev/js → dev/frontend/js</span>
+            <span class="text-tertiary" style="font-size: 0.9rem"
+              >Example: dev/js → dev/frontend/js</span
+            >
           </div>
         </div>
       </div>

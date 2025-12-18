@@ -150,6 +150,85 @@ function setupApiRoutes(app, db, helpers) {
     }
   });
 
+  // Reset bookmarks - delete all and create example bookmarks
+  app.post(
+    "/api/settings/reset-bookmarks",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    async (req, res) => {
+      try {
+        const { v4: uuidv4 } = require("uuid");
+        const userId = req.user.id;
+
+        // Delete all bookmark_tags for this user's bookmarks
+        db.prepare(
+          `DELETE FROM bookmark_tags WHERE bookmark_id IN (SELECT id FROM bookmarks WHERE user_id = ?)`,
+        ).run(userId);
+
+        // Delete all bookmarks for this user
+        db.prepare("DELETE FROM bookmarks WHERE user_id = ?").run(userId);
+
+        // Delete all folders for this user
+        db.prepare("DELETE FROM folders WHERE user_id = ?").run(userId);
+
+        // Delete all tags for this user
+        db.prepare("DELETE FROM tags WHERE user_id = ?").run(userId);
+
+        // Create example folder
+        const folderId = uuidv4();
+        db.prepare(
+          "INSERT INTO folders (id, user_id, name, color) VALUES (?, ?, ?, ?)",
+        ).run(folderId, userId, "Getting Started", "#10b981");
+
+        // Create example bookmarks
+        const exampleBookmarks = [
+          {
+            title: "AnchorMarks Documentation",
+            url: "https://github.com/gogogadgetscott/AnchorMarks",
+            description: "Official documentation and source code for AnchorMarks",
+            folder_id: folderId,
+          },
+          {
+            title: "Google",
+            url: "https://www.google.com",
+            description: "Search the web",
+            folder_id: null,
+          },
+          {
+            title: "GitHub",
+            url: "https://github.com",
+            description: "Where the world builds software",
+            folder_id: null,
+          },
+        ];
+
+        let bookmarksCreated = 0;
+        for (const bm of exampleBookmarks) {
+          const id = uuidv4();
+          db.prepare(
+            `INSERT INTO bookmarks (id, user_id, folder_id, title, url, description) 
+             VALUES (?, ?, ?, ?, ?, ?)`,
+          ).run(id, userId, bm.folder_id, bm.title, bm.url, bm.description);
+
+          // Fetch favicon in background
+          if (fetchFaviconWrapper) {
+            fetchFaviconWrapper(bm.url, id).catch(() => { });
+          }
+          bookmarksCreated++;
+        }
+
+        res.json({
+          success: true,
+          bookmarks_created: bookmarksCreated,
+          message: "Bookmarks reset successfully",
+        });
+      } catch (err) {
+        console.error("Error resetting bookmarks:", err);
+        res.status(500).json({ error: "Failed to reset bookmarks" });
+      }
+    },
+  );
+
   // AI tag suggestions
   const aiTags = require("../helpers/ai-tags");
   const { isPrivateAddress } = require("../helpers/utils");

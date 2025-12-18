@@ -542,9 +542,10 @@ export function init() {
   }
 
   // Load smart collections on dashboard (don't block)
-  setTimeout(() => {
-    loadSmartCollections();
-    loadSmartInsights();
+  setTimeout(async () => {
+    await loadSmartCollections();
+    // Add a small delay between calls to be polite
+    setTimeout(loadSmartInsights, 500);
   }, 1000);
 }
 
