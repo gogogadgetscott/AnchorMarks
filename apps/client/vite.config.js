@@ -52,19 +52,27 @@ const httpRedirectPlugin = () => ({
     const httpRedirectPort = vitePort - 1; // Use port 5172 for HTTP redirect
 
     const httpServer = http.createServer((req, res) => {
-      const host = req.headers.host?.replace(`:${httpRedirectPort}`, `:${vitePort}`) || `localhost:${vitePort}`;
+      const host =
+        req.headers.host?.replace(`:${httpRedirectPort}`, `:${vitePort}`) ||
+        `localhost:${vitePort}`;
       const redirectUrl = `https://${host}${req.url}`;
       res.writeHead(301, { Location: redirectUrl });
       res.end();
     });
 
-    httpServer.listen(httpRedirectPort, () => {
-      console.log(`\n  ➜  HTTP redirect: http://localhost:${httpRedirectPort}/ → https://localhost:${vitePort}/`);
-    }).on("error", (err) => {
-      if (err.code === "EADDRINUSE" || err.code === "EACCES") {
-        console.log(`  ℹ️  HTTP redirect port ${httpRedirectPort} not available, skipping`);
-      }
-    });
+    httpServer
+      .listen(httpRedirectPort, () => {
+        console.log(
+          `\n  ➜  HTTP redirect: http://localhost:${httpRedirectPort}/ → https://localhost:${vitePort}/`,
+        );
+      })
+      .on("error", (err) => {
+        if (err.code === "EADDRINUSE" || err.code === "EACCES") {
+          console.log(
+            `  ℹ️  HTTP redirect port ${httpRedirectPort} not available, skipping`,
+          );
+        }
+      });
   },
 });
 
@@ -114,9 +122,9 @@ export default defineConfig({
     // Enable HTTPS when SSL certificates are available
     https: SSL_ENABLED
       ? {
-        key: fs.readFileSync(resolvedKeyPath),
-        cert: fs.readFileSync(resolvedCertPath),
-      }
+          key: fs.readFileSync(resolvedKeyPath),
+          cert: fs.readFileSync(resolvedCertPath),
+        }
       : false,
     // Proxy API requests to Express backend
     proxy: {

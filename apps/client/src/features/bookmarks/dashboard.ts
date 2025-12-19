@@ -258,7 +258,8 @@ export async function restoreView(id: string): Promise<void> {
 
 // sortBookmarks is defined locally to avoid circular dependency with bookmarks.ts
 function sortBookmarks(list: any[], widgetSort?: string): any[] {
-  const sort = widgetSort || state.dashboardConfig.bookmarkSort || "recently_added";
+  const sort =
+    widgetSort || state.dashboardConfig.bookmarkSort || "recently_added";
   return [...list].sort((a, b) => {
     switch (sort) {
       case "a_z":
@@ -338,11 +339,11 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
     if (!widgets || widgets.length === 0) return;
 
     const res = await api("/tags/analytics");
-    
+
     // Handle various response formats
     let tags: any[] = [];
     let cooccurrence: any[] = [];
-    
+
     if (res && typeof res === "object") {
       if (res.success && Array.isArray(res.tags)) {
         tags = res.tags;
@@ -655,7 +656,9 @@ function renderFreeformWidgets(): string {
                             </svg>
                         </button>
                         <div class="widget-options-menu hidden" data-widget-index="${index}">
-                            ${widget.type !== "tag-analytics" ? `
+                            ${
+                              widget.type !== "tag-analytics"
+                                ? `
                             <button class="widget-option" data-action="widget-sort-az" data-widget-index="${index}" data-widget-type="${widget.type}" data-widget-id="${widget.id}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 6h18M3 12h12M3 18h6"/></svg>
                                 Sort A-Z
@@ -678,7 +681,9 @@ function renderFreeformWidgets(): string {
                                 Show in Bookmarks
                             </button>
                             <div class="widget-option-divider"></div>
-                            ` : ""}
+                            `
+                                : ""
+                            }
                             <button class="widget-option" data-action="change-widget-color" data-index="${index}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20"/></svg>
                                 Change Color
@@ -764,15 +769,16 @@ function renderFreeformWidgets(): string {
                   </div>
                 </div>
                 `
-                : `
+                  : `
                 <div class="compact-list">
                     ${sortedBookmarks
                       .slice(0, 50)
-                      .map(
-                        (b) => {
-                          const colorStyle = b.color ? `--bookmark-color: ${b.color}; background-color: color-mix(in srgb, ${b.color} 20%, var(--bg-primary)); border-left: 6px solid ${b.color};` : "";
-                          return `
-                        <div class="compact-item${b.color ? ' has-color' : ''}" style="${colorStyle}">
+                      .map((b) => {
+                        const colorStyle = b.color
+                          ? `--bookmark-color: ${b.color}; background-color: color-mix(in srgb, ${b.color} 20%, var(--bg-primary)); border-left: 6px solid ${b.color};`
+                          : "";
+                        return `
+                        <div class="compact-item${b.color ? " has-color" : ""}" style="${colorStyle}">
                             <a href="${b.url}" target="_blank" class="compact-item-link" data-action="track-click" data-id="${b.id}">
                                 <div class="compact-favicon">
                                     ${
@@ -795,7 +801,8 @@ function renderFreeformWidgets(): string {
                                 </button>
                             </div>
                         </div>
-                    `})
+                    `;
+                      })
                       .join("")}
                     ${sortedBookmarks.length > 50 ? `<div style="padding:0.5rem;font-size:0.75rem;color:var(--text-tertiary);text-align:center">+${sortedBookmarks.length - 50} more</div>` : ""}
                 </div>
@@ -963,12 +970,16 @@ export function initDashboardDragDrop(): void {
       btn.addEventListener("click", (e: any) => {
         e.stopPropagation();
         const index = parseInt(btn.dataset.index);
-        
+
         // Close options menu first
-        document.querySelectorAll(".widget-options-menu").forEach((m) => m.classList.add("hidden"));
-        
+        document
+          .querySelectorAll(".widget-options-menu")
+          .forEach((m) => m.classList.add("hidden"));
+
         // Find the options button for positioning (use the button that opened the menu)
-        const optionsBtn = document.querySelector(`.widget-options-container [data-action="toggle-widget-options"][data-index="${index}"]`);
+        const optionsBtn = document.querySelector(
+          `.widget-options-container [data-action="toggle-widget-options"][data-index="${index}"]`,
+        );
         showWidgetColorPicker(index, (optionsBtn as HTMLElement) || btn);
       });
     });
@@ -980,13 +991,15 @@ export function initDashboardDragDrop(): void {
       btn.addEventListener("click", (e: any) => {
         e.stopPropagation();
         const index = btn.dataset.index;
-        const menu = document.querySelector(`.widget-options-menu[data-widget-index="${index}"]`);
-        
+        const menu = document.querySelector(
+          `.widget-options-menu[data-widget-index="${index}"]`,
+        );
+
         // Close all other menus first
         document.querySelectorAll(".widget-options-menu").forEach((m) => {
           if (m !== menu) m.classList.add("hidden");
         });
-        
+
         menu?.classList.toggle("hidden");
       });
     });
@@ -997,11 +1010,11 @@ export function initDashboardDragDrop(): void {
     const target = e.target as HTMLElement;
     // Don't close if clicking inside a menu, on the toggle button, or on any form element
     if (
-      target.closest('.widget-options-menu') || 
+      target.closest(".widget-options-menu") ||
       target.closest('[data-action="toggle-widget-options"]') ||
-      target.closest('select') ||
-      target.closest('input') ||
-      target.closest('.tag-analytics')
+      target.closest("select") ||
+      target.closest("input") ||
+      target.closest(".tag-analytics")
     ) {
       return;
     }
@@ -1009,7 +1022,7 @@ export function initDashboardDragDrop(): void {
       m.classList.add("hidden");
     });
   };
-  
+
   // Only add listener once (use data attribute to track)
   const container = document.getElementById("dashboard-widgets-freeform");
   if (container && !(container as any)._menuListenerAdded) {
@@ -1055,29 +1068,36 @@ export function initDashboardDragDrop(): void {
         e.stopPropagation();
         const widgetType = btn.dataset.widgetType;
         const widgetId = btn.dataset.widgetId;
-        
+
         // Close menu
-        document.querySelectorAll(".widget-options-menu").forEach((m) => m.classList.add("hidden"));
-        
+        document
+          .querySelectorAll(".widget-options-menu")
+          .forEach((m) => m.classList.add("hidden"));
+
         // Open bookmark modal and pre-fill folder or tag
         const { openModal, resetForms } = await import("@utils/ui-helpers.ts");
         resetForms();
-        
+
         if (widgetType === "folder") {
-          const folderSelect = document.getElementById("bookmark-folder") as HTMLSelectElement;
+          const folderSelect = document.getElementById(
+            "bookmark-folder",
+          ) as HTMLSelectElement;
           if (folderSelect) folderSelect.value = widgetId;
         } else if (widgetType === "tag") {
-          const tagsInput = document.getElementById("bookmark-tags") as HTMLInputElement;
+          const tagsInput = document.getElementById(
+            "bookmark-tags",
+          ) as HTMLInputElement;
           if (tagsInput) tagsInput.value = widgetId;
           // Also try to load into the tag input UI
           try {
-            const { loadTagsFromInput } = await import("@features/bookmarks/tag-input.ts");
+            const { loadTagsFromInput } =
+              await import("@features/bookmarks/tag-input.ts");
             loadTagsFromInput(widgetId);
           } catch (err) {
             // Tag input module might not be available
           }
         }
-        
+
         openModal("bookmark-modal");
       });
     });
@@ -1088,47 +1108,52 @@ export function initDashboardDragDrop(): void {
     .forEach((btn: any) => {
       btn.addEventListener("click", async (e: any) => {
         e.stopPropagation();
-        
+
         // Find widget by ID and Type for robustness
         const widgetType = btn.dataset.widgetType;
         const widgetId = btn.dataset.widgetId;
         const widget = state.dashboardWidgets.find(
-          (w) => w.type === widgetType && w.id === widgetId
+          (w) => w.type === widgetType && w.id === widgetId,
         );
 
         if (!widget) {
           showToast("Widget not found", "error");
-          console.error("Widget not found for open-all", { widgetType, widgetId });
+          console.error("Widget not found for open-all", {
+            widgetType,
+            widgetId,
+          });
           return;
         }
-        
+
         const widgetData = getWidgetData(widget);
         if (!widgetData) {
           showToast("Could not retrieve bookmarks", "error");
           return;
         }
-        
+
         // Close menu immediately
-        document.querySelectorAll(".widget-options-menu").forEach((m) => m.classList.add("hidden"));
-        
+        document
+          .querySelectorAll(".widget-options-menu")
+          .forEach((m) => m.classList.add("hidden"));
+
         const { bookmarks } = widgetData;
-        
+
         if (!bookmarks || bookmarks.length === 0) {
           showToast("No bookmarks to open", "info");
           return;
         }
-        
+
         // Confirm for large batches
         if (bookmarks.length > 5) {
           if (!confirm(`Open ${bookmarks.length} bookmarks in new tabs?`)) {
             return;
           }
         }
-        
+
         // Open each bookmark
         let successCount = 0;
         const failedBookmarks: any[] = [];
-        
+
         bookmarks.forEach((b: any) => {
           if (b && b.url) {
             const win = window.open(b.url, "_blank");
@@ -1139,9 +1164,12 @@ export function initDashboardDragDrop(): void {
             }
           }
         });
-        
+
         if (successCount === bookmarks.length) {
-          showToast(`Opened ${successCount} tab${successCount > 1 ? "s" : ""}`, "success");
+          showToast(
+            `Opened ${successCount} tab${successCount > 1 ? "s" : ""}`,
+            "success",
+          );
         } else {
           // Some failing - clear menu and show fallback UI
           showBlockedLinksUI(failedBookmarks, successCount);
@@ -1149,29 +1177,29 @@ export function initDashboardDragDrop(): void {
       });
     });
 
-// Helper to show UI for blocked links
-function showBlockedLinksUI(bookmarks: any[], successCount: number) {
-  // Check if modal already exists
-  let modal = document.getElementById("blocked-links-modal");
-  
-  if (!modal) {
-    modal = document.createElement("div");
-    modal.id = "blocked-links-modal";
-    modal.className = "modal-overlay";
-    modal.style.zIndex = "9999";
-    document.body.appendChild(modal);
-    
-    // Close on click outside
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) modal?.classList.add("hidden");
-    });
-  }
-  
-  if (!modal) return; // Should not happen
-  
-  const plural = bookmarks.length > 1;
-  
-  modal.innerHTML = `
+  // Helper to show UI for blocked links
+  function showBlockedLinksUI(bookmarks: any[], successCount: number) {
+    // Check if modal already exists
+    let modal = document.getElementById("blocked-links-modal");
+
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "blocked-links-modal";
+      modal.className = "modal-overlay";
+      modal.style.zIndex = "9999";
+      document.body.appendChild(modal);
+
+      // Close on click outside
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) modal?.classList.add("hidden");
+      });
+    }
+
+    if (!modal) return; // Should not happen
+
+    const plural = bookmarks.length > 1;
+
+    modal.innerHTML = `
     <div class="modal">
       <div class="modal-header">
         <h3>${successCount > 0 ? "Some Tabs Blocked" : "Popups Blocked"}</h3>
@@ -1185,17 +1213,24 @@ function showBlockedLinksUI(bookmarks: any[], successCount: number) {
           Use the links below to open them manually:
         </p>
         <div class="blocked-links-list" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
-          ${bookmarks.map(b => `
+          ${bookmarks
+            .map(
+              (b) => `
             <a href="${b.url}" target="_blank" class="blocked-link-item" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-bottom: 1px solid var(--border-color); text-decoration: none; color: var(--text-primary); transition: background 0.2s;">
-              ${b.favicon ? `<img src="${b.favicon}" style="width:16px;height:16px;border-radius:2px" onerror="this.style.display='none'">` : 
-                `<span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;background:var(--bg-tertiary);border-radius:2px;font-size:10px">🔗</span>`}
+              ${
+                b.favicon
+                  ? `<img src="${b.favicon}" style="width:16px;height:16px;border-radius:2px" onerror="this.style.display='none'">`
+                  : `<span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;background:var(--bg-tertiary);border-radius:2px;font-size:10px">🔗</span>`
+              }
               <div style="flex:1;min-width:0">
                 <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.title || b.url}</div>
                 <div style="font-size:0.75rem;color:var(--text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.url}</div>
               </div>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;color:var(--primary-500)"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </a>
-          `).join('')}
+          `,
+            )
+            .join("")}
         </div>
       </div>
       <div class="modal-footer">
@@ -1203,20 +1238,20 @@ function showBlockedLinksUI(bookmarks: any[], successCount: number) {
       </div>
     </div>
   `;
-  
-  // Add hover effect style dynamically if not present
-  if (!document.getElementById("blocked-links-style")) {
-    const style = document.createElement("style");
-    style.id = "blocked-links-style";
-    style.textContent = `
+
+    // Add hover effect style dynamically if not present
+    if (!document.getElementById("blocked-links-style")) {
+      const style = document.createElement("style");
+      style.id = "blocked-links-style";
+      style.textContent = `
       .blocked-link-item:hover { background: var(--bg-tertiary) !important; }
       .blocked-link-item:last-child { border-bottom: none !important; }
     `;
-    document.head.appendChild(style);
+      document.head.appendChild(style);
+    }
+
+    modal.classList.remove("hidden");
   }
-  
-  modal.classList.remove("hidden");
-}
 
   // Widget show in bookmarks view
   document
@@ -1226,19 +1261,23 @@ function showBlockedLinksUI(bookmarks: any[], successCount: number) {
         e.stopPropagation();
         const widgetType = btn.dataset.widgetType;
         const widgetId = btn.dataset.widgetId;
-        
+
         // Close menu
-        document.querySelectorAll(".widget-options-menu").forEach((m) => m.classList.add("hidden"));
-        
+        document
+          .querySelectorAll(".widget-options-menu")
+          .forEach((m) => m.classList.add("hidden"));
+
         if (widgetType === "folder") {
           // Navigate to folder view
-          const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
+          const { loadBookmarks } =
+            await import("@features/bookmarks/bookmarks.ts");
           state.setCurrentView("folder");
           state.setCurrentFolder(widgetId);
           await loadBookmarks();
         } else if (widgetType === "tag") {
           // Navigate to bookmarks view with tag filter
-          const { loadBookmarks, renderBookmarks } = await import("@features/bookmarks/bookmarks.ts");
+          const { loadBookmarks, renderBookmarks } =
+            await import("@features/bookmarks/bookmarks.ts");
           const { updateActiveNav } = await import("@utils/ui-helpers.ts");
           state.setCurrentView("all");
           state.filterConfig.tags = [widgetId];

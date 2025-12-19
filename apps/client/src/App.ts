@@ -670,9 +670,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
   document.getElementById("quick-launch")?.addEventListener("click", (e) => {
-    if (
-      (e.target as HTMLElement).classList.contains("quick-launch-backdrop")
-    ) {
+    if ((e.target as HTMLElement).classList.contains("quick-launch-backdrop")) {
       closeCommandPalette();
     }
   });

@@ -164,11 +164,11 @@ export function endTour(): void {
   if (popover) popover.classList.add("hidden");
 
   state.tourState.active = false;
-  
+
   // Save to server (also keeps localStorage for backward compatibility)
   saveTourCompleted();
   localStorage.setItem("anchormarks_tour_dismissed", "true");
-  
+
   showToast("🎉 Tour complete! Happy bookmarking!");
 }
 
@@ -187,11 +187,11 @@ export function skipTour(): void {
   if (popover) popover.classList.add("hidden");
 
   state.tourState.active = false;
-  
+
   // Save to server (also keeps localStorage for backward compatibility)
   saveTourCompleted();
   localStorage.setItem("anchormarks_tour_dismissed", "true");
-  
+
   showToast("Tour skipped. You can restart it from Settings anytime!");
 }
 

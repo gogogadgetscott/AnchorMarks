@@ -171,7 +171,7 @@ export function resetForms(): void {
   ) as HTMLInputElement;
   if (folderColor) folderColor.value = "#6366f1";
 
-  // Reset bookmark color picker  
+  // Reset bookmark color picker
   document.querySelectorAll(".color-option-bookmark").forEach((opt, i) => {
     opt.classList.toggle("active", i === 0);
   });

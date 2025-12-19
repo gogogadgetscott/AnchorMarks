@@ -33,33 +33,49 @@ function getTagColor(tagName: string, index: number): string {
   return TAG_COLORS[index % TAG_COLORS.length];
 }
 
-// Calculate font size based on count (logarithmic scale for better distribution)
-function calculateFontSize(count: number, minCount: number, maxCount: number): number {
-  const minSize = 0.75;
-  const maxSize = 3.5;
+// Predefined font sizes like react-tagcloud approach
+// These will scale proportionally based on container size
+function getBaseFontSizes(containerHeight: number): number[] {
+  // Scale font sizes based on available height
+  const scale = Math.min(1, containerHeight / 600); // 600px is baseline
+  const baseSizes = [14, 18, 24, 32, 40, 48, 56];
   
+  return baseSizes.map(size => Math.max(12, size * scale));
+}
+
+// Map tag count to font size index using linear scale
+function getFontSizeForCount(
+  count: number,
+  minCount: number,
+  maxCount: number,
+  fontSizes: number[]
+): number {
   if (maxCount === minCount) {
-    return (minSize + maxSize) / 2;
+    return fontSizes[Math.floor(fontSizes.length / 2)];
   }
+
+  // Linear scale from minCount to maxCount
+  const range = maxCount - minCount;
+  const normalized = (count - minCount) / range;
   
-  // Use logarithmic scale for better distribution
-  const logMin = Math.log(minCount || 1);
-  const logMax = Math.log(maxCount || 1);
-  const logCount = Math.log(count || 1);
-  
-  const scale = (logCount - logMin) / (logMax - logMin);
-  return minSize + scale * (maxSize - minSize);
+  // Map to font size index
+  const index = Math.floor(normalized * (fontSizes.length - 1));
+  return fontSizes[index];
 }
 
 // Calculate opacity based on count
-function calculateOpacity(count: number, minCount: number, maxCount: number): number {
+function calculateOpacity(
+  count: number,
+  minCount: number,
+  maxCount: number,
+): number {
   const minOpacity = 0.6;
   const maxOpacity = 1;
-  
+
   if (maxCount === minCount) {
     return (minOpacity + maxOpacity) / 2;
   }
-  
+
   const scale = (count - minCount) / (maxCount - minCount);
   return minOpacity + scale * (maxOpacity - minOpacity);
 }
@@ -67,7 +83,7 @@ function calculateOpacity(count: number, minCount: number, maxCount: number): nu
 // Build tag data from bookmarks
 function buildTagData(): { name: string; count: number; color: string }[] {
   const tagCounts: Record<string, number> = {};
-  
+
   state.bookmarks.forEach((b) => {
     if (b.tags) {
       b.tags.split(",").forEach((t) => {
@@ -140,6 +156,12 @@ export function renderTagCloud(): void {
   // Shuffle tags for organic cloud appearance
   const shuffledTags = shuffleArray(tags);
 
+  // Get container dimensions
+  const canvasHeight = window.innerHeight - 300; // Account for header, legend, etc.
+  
+  // Get scaled font sizes based on container
+  const fontSizes = getBaseFontSizes(canvasHeight);
+
   const tagCloudHtml = `
     <div class="tag-cloud-view">
       <div class="tag-cloud-header">
@@ -166,18 +188,23 @@ export function renderTagCloud(): void {
       <div class="tag-cloud-canvas" id="tag-cloud-canvas">
         ${shuffledTags
           .map((tag, index) => {
-            const fontSize = calculateFontSize(tag.count, minCount, maxCount);
+            const fontSize = getFontSizeForCount(tag.count, minCount, maxCount, fontSizes);
             const opacity = calculateOpacity(tag.count, minCount, maxCount);
             const delay = (index * 0.03).toFixed(2);
-            const rotation = Math.random() > 0.85 ? (Math.random() > 0.5 ? "rotate(-3deg)" : "rotate(3deg)") : "rotate(0deg)";
-            
+            const rotation =
+              Math.random() > 0.85
+                ? Math.random() > 0.5
+                  ? "rotate(-3deg)"
+                  : "rotate(3deg)"
+                : "rotate(0deg)";
+
             return `
               <button class="tag-cloud-tag" 
                       data-tag="${escapeHtml(tag.name)}"
                       data-count="${tag.count}"
                       style="
                         --tag-color: ${tag.color};
-                        --tag-size: ${fontSize}rem;
+                        --tag-size: ${fontSize}px;
                         --tag-opacity: ${opacity};
                         --tag-delay: ${delay}s;
                         --tag-rotation: ${rotation};
@@ -220,17 +247,20 @@ export function renderTagCloud(): void {
       state.setCurrentFolder(null);
       state.filterConfig.tags = [tagName];
 
-      const searchInput = document.getElementById("search-input") as HTMLInputElement;
+      const searchInput = document.getElementById(
+        "search-input",
+      ) as HTMLInputElement;
       if (searchInput) searchInput.value = "";
 
       const viewTitle = document.getElementById("view-title");
       if (viewTitle) viewTitle.textContent = `Tag: ${tagName}`;
 
       // Import and update UI
-      const [{ renderActiveFilters, renderSidebarTags }, { loadBookmarks }] = await Promise.all([
-        import("@features/bookmarks/search.ts"),
-        import("@features/bookmarks/bookmarks.ts"),
-      ]);
+      const [{ renderActiveFilters, renderSidebarTags }, { loadBookmarks }] =
+        await Promise.all([
+          import("@features/bookmarks/search.ts"),
+          import("@features/bookmarks/bookmarks.ts"),
+        ]);
 
       const { updateActiveNav } = await import("@utils/ui-helpers.ts");
       updateActiveNav();
@@ -239,6 +269,29 @@ export function renderTagCloud(): void {
       loadBookmarks();
     });
   });
+
+  // Add resize observer to redraw tag cloud on window resize
+  let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
+  const handleResize = () => {
+    if (resizeTimeout) clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      // Only redraw if we're still in tag cloud view
+      if (
+        state.currentView === "tag-cloud" &&
+        container.querySelector(".tag-cloud-view")
+      ) {
+        renderTagCloud();
+      }
+    }, 300); // Debounce resize events
+  };
+
+  window.addEventListener("resize", handleResize);
+
+  // Store cleanup function for when view changes
+  (window as any).__tagCloudResizeCleanup = () => {
+    window.removeEventListener("resize", handleResize);
+    if (resizeTimeout) clearTimeout(resizeTimeout);
+  };
 }
 
 export default {

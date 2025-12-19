@@ -218,6 +218,13 @@ export function setCurrentDashboardTab(val: string | null) {
   currentDashboardTab = val;
 }
 export function setCurrentView(val: string) {
+  // Clean up tag cloud resize listener if leaving tag cloud view
+  if (currentView === "tag-cloud" && val !== "tag-cloud") {
+    if (typeof (window as any).__tagCloudResizeCleanup === "function") {
+      (window as any).__tagCloudResizeCleanup();
+      (window as any).__tagCloudResizeCleanup = undefined;
+    }
+  }
   currentView = val;
 }
 export function setCurrentFolder(val: string | null) {

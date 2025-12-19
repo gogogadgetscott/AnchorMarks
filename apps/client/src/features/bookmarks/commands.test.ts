@@ -32,11 +32,41 @@ import * as state from "@features/state.ts";
 
 // Test data
 const mockBookmarks = [
-  { id: "1", title: "GitHub - Code Hosting", url: "https://github.com", favicon: "/favicons/github.png", tags: "dev,code" },
-  { id: "2", title: "Google Search", url: "https://google.com", favicon: "/favicons/google.png", tags: "search,tools" },
-  { id: "3", title: "Stack Overflow", url: "https://stackoverflow.com", favicon: "", tags: "dev,programming" },
-  { id: "4", title: "MDN Web Docs", url: "https://developer.mozilla.org", favicon: "", tags: "dev,docs,reference" },
-  { id: "5", title: "Reddit - Front Page", url: "https://reddit.com", favicon: "", tags: "social,news" },
+  {
+    id: "1",
+    title: "GitHub - Code Hosting",
+    url: "https://github.com",
+    favicon: "/favicons/github.png",
+    tags: "dev,code",
+  },
+  {
+    id: "2",
+    title: "Google Search",
+    url: "https://google.com",
+    favicon: "/favicons/google.png",
+    tags: "search,tools",
+  },
+  {
+    id: "3",
+    title: "Stack Overflow",
+    url: "https://stackoverflow.com",
+    favicon: "",
+    tags: "dev,programming",
+  },
+  {
+    id: "4",
+    title: "MDN Web Docs",
+    url: "https://developer.mozilla.org",
+    favicon: "",
+    tags: "dev,docs,reference",
+  },
+  {
+    id: "5",
+    title: "Reddit - Front Page",
+    url: "https://reddit.com",
+    favicon: "",
+    tags: "social,news",
+  },
 ];
 
 const mockFolders = [
@@ -59,29 +89,37 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
   describe("Empty search (no filter)", () => {
     it("should return base commands when no filter text", () => {
       const results = getCommandPaletteCommands("");
-      
+
       // Should include base commands
-      expect(results.some(r => r.label === "Add bookmark")).toBe(true);
-      expect(results.some(r => r.label === "Show dashboard")).toBe(true);
-      expect(results.some(r => r.label === "Open settings")).toBe(true);
+      expect(results.some((r) => r.label === "Add bookmark")).toBe(true);
+      expect(results.some((r) => r.label === "Show dashboard")).toBe(true);
+      expect(results.some((r) => r.label === "Open settings")).toBe(true);
     });
 
     it("should include top-level folders", () => {
       const results = getCommandPaletteCommands("");
-      
+
       // Should include top-level folders (not nested ones)
-      expect(results.some(r => r.label === "Work" && r.category === "folder")).toBe(true);
-      expect(results.some(r => r.label === "Personal" && r.category === "folder")).toBe(true);
-      expect(results.some(r => r.label === "Development" && r.category === "folder")).toBe(true);
+      expect(
+        results.some((r) => r.label === "Work" && r.category === "folder"),
+      ).toBe(true);
+      expect(
+        results.some((r) => r.label === "Personal" && r.category === "folder"),
+      ).toBe(true);
+      expect(
+        results.some(
+          (r) => r.label === "Development" && r.category === "folder",
+        ),
+      ).toBe(true);
       // Nested folder should NOT be included
-      expect(results.some(r => r.label === "Work Projects")).toBe(false);
+      expect(results.some((r) => r.label === "Work Projects")).toBe(false);
     });
 
     it("should include recent bookmarks", () => {
       const results = getCommandPaletteCommands("");
-      
-      // Should include some bookmarks 
-      const bookmarkResults = results.filter(r => r.category === "bookmark");
+
+      // Should include some bookmarks
+      const bookmarkResults = results.filter((r) => r.category === "bookmark");
       expect(bookmarkResults.length).toBeGreaterThan(0);
       expect(bookmarkResults.length).toBeLessThanOrEqual(5); // Limited to 5 recent
     });
@@ -90,29 +128,35 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
   describe("Bookmark search (no prefix)", () => {
     it("should match bookmarks by title", () => {
       const results = getCommandPaletteCommands("github");
-      
+
       expect(results.length).toBeGreaterThan(0);
-      expect(results.some(r => r.label.toLowerCase().includes("github"))).toBe(true);
+      expect(
+        results.some((r) => r.label.toLowerCase().includes("github")),
+      ).toBe(true);
     });
 
     it("should match bookmarks by URL", () => {
       const results = getCommandPaletteCommands("stackoverflow");
-      
+
       expect(results.length).toBeGreaterThan(0);
-      expect(results.some(r => r.description?.includes("stackoverflow"))).toBe(true);
+      expect(
+        results.some((r) => r.description?.includes("stackoverflow")),
+      ).toBe(true);
     });
 
     it("should match partial strings", () => {
       const results = getCommandPaletteCommands("git");
-      
-      expect(results.some(r => r.label.toLowerCase().includes("git"))).toBe(true);
+
+      expect(results.some((r) => r.label.toLowerCase().includes("git"))).toBe(
+        true,
+      );
     });
 
     it("should be case insensitive", () => {
       const resultsLower = getCommandPaletteCommands("google");
       const resultsUpper = getCommandPaletteCommands("GOOGLE");
       const resultsMixed = getCommandPaletteCommands("GoOgLe");
-      
+
       expect(resultsLower.length).toBe(resultsUpper.length);
       expect(resultsLower.length).toBe(resultsMixed.length);
       expect(resultsLower.length).toBeGreaterThan(0);
@@ -120,18 +164,22 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
 
     it("should return empty results for no matches", () => {
       const results = getCommandPaletteCommands("xyznonexistent123");
-      
+
       expect(results.length).toBe(0);
     });
 
     it("should prioritize bookmarks over folders and commands in search", () => {
       // "dev" matches bookmark titles/tags and folder "Development"
       const results = getCommandPaletteCommands("dev");
-      
+
       // First results should be bookmarks
-      const firstBookmarkIndex = results.findIndex(r => r.category === "bookmark");
-      const firstFolderIndex = results.findIndex(r => r.category === "folder");
-      
+      const firstBookmarkIndex = results.findIndex(
+        (r) => r.category === "bookmark",
+      );
+      const firstFolderIndex = results.findIndex(
+        (r) => r.category === "folder",
+      );
+
       if (firstBookmarkIndex !== -1 && firstFolderIndex !== -1) {
         expect(firstBookmarkIndex).toBeLessThan(firstFolderIndex);
       }
@@ -139,25 +187,29 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
 
     it("should include bookmark favicons", () => {
       const results = getCommandPaletteCommands("github");
-      
-      const githubResult = results.find(r => r.label.toLowerCase().includes("github"));
+
+      const githubResult = results.find((r) =>
+        r.label.toLowerCase().includes("github"),
+      );
       expect(githubResult?.favicon).toBe("/favicons/github.png");
     });
 
     it("should limit bookmark results to 10", () => {
       // Add more bookmarks temporarily
       // @ts-ignore
-      state.bookmarks = Array(20).fill(null).map((_, i) => ({
-        id: `bm${i}`,
-        title: `Test Bookmark ${i}`,
-        url: `https://test${i}.com`,
-        favicon: "",
-        tags: "",
-      }));
-      
+      state.bookmarks = Array(20)
+        .fill(null)
+        .map((_, i) => ({
+          id: `bm${i}`,
+          title: `Test Bookmark ${i}`,
+          url: `https://test${i}.com`,
+          favicon: "",
+          tags: "",
+        }));
+
       const results = getCommandPaletteCommands("test");
-      const bookmarkResults = results.filter(r => r.category === "bookmark");
-      
+      const bookmarkResults = results.filter((r) => r.category === "bookmark");
+
       expect(bookmarkResults.length).toBeLessThanOrEqual(10);
     });
   });
@@ -165,63 +217,67 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
   describe("Command prefix (>)", () => {
     it("should only return commands with > prefix", () => {
       const results = getCommandPaletteCommands(">");
-      
-      expect(results.every(r => r.category === "command")).toBe(true);
-      expect(results.some(r => r.label === "Add bookmark")).toBe(true);
+
+      expect(results.every((r) => r.category === "command")).toBe(true);
+      expect(results.some((r) => r.label === "Add bookmark")).toBe(true);
     });
 
     it("should filter commands by search term", () => {
       const results = getCommandPaletteCommands(">dashboard");
-      
-      expect(results.some(r => r.label.toLowerCase().includes("dashboard"))).toBe(true);
+
+      expect(
+        results.some((r) => r.label.toLowerCase().includes("dashboard")),
+      ).toBe(true);
     });
 
     it("should not include bookmarks or folders with > prefix", () => {
       const results = getCommandPaletteCommands(">github");
-      
-      expect(results.every(r => r.category === "command")).toBe(true);
+
+      expect(results.every((r) => r.category === "command")).toBe(true);
     });
   });
 
   describe("Folder prefix (@)", () => {
     it("should only return folders with @ prefix", () => {
       const results = getCommandPaletteCommands("@");
-      
-      expect(results.every(r => r.category === "folder")).toBe(true);
+
+      expect(results.every((r) => r.category === "folder")).toBe(true);
       expect(results.length).toBe(3); // Only top-level folders
     });
 
     it("should filter folders by name", () => {
       const results = getCommandPaletteCommands("@work");
-      
-      expect(results.some(r => r.label.toLowerCase().includes("work"))).toBe(true);
-      expect(results.every(r => r.category === "folder")).toBe(true);
+
+      expect(results.some((r) => r.label.toLowerCase().includes("work"))).toBe(
+        true,
+      );
+      expect(results.every((r) => r.category === "folder")).toBe(true);
     });
 
     it("should not include bookmarks with @ prefix", () => {
       const results = getCommandPaletteCommands("@development");
-      
-      expect(results.every(r => r.category === "folder")).toBe(true);
+
+      expect(results.every((r) => r.category === "folder")).toBe(true);
     });
   });
 
   describe("Tag prefix (#)", () => {
     it("should filter bookmarks by tag with # prefix", () => {
       const results = getCommandPaletteCommands("#dev");
-      
+
       expect(results.length).toBeGreaterThan(0);
-      expect(results.every(r => r.category === "bookmark")).toBe(true);
+      expect(results.every((r) => r.category === "bookmark")).toBe(true);
     });
 
     it("should return empty for non-existent tag", () => {
       const results = getCommandPaletteCommands("#nonexistenttag");
-      
+
       expect(results.length).toBe(0);
     });
 
     it("should match partial tag names", () => {
       const results = getCommandPaletteCommands("#prog");
-      
+
       expect(results.length).toBeGreaterThan(0);
     });
   });
@@ -229,23 +285,25 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
   describe("Edge cases", () => {
     it("should handle whitespace-only input", () => {
       const results = getCommandPaletteCommands("   ");
-      
+
       // Whitespace only should be treated as empty - return all commands
-      expect(results.some(r => r.category === "command")).toBe(true);
+      expect(results.some((r) => r.category === "command")).toBe(true);
     });
 
     it("should handle whitespace around search terms", () => {
       const results = getCommandPaletteCommands("  github  ");
-      
-      expect(results.some(r => r.label.toLowerCase().includes("github"))).toBe(true);
+
+      expect(
+        results.some((r) => r.label.toLowerCase().includes("github")),
+      ).toBe(true);
     });
 
     it("should handle empty bookmarks array", () => {
       // @ts-ignore
       state.bookmarks = [];
-      
+
       const results = getCommandPaletteCommands("test");
-      
+
       // Should not throw, returns commands that match
       expect(Array.isArray(results)).toBe(true);
     });
@@ -253,9 +311,9 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
     it("should handle empty folders array", () => {
       // @ts-ignore
       state.folders = [];
-      
+
       const results = getCommandPaletteCommands("@test");
-      
+
       // Should not throw, should return empty
       expect(Array.isArray(results)).toBe(true);
       expect(results.length).toBe(0);
@@ -267,19 +325,21 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
         { id: "1", url: "https://notitle.com" }, // No title
         { id: "2", title: "No Tags", url: "https://notags.com" }, // No tags
       ];
-      
+
       const results = getCommandPaletteCommands("notitle");
-      
+
       // Should use URL as fallback for title
-      expect(results.some(r => r.description?.includes("notitle"))).toBe(true);
+      expect(results.some((r) => r.description?.includes("notitle"))).toBe(
+        true,
+      );
     });
   });
 
   describe("Command structure", () => {
     it("should include all required command properties", () => {
       const results = getCommandPaletteCommands("");
-      
-      const command = results.find(r => r.category === "command");
+
+      const command = results.find((r) => r.category === "command");
       expect(command).toBeDefined();
       expect(command?.label).toBeDefined();
       expect(command?.icon).toBeDefined();
@@ -288,8 +348,8 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
 
     it("should include all required bookmark properties", () => {
       const results = getCommandPaletteCommands("github");
-      
-      const bookmark = results.find(r => r.category === "bookmark");
+
+      const bookmark = results.find((r) => r.category === "bookmark");
       expect(bookmark).toBeDefined();
       expect(bookmark?.label).toBeDefined();
       expect(bookmark?.url).toBeDefined();
@@ -299,8 +359,8 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
 
     it("should include all required folder properties", () => {
       const results = getCommandPaletteCommands("@");
-      
-      const folder = results.find(r => r.category === "folder");
+
+      const folder = results.find((r) => r.category === "folder");
       expect(folder).toBeDefined();
       expect(folder?.label).toBeDefined();
       expect(folder?.icon).toBe("📁");

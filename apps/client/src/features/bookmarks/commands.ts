@@ -105,23 +105,24 @@ import { Command } from "@/types";
 // Get command palette commands
 export function getCommandPaletteCommands(filterText: string = ""): Command[] {
   const term = filterText.toLowerCase().trim();
-  
+
   // Check for special prefixes
   const isCommandSearch = term.startsWith(">");
   const isFolderSearch = term.startsWith("@");
   const isTagSearch = term.startsWith("#");
-  const isBookmarkOnly = !isCommandSearch && !isFolderSearch && !isTagSearch && term.length > 0;
-  
+  const isBookmarkOnly =
+    !isCommandSearch && !isFolderSearch && !isTagSearch && term.length > 0;
+
   // Clean the search term (remove prefix if present)
   const searchTerm = term.replace(/^[>#@]/, "").trim();
 
   const baseCommands: Command[] = [
-    { 
-      label: "Add bookmark", 
+    {
+      label: "Add bookmark",
       action: () => openModal("bookmark-modal"),
       icon: "➕",
       category: "command",
-      description: "Create a new bookmark"
+      description: "Create a new bookmark",
     },
     {
       label: "Focus search",
@@ -129,7 +130,7 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
         (document.getElementById("search-input") as HTMLInputElement)?.focus(),
       icon: "🔍",
       category: "command",
-      description: "Focus the search input"
+      description: "Focus the search input",
     },
     {
       label: "Show dashboard",
@@ -145,7 +146,7 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
       },
       icon: "📊",
       category: "command",
-      description: "Go to dashboard view"
+      description: "Go to dashboard view",
     },
     {
       label: "View tag cloud",
@@ -161,7 +162,7 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
       },
       icon: "☁️",
       category: "command",
-      description: "View interactive tag cloud"
+      description: "View interactive tag cloud",
     },
     {
       label: "View favorites",
@@ -177,7 +178,7 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
       },
       icon: "⭐",
       category: "command",
-      description: "View favorite bookmarks"
+      description: "View favorite bookmarks",
     },
     {
       label: "View all bookmarks",
@@ -193,14 +194,14 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
       },
       icon: "📚",
       category: "command",
-      description: "Show all bookmarks"
+      description: "Show all bookmarks",
     },
-    { 
-      label: "Open settings", 
+    {
+      label: "Open settings",
       action: () => openModal("settings-modal"),
       icon: "⚙️",
       category: "command",
-      description: "Open application settings"
+      description: "Open application settings",
     },
     {
       label: "Import bookmarks",
@@ -208,13 +209,15 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
         openModal("settings-modal");
         // Switch to import tab after modal opens
         setTimeout(() => {
-          const importTab = document.querySelector('[data-settings-tab="import-export"]') as HTMLElement;
+          const importTab = document.querySelector(
+            '[data-settings-tab="import-export"]',
+          ) as HTMLElement;
           importTab?.click();
         }, 100);
       },
       icon: "📥",
       category: "command",
-      description: "Import bookmarks from file"
+      description: "Import bookmarks from file",
     },
     {
       label: "Export bookmarks",
@@ -225,7 +228,7 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
       },
       icon: "📤",
       category: "command",
-      description: "Export bookmarks to file"
+      description: "Export bookmarks to file",
     },
   ];
 
@@ -245,7 +248,7 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
       },
       icon: "📁",
       category: "folder" as const,
-      description: `Go to folder`
+      description: `Go to folder`,
     }));
 
   // Create bookmark commands (for launcher functionality)
@@ -274,12 +277,12 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
   if (isCommandSearch) {
     // Only show commands when using > prefix
     results = baseCommands.filter((cmd) =>
-      cmd.label.toLowerCase().includes(searchTerm)
+      cmd.label.toLowerCase().includes(searchTerm),
     );
   } else if (isFolderSearch) {
     // Only show folders when using @ prefix
     results = folderCommands.filter((cmd) =>
-      cmd.label.toLowerCase().includes(searchTerm)
+      cmd.label.toLowerCase().includes(searchTerm),
     );
   } else if (isTagSearch) {
     // Filter by tag - show bookmarks with matching tags
@@ -292,17 +295,21 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
     const matchingBookmarks = bookmarkCommands.filter(
       (cmd) =>
         cmd.label.toLowerCase().includes(searchTerm) ||
-        cmd.description?.toLowerCase().includes(searchTerm)
+        cmd.description?.toLowerCase().includes(searchTerm),
     );
     const matchingCommands = baseCommands.filter((cmd) =>
-      cmd.label.toLowerCase().includes(searchTerm)
+      cmd.label.toLowerCase().includes(searchTerm),
     );
     const matchingFolders = folderCommands.filter((cmd) =>
-      cmd.label.toLowerCase().includes(searchTerm)
+      cmd.label.toLowerCase().includes(searchTerm),
     );
-    
+
     // Show bookmarks first (main launcher use case), then folders, then commands
-    results = [...matchingBookmarks.slice(0, 10), ...matchingFolders, ...matchingCommands];
+    results = [
+      ...matchingBookmarks.slice(0, 10),
+      ...matchingFolders,
+      ...matchingCommands,
+    ];
   } else {
     // No search term - show commands and folders first, then some recent bookmarks
     const recentBookmarks = bookmarkCommands.slice(0, 5);
@@ -357,12 +364,12 @@ export function renderCommandPaletteList(filterText: string): void {
 
   if (entries.length === 0) {
     const term = (filterText || "").trim();
-    const hint = term.startsWith(">") 
-      ? "No matching commands" 
-      : term.startsWith("@") 
-        ? "No matching folders" 
-        : term.startsWith("#") 
-          ? "No bookmarks with matching tags" 
+    const hint = term.startsWith(">")
+      ? "No matching commands"
+      : term.startsWith("@")
+        ? "No matching folders"
+        : term.startsWith("#")
+          ? "No bookmarks with matching tags"
           : "No matches found";
     list.innerHTML = `<div class="command-item empty">${hint}</div>`;
     return;
@@ -383,16 +390,18 @@ export function renderCommandPaletteList(filterText: string): void {
       // Truncate URL for display
       let descriptionHtml = "";
       if (cmd.description) {
-        const shortDesc = cmd.description.length > 50 
-          ? cmd.description.substring(0, 50) + "..." 
-          : cmd.description;
+        const shortDesc =
+          cmd.description.length > 50
+            ? cmd.description.substring(0, 50) + "..."
+            : cmd.description;
         descriptionHtml = `<span class="command-desc">${escapeHtml(shortDesc)}</span>`;
       }
 
       // Category badge
-      const categoryBadge = cmd.category && cmd.category !== "command" 
-        ? `<span class="command-category ${cmd.category}">${cmd.category}</span>` 
-        : "";
+      const categoryBadge =
+        cmd.category && cmd.category !== "command"
+          ? `<span class="command-category ${cmd.category}">${cmd.category}</span>`
+          : "";
 
       return `
         <div class="command-item ${idx === state.commandPaletteActiveIndex ? "active" : ""} ${cmd.category || ""}" data-index="${idx}">

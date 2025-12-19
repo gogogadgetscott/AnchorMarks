@@ -189,7 +189,8 @@ function setupApiRoutes(app, db, helpers) {
           {
             title: "AnchorMarks Documentation",
             url: "https://github.com/gogogadgetscott/AnchorMarks",
-            description: "Official documentation and source code for AnchorMarks",
+            description:
+              "Official documentation and source code for AnchorMarks",
             tags: "docs,anchormarks",
             folder_id: folderId,
           },
@@ -305,7 +306,10 @@ function setupApiRoutes(app, db, helpers) {
         ];
 
         // Tag helper functions
-        const { ensureTagsExist, updateBookmarkTags } = require("../helpers/tag-helpers");
+        const {
+          ensureTagsExist,
+          updateBookmarkTags,
+        } = require("../helpers/tag-helpers");
 
         let bookmarksCreated = 0;
         for (const bm of exampleBookmarks) {
@@ -317,7 +321,10 @@ function setupApiRoutes(app, db, helpers) {
 
           // Add tags if present
           if (bm.tags) {
-            const tagNames = bm.tags.split(",").map((t) => t.trim()).filter(Boolean);
+            const tagNames = bm.tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean);
             if (tagNames.length > 0) {
               const tagIds = ensureTagsExist(db, userId, tagNames);
               updateBookmarkTags(db, id, tagIds);
@@ -326,7 +333,7 @@ function setupApiRoutes(app, db, helpers) {
 
           // Fetch favicon in background
           if (fetchFaviconWrapper) {
-            fetchFaviconWrapper(bm.url, id).catch(() => { });
+            fetchFaviconWrapper(bm.url, id).catch(() => {});
           }
           bookmarksCreated++;
         }

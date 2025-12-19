@@ -99,7 +99,10 @@ export async function loadBookmarks(): Promise<void> {
     updateActiveNav();
 
     // Initialize bookmark views UI if in bookmark view
-    if (state.currentView !== "dashboard" && state.currentView !== "tag-cloud") {
+    if (
+      state.currentView !== "dashboard" &&
+      state.currentView !== "tag-cloud"
+    ) {
       initBookmarkViews();
     }
 
@@ -453,16 +456,17 @@ export async function updateBookmark(
     });
     const index = state.bookmarks.findIndex((b) => b.id === id);
     if (index !== -1) state.bookmarks[index] = bookmark;
-    
+
     // Re-render the appropriate view based on current state
     if (state.currentView === "dashboard") {
       // Dynamically import and render dashboard
-      const { renderDashboard } = await import("@features/bookmarks/dashboard.ts");
+      const { renderDashboard } =
+        await import("@features/bookmarks/dashboard.ts");
       renderDashboard();
     } else {
       renderBookmarks();
     }
-    
+
     updateCounts();
     closeModals();
     showToast("Bookmark updated!", "success");
@@ -478,15 +482,16 @@ export async function deleteBookmark(id: string): Promise<void> {
   try {
     await api(`/bookmarks/${id}`, { method: "DELETE" });
     state.setBookmarks(state.bookmarks.filter((b) => b.id !== id));
-    
+
     // Re-render the appropriate view based on current state
     if (state.currentView === "dashboard") {
-      const { renderDashboard } = await import("@features/bookmarks/dashboard.ts");
+      const { renderDashboard } =
+        await import("@features/bookmarks/dashboard.ts");
       renderDashboard();
     } else {
       renderBookmarks();
     }
-    
+
     updateCounts();
     showToast("Bookmark deleted", "success");
   } catch (err: any) {
@@ -541,9 +546,11 @@ export async function editBookmark(id: string): Promise<void> {
     bookmark.tags || "";
 
   // Load color
-  const colorInput = document.getElementById("bookmark-color") as HTMLInputElement;
+  const colorInput = document.getElementById(
+    "bookmark-color",
+  ) as HTMLInputElement;
   if (colorInput) colorInput.value = bookmark.color || "";
-  
+
   // Update color picker UI
   document.querySelectorAll(".color-option-bookmark").forEach((opt: any) => {
     const optColor = opt.dataset.color || "";
