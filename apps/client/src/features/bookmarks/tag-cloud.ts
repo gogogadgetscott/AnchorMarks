@@ -39,8 +39,8 @@ function getBaseFontSizes(containerHeight: number): number[] {
   // Scale font sizes based on available height
   const scale = Math.min(1, containerHeight / 600); // 600px is baseline
   const baseSizes = [14, 18, 24, 32, 40, 48, 56];
-  
-  return baseSizes.map(size => Math.max(12, size * scale));
+
+  return baseSizes.map((size) => Math.max(12, size * scale));
 }
 
 // Map tag count to font size index using linear scale
@@ -48,7 +48,7 @@ function getFontSizeForCount(
   count: number,
   minCount: number,
   maxCount: number,
-  fontSizes: number[]
+  fontSizes: number[],
 ): number {
   if (maxCount === minCount) {
     return fontSizes[Math.floor(fontSizes.length / 2)];
@@ -57,7 +57,7 @@ function getFontSizeForCount(
   // Linear scale from minCount to maxCount
   const range = maxCount - minCount;
   const normalized = (count - minCount) / range;
-  
+
   // Map to font size index
   const index = Math.floor(normalized * (fontSizes.length - 1));
   return fontSizes[index];
@@ -158,7 +158,7 @@ export function renderTagCloud(): void {
 
   // Get container dimensions
   const canvasHeight = window.innerHeight - 300; // Account for header, legend, etc.
-  
+
   // Get scaled font sizes based on container
   const fontSizes = getBaseFontSizes(canvasHeight);
 
@@ -188,7 +188,12 @@ export function renderTagCloud(): void {
       <div class="tag-cloud-canvas" id="tag-cloud-canvas">
         ${shuffledTags
           .map((tag, index) => {
-            const fontSize = getFontSizeForCount(tag.count, minCount, maxCount, fontSizes);
+            const fontSize = getFontSizeForCount(
+              tag.count,
+              minCount,
+              maxCount,
+              fontSizes,
+            );
             const opacity = calculateOpacity(tag.count, minCount, maxCount);
             const delay = (index * 0.03).toFixed(2);
             const rotation =

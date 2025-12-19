@@ -249,6 +249,69 @@
               >
             </div>
 
+            <!-- User Journey Cards -->
+            <div class="user-journeys">
+              <div class="journey-card">
+                <h3>🧑‍🎓 New User</h3>
+                <p>
+                  Just getting started? Focus on adding bookmarks, organizing
+                  with folders and tags, and basic search.
+                </p>
+                <h4>Do this first:</h4>
+                <ol>
+                  <li>
+                    <a href="#bookmarks">Install extension & add 5 bookmarks</a>
+                  </li>
+                  <li><a href="#folders">Create 1 folder</a></li>
+                  <li><a href="#tags">Add tags to your bookmarks</a></li>
+                  <li><a href="#search">Try Quick Launch search</a></li>
+                  <li><a href="#dashboard">Set up your dashboard</a></li>
+                </ol>
+              </div>
+              <div class="journey-card">
+                <h3>🚀 Power User</h3>
+                <p>
+                  Already organized? Dive into advanced features like Smart
+                  Collections, Tag Analytics, and custom Views.
+                </p>
+                <h4>Do this first:</h4>
+                <ol>
+                  <li>
+                    <a href="#smart-collections">Create a Smart Collection</a>
+                  </li>
+                  <li><a href="#tag-analytics">Explore Tag Analytics</a></li>
+                  <li><a href="#views">Save and restore Views</a></li>
+                  <li><a href="#shortcuts">Learn keyboard shortcuts</a></li>
+                  <li><a href="#quick-launch">Master Quick Launch</a></li>
+                </ol>
+              </div>
+              <div class="journey-card">
+                <h3>🛠️ Self-host / Admin</h3>
+                <p>
+                  Running your own instance? Learn deployment, security, and API
+                  integration.
+                </p>
+                <h4>Do this first:</h4>
+                <ol>
+                  <li>
+                    <a href="#deployment">Set up production deployment</a>
+                  </li>
+                  <li>
+                    <a href="#security-auth">Configure security & auth</a>
+                  </li>
+                  <li><a href="#api-reference">Explore API endpoints</a></li>
+                  <li>
+                    <a href="#project-structure"
+                      >Understand project structure</a
+                    >
+                  </li>
+                  <li>
+                    <a href="#troubleshooting">Check troubleshooting tips</a>
+                  </li>
+                </ol>
+              </div>
+            </div>
+
             <h3 class="help-anchor" id="first-5-minutes">First 5 minutes</h3>
             <ol class="help-checklist">
               <li><a href="#bookmarks">Add your first bookmark</a></li>
@@ -311,14 +374,17 @@
             </p>
 
             <div class="tip-box">
-              <strong>Missed the tour?</strong> Open <strong>Settings</strong> →
-              <strong>General</strong> → <strong>Restart Tour</strong> to run
-              the onboarding tour again (no dev tools required).
+              <span class="callout-icon" aria-hidden="true">💡</span
+              ><strong>Missed the tour?</strong> Open
+              <strong>Settings</strong> → <strong>General</strong> →
+              <strong>Restart Tour</strong> to run the onboarding tour again (no
+              dev tools required).
             </div>
 
             <div class="tip-box">
-              <strong>Mobile Navigation:</strong> On mobile devices (tablets and
-              phones), the sidebar is hidden by default to maximize screen
+              <span class="callout-icon" aria-hidden="true">💡</span
+              ><strong>Mobile Navigation:</strong> On mobile devices (tablets
+              and phones), the sidebar is hidden by default to maximize screen
               space. Tap the menu icon (☰) in the header to open the sidebar,
               which slides in as an overlay. Tap outside the sidebar or on any
               navigation item to close it.
@@ -401,7 +467,8 @@
               </li>
             </ul>
             <div class="tip-box">
-              <strong>Color ideas:</strong> Use colors to mark priority levels
+              <span class="callout-icon" aria-hidden="true">💡</span
+              ><strong>Color ideas:</strong> Use colors to mark priority levels
               (red = urgent, yellow = review), status (green = active, gray =
               archived), or categories (blue = work, purple = personal). Colors
               work alongside folders and tags for maximum flexibility.
@@ -454,7 +521,8 @@
             </ul>
 
             <div class="tip-box">
-              <strong>Color key (characters):</strong> If you want even more
+              <span class="callout-icon" aria-hidden="true">💡</span
+              ><strong>Color key (characters):</strong> If you want even more
               visual grouping, you can prefix folder names with colored emoji
               characters (works anywhere text is shown).
               <div class="code-block">
@@ -482,8 +550,9 @@
             </ul>
 
             <div class="tip-box">
-              <strong>Color key (characters):</strong> You can also use emoji as
-              a lightweight “color system” for tags. Example tags:
+              <span class="callout-icon" aria-hidden="true">💡</span
+              ><strong>Color key (characters):</strong> You can also use emoji
+              as a lightweight “color system” for tags. Example tags:
               <code>🔵 reference</code>, <code>🟢 active</code>,
               <code>🟣 personal</code>.
             </div>
@@ -492,7 +561,8 @@
               <span class="section-icon" aria-hidden="true">☁️</span>Tag Cloud
             </h3>
             <p class="help-at-a-glance">
-              <strong>At a glance:</strong> The Tag Cloud is an interactive
+              <span class="callout-icon" aria-hidden="true">👁️</span
+              ><strong>At a glance:</strong> The Tag Cloud is an interactive
               visualization that displays all your tags sized by their usage
               frequency, making it easy to see your most-used tags at a glance
               and quickly filter bookmarks.
@@ -568,9 +638,11 @@
               <span class="section-icon" aria-hidden="true">🔎</span>Search
               &amp; Filter
             </h3>
-            <p>
-              AnchorMarks features a powerful full-width filter bar (similar to
-              Adobe Lightroom) for quickly finding bookmarks.
+            <p class="help-at-a-glance">
+              <span class="callout-icon" aria-hidden="true">👁️</span
+              ><strong>At a glance:</strong> Powerful full-width filter bar for
+              finding bookmarks by folders, tags, and search terms, with
+              flexible sorting options.
             </p>
 
             <h4>Search</h4>
@@ -649,7 +721,8 @@
             </ul>
 
             <div class="tip-box">
-              <strong>Quick Tip:</strong> The filter bar pushes content down
+              <span class="callout-icon" aria-hidden="true">💡</span
+              ><strong>Quick Tip:</strong> The filter bar pushes content down
               when open, so you can see both your filters and results at the
               same time. Combine folder + tag filters to create powerful queries
               (example: "Work" folder + "urgent" tag).
@@ -666,7 +739,8 @@
               Collections
             </h3>
             <p class="help-at-a-glance">
-              <strong>At a glance:</strong> Smart Collections are saved,
+              <span class="callout-icon" aria-hidden="true">👁️</span
+              ><strong>At a glance:</strong> Smart Collections are saved,
               rule-based groupings that automatically update as your bookmarks
               change (think “saved searches” with a friendly name).
             </p>
@@ -734,7 +808,8 @@
               Organization
             </h3>
             <p class="help-at-a-glance">
-              <strong>At a glance:</strong> Smart Organization suggests tags,
+              <span class="callout-icon" aria-hidden="true">👁️</span
+              ><strong>At a glance:</strong> Smart Organization suggests tags,
               proposes collections, and surfaces insights based on your
               bookmarks and usage patterns.
             </p>
@@ -763,9 +838,10 @@
               <span class="section-icon" aria-hidden="true">📊</span>Dashboard
             </h3>
             <p class="help-at-a-glance">
-              <strong>At a glance:</strong> The dashboard is a configurable home
-              screen that can group bookmarks by folders or tags using draggable
-              widgets.
+              <span class="callout-icon" aria-hidden="true">👁️</span
+              ><strong>At a glance:</strong> The dashboard is a configurable
+              home screen that can group bookmarks by folders or tags using
+              draggable widgets.
             </p>
 
             <h4>Adding Widgets</h4>
@@ -867,7 +943,8 @@
               </li>
             </ul>
             <div class="tip-box">
-              <strong>Tip:</strong> Sort settings are saved per-widget, so you
+              <span class="callout-icon" aria-hidden="true">💡</span
+              ><strong>Tip:</strong> Sort settings are saved per-widget, so you
               can have one widget sorted A-Z and another sorted by most
               recent—each widget remembers its own sort preference.
             </div>
@@ -876,12 +953,10 @@
               <span class="section-icon" aria-hidden="true">🏷️</span>Tag
               Analytics
             </h3>
-            <p>
-              The <strong>Tag Analytics</strong> widget helps you understand how
-              your tags are used across bookmarks and which tags commonly occur
-              together. Add it from the <em>Tags</em> section of the widget
-              picker. It appears with controls for selecting a metric and a
-              result limit.
+            <p class="help-at-a-glance">
+              <strong>At a glance:</strong> Analytics widget showing tag usage,
+              co-occurrence patterns, and metrics like clicks and favorites to
+              optimize your tagging strategy.
             </p>
             <h4>Controls &amp; Metrics</h4>
             <ul>
@@ -1038,7 +1113,8 @@
             </ul>
 
             <div class="tip-box">
-              <strong>Pro Tips:</strong>
+              <span class="callout-icon" aria-hidden="true">🚀</span
+              ><strong>Pro Tips:</strong>
               <ul style="margin: 0.5rem 0 0; padding-left: 1.25rem">
                 <li>
                   Use Auto Position after adding several widgets to create a
@@ -1113,7 +1189,8 @@
               Features
             </h3>
             <p class="help-at-a-glance">
-              <strong>At a glance:</strong> Advanced features help you manage
+              <span class="callout-icon" aria-hidden="true">👁️</span
+              ><strong>At a glance:</strong> Advanced features help you manage
               large libraries faster (bulk ops, hierarchies, insights, and
               cleanup tools).
             </p>
@@ -1427,7 +1504,8 @@
               </ul>
 
               <div class="tip-box">
-                <strong>Pro Tip:</strong> Quick Launch searches both bookmark
+                <span class="callout-icon" aria-hidden="true">🚀</span
+                ><strong>Pro Tip:</strong> Quick Launch searches both bookmark
                 titles AND URLs. If you can't remember a bookmark's name, try
                 typing part of the domain (e.g., "github" to find all GitHub
                 links).
@@ -1478,7 +1556,8 @@
               <li>Report issues on the GitHub repository.</li>
             </ul>
             <div class="tip-box">
-              <strong>Quick tip:</strong> Press <kbd>&gt;</kbd> for shortcut
+              <span class="callout-icon" aria-hidden="true">💡</span
+              ><strong>Quick tip:</strong> Press <kbd>&gt;</kbd> for shortcut
               help, or <kbd>Ctrl+Shift+P</kbd> / <kbd>Cmd+Shift+P</kbd> for the
               Quick Launch.
             </div>
@@ -1571,7 +1650,8 @@
                 Views &amp; Dashboard Import/Export
               </h3>
               <p class="help-at-a-glance">
-                <strong>At a glance:</strong> Views capture filters, sorts, and
+                <span class="callout-icon" aria-hidden="true">👁️</span
+                ><strong>At a glance:</strong> Views capture filters, sorts, and
                 dashboard widget layouts. You can now export and import saved
                 Views (including Dashboard layouts) to move layouts between
                 accounts or keep backups.
@@ -1764,7 +1844,8 @@
             </ul>
 
             <div class="tip-box">
-              <strong>Security:</strong> Treat API keys like passwords.
+              <span class="callout-icon" aria-hidden="true">💡</span
+              ><strong>Security:</strong> Treat API keys like passwords.
               Regenerate them in Settings if compromised.
             </div>
 
@@ -1861,7 +1942,8 @@
             </div>
 
             <div class="tip-box">
-              <strong>Development Mode:</strong> Access the app at
+              <span class="callout-icon" aria-hidden="true">💡</span
+              ><strong>Development Mode:</strong> Access the app at
               <code>http://localhost:5173</code> (Vite dev server). All API
               requests are automatically proxied to the Express backend on port
               3000. Changes to frontend code trigger instant HMR updates without
@@ -1869,7 +1951,8 @@
             </div>
 
             <div class="tip-box">
-              <strong>Production Mode:</strong> Run
+              <span class="callout-icon" aria-hidden="true">💡</span
+              ><strong>Production Mode:</strong> Run
               <code>npm run build</code> to compile the frontend into
               <code>apps/client/dist</code>. Then
               <code>npm run prod</code> serves everything from the Express
@@ -1887,6 +1970,128 @@
               The Vite configuration (<code>apps/vite.config.js</code>)
               automatically reads these values and configures the proxy to route
               API requests to the correct backend port.
+            </p>
+
+            <h3 class="help-anchor" id="faq">
+              <span class="section-icon" aria-hidden="true">❓</span>FAQ
+            </h3>
+            <details>
+              <summary><strong>How do I backup my bookmarks?</strong></summary>
+              <p>
+                Use the export feature in Settings → Export to download your
+                bookmarks as JSON. For dashboard layouts and views, use Settings
+                → Views → Export.
+              </p>
+            </details>
+            <details>
+              <summary>
+                <strong>Can I import bookmarks from my browser?</strong>
+              </summary>
+              <p>
+                Yes! Use Settings → Import → Browser Bookmarks. AnchorMarks
+                supports HTML bookmark files from Chrome, Firefox, Edge, and
+                Safari.
+              </p>
+            </details>
+            <details>
+              <summary>
+                <strong
+                  >How do I organize bookmarks with folders and tags?</strong
+                >
+              </summary>
+              <p>
+                Folders are for hierarchical organization (like file folders),
+                while tags are for flexible categorization (one bookmark can
+                have multiple tags). Use both together for maximum organization.
+              </p>
+            </details>
+            <details>
+              <summary>
+                <strong
+                  >What's the difference between Smart Collections and
+                  Views?</strong
+                >
+              </summary>
+              <p>
+                Smart Collections are dynamic groupings based on rules (e.g.,
+                all GitHub links). Views are saved filter/sort states that you
+                can restore later.
+              </p>
+            </details>
+            <details>
+              <summary><strong>How do I reset my password?</strong></summary>
+              <p>
+                If you're self-hosting, passwords are managed locally. For the
+                hosted version, use the "Forgot Password" link on the login
+                page.
+              </p>
+            </details>
+            <details>
+              <summary><strong>Can I use AnchorMarks offline?</strong></summary>
+              <p>
+                The web app requires a server connection, but you can self-host
+                it on your local network for offline use.
+              </p>
+            </details>
+            <details>
+              <summary>
+                <strong>How do I customize the dashboard?</strong>
+              </summary>
+              <p>
+                Click "Add Widget" to add folder or tag widgets. Drag to
+                rearrange, resize handles to adjust size, and use the widget
+                options menu (⋮) for per-widget settings.
+              </p>
+            </details>
+            <details>
+              <summary>
+                <strong>Why aren't my favicons loading?</strong>
+              </summary>
+              <p>
+                Favicons are fetched automatically when adding bookmarks. If
+                they're missing, the server may be blocking external requests or
+                the site doesn't provide favicons.
+              </p>
+            </details>
+
+            <h3 class="help-anchor" id="for-developers">
+              <span class="section-icon" aria-hidden="true">👨‍💻</span>For
+              Developers
+            </h3>
+            <p class="help-at-a-glance">
+              <span class="callout-icon" aria-hidden="true">👁️</span
+              ><strong>At a glance:</strong> AnchorMarks is a full-stack
+              JavaScript app with Node.js backend, SQLite database, and modern
+              frontend tooling. Perfect for learning modern web development
+              patterns.
+            </p>
+            <ul>
+              <li>
+                <strong>Backend:</strong> Express.js with JWT auth, CSRF
+                protection, and better-sqlite3 for database access.
+              </li>
+              <li>
+                <strong>Frontend:</strong> Vanilla JS with modern ES modules, no
+                frameworks — great for understanding DOM manipulation and state
+                management.
+              </li>
+              <li>
+                <strong>Database:</strong> SQLite with WAL mode, user isolation,
+                and parameterized queries for security.
+              </li>
+              <li>
+                <strong>Testing:</strong> Jest for server, Vitest for client,
+                with coverage reporting.
+              </li>
+              <li>
+                <strong>Build:</strong> Vite for fast development, npm
+                workspaces for monorepo.
+              </li>
+            </ul>
+            <p>
+              <strong>Contributing:</strong> See CONTRIBUTING.md for setup
+              instructions. The codebase emphasizes security, performance, and
+              maintainability.
             </p>
 
             <h3 class="help-anchor" id="roadmap">

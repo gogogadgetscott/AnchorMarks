@@ -30,32 +30,32 @@ Compared to Linkwarden/Linkding/Shaarli, AnchorMarks emphasizes minimal setup, r
 
 ## ✨ Features at a Glance
 
-| Capability | Details |
-| --- | --- |
-| 🔄 Browser Sync | Chrome / Edge / Firefox extension included |
-| 🚀 Flow Launcher | Plugin integration for quick search |
-| 🔌 REST API | Read/write endpoints with JWT + CSRF |
-| 🗃️ SQLite DB | better-sqlite3 with WAL |
-| 🐳 Docker | Compose setup, helper scripts provided |
-| 🔒 SSL | Reverse proxy ready (sample nginx.conf) |
-| 📥 Import/Export | Netscape HTML + JSON |
-| 🏷️ Tags & Folders | Nested folders, tag analytics & suggestions |
-| 🖼️ Favicons | Automatic fetching and local caching |
-| 🌙 Dark Mode | Beautiful light and dark themes |
-| 📱 Responsive | Works on desktop, tablet, and mobile |
-| ⭐ Favorites | Quick access to important bookmarks |
+| Capability            | Details                                                                     |
+| --------------------- | --------------------------------------------------------------------------- |
+| 🔄 Browser Sync       | Chrome / Edge / Firefox extension included                                  |
+| 🚀 Flow Launcher      | Plugin integration for quick search                                         |
+| 🔌 REST API           | Read/write endpoints with JWT + CSRF                                        |
+| 🗃️ SQLite DB          | better-sqlite3 with WAL                                                     |
+| 🐳 Docker             | Compose setup, helper scripts provided                                      |
+| 🔒 SSL                | Reverse proxy ready (sample nginx.conf)                                     |
+| 📥 Import/Export      | Netscape HTML + JSON                                                        |
+| 🏷️ Tags & Folders     | Nested folders, tag analytics & suggestions                                 |
+| 🖼️ Favicons           | Automatic fetching and local caching                                        |
+| 🌙 Dark Mode          | Beautiful light and dark themes                                             |
+| 📱 Responsive         | Works on desktop, tablet, and mobile                                        |
+| ⭐ Favorites          | Quick access to important bookmarks                                         |
 | 🎯 Advanced Filtering | Full-width filter bar with folder/tag counts (see [Help](help.html#search)) |
 
 ## 🎥 Live Tour
 
 - Dashboard: configurable widgets and quick-access favorites.
-	<img src="apps/client/public/images/anchormarks_dashboard_1765737807089.png" width="720" alt="Dashboard">
+  <img src="apps/client/public/images/anchormarks_dashboard_1765737807089.png" width="720" alt="Dashboard">
 
 - Search: fast, ranked results with filter bar.
-	<img src="apps/client/public/images/anchormarks_search_1765737823968.png" width="720" alt="Search">
+  <img src="apps/client/public/images/anchormarks_search_1765737823968.png" width="720" alt="Search">
 
 - Mobile: responsive layout with the same features on-the-go.
-	<img src="apps/client/public/images/anchormarks_mobile_1765737840238.png" width="360" alt="Mobile">
+  <img src="apps/client/public/images/anchormarks_mobile_1765737840238.png" width="360" alt="Mobile">
 
 ### Typical Workflow
 
@@ -105,7 +105,7 @@ Compose file: tooling/docker/docker-compose.yml. The stack reads variables from 
 - Enable rate limiting on auth endpoints.
 - Run behind an SSL-terminating reverse proxy (see tooling/deploy/nginx.conf).
 - Block private/loopback SSRF targets; production code already enforces this.
-📘 **[View full documentation →](help.html)** · [Installation Guide](INSTALL.md) · [Vite Migration](VITE_MIGRATION.md)
+  📘 **[View full documentation →](help.html)** · [Installation Guide](INSTALL.md) · [Vite Migration](VITE_MIGRATION.md)
 
 ## 🔧 Configuration
 

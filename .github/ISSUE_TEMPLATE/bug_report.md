@@ -9,6 +9,7 @@ assignees: []
 A clear and concise description of what the bug is.
 
 **Steps to reproduce**
+
 1. Go to ...
 2. Click on ...
 3. See error ...
@@ -20,6 +21,7 @@ What you expected to happen.
 If applicable, add screenshots or paste logs.
 
 **Environment**
+
 - OS:
 - Browser:
 - Node version:
