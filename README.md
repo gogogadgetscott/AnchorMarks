@@ -216,3 +216,10 @@ To run the test suite inside a container (installs dev dependencies temporarily)
 ```bash
 docker compose -f tooling/docker/docker-compose.yml run --rm anchormarks sh -c "npm install && npm test"
 ```
+
+### Roadmap
+- Add fullscreen mode
+- Add current dashbaord view to header
+- Update dashbaord page header when view is changed but not saved
+- Issue warning before loaded a dashboard view if the current view is not saved
+- Add settings > mantainance page to fresh favicon, check for duplicate bookmarks, check for broken links

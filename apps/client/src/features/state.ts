@@ -52,6 +52,15 @@ export let widgetOrder: Record<string, number> = {};
 export let dashboardWidgets: DashboardWidget[] = [];
 export let collapsedSections: string[] = [];
 
+// Dashboard View State
+export let currentDashboardViewName: string | null = null;
+export let currentDashboardViewId: string | null = null;
+export let dashboardHasUnsavedChanges: boolean = false;
+export let savedDashboardState: string | null = null;
+
+// Fullscreen State
+export let isFullscreen: boolean = false;
+
 // Filter State
 export let filterConfig: FilterConfig = {
   sort: "recently_added",
@@ -268,6 +277,21 @@ export function setDashboardWidgets(val: DashboardWidget[]) {
 }
 export function setCollapsedSections(val: string[]) {
   collapsedSections = val;
+}
+export function setCurrentDashboardViewName(val: string | null) {
+  currentDashboardViewName = val;
+}
+export function setCurrentDashboardViewId(val: string | null) {
+  currentDashboardViewId = val;
+}
+export function setDashboardHasUnsavedChanges(val: boolean) {
+  dashboardHasUnsavedChanges = val;
+}
+export function setSavedDashboardState(val: string | null) {
+  savedDashboardState = val;
+}
+export function setIsFullscreen(val: boolean) {
+  isFullscreen = val;
 }
 export function setFilterConfig(val: FilterConfig) {
   filterConfig = val;

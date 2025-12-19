@@ -19,6 +19,100 @@ function snapToGrid(value: number): number {
   return Math.round(value / GRID_SIZE) * GRID_SIZE;
 }
 
+/**
+ * Toggle fullscreen mode
+ */
+export function toggleFullscreen(): void {
+  const isFullscreen = document.body.classList.toggle("fullscreen-mode");
+  state.setIsFullscreen(isFullscreen);
+
+  // Toggle icon visibility
+  const enterIcon = document.querySelector("#dashboard-fullscreen-btn .fullscreen-enter-icon");
+  const exitIcon = document.querySelector("#dashboard-fullscreen-btn .fullscreen-exit-icon");
+  if (enterIcon && exitIcon) {
+    enterIcon.classList.toggle("hidden", isFullscreen);
+    exitIcon.classList.toggle("hidden", !isFullscreen);
+  }
+}
+
+/**
+ * Get current dashboard state as JSON string for comparison
+ */
+function getDashboardStateSnapshot(): string {
+  return JSON.stringify({
+    widgets: state.dashboardWidgets,
+    mode: state.dashboardConfig.mode,
+    tags: state.dashboardConfig.tags,
+    sort: state.dashboardConfig.bookmarkSort,
+  });
+}
+
+/**
+ * Save current dashboard state for comparison
+ */
+export function saveDashboardStateSnapshot(): void {
+  state.setSavedDashboardState(getDashboardStateSnapshot());
+  state.setDashboardHasUnsavedChanges(false);
+  updateUnsavedIndicator();
+}
+
+/**
+ * Check if dashboard has unsaved changes
+ */
+export function checkDashboardChanges(): boolean {
+  if (!state.savedDashboardState) return false;
+  const hasChanges = getDashboardStateSnapshot() !== state.savedDashboardState;
+  state.setDashboardHasUnsavedChanges(hasChanges);
+  updateUnsavedIndicator();
+  return hasChanges;
+}
+
+/**
+ * Mark dashboard as modified
+ */
+export function markDashboardModified(): void {
+  state.setDashboardHasUnsavedChanges(true);
+  updateUnsavedIndicator();
+}
+
+/**
+ * Update the unsaved changes indicator in the header
+ */
+function updateUnsavedIndicator(): void {
+  const indicator = document.getElementById("dashboard-unsaved-indicator");
+  if (indicator) {
+    indicator.classList.toggle("hidden", !state.dashboardHasUnsavedChanges);
+  }
+}
+
+/**
+ * Update the view name badge in the header
+ */
+export function updateViewNameBadge(viewName: string | null): void {
+  const badge = document.getElementById("dashboard-view-name");
+  if (badge) {
+    if (viewName) {
+      badge.textContent = viewName;
+      badge.classList.remove("hidden");
+    } else {
+      badge.textContent = "";
+      badge.classList.add("hidden");
+    }
+  }
+}
+
+/**
+ * Confirm before switching views if there are unsaved changes
+ */
+export function confirmViewSwitch(): boolean {
+  if (state.dashboardHasUnsavedChanges) {
+    return confirm(
+      "You have unsaved changes to the dashboard layout. These changes will be lost if you switch views. Continue?"
+    );
+  }
+  return true;
+}
+
 // Init dashboard views UI
 export async function initDashboardViews(): Promise<void> {
   const headerActions = document.querySelector(".header-right");
@@ -118,6 +212,7 @@ async function showViewsMenu(): Promise<void> {
   dropdown.querySelectorAll(".view-item").forEach((item: any) => {
     const viewId = item.dataset.viewId;
     const nameSpan = item.querySelector(".view-name");
+    const viewName = nameSpan?.textContent || null;
     const deleteBtn = item.querySelector(".delete-view-btn");
 
     // Click on view name to restore
@@ -125,7 +220,7 @@ async function showViewsMenu(): Promise<void> {
       nameSpan.addEventListener("click", async (e: any) => {
         e.preventDefault();
         e.stopPropagation();
-        await restoreView(viewId);
+        await restoreView(viewId, viewName);
       });
     }
 
@@ -190,6 +285,12 @@ export async function saveCurrentView(): Promise<void> {
     showToast("View saved!", "success");
     document.getElementById("views-dropdown")?.remove();
 
+    // Track the saved view
+    state.setCurrentDashboardViewId(view.id);
+    state.setCurrentDashboardViewName(name);
+    updateViewNameBadge(name);
+    saveDashboardStateSnapshot();
+
     // Prompt to create bookmark shortcut
     if (confirm("Create a bookmark shortcut for this view?")) {
       const { createBookmark } =
@@ -229,11 +330,19 @@ export async function deleteView(id: string): Promise<void> {
 }
 
 // Restore View
-export async function restoreView(id: string): Promise<void> {
+export async function restoreView(id: string, viewName?: string): Promise<void> {
+  // Warn about unsaved changes
+  if (!confirmViewSwitch()) return;
+
   try {
     await api(`/dashboard/views/${id}/restore`, { method: "POST" });
     showToast("View restored!", "success");
     document.getElementById("views-dropdown")?.remove();
+
+    // Track the loaded view
+    state.setCurrentDashboardViewId(id);
+    state.setCurrentDashboardViewName(viewName || null);
+    updateViewNameBadge(viewName || null);
 
     // Reload settings to get updated dashboard config
     const { loadSettings, saveSettings } =
@@ -246,6 +355,9 @@ export async function restoreView(id: string): Promise<void> {
 
     // Re-render dashboard with new settings
     renderDashboard();
+
+    // Save the state snapshot after loading the view
+    saveDashboardStateSnapshot();
   } catch (err: any) {
     showToast(err.message, "error");
   }
@@ -1495,6 +1607,8 @@ function saveDashboardWidgets(): void {
   import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
     saveSettings({ dashboard_widgets: state.dashboardWidgets }),
   );
+  // Mark dashboard as having unsaved changes (relative to saved view)
+  markDashboardModified();
 }
 
 // Filter dashboard bookmarks
@@ -1749,4 +1863,10 @@ export default {
   toggleLayoutSettings,
   autoPositionWidgets,
   clearDashboard,
+  toggleFullscreen,
+  saveDashboardStateSnapshot,
+  checkDashboardChanges,
+  markDashboardModified,
+  updateViewNameBadge,
+  confirmViewSwitch,
 };

@@ -322,6 +322,14 @@ async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     );
   }
 
+  // F11: Toggle fullscreen (on dashboard)
+  if (key === "f11" && state.currentView === "dashboard") {
+    e.preventDefault();
+    import("@features/bookmarks/dashboard.ts").then(({ toggleFullscreen }) =>
+      toggleFullscreen(),
+    );
+  }
+
   // ?: Shortcuts help
   if (key === "?" || e.key === "?") {
     const activeEl = document.activeElement;
@@ -963,6 +971,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
+  // Dashboard fullscreen toggle
+  document
+    .getElementById("dashboard-fullscreen-btn")
+    ?.addEventListener("click", () =>
+      import("@features/bookmarks/dashboard.ts").then(({ toggleFullscreen }) =>
+        toggleFullscreen(),
+      ),
+    );
+
   // Close mobile sidebar when clicking on navigation items
   document.querySelectorAll(".sidebar .nav-item").forEach((item) => {
     item.addEventListener("click", () => {
@@ -1050,6 +1067,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       if ((tab as HTMLElement).dataset.settingsTab === "tags") {
         import("@features/bookmarks/search.ts").then(({ loadTagStats }) =>
           loadTagStats(),
+        );
+      }
+
+      // Initialize maintenance module when tab is selected
+      if ((tab as HTMLElement).dataset.settingsTab === "maintenance") {
+        import("@features/maintenance.ts").then(({ initMaintenance }) =>
+          initMaintenance(),
         );
       }
     });

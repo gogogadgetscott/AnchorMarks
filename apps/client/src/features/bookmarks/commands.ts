@@ -230,6 +230,43 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
       category: "command",
       description: "Export bookmarks to file",
     },
+    {
+      label: "Toggle fullscreen",
+      action: () => {
+        if (state.currentView === "dashboard") {
+          import("@features/bookmarks/dashboard.ts").then(({ toggleFullscreen }) =>
+            toggleFullscreen(),
+          );
+        } else {
+          // Switch to dashboard first, then toggle fullscreen
+          state.setCurrentView("dashboard");
+          updateActiveNav();
+          import("@features/bookmarks/dashboard.ts").then(({ renderDashboard, toggleFullscreen }) => {
+            renderDashboard();
+            setTimeout(() => toggleFullscreen(), 100);
+          });
+        }
+      },
+      icon: "⛶",
+      category: "command",
+      description: "Toggle fullscreen mode (dashboard)",
+    },
+    {
+      label: "Open maintenance settings",
+      action: () => {
+        openModal("settings-modal");
+        // Switch to maintenance tab after modal opens
+        setTimeout(() => {
+          const maintenanceTab = document.querySelector(
+            '[data-settings-tab="maintenance"]',
+          ) as HTMLElement;
+          maintenanceTab?.click();
+        }, 100);
+      },
+      icon: "🔧",
+      category: "command",
+      description: "Check links, find duplicates, refresh favicons",
+    },
   ];
 
   const folderCommands: Command[] = state.folders
