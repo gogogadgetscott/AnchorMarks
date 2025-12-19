@@ -363,10 +363,42 @@ export async function restoreView(id: string, viewName?: string): Promise<void> 
   }
 }
 
-// Make functions global for inline onclick handlers
 (window as any).saveCurrentView = saveCurrentView;
 (window as any).deleteView = deleteView;
 (window as any).restoreView = restoreView;
+
+// Helper to render compact bookmark item
+function renderCompactBookmarkItem(b: any): string {
+  const colorStyle = b.color
+    ? `--bookmark-color: ${b.color}; background-color: color-mix(in srgb, ${b.color} 20%, var(--bg-primary)); border-left: 6px solid ${b.color};`
+    : "";
+  return `
+    <div class="compact-item${b.color ? " has-color" : ""}" style="${colorStyle}">
+        <a href="${b.url}" target="_blank" class="compact-item-link" data-action="track-click" data-id="${b.id}">
+            <div class="compact-favicon">
+                ${
+                  !state.hideFavicons && b.favicon
+                    ? `<img src="${b.favicon}" alt="" loading="lazy">`
+                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/></svg>`
+                }
+            </div>
+            <span class="compact-text">${escapeHtml(b.title)}</span>
+        </a>
+        <div class="compact-actions">
+            <button class="compact-action-btn" data-action="edit-bookmark" data-id="${b.id}" title="Edit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="compact-action-btn" data-action="copy-link" data-url="${escapeHtml(b.url)}" title="Copy link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+            <button class="compact-action-btn compact-action-danger" data-action="delete-bookmark" data-id="${b.id}" title="Delete">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+        </div>
+    </div>
+    `;
+}
+
 
 // sortBookmarks is defined locally to avoid circular dependency with bookmarks.ts
 function sortBookmarks(list: any[], widgetSort?: string): any[] {
@@ -438,9 +470,68 @@ export function renderDashboard(): void {
     `;
 
   container.innerHTML = dashboardHtml;
+  container.innerHTML = dashboardHtml;
   initDashboardDragDrop();
   initTagAnalyticsWidgets();
+  setupWidgetLazyLoading();
 }
+
+// Setup widget lazy loading
+function setupWidgetLazyLoading(): void {
+  const sentinels = document.querySelectorAll(".widget-load-more");
+  if (sentinels.length === 0) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const sentinel = entry.target as HTMLElement;
+          loadMoreWidgetItems(sentinel);
+        }
+      });
+    },
+    { rootMargin: "100px" },
+  );
+
+  sentinels.forEach((s) => observer.observe(s));
+}
+
+// Load more items for a widget
+function loadMoreWidgetItems(sentinel: HTMLElement): void {
+  const index = parseInt(sentinel.dataset.widgetIndex || "-1");
+  const widget = state.dashboardWidgets[index];
+  if (!widget) return;
+
+  // Prevent multiple loads
+  if (sentinel.dataset.loading === "true") return;
+  sentinel.dataset.loading = "true";
+
+  const widgetData = getWidgetData(widget);
+  if (!widgetData) return;
+
+  const bookmarks = sortBookmarks(widgetData.bookmarks, widget.sort);
+  const container = sentinel.parentElement;
+  if (!container) return;
+
+  // Count current items to determine offset
+  const currentCount = container.querySelectorAll(".compact-item").length;
+  const batchSize = 20;
+
+  const nextBatch = bookmarks.slice(currentCount, currentCount + batchSize);
+
+  if (nextBatch.length > 0) {
+    const html = nextBatch.map((b: any) => renderCompactBookmarkItem(b)).join("");
+    sentinel.insertAdjacentHTML("beforebegin", html);
+  }
+
+  // Update sentinel or remove if done
+  if (currentCount + nextBatch.length >= bookmarks.length) {
+    sentinel.remove();
+  } else {
+    sentinel.dataset.loading = "false";
+  }
+}
+
 
 // Initialize Tag Analytics widgets
 export async function initTagAnalyticsWidgets(): Promise<void> {
@@ -814,109 +905,90 @@ function renderFreeformWidgets(): string {
                 widget.type === "tag-analytics"
                   ? `
                 <div class="tag-analytics" data-analytics-widget="${index}">
-                  <div class="tag-analytics-controls" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;">
-                    <label style="display:flex;align-items:center;gap:0.25rem;">
-                      <span style="font-size:0.75rem;color:var(--text-tertiary)">Metric</span>
-                      <select class="tag-analytics-metric">
-                        <option value="count">Usage</option>
-                        <option value="click_count_sum">Clicks</option>
-                        <option value="favorites_count">Favorites</option>
-                      </select>
-                    </label>
-                    <label style="display:flex;align-items:center;gap:0.25rem;">
-                      <span style="font-size:0.75rem;color:var(--text-tertiary)">Top N</span>
-                      <select class="tag-analytics-limit">
-                        <option value="10">10</option>
-                        <option value="20" selected>20</option>
-                        <option value="30">30</option>
-                        <option value="50">50</option>
-                      </select>
-                    </label>
-                    <label style="display:flex;align-items:center;gap:0.25rem;">
-                      <span style="font-size:0.75rem;color:var(--text-tertiary)">Pairs Sort</span>
-                      <select class="tag-analytics-pairsort">
-                        <option value="count" selected>Count</option>
-                        <option value="alpha">A→Z</option>
-                      </select>
-                    </label>
-                    <div class="tag-analytics-exports" style="margin-left:auto;display:flex;gap:0.25rem;">
-                      <button class="btn btn-sm tag-analytics-export-json" title="Export JSON">JSON</button>
-                      <button class="btn btn-sm tag-analytics-export-tags-csv" title="Export Tags CSV">Tags CSV</button>
-                      <button class="btn btn-sm tag-analytics-export-pairs-csv" title="Export Pairs CSV">Pairs CSV</button>
-                    </div>
-                  </div>
-                  <div class="tag-analytics-colors" style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;">
-                    <label style="display:flex;align-items:center;gap:0.25rem;">
-                      <span style="font-size:0.75rem;color:var(--text-tertiary)">Usage</span>
-                      <input type="color" class="tag-analytics-color-usage" style="width:24px;height:20px;border:none;cursor:pointer;" />
-                    </label>
-                    <label style="display:flex;align-items:center;gap:0.25rem;">
-                      <span style="font-size:0.75rem;color:var(--text-tertiary)">Clicks</span>
-                      <input type="color" class="tag-analytics-color-clicks" style="width:24px;height:20px;border:none;cursor:pointer;" />
-                    </label>
-                    <label style="display:flex;align-items:center;gap:0.25rem;">
-                      <span style="font-size:0.75rem;color:var(--text-tertiary)">Favorites</span>
-                      <input type="color" class="tag-analytics-color-favorites" style="width:24px;height:20px;border:none;cursor:pointer;" />
-                    </label>
-                    <label style="display:flex;align-items:center;gap:0.25rem;">
-                      <span style="font-size:0.75rem;color:var(--text-tertiary)">Pairs</span>
-                      <input type="color" class="tag-analytics-color-pairs" style="width:24px;height:20px;border:none;cursor:pointer;" />
-                    </label>
-                  </div>
-                  <div class="tag-analytics-legend" style="display:flex;gap:0.75rem;align-items:center;margin-bottom:0.5rem;">
-                    <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-usage" style="display:inline-block;width:10px;height:10px;background:#6366f1;border-radius:2px"></span>Usage</span>
-                    <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-clicks" style="display:inline-block;width:10px;height:10px;background:#f97316;border-radius:2px"></span>Clicks</span>
-                    <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-favorites" style="display:inline-block;width:10px;height:10px;background:#eab308;border-radius:2px"></span>Favorites</span>
-                    <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-pairs" style="display:inline-block;width:10px;height:10px;background:#6b7280;border-radius:2px"></span>Pairs</span>
-                  </div>
-                  <div class="tag-analytics-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-                    <div class="tag-analytics-col">
-                      <div class="tag-analytics-col-title" style="font-weight:600;margin-bottom:0.25rem;">Top Tags</div>
-                      <div class="tag-analytics-list tag-analytics-top-tags" style="display:grid;grid-template-columns:1fr auto;gap:0.25rem"></div>
-                    </div>
-                    <div class="tag-analytics-col">
-                      <div class="tag-analytics-col-title" style="font-weight:600;margin-bottom:0.25rem;">Top Co-occurrence</div>
-                      <div class="tag-analytics-list tag-analytics-cooccurrence" style="display:grid;grid-template-columns:1fr auto;gap:0.25rem"></div>
-                    </div>
-                  </div>
+                   <!-- Tag analytics content -->
+                   <div class="tag-analytics-controls" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;">
+                     <label style="display:flex;align-items:center;gap:0.25rem;">
+                       <span style="font-size:0.75rem;color:var(--text-tertiary)">Metric</span>
+                       <select class="tag-analytics-metric">
+                         <option value="count">Usage</option>
+                         <option value="click_count_sum">Clicks</option>
+                         <option value="favorites_count">Favorites</option>
+                       </select>
+                     </label>
+                     <label style="display:flex;align-items:center;gap:0.25rem;">
+                       <span style="font-size:0.75rem;color:var(--text-tertiary)">Top N</span>
+                       <select class="tag-analytics-limit">
+                         <option value="10">10</option>
+                         <option value="20" selected>20</option>
+                         <option value="30">30</option>
+                         <option value="50">50</option>
+                       </select>
+                     </label>
+                     <label style="display:flex;align-items:center;gap:0.25rem;">
+                       <span style="font-size:0.75rem;color:var(--text-tertiary)">Pairs Sort</span>
+                       <select class="tag-analytics-pairsort">
+                         <option value="count" selected>Count</option>
+                         <option value="alpha">A→Z</option>
+                       </select>
+                     </label>
+                     <div class="tag-analytics-exports" style="margin-left:auto;display:flex;gap:0.25rem;">
+                       <button class="btn btn-sm tag-analytics-export-json" title="Export JSON">JSON</button>
+                       <button class="btn btn-sm tag-analytics-export-tags-csv" title="Export Tags CSV">Tags CSV</button>
+                       <button class="btn btn-sm tag-analytics-export-pairs-csv" title="Export Pairs CSV">Pairs CSV</button>
+                     </div>
+                   </div>
+                   <!-- ... rest of analytics ... -->
+                   <div class="tag-analytics-colors" style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;">
+                     <!-- Colors inputs placeholders, populated by initTagAnalyticsWidgets -->
+                     <label style="display:flex;align-items:center;gap:0.25rem;">
+                       <span style="font-size:0.75rem;color:var(--text-tertiary)">Usage</span>
+                       <input type="color" class="tag-analytics-color-usage" style="width:24px;height:20px;border:none;cursor:pointer;" />
+                     </label>
+                     <label style="display:flex;align-items:center;gap:0.25rem;">
+                       <span style="font-size:0.75rem;color:var(--text-tertiary)">Clicks</span>
+                       <input type="color" class="tag-analytics-color-clicks" style="width:24px;height:20px;border:none;cursor:pointer;" />
+                     </label>
+                     <label style="display:flex;align-items:center;gap:0.25rem;">
+                       <span style="font-size:0.75rem;color:var(--text-tertiary)">Favorites</span>
+                       <input type="color" class="tag-analytics-color-favorites" style="width:24px;height:20px;border:none;cursor:pointer;" />
+                     </label>
+                     <label style="display:flex;align-items:center;gap:0.25rem;">
+                       <span style="font-size:0.75rem;color:var(--text-tertiary)">Pairs</span>
+                       <input type="color" class="tag-analytics-color-pairs" style="width:24px;height:20px;border:none;cursor:pointer;" />
+                     </label>
+                   </div>
+                   <div class="tag-analytics-legend" style="display:flex;gap:0.75rem;align-items:center;margin-bottom:0.5rem;">
+                     <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-usage" style="display:inline-block;width:10px;height:10px;background:#6366f1;border-radius:2px"></span>Usage</span>
+                     <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-clicks" style="display:inline-block;width:10px;height:10px;background:#f97316;border-radius:2px"></span>Clicks</span>
+                     <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-favorites" style="display:inline-block;width:10px;height:10px;background:#eab308;border-radius:2px"></span>Favorites</span>
+                     <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-pairs" style="display:inline-block;width:10px;height:10px;background:#6b7280;border-radius:2px"></span>Pairs</span>
+                   </div>
+                   <div class="tag-analytics-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                     <div class="tag-analytics-col">
+                       <div class="tag-analytics-col-title" style="font-weight:600;margin-bottom:0.25rem;">Top Tags</div>
+                       <div class="tag-analytics-list tag-analytics-top-tags" style="display:grid;grid-template-columns:1fr auto;gap:0.25rem"></div>
+                     </div>
+                     <div class="tag-analytics-col">
+                       <div class="tag-analytics-col-title" style="font-weight:600;margin-bottom:0.25rem;">Top Co-occurrence</div>
+                       <div class="tag-analytics-list tag-analytics-cooccurrence" style="display:grid;grid-template-columns:1fr auto;gap:0.25rem"></div>
+                     </div>
+                   </div>
                 </div>
                 `
                   : `
                 <div class="compact-list">
                     ${sortedBookmarks
-                      .slice(0, 50)
-                      .map((b) => {
-                        const colorStyle = b.color
-                          ? `--bookmark-color: ${b.color}; background-color: color-mix(in srgb, ${b.color} 20%, var(--bg-primary)); border-left: 6px solid ${b.color};`
-                          : "";
-                        return `
-                        <div class="compact-item${b.color ? " has-color" : ""}" style="${colorStyle}">
-                            <a href="${b.url}" target="_blank" class="compact-item-link" data-action="track-click" data-id="${b.id}">
-                                <div class="compact-favicon">
-                                    ${
-                                      !state.hideFavicons && b.favicon
-                                        ? `<img src="${b.favicon}" alt="">`
-                                        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/></svg>`
-                                    }
-                                </div>
-                                <span class="compact-text">${escapeHtml(b.title)}</span>
-                            </a>
-                            <div class="compact-actions">
-                                <button class="compact-action-btn" data-action="edit-bookmark" data-id="${b.id}" title="Edit">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                </button>
-                                <button class="compact-action-btn" data-action="copy-link" data-url="${escapeHtml(b.url)}" title="Copy link">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                                </button>
-                                <button class="compact-action-btn compact-action-danger" data-action="delete-bookmark" data-id="${b.id}" title="Delete">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                      })
+                      .slice(0, 20)
+                      .map((b) => renderCompactBookmarkItem(b))
                       .join("")}
-                    ${sortedBookmarks.length > 50 ? `<div style="padding:0.5rem;font-size:0.75rem;color:var(--text-tertiary);text-align:center">+${sortedBookmarks.length - 50} more</div>` : ""}
+                    ${
+                      sortedBookmarks.length > 20
+                        ? `
+                    <div class="widget-load-more" data-widget-index="${index}" style="padding:0.5rem;text-align:center;color:var(--text-tertiary);">
+                        <div class="loading-spinner small"></div>
+                    </div>`
+                        : ""
+                    }
                 </div>
                 `
               }
