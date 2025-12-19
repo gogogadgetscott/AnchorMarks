@@ -78,11 +78,11 @@ export function initDom(): void {
     "bulk-move-select",
   ) as HTMLSelectElement;
   dom.bulkCount = document.getElementById("bulk-count");
-  dom.commandPalette = document.getElementById("command-palette");
+  dom.commandPalette = document.getElementById("quick-launch");
   dom.commandPaletteInput = document.getElementById(
-    "command-palette-input",
+    "quick-launch-input",
   ) as HTMLInputElement;
-  dom.commandPaletteList = document.getElementById("command-palette-list");
+  dom.commandPaletteList = document.getElementById("quick-launch-list");
   dom.bookmarkUrlInput = document.getElementById(
     "bookmark-url",
   ) as HTMLInputElement;
@@ -161,6 +161,7 @@ export function resetForms(): void {
   if (bookmarkModalTitle) bookmarkModalTitle.textContent = "Add Bookmark";
   if (folderModalTitle) folderModalTitle.textContent = "New Folder";
 
+  // Reset folder color picker
   document.querySelectorAll(".color-option").forEach((opt, i) => {
     opt.classList.toggle("active", i === 0);
   });
@@ -169,6 +170,16 @@ export function resetForms(): void {
     "folder-color",
   ) as HTMLInputElement;
   if (folderColor) folderColor.value = "#6366f1";
+
+  // Reset bookmark color picker  
+  document.querySelectorAll(".color-option-bookmark").forEach((opt, i) => {
+    opt.classList.toggle("active", i === 0);
+  });
+
+  const bookmarkColor = document.getElementById(
+    "bookmark-color",
+  ) as HTMLInputElement;
+  if (bookmarkColor) bookmarkColor.value = "";
 
   if (dom.tagSuggestions) dom.tagSuggestions.innerHTML = "";
 }

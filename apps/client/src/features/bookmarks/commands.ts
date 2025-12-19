@@ -103,13 +103,33 @@ import { openModal, updateActiveNav } from "@utils/ui-helpers.ts";
 import { Command } from "@/types";
 
 // Get command palette commands
-export function getCommandPaletteCommands(): Command[] {
+export function getCommandPaletteCommands(filterText: string = ""): Command[] {
+  const term = filterText.toLowerCase().trim();
+  
+  // Check for special prefixes
+  const isCommandSearch = term.startsWith(">");
+  const isFolderSearch = term.startsWith("@");
+  const isTagSearch = term.startsWith("#");
+  const isBookmarkOnly = !isCommandSearch && !isFolderSearch && !isTagSearch && term.length > 0;
+  
+  // Clean the search term (remove prefix if present)
+  const searchTerm = term.replace(/^[>#@]/, "").trim();
+
   const baseCommands: Command[] = [
-    { label: "Add bookmark", action: () => openModal("bookmark-modal") },
+    { 
+      label: "Add bookmark", 
+      action: () => openModal("bookmark-modal"),
+      icon: "➕",
+      category: "command",
+      description: "Create a new bookmark"
+    },
     {
       label: "Focus search",
       action: () =>
         (document.getElementById("search-input") as HTMLInputElement)?.focus(),
+      icon: "🔍",
+      category: "command",
+      description: "Focus the search input"
     },
     {
       label: "Show dashboard",
@@ -123,6 +143,9 @@ export function getCommandPaletteCommands(): Command[] {
           loadBookmarks(),
         );
       },
+      icon: "📊",
+      category: "command",
+      description: "Go to dashboard view"
     },
     {
       label: "View favorites",
@@ -136,49 +159,148 @@ export function getCommandPaletteCommands(): Command[] {
           loadBookmarks(),
         );
       },
+      icon: "⭐",
+      category: "command",
+      description: "View favorite bookmarks"
     },
     {
-      label: "View all",
+      label: "View all bookmarks",
       action: () => {
         state.setCurrentView("all");
         state.setCurrentFolder(null);
         updateActiveNav();
         const viewTitle = document.getElementById("view-title");
         if (viewTitle) viewTitle.textContent = "Bookmarks";
-        if (viewTitle) viewTitle.textContent = "Bookmarks";
         import("@features/bookmarks/bookmarks.ts").then(({ loadBookmarks }) =>
           loadBookmarks(),
         );
       },
+      icon: "📚",
+      category: "command",
+      description: "Show all bookmarks"
     },
-    { label: "Open settings", action: () => openModal("settings-modal") },
+    { 
+      label: "Open settings", 
+      action: () => openModal("settings-modal"),
+      icon: "⚙️",
+      category: "command",
+      description: "Open application settings"
+    },
+    {
+      label: "Import bookmarks",
+      action: () => {
+        openModal("settings-modal");
+        // Switch to import tab after modal opens
+        setTimeout(() => {
+          const importTab = document.querySelector('[data-settings-tab="import-export"]') as HTMLElement;
+          importTab?.click();
+        }, 100);
+      },
+      icon: "📥",
+      category: "command",
+      description: "Import bookmarks from file"
+    },
+    {
+      label: "Export bookmarks",
+      action: () => {
+        import("@features/bookmarks/import-export.ts").then(({ exportJson }) =>
+          exportJson(),
+        );
+      },
+      icon: "📤",
+      category: "command",
+      description: "Export bookmarks to file"
+    },
   ];
 
   const folderCommands: Command[] = state.folders
     .filter((f) => !f.parent_id)
     .map((f) => ({
-      label: `Go to ${f.name}`,
+      label: f.name,
       action: () => {
         state.setCurrentView("folder");
         state.setCurrentFolder(f.id);
         const viewTitle = document.getElementById("view-title");
         if (viewTitle) viewTitle.textContent = f.name;
         updateActiveNav();
-        updateActiveNav();
         import("@features/bookmarks/bookmarks.ts").then(({ loadBookmarks }) =>
           loadBookmarks(),
         );
       },
+      icon: "📁",
+      category: "folder" as const,
+      description: `Go to folder`
     }));
 
-  return [...baseCommands, ...folderCommands];
+  // Create bookmark commands (for launcher functionality)
+  const bookmarkCommands: Command[] = state.bookmarks
+    .slice(0, 100) // Limit to first 100 for performance
+    .map((b) => ({
+      label: b.title || b.url,
+      action: () => {
+        // Open the bookmark URL
+        window.open(b.url, "_blank");
+        // Increment click count
+        import("@services/api.ts").then(({ api }) => {
+          api(`/bookmarks/${b.id}/click`, { method: "POST" }).catch(() => {});
+        });
+      },
+      icon: "",
+      category: "bookmark" as const,
+      description: b.url,
+      url: b.url,
+      favicon: b.favicon || "",
+    }));
+
+  // Filter based on search mode
+  let results: Command[] = [];
+
+  if (isCommandSearch) {
+    // Only show commands when using > prefix
+    results = baseCommands.filter((cmd) =>
+      cmd.label.toLowerCase().includes(searchTerm)
+    );
+  } else if (isFolderSearch) {
+    // Only show folders when using @ prefix
+    results = folderCommands.filter((cmd) =>
+      cmd.label.toLowerCase().includes(searchTerm)
+    );
+  } else if (isTagSearch) {
+    // Filter by tag - show bookmarks with matching tags
+    results = bookmarkCommands.filter((cmd) => {
+      const bookmark = state.bookmarks.find((b) => b.url === cmd.url);
+      return bookmark?.tags?.toLowerCase().includes(searchTerm);
+    });
+  } else if (isBookmarkOnly && searchTerm.length >= 1) {
+    // When searching, prioritize bookmarks but show everything that matches
+    const matchingBookmarks = bookmarkCommands.filter(
+      (cmd) =>
+        cmd.label.toLowerCase().includes(searchTerm) ||
+        cmd.description?.toLowerCase().includes(searchTerm)
+    );
+    const matchingCommands = baseCommands.filter((cmd) =>
+      cmd.label.toLowerCase().includes(searchTerm)
+    );
+    const matchingFolders = folderCommands.filter((cmd) =>
+      cmd.label.toLowerCase().includes(searchTerm)
+    );
+    
+    // Show bookmarks first (main launcher use case), then folders, then commands
+    results = [...matchingBookmarks.slice(0, 10), ...matchingFolders, ...matchingCommands];
+  } else {
+    // No search term - show commands and folders first, then some recent bookmarks
+    const recentBookmarks = bookmarkCommands.slice(0, 5);
+    results = [...baseCommands, ...folderCommands, ...recentBookmarks];
+  }
+
+  return results;
 }
 
 // Open command palette
 export function openCommandPalette(): void {
-  const palette = document.getElementById("command-palette");
+  const palette = document.getElementById("quick-launch");
   const input = document.getElementById(
-    "command-palette-input",
+    "quick-launch-input",
   ) as HTMLInputElement;
 
   if (!palette) return;
@@ -193,9 +315,9 @@ export function openCommandPalette(): void {
 
 // Close command palette
 export function closeCommandPalette(): void {
-  const palette = document.getElementById("command-palette");
+  const palette = document.getElementById("quick-launch");
   const input = document.getElementById(
-    "command-palette-input",
+    "quick-launch-input",
   ) as HTMLInputElement;
   if (!palette) return;
 
@@ -209,35 +331,72 @@ export function closeCommandPalette(): void {
 
 // Render command palette list
 export function renderCommandPaletteList(filterText: string): void {
-  const list = document.getElementById("command-palette-list");
+  const list = document.getElementById("quick-launch-list");
   if (!list) return;
 
-  const term = (filterText || "").toLowerCase();
-  const entries: Command[] = getCommandPaletteCommands().filter((cmd) =>
-    cmd.label.toLowerCase().includes(term),
-  );
+  // Get filtered commands (filtering is now done inside getCommandPaletteCommands)
+  const entries: Command[] = getCommandPaletteCommands(filterText);
   state.setCommandPaletteEntries(entries);
   state.setCommandPaletteActiveIndex(0);
 
   if (entries.length === 0) {
-    list.innerHTML = '<div class="command-item">No matches</div>';
+    const term = (filterText || "").trim();
+    const hint = term.startsWith(">") 
+      ? "No matching commands" 
+      : term.startsWith("@") 
+        ? "No matching folders" 
+        : term.startsWith("#") 
+          ? "No bookmarks with matching tags" 
+          : "No matches found";
+    list.innerHTML = `<div class="command-item empty">${hint}</div>`;
     return;
   }
 
   list.innerHTML = entries
-    .map(
-      (cmd, idx) => `
-        <div class="command-item ${idx === state.commandPaletteActiveIndex ? "active" : ""}" data-index="${idx}">
-            <span>${escapeHtml(cmd.label)}</span>
+    .map((cmd, idx) => {
+      // Determine icon - use favicon for bookmarks, emoji for others
+      let iconHtml = "";
+      if (cmd.category === "bookmark" && cmd.favicon) {
+        iconHtml = `<img class="command-favicon" src="${escapeHtml(cmd.favicon)}" alt="" onerror="this.style.display='none'" />`;
+      } else if (cmd.icon) {
+        iconHtml = `<span class="command-icon">${cmd.icon}</span>`;
+      } else if (cmd.category === "bookmark") {
+        iconHtml = `<span class="command-icon">🔗</span>`;
+      }
+
+      // Truncate URL for display
+      let descriptionHtml = "";
+      if (cmd.description) {
+        const shortDesc = cmd.description.length > 50 
+          ? cmd.description.substring(0, 50) + "..." 
+          : cmd.description;
+        descriptionHtml = `<span class="command-desc">${escapeHtml(shortDesc)}</span>`;
+      }
+
+      // Category badge
+      const categoryBadge = cmd.category && cmd.category !== "command" 
+        ? `<span class="command-category ${cmd.category}">${cmd.category}</span>` 
+        : "";
+
+      return `
+        <div class="command-item ${idx === state.commandPaletteActiveIndex ? "active" : ""} ${cmd.category || ""}" data-index="${idx}">
+          <div class="command-item-left">
+            ${iconHtml}
+            <span class="command-label">${escapeHtml(cmd.label)}</span>
+          </div>
+          <div class="command-item-right">
+            ${descriptionHtml}
+            ${categoryBadge}
+          </div>
         </div>
-    `,
-    )
+      `;
+    })
     .join("");
 }
 
 // Update command palette active item
 export function updateCommandPaletteActive(direction: number): void {
-  const list = document.getElementById("command-palette-list");
+  const list = document.getElementById("quick-launch-list");
   if (!list || state.commandPaletteEntries.length === 0) return;
 
   const newIndex = Math.max(

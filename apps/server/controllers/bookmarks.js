@@ -216,7 +216,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
 
   // Create bookmark
   app.post("/api/bookmarks", authenticateTokenMiddleware, (req, res) => {
-    const { title, url, description, folder_id, tags } = req.body;
+    const { title, url, description, folder_id, tags, color } = req.body;
     const id = uuidv4();
     if (!url) return res.status(400).json({ error: "URL is required" });
     try {
@@ -237,6 +237,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
         favicon: faviconUrl,
         position,
         content_type: contentType,
+        color: color || null,
       });
 
       if (tags && tags.trim()) {

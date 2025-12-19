@@ -196,7 +196,7 @@ async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     if (
       !activeEl ||
       !["INPUT", "TEXTAREA"].includes(activeEl.tagName) ||
-      activeEl.id === "command-palette-input"
+      activeEl.id === "quick-launch-input"
     ) {
       e.preventDefault();
       openModal("bookmark-modal");
@@ -321,7 +321,7 @@ async function handleKeyboard(e: KeyboardEvent): Promise<void> {
   if (state.commandPaletteOpen) {
     const isPaletteInputFocused =
       document.activeElement &&
-      document.activeElement.id === "command-palette-input";
+      document.activeElement.id === "quick-launch-input";
     if (!isPaletteInputFocused) {
       if (key === "arrowdown") {
         e.preventDefault();
@@ -601,7 +601,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     );
 
   // Command palette
-  const commandPaletteInput = document.getElementById("command-palette-input");
+  const commandPaletteInput = document.getElementById("quick-launch-input");
   commandPaletteInput?.addEventListener("input", () =>
     renderCommandPaletteList(
       (commandPaletteInput as HTMLInputElement).value || "",
@@ -641,7 +641,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   document
-    .getElementById("command-palette-list")
+    .getElementById("quick-launch-list")
     ?.addEventListener("click", (e) => {
       const item = (e.target as HTMLElement).closest(".command-item");
       if (!item) return;
@@ -652,9 +652,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
 
-  document.getElementById("command-palette")?.addEventListener("click", (e) => {
+  document.getElementById("quick-launch")?.addEventListener("click", (e) => {
     if (
-      (e.target as HTMLElement).classList.contains("command-palette-backdrop")
+      (e.target as HTMLElement).classList.contains("quick-launch-backdrop")
     ) {
       closeCommandPalette();
     }
@@ -706,6 +706,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       const folderEl = document.getElementById(
         "bookmark-folder",
       ) as HTMLSelectElement;
+      const colorEl = document.getElementById(
+        "bookmark-color",
+      ) as HTMLInputElement;
 
       const id = idEl?.value;
       const tagsValue = tagsEl?.value;
@@ -716,6 +719,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         description: descEl?.value || undefined,
         folder_id: folderEl?.value || undefined,
         tags: tagsValue || undefined,
+        color: colorEl?.value || undefined,
       };
       console.log("[Bookmark Form] Submitting data:", data);
 
@@ -870,7 +874,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
 
-  // Color Picker
+  // Color Picker (Folder)
   document.querySelectorAll(".color-option").forEach((opt) => {
     opt.addEventListener("click", () => {
       document
@@ -882,6 +886,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       ) as HTMLInputElement;
       if (colorInput)
         colorInput.value = (opt as HTMLElement).dataset.color || "#6366f1";
+    });
+  });
+
+  // Color Picker (Bookmark)
+  document.querySelectorAll(".color-option-bookmark").forEach((opt) => {
+    opt.addEventListener("click", () => {
+      document
+        .querySelectorAll(".color-option-bookmark")
+        .forEach((o) => o.classList.remove("active"));
+      opt.classList.add("active");
+      const colorInput = document.getElementById(
+        "bookmark-color",
+      ) as HTMLInputElement;
+      if (colorInput)
+        colorInput.value = (opt as HTMLElement).dataset.color || "";
     });
   });
 

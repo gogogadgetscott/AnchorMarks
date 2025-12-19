@@ -205,6 +205,9 @@ function initializeDatabase(DB_PATH) {
       "ALTER TABLE user_settings ADD COLUMN tour_completed INTEGER DEFAULT 0",
     ).run();
   } catch (err) {}
+  try {
+    db.prepare("ALTER TABLE bookmarks ADD COLUMN color TEXT").run();
+  } catch (err) {}
 
   return db;
 }

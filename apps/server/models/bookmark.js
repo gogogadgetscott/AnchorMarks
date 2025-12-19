@@ -158,9 +158,10 @@ function createBookmark(db, userIdOrData, maybeData) {
   const url = data.url;
   const description = data.description || null;
   const content_type = data.content_type || data.contentType || "link";
+  const color = data.color || null;
 
   db.prepare(
-    `INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, position, content_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, position, content_type, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     userId,
@@ -171,6 +172,7 @@ function createBookmark(db, userIdOrData, maybeData) {
     faviconUrl,
     position,
     content_type,
+    color,
   );
 
   return getBookmarkById(db, userId, id);
@@ -187,6 +189,7 @@ function updateBookmark(db, userId, id, fields = {}) {
     favicon,
     tags,
     tag_colors,
+    color,
   } = fields;
   db.prepare(
     `
@@ -198,6 +201,7 @@ function updateBookmark(db, userId, id, fields = {}) {
       is_favorite = COALESCE(?, is_favorite),
       position = COALESCE(?, position),
       favicon = COALESCE(?, favicon),
+      color = ?,
       updated_at = CURRENT_TIMESTAMP
     WHERE id = ? AND user_id = ?
   `,
@@ -209,6 +213,7 @@ function updateBookmark(db, userId, id, fields = {}) {
     is_favorite,
     position,
     favicon,
+    color !== undefined ? color : null,
     id,
     userId,
   );

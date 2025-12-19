@@ -722,24 +722,38 @@ function renderFreeformWidgets(): string {
                   </div>
                 </div>
                 `
-                  : `
+                : `
                 <div class="compact-list">
                     ${sortedBookmarks
                       .slice(0, 50)
                       .map(
-                        (b) => `
-                        <a href="${b.url}" target="_blank" class="compact-item" data-action="track-click" data-id="${b.id}">
-                            <div class="compact-favicon">
-                                ${
-                                  !state.hideFavicons && b.favicon
-                                    ? `<img src="${b.favicon}" alt="">`
-                                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/></svg>`
-                                }
+                        (b) => {
+                          const colorStyle = b.color ? `--bookmark-color: ${b.color}; background-color: color-mix(in srgb, ${b.color} 20%, var(--bg-primary)); border-left: 6px solid ${b.color};` : "";
+                          return `
+                        <div class="compact-item${b.color ? ' has-color' : ''}" style="${colorStyle}">
+                            <a href="${b.url}" target="_blank" class="compact-item-link" data-action="track-click" data-id="${b.id}">
+                                <div class="compact-favicon">
+                                    ${
+                                      !state.hideFavicons && b.favicon
+                                        ? `<img src="${b.favicon}" alt="">`
+                                        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/></svg>`
+                                    }
+                                </div>
+                                <span class="compact-text">${escapeHtml(b.title)}</span>
+                            </a>
+                            <div class="compact-actions">
+                                <button class="compact-action-btn" data-action="edit-bookmark" data-id="${b.id}" title="Edit">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </button>
+                                <button class="compact-action-btn" data-action="copy-link" data-url="${escapeHtml(b.url)}" title="Copy link">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                </button>
+                                <button class="compact-action-btn compact-action-danger" data-action="delete-bookmark" data-id="${b.id}" title="Delete">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                </button>
                             </div>
-                            <span class="compact-text">${escapeHtml(b.title)}</span>
-                        </a>
-                    `,
-                      )
+                        </div>
+                    `})
                       .join("")}
                     ${sortedBookmarks.length > 50 ? `<div style="padding:0.5rem;font-size:0.75rem;color:var(--text-tertiary);text-align:center">+${sortedBookmarks.length - 50} more</div>` : ""}
                 </div>

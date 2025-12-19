@@ -20,6 +20,7 @@ export interface Bookmark {
   click_count?: number;
   created_at?: string;
   updated_at?: string;
+  color?: string;
 }
 
 export interface Folder {
@@ -68,4 +69,9 @@ export interface TourStep {
 export interface Command {
   label: string;
   action: () => void;
+  icon?: string;
+  category?: "command" | "folder" | "bookmark" | "tag";
+  description?: string;
+  url?: string;
+  favicon?: string;
 }

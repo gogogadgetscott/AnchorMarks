@@ -91,9 +91,9 @@
                   >
                 </li>
                 <li>
-                  <a href="#command-palette"
+                  <a href="#quick-launch"
                     ><span class="nav-icon" aria-hidden="true">🎯</span
-                    ><span class="nav-text">Command Palette</span></a
+                    ><span class="nav-text">Quick Launch</span></a
                   >
                 </li>
                 <li>
@@ -518,8 +518,9 @@
             </div>
 
             <p>
-              Open the command palette with <kbd>Ctrl+Shift+P</kbd> /
-              <kbd>Cmd+Shift+P</kbd> for quick actions and navigation.
+              Open <strong>Quick Launch</strong> with <kbd>Ctrl+K</kbd> /
+              <kbd>Cmd+K</kbd> to quickly search and open bookmarks, navigate to
+              folders, or run commands.
             </p>
 
             <h3 class="help-anchor" id="smart-collections">
@@ -998,7 +999,7 @@
                   <td><kbd>Cmd+A</kbd></td>
                 </tr>
                 <tr>
-                  <td>Open command palette</td>
+                  <td>Open Quick Launch</td>
                   <td><kbd>Ctrl+Shift+P</kbd></td>
                   <td><kbd>Cmd+Shift+P</kbd></td>
                 </tr>
@@ -1015,10 +1016,10 @@
               </tbody>
             </table>
 
-            <h4>Command Palette Navigation</h4>
+            <h4>Quick Launch Navigation</h4>
             <table
               class="shortcuts-table"
-              aria-label="Command palette navigation shortcuts"
+              aria-label="Quick launch navigation shortcuts"
             >
               <thead>
                 <tr>
@@ -1056,119 +1057,199 @@
                   <td><kbd>Enter</kbd></td>
                 </tr>
                 <tr>
-                  <td>Close command palette</td>
+                  <td>Close Quick Launch</td>
                   <td><kbd>Esc</kbd></td>
                 </tr>
               </tbody>
             </table>
 
-            <section class="help-section" id="command-palette">
+            <section class="help-section" id="quick-launch">
               <h2>
-                <span class="section-icon" aria-hidden="true">🎯</span>Command
-                Palette
+                <span class="section-icon" aria-hidden="true">🎯</span>Quick
+                Launch
               </h2>
               <p>
-                The Command Palette is a quick, fuzzy-search dialog for running
-                actions, navigating the app, and executing tools with arguments.
-                Think of it as a universal launcher for AnchorMarks — a fast way
-                to do common tasks without hunting through menus.
+                The Quick Launch is a powerful universal launcher for
+                AnchorMarks. Use it to instantly search and open bookmarks,
+                navigate to folders, or run actions without touching the mouse.
+                Think of it like Spotlight (Mac), Alfred, or Raycast — but for
+                your bookmarks.
               </p>
 
-              <h3 class="help-anchor" id="cp-open">Open the Command Palette</h3>
+              <h3 class="help-anchor" id="cp-open">Open Quick Launch</h3>
               <ul>
                 <li>
-                  <strong>Keyboard:</strong> press <kbd>Ctrl+Shift+P</kbd> on
-                  Windows/Linux or <kbd>Cmd+Shift+P</kbd> on macOS.
+                  <strong>Keyboard:</strong> press <kbd>Ctrl+K</kbd> on
+                  Windows/Linux or <kbd>Cmd+K</kbd> on macOS (same as focusing
+                  the search bar).
                 </li>
                 <li>
-                  <strong>From UI:</strong> open the command palette from the
-                  header menu → <strong>Command Palette</strong>.
+                  <strong>Alternative:</strong> press
+                  <kbd>Ctrl+Shift+P</kbd> / <kbd>Cmd+Shift+P</kbd> for commands
+                  only.
                 </li>
               </ul>
 
-              <h3 class="help-anchor" id="cp-basic">How it works</h3>
+              <h3 class="help-anchor" id="cp-bookmark-search">
+                Bookmark Launcher
+              </h3>
+              <p>
+                The primary use case: quickly find and open any bookmark by
+                typing part of its title or URL.
+              </p>
               <ul>
                 <li>
-                  <strong>Fuzzy search:</strong> start typing to filter commands
-                  by name or keywords; results update instantly.
+                  <strong>Search bookmarks:</strong> just start typing — results
+                  show matching bookmarks with their favicons.
                 </li>
                 <li>
-                  <strong>Navigate:</strong> use <kbd>↑</kbd>/<kbd>↓</kbd> to
-                  move the selection and <kbd>Enter</kbd> to execute.
+                  <strong>Open instantly:</strong> press <kbd>Enter</kbd> to
+                  open the selected bookmark in a new tab.
                 </li>
                 <li>
-                  <strong>Close:</strong> press <kbd>Esc</kbd> to dismiss.
-                </li>
-                <li>
-                  <strong>Arguments:</strong> some commands accept arguments
-                  (e.g., search queries, view names). When supported, an
-                  argument input appears inline after selecting the command.
-                </li>
-                <li>
-                  <strong>Context-aware:</strong> commands may change based on
-                  where you are (Dashboard, Bookmarks, Settings).
+                  <strong>Click tracking:</strong> opening a bookmark from Quick
+                  Launch counts as a click, keeping your analytics up to date.
                 </li>
               </ul>
 
-              <h3 class="help-anchor" id="cp-examples">Common commands</h3>
+              <h3 class="help-anchor" id="cp-prefixes">Smart Prefixes</h3>
+              <p>
+                Use special prefixes to filter results by category:
+              </p>
+              <table
+                class="shortcuts-table"
+                aria-label="Quick Launch prefixes"
+              >
+                <thead>
+                  <tr>
+                    <th>Prefix</th>
+                    <th>What it shows</th>
+                    <th>Example</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><kbd>></kbd></td>
+                    <td>Commands only</td>
+                    <td><code>>settings</code> → "Open settings"</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>@</kbd></td>
+                    <td>Folders only</td>
+                    <td><code>@work</code> → folders containing "work"</td>
+                  </tr>
+                  <tr>
+                    <td><kbd>#</kbd></td>
+                    <td>Bookmarks by tag</td>
+                    <td><code>#dev</code> → bookmarks tagged "dev"</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h3 class="help-anchor" id="cp-navigation">Navigation</h3>
               <ul>
                 <li>
-                  <strong>Open Dashboard</strong> — jumps to the Dashboard.
+                  <kbd>↑</kbd>/<kbd>↓</kbd> — move selection up/down
                 </li>
                 <li>
-                  <strong>Add Bookmark</strong> — opens the add bookmark modal.
+                  <kbd>Page Up</kbd>/<kbd>Page Down</kbd> — jump 5 items
                 </li>
                 <li>
-                  <strong>Focus Search</strong> — focuses the global search box.
+                  <kbd>Home</kbd>/<kbd>End</kbd> — jump to first/last item
                 </li>
                 <li>
-                  <strong>Save View</strong> — save current filters/layout as a
-                  View.
+                  <kbd>Enter</kbd> — execute the selected command or open the
+                  bookmark
                 </li>
                 <li>
-                  <strong>Apply View: &lt;name&gt;</strong> — restore a saved
-                  View.
-                </li>
-                <li>
-                  <strong>Import View</strong> — open the Views import dialog.
-                </li>
-                <li>
-                  <strong>Toggle Theme</strong> — switch between
-                  Light/Dark/System.
-                </li>
-                <li>
-                  <strong>Restart Tour</strong> — restart the onboarding tour.
+                  <kbd>Esc</kbd> — close Quick Launch
                 </li>
               </ul>
 
-              <h3 class="help-anchor" id="cp-create">Custom and power usage</h3>
+              <h3 class="help-anchor" id="cp-commands">Available Commands</h3>
+              <p>
+                When empty or using the <kbd>></kbd> prefix, you'll see
+                commands like:
+              </p>
               <ul>
                 <li>
-                  Power users can create shortcuts and custom commands via
-                  Settings → Keyboard Shortcuts (or via Views for layout
-                  presets). Custom commands appear in the palette after
-                  creation.
+                  <strong>📊 Show dashboard</strong> — jumps to the Dashboard
                 </li>
                 <li>
-                  Use the palette to run scripts or integrations that are
-                  exposed as commands (third‑party integrations may add commands
-                  visible here).
+                  <strong>➕ Add bookmark</strong> — opens the add bookmark
+                  modal
+                </li>
+                <li>
+                  <strong>🔍 Focus search</strong> — focuses the global search
+                  box
+                </li>
+                <li>
+                  <strong>⭐ View favorites</strong> — shows only favorite
+                  bookmarks
+                </li>
+                <li>
+                  <strong>📚 View all bookmarks</strong> — shows all bookmarks
+                </li>
+                <li>
+                  <strong>⚙️ Open settings</strong> — opens the settings modal
+                </li>
+                <li>
+                  <strong>📥 Import bookmarks</strong> — opens import dialog
+                </li>
+                <li>
+                  <strong>📤 Export bookmarks</strong> — exports bookmarks to
+                  JSON
                 </li>
               </ul>
 
-              <h3 class="help-anchor" id="cp-accessibility">Accessibility</h3>
+              <h3 class="help-anchor" id="cp-visual">Visual Indicators</h3>
               <ul>
                 <li>
-                  The Command Palette is fully keyboard accessible and works
-                  with screen readers — results expose descriptive labels and
-                  roles to assistive tech.
+                  <strong>Favicons:</strong> bookmarks display their site
+                  favicon for quick visual identification.
+                </li>
+                <li>
+                  <strong>Category badges:</strong> items show colored badges
+                  (blue for bookmarks, orange for folders).
+                </li>
+                <li>
+                  <strong>URL preview:</strong> bookmark results show a
+                  truncated URL as a description.
+                </li>
+                <li>
+                  <strong>Color-coded borders:</strong> active bookmark items
+                  have a blue left border; folders have orange.
+                </li>
+              </ul>
+
+              <h3 class="help-anchor" id="cp-tips">Tips for Power Users</h3>
+              <ul>
+                <li>
+                  <strong>Fastest workflow:</strong> press <kbd>Ctrl+K</kbd>,
+                  type 2-3 characters of a bookmark name, press
+                  <kbd>Enter</kbd>. You can launch any bookmark in under 2
+                  seconds.
+                </li>
+                <li>
+                  <strong>Navigate to folders:</strong> type <code>@</code>
+                  followed by folder name to quickly jump to any folder view.
+                </li>
+                <li>
+                  <strong>Find by tag:</strong> use <code>#tagname</code> to see
+                  all bookmarks with a specific tag.
+                </li>
+                <li>
+                  <strong>Recent bookmarks:</strong> when the palette opens with
+                  no search term, it shows your most recent bookmarks for quick
+                  access.
                 </li>
               </ul>
 
               <div class="tip-box">
-                <strong>Tip:</strong> Type a verb (open, add, save, import) then
-                a noun (dashboard, bookmark, view) to quickly find the command
-                you want.
+                <strong>Pro Tip:</strong> Quick Launch searches both bookmark
+                titles AND URLs. If you can't remember a bookmark's name, try
+                typing part of the domain (e.g., "github" to find all GitHub
+                links).
               </div>
             </section>
 
@@ -1218,7 +1299,7 @@
             <div class="tip-box">
               <strong>Quick tip:</strong> Press <kbd>&gt;</kbd> for shortcut
               help, or <kbd>Ctrl+Shift+P</kbd> / <kbd>Cmd+Shift+P</kbd> for the
-              command palette.
+              Quick Launch.
             </div>
 
             <section class="help-section" id="settings">

@@ -283,7 +283,7 @@ export function attachBookmarkCardListeners(): void {
       if (url.startsWith("bookmark-view:")) {
         // Bookmark view shortcut
         const viewId = url.substring(14);
-        // restoreBookmarkView(viewId); // Assuming this function exists or logic is needed
+        restoreBookmarkView(viewId);
         return;
       }
 
@@ -449,7 +449,16 @@ export async function updateBookmark(
     });
     const index = state.bookmarks.findIndex((b) => b.id === id);
     if (index !== -1) state.bookmarks[index] = bookmark;
-    renderBookmarks();
+    
+    // Re-render the appropriate view based on current state
+    if (state.currentView === "dashboard") {
+      // Dynamically import and render dashboard
+      const { renderDashboard } = await import("@features/bookmarks/dashboard.ts");
+      renderDashboard();
+    } else {
+      renderBookmarks();
+    }
+    
     updateCounts();
     closeModals();
     showToast("Bookmark updated!", "success");
@@ -465,7 +474,15 @@ export async function deleteBookmark(id: string): Promise<void> {
   try {
     await api(`/bookmarks/${id}`, { method: "DELETE" });
     state.setBookmarks(state.bookmarks.filter((b) => b.id !== id));
-    renderBookmarks();
+    
+    // Re-render the appropriate view based on current state
+    if (state.currentView === "dashboard") {
+      const { renderDashboard } = await import("@features/bookmarks/dashboard.ts");
+      renderDashboard();
+    } else {
+      renderBookmarks();
+    }
+    
     updateCounts();
     showToast("Bookmark deleted", "success");
   } catch (err: any) {
@@ -518,6 +535,16 @@ export async function editBookmark(id: string): Promise<void> {
     bookmark.folder_id || "";
   (document.getElementById("bookmark-tags") as HTMLInputElement).value =
     bookmark.tags || "";
+
+  // Load color
+  const colorInput = document.getElementById("bookmark-color") as HTMLInputElement;
+  if (colorInput) colorInput.value = bookmark.color || "";
+  
+  // Update color picker UI
+  document.querySelectorAll(".color-option-bookmark").forEach((opt: any) => {
+    const optColor = opt.dataset.color || "";
+    opt.classList.toggle("active", optColor === (bookmark.color || ""));
+  });
 
   // Load tags into the new tag input system
   // @ts-ignore

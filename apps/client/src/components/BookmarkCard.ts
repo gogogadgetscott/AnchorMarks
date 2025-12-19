@@ -17,6 +17,7 @@ interface Bookmark {
     color_override?: string;
   }>;
   folder_id?: string;
+  color?: string;
   [key: string]: any;
 }
 
@@ -71,8 +72,15 @@ export function BookmarkCard(bookmark: Bookmark, index: number): string {
       ? `<img src="${bookmark.favicon}" alt="" class="bookmark-favicon-img" data-fallback="true" loading="lazy">`
       : Icon("link", { size: 24 });
 
+  // Apply custom bookmark background color if set
+  // Use inline style for direct color application + CSS custom property for theming
+  const colorStyle = bookmark.color
+    ? `--bookmark-color: ${bookmark.color}; background-color: ${bookmark.color};`
+    : "";
+  const hasColorClass = bookmark.color ? "has-custom-color" : "";
+
   return `
-    <div class="bookmark-card ${isSelected ? "selected" : ""}" data-id="${bookmark.id}" data-index="${index}">
+    <div class="bookmark-card ${isSelected ? "selected" : ""} ${hasColorClass}" data-id="${bookmark.id}" data-index="${index}" style="${colorStyle}">
       <label class="bookmark-select">
         <input type="checkbox" ${isSelected ? "checked" : ""}>
       </label>
