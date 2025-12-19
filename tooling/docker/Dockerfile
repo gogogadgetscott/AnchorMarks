@@ -25,6 +25,11 @@ ENV NODE_ENV=${NODE_ENV:-production}
 ENV PORT=${PORT:-3000}
 ENV HOST=${HOST:-0.0.0.0}
 ENV DB_PATH=${DB_PATH:-/apps/database/anchormarks.db}
+ENV JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-this-to-a-random-string}
+ENV CORS_ORIGIN=${CORS_ORIGIN:-*}
+ENV DOTENV_CONFIG_QUIET=${DOTENV_CONFIG_QUIET:-1}
+ENV SSL_KEY=${SSL_KEY:-/apps/ssl/privkey.pem}
+ENV SSL_CERT=${SSL_CERT:-/apps/ssl/fullchain.pem}
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://${HOST}:${PORT}/api/health || exit 1
 RUN chown -R node:node /apps
