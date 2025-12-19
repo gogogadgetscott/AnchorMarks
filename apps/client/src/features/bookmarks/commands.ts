@@ -389,7 +389,8 @@ export function renderCommandPaletteList(filterText: string): void {
 
       // Truncate URL for display
       let descriptionHtml = "";
-      if (cmd.description) {
+      // Don't show description (URL) for bookmarks to allow longer titles
+      if (cmd.description && cmd.category !== "bookmark") {
         const shortDesc =
           cmd.description.length > 50
             ? cmd.description.substring(0, 50) + "..."

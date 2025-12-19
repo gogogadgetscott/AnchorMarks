@@ -1184,9 +1184,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     ?.addEventListener("change", (e: Event) => {
       const target = e.target as HTMLInputElement;
       if (target.files && target.files[0]) {
+        const file = target.files[0];
         import("@features/bookmarks/import-export.ts").then(({ importHtml }) =>
-          importHtml(target.files![0]),
+          importHtml(file),
         );
+        target.value = ""; // Reset input so same file can be selected again
       }
     });
 

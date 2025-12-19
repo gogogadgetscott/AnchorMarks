@@ -2,6 +2,8 @@ const { v4: uuidv4 } = require("uuid");
 
 function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
   const imported = [];
+  let skipped = 0;
+  const importLog = [];
   const folderIdMap = new Map();
 
   const ensureFolder = (folder) => {
@@ -66,6 +68,9 @@ function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
     guard++;
   }
 
+  const today = new Date();
+  const importTag = `import-${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
   for (const bm of bookmarks) {
     const id = uuidv4();
     const faviconUrl = null;
@@ -74,8 +79,18 @@ function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
       ? folderIdMap.get(bm.folder_id) || null
       : null;
 
+    const existing = db
+      .prepare("SELECT id FROM bookmarks WHERE user_id = ? AND url = ?")
+      .get(userId, bm.url);
+
+    if (existing) {
+      skipped++;
+      importLog.push({ url: bm.url, status: "skipped", reason: "duplicate" });
+      continue;
+    }
+
     db.prepare(
-      "INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     ).run(
       id,
       userId,
@@ -84,13 +99,22 @@ function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
       bm.url,
       bm.description || null,
       faviconUrl,
+      bm.color || null,
     );
 
-    const normalizedTags = bm.tags
-      ? Array.isArray(bm.tags)
-        ? bm.tags.join(",")
-        : bm.tags
-      : null;
+    let tagList = [];
+    if (bm.tags) {
+        if (Array.isArray(bm.tags)) {
+            tagList = bm.tags;
+        } else {
+            tagList = bm.tags.split(",").map(t => t.trim()).filter(Boolean);
+        }
+    }
+    if (!tagList.includes(importTag)) {
+        tagList.push(importTag);
+    }
+    
+    const normalizedTags = tagList.join(",");
     if (normalizedTags) {
       const tagHelpers = require("../helpers/tag-helpers");
       const tagIds = tagHelpers.ensureTagsExist(db, userId, normalizedTags);
@@ -98,9 +122,15 @@ function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
     }
 
     imported.push({ id, url: bm.url, title: bm.title, tags: normalizedTags });
+    importLog.push({ url: bm.url, status: "imported" });
   }
 
-  return { imported, folders: Array.from(folderIdMap.values()) };
+  return {
+    imported,
+    skipped,
+    importLog,
+    folders: Array.from(folderIdMap.values()),
+  };
 }
 
 function exportData(db, userId) {

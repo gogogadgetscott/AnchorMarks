@@ -3623,7 +3623,7 @@ body.dragging-widget .widget-sidebar-overlay {
 
 .quick-launch-panel {
   position: relative;
-  width: min(640px, 90vw);
+  width: min(800px, 95vw);
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-xl);
@@ -4228,7 +4228,7 @@ body.dragging-widget .widget-sidebar-overlay {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.3rem 0.75rem;
   color: var(--text-primary);
   font-size: 0.8125rem;
   text-decoration: none;
@@ -4295,8 +4295,8 @@ body.dragging-widget .widget-sidebar-overlay {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border: none;
   background: transparent;
@@ -4544,7 +4544,68 @@ body.dragging-widget .widget-sidebar-overlay {
 .tag-count {
   font-size: 0.8125rem;
   color: var(--text-secondary);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
   margin-left: auto;
+}
+
+/* Tag Autocomplete */
+.tag-autocomplete {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  margin-top: 4px;
+}
+
+.tag-autocomplete-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.tag-autocomplete-item:hover,
+.tag-autocomplete-item.active {
+  background-color: var(--bg-hover);
+}
+
+.tag-autocomplete-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.tag-autocomplete-count {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-full);
+}
+
+.tag-autocomplete-empty {
+  padding: 0.75rem;
+  color: var(--text-secondary);
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.tag-autocomplete-create {
+  border-top: 1px solid var(--border-color);
+  color: var(--primary-600);
+}
+
+.tag-autocomplete-create .tag-autocomplete-name {
+  color: var(--primary-600);
 }
 
 /* Freeform Dashboard Layout */

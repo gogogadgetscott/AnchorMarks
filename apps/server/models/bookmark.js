@@ -201,7 +201,7 @@ function updateBookmark(db, userId, id, fields = {}) {
       is_favorite = COALESCE(?, is_favorite),
       position = COALESCE(?, position),
       favicon = COALESCE(?, favicon),
-      color = ?,
+      color = COALESCE(?, color),
       updated_at = CURRENT_TIMESTAMP
     WHERE id = ? AND user_id = ?
   `,

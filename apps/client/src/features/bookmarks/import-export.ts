@@ -29,8 +29,37 @@ export async function importHtml(file: File): Promise<void> {
     const { renderSidebarTags } = await import("@features/bookmarks/search.ts");
     await renderSidebarTags();
 
-    showToast(`Imported ${result.imported} bookmarks!`, "success");
-    setImportProgress("success", `${result.imported} bookmarks imported.`);
+    const hasLog = result.import_log && result.import_log.length > 0;
+    
+    showToast(
+      `Imported ${result.imported} bookmarks!${
+        result.skipped ? ` (${result.skipped} skipped)` : ""
+      }${hasLog ? ". Log file downloaded." : ""}`,
+      "success",
+    );
+
+    setImportProgress(
+      "success",
+      `${result.imported} imported${
+        result.skipped ? `, ${result.skipped} skipped` : ""
+      }.`,
+    );
+
+    if (hasLog) {
+      const logContent = result.import_log
+        .map(
+          (entry: any) =>
+            `[${entry.status.toUpperCase()}] ${entry.url}${
+              entry.reason ? ` (${entry.reason})` : ""
+            }`,
+        )
+        .join("\n");
+      const blob = new Blob([logContent], { type: "text/plain" });
+      downloadBlob(
+        blob,
+        `import-log-${new Date().toISOString().split("T")[0]}.txt`,
+      );
+    }
   } catch (err: any) {
     showToast(err.message, "error");
     setImportProgress("error", err.message);

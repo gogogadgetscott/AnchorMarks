@@ -14,28 +14,23 @@ function setupImportExportRoutes(
     async (req, res) => {
       try {
         const { html } = req.body;
-        const parsed = await parseBookmarkHtml(
+        const { bookmarks, folders } = await parseBookmarkHtml(
           db,
           html,
           req.user.id,
           fetchFaviconWrapper,
         );
-        const toImport = parsed.map((p) => ({
-          title: p.title,
-          url: p.url,
-          description: p.description || null,
-          folder_id: p.folder_id || null,
-          tags: p.tags || null,
-        }));
         const result = importExportModel.importJson(db, req.user.id, {
-          bookmarks: toImport,
-          folders: [],
+          bookmarks,
+          folders,
         });
         result.imported.forEach((b) =>
           fetchFaviconWrapper(b.url, b.id).catch(console.error),
         );
         res.json({
           imported: result.imported.length,
+          skipped: result.skipped || 0,
+          import_log: result.importLog || [],
           bookmarks: result.imported,
         });
       } catch (err) {
@@ -57,6 +52,8 @@ function setupImportExportRoutes(
       );
       res.json({
         imported: result.imported.length,
+        skipped: result.skipped || 0,
+        import_log: result.importLog || [],
         bookmarks: result.imported,
       });
     } catch (err) {

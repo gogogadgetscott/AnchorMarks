@@ -28,14 +28,15 @@ export function initTagInput(): void {
     input.focus();
   });
 
+  // Show suggestions on focus
+  input.addEventListener("focus", () => {
+    showAutocomplete(input.value.trim(), autocomplete);
+  });
+
   // Input event - show autocomplete
   input.addEventListener("input", (e: Event) => {
     const value = (e.target as HTMLInputElement).value.trim();
-    if (value.length > 0) {
-      showAutocomplete(value, autocomplete);
-    } else {
-      hideAutocomplete(autocomplete);
-    }
+    showAutocomplete(value, autocomplete);
   });
 
   // Keyboard navigation
@@ -180,30 +181,32 @@ function showAutocomplete(searchTerm: string, autocomplete: HTMLElement): void {
 
   // Get all tags from tagMetadata
   const allTags = Object.keys(state.tagMetadata || {});
+  let matches: string[] = [];
 
-  // Filter by search term
-  const matches = allTags
-    .filter((tag) => {
-      return (
-        tag.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !selectedTags.includes(tag)
-      );
-    })
-    .slice(0, 10); // Limit to 10 suggestions
-
-  if (matches.length === 0) {
-    autocomplete.innerHTML =
-      '<div class="tag-autocomplete-empty">No matching tags</div>';
-    autocomplete.style.display = "block";
-    autocompleteIndex = -1;
-    return;
+  if (!searchTerm) {
+    // Show top 20 popular tags if no search term
+     matches = allTags
+      .filter((tag) => !selectedTags.includes(tag))
+      .sort((a, b) => ((state.tagMetadata[b] as any)?.count || 0) - ((state.tagMetadata[a] as any)?.count || 0))
+      .slice(0, 20);
+  } else {
+    // Filter by search term
+    matches = allTags
+      .filter((tag) => {
+        return (
+          tag.toLowerCase().includes(searchTerm.toLowerCase()) &&
+          !selectedTags.includes(tag)
+        );
+      })
+      .slice(0, 10); // Limit to 10 suggestions
   }
 
-  autocomplete.innerHTML = matches
+  let html = matches
     .map((tag, index) => {
       const tagMeta = state.tagMetadata[tag];
+      const isSelected = index === 0 && !searchTerm; // Select first if list mode
       return `
-        <div class="tag-autocomplete-item ${index === 0 ? "active" : ""}" data-tag="${escapeHtml(tag)}">
+        <div class="tag-autocomplete-item ${isSelected ? "" : ""}" data-tag="${escapeHtml(tag)}">
           <span class="tag-autocomplete-name">${escapeHtml(tag)}</span>
           <span class="tag-autocomplete-count">${(tagMeta as any).count || 0}</span>
         </div>
@@ -211,8 +214,36 @@ function showAutocomplete(searchTerm: string, autocomplete: HTMLElement): void {
     })
     .join("");
 
+  // Add "Create new" option if search term exists and is not an exact match
+  if (searchTerm && !matches.some(t => t.toLowerCase() === searchTerm.toLowerCase()) && !selectedTags.includes(searchTerm)) {
+    const isFirst = matches.length === 0;
+    html += `
+        <div class="tag-autocomplete-item tag-autocomplete-create ${isFirst ? "active" : ""}" data-tag="${escapeHtml(searchTerm)}">
+          <span class="tag-autocomplete-name">Create "${escapeHtml(searchTerm)}"</span>
+          <span class="tag-autocomplete-count">+</span>
+        </div>
+    `;
+  } else if (matches.length > 0 && searchTerm) {
+      // If we have matches and a search term, make sure the first one is active
+      html = html.replace('class="tag-autocomplete-item', 'class="tag-autocomplete-item active');
+  }
+
+  if (!html) {
+      if (searchTerm) {
+         // Should have been handled by Create New, but double check
+         autocomplete.innerHTML = '<div class="tag-autocomplete-empty">No matching tags</div>';
+      } else {
+         autocomplete.innerHTML = '<div class="tag-autocomplete-empty">Start typing to add tags</div>';
+      }
+      autocomplete.style.display = searchTerm ? "block" : "none"; // Hide if empty and no recent tags
+      if (!searchTerm && matches.length > 0) autocomplete.style.display = "block";
+      autocompleteIndex = -1;
+      return;
+  }
+
+  autocomplete.innerHTML = html;
   autocomplete.style.display = "block";
-  autocompleteIndex = 0;
+  autocompleteIndex = matches.length > 0 && searchTerm ? 0 : (html.includes("tag-autocomplete-create active") ? matches.length : -1);
 
   // Add click listeners
   autocomplete.querySelectorAll(".tag-autocomplete-item").forEach((item) => {

@@ -1,15 +1,20 @@
 const { v4: uuidv4 } = require("uuid");
-const bookmarkModel = require("../models/bookmark");
-const folderModel = require("../models/folder");
-const { ensureTagsExist, updateBookmarkTags } = require("./tag-helpers");
-const tagHelpers = require("./tags");
-const { parseTags, stringifyTags } = tagHelpers;
+const { parseTags, stringifyTags } = require("./tags");
 
 async function parseBookmarkHtml(db, html, userId, fetchFaviconWrapper) {
-  const imported = [];
+  const bookmarks = [];
+  const folders = [];
 
   function createFolder(name, parentId) {
-    return folderModel.ensureFolder(db, userId, name, parentId);
+    const id = uuidv4();
+    folders.push({
+      id,
+      name,
+      parent_id: parentId,
+      icon: "folder",
+      color: "#6366f1",
+    });
+    return id;
   }
 
   function findClosingTag(str, start, tagName) {
@@ -73,33 +78,18 @@ async function parseBookmarkHtml(db, html, userId, fetchFaviconWrapper) {
           const url = hrefMatch[1];
           const tagsMatch = attributes.match(/TAGS=["']([^"']+)["']/i);
           const tags = tagsMatch ? tagsMatch[1] : null;
+          const colorMatch = attributes.match(/COLOR=["']([^"']+)["']/i);
+          const color = colorMatch ? colorMatch[1] : null;
 
           if (!url.startsWith("javascript:") && !url.startsWith("place:")) {
-            const id = uuidv4();
-            const faviconUrl = null;
             const tagsString = tags ? stringifyTags(parseTags(tags)) : null;
 
-            const created = bookmarkModel.createBookmark(db, {
-              id,
-              user_id: userId,
+            bookmarks.push({
+              title,
+              url,
               folder_id: currentParentId,
-              title,
-              url,
-              favicon: faviconUrl,
-            });
-
-            if (tagsString) {
-              const tagIds = ensureTagsExist(db, userId, tagsString);
-              updateBookmarkTags(db, created.id, tagIds);
-            }
-
-            if (fetchFaviconWrapper)
-              fetchFaviconWrapper(url, created.id).catch(console.error);
-            imported.push({
-              id: created.id,
-              title,
-              url,
-              tags: tagsString || null,
+              tags: tagsString,
+              color,
             });
           }
         }
@@ -112,7 +102,7 @@ async function parseBookmarkHtml(db, html, userId, fetchFaviconWrapper) {
 
   parseBlock(html, null);
 
-  return imported;
+  return { bookmarks, folders };
 }
 
 module.exports = { parseBookmarkHtml };

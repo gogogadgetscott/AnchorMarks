@@ -91,7 +91,11 @@ export async function bulkAddTags(): Promise<void> {
     state.bookmarks.map((b) => {
       if (!state.selectedBookmarks.has(b.id)) return b;
       const merged = new Set([...parseTagInput(b.tags || ""), ...tagsToAdd]);
-      return { ...b, tags: Array.from(merged).join(", ") };
+      return {
+        ...b,
+        tags: Array.from(merged).join(", "),
+        tags_detailed: undefined,
+      };
     }),
   );
 
@@ -126,7 +130,11 @@ export async function bulkRemoveTags(): Promise<void> {
       const filtered = parseTagInput(b.tags).filter(
         (t) => !removeSet.has(t.toLowerCase()),
       );
-      return { ...b, tags: filtered.join(", ") };
+      return {
+        ...b,
+        tags: filtered.join(", "),
+        tags_detailed: undefined,
+      };
     }),
   );
 
