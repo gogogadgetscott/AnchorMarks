@@ -7,7 +7,12 @@
     "manager",
     "sync",
     "api",
-    "flow-launcher"
+    "flow-launcher",
+    "ai",
+    "gpt",
+    "web",
+    "application",
+    "bookmarklet"
   ],
   "homepage": "https://github.com/gogogadgetscott/AnchorMarks#readme",
   "bugs": {
@@ -49,6 +54,7 @@
     "docker:logs": "docker compose -f tooling/docker/docker-compose.yml logs -f",
     "docker:shell": "docker compose -f tooling/docker/docker-compose.yml exec -it anchormarks /bin/sh",
     "deploy:install": "sudo bash tooling/deploy/install.sh",
+    "demo:gif": "bash tooling/scripts/make-demo-gif.sh",
     "help": "echo 'Available scripts:' && npm run --list"
   },
   "engines": {

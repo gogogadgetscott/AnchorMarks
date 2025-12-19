@@ -6,6 +6,10 @@ export default defineConfig({
     environment: "jsdom",
     include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
     globals: true,
+    coverage: {
+      reporter: ["text", "json", "html", "lcov"],
+      reportsDirectory: "coverage",
+    },
   },
   resolve: {
     alias: {
