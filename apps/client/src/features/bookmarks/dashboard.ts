@@ -291,6 +291,13 @@ export async function saveCurrentView(): Promise<void> {
     updateViewNameBadge(name);
     saveDashboardStateSnapshot();
 
+    // Persist to settings
+    const { saveSettings } = await import("@features/bookmarks/settings.ts");
+    await saveSettings({
+      current_dashboard_view_id: view.id,
+      current_dashboard_view_name: name,
+    });
+
     // Prompt to create bookmark shortcut
     if (confirm("Create a bookmark shortcut for this view?")) {
       const { createBookmark } =
@@ -349,12 +356,17 @@ export async function restoreView(id: string, viewName?: string): Promise<void> 
       await import("@features/bookmarks/settings.ts");
     await loadSettings();
 
-    // Ensure current view is set to dashboard
+    // Ensure current view is set to dashboard and persist view info
     state.setCurrentView("dashboard");
-    await saveSettings({ current_view: "dashboard" });
+    await saveSettings({
+      current_view: "dashboard",
+      current_dashboard_view_id: id,
+      current_dashboard_view_name: viewName || null,
+    });
 
     // Re-render dashboard with new settings
     renderDashboard();
+    updateLayoutStats();
 
     // Save the state snapshot after loading the view
     saveDashboardStateSnapshot();
@@ -453,6 +465,9 @@ export function renderDashboard(): void {
   initDashboardViews();
   const btn = document.getElementById("dashboard-views-btn");
   if (btn) btn.classList.remove("hidden");
+
+  // Restore view name badge from state (survives page refresh)
+  updateViewNameBadge(state.currentDashboardViewName);
 
   const dashboardHtml = `
         <div class="dashboard-freeform-container" id="dashboard-drop-zone">
@@ -1580,6 +1595,7 @@ export function addDashboardWidget(
   saveDashboardWidgets();
   renderDashboard();
   updateCounts();
+  updateLayoutStats();
   showToast(
     `${type === "folder" ? "Folder" : "Tag"} added to dashboard`,
     "success",
@@ -1592,6 +1608,7 @@ export function removeDashboardWidget(index: number): void {
   saveDashboardWidgets();
   renderDashboard();
   updateCounts();
+  updateLayoutStats();
   showToast("Widget removed", "success");
 }
 
@@ -1771,7 +1788,7 @@ export function showLayoutSettings(): void {
           </p>
           <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
             <div style="font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; margin-bottom: 0.5rem;">Statistics</div>
-            <div style="font-size: 0.875rem;"><strong>${state.dashboardWidgets.length}</strong> widget${state.dashboardWidgets.length !== 1 ? "s" : ""} on dashboard</div>
+            <div id="layout-stats-content" style="font-size: 0.875rem;"><strong>${state.dashboardWidgets.length}</strong> widget${state.dashboardWidgets.length !== 1 ? "s" : ""} on dashboard</div>
           </div>
         </div>
       </div>
@@ -1799,6 +1816,17 @@ export function closeLayoutSettings(): void {
   if (dropdown) {
     dropdown.remove();
     document.removeEventListener("click", handleLayoutSettingsClickOutside);
+  }
+}
+
+/**
+ * Update layout statistics display if the layout dropdown is open
+ */
+export function updateLayoutStats(): void {
+  const statsEl = document.getElementById("layout-stats-content");
+  if (statsEl) {
+    const count = state.dashboardWidgets.length;
+    statsEl.innerHTML = `<strong>${count}</strong> widget${count !== 1 ? "s" : ""} on dashboard`;
   }
 }
 
@@ -1941,4 +1969,5 @@ export default {
   markDashboardModified,
   updateViewNameBadge,
   confirmViewSwitch,
+  updateLayoutStats,
 };

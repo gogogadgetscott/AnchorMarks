@@ -35,8 +35,9 @@ export function openWidgetPicker() {
       <span class="filter-dropdown-title">Add Widgets to Dashboard</span>
       <div class="filter-dropdown-actions">
         <button class="btn-icon" id="widget-pin-btn" title="${widgetDropdownPinned ? "Unpin" : "Pin"}">
-          <svg viewBox="0 0 24 24" fill="${widgetDropdownPinned ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
-            <path d="M12 2v3m0 14v3m-3-3h6m-6-3l.75-7.5a1.5 1.5 0 0 1 3 0L13.5 13M9 16h6"/>
+          <svg viewBox="0 0 512 512" fill="${widgetDropdownPinned ? "currentColor" : "none"}" stroke="currentColor" stroke-width="16" style="width:14px;height:14px;${widgetDropdownPinned ? "transform:rotate(45deg);" : ""}">
+            <polygon points="419.286,301.002 416.907,248.852 357.473,219.867 337.487,55.355 369.774,38.438 369.774,0 286.751,0 225.249,0 142.219,0 142.219,38.438 174.509,55.355 154.52,219.867 95.096,248.852 92.714,301.002 256.001,301.002"/>
+            <polygon points="231.399,465.871 254.464,512 277.522,465.871 277.522,315.194 231.399,315.194"/>
           </svg>
         </button>
         <button class="btn-icon" id="widget-close-btn" title="Close">

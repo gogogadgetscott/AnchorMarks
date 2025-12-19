@@ -39,6 +39,14 @@ export async function loadSettings(): Promise<void> {
       state.setCurrentView(settings.current_view);
     }
 
+    // Restore current dashboard view name and ID
+    if (settings.current_dashboard_view_id) {
+      state.setCurrentDashboardViewId(settings.current_dashboard_view_id);
+    }
+    if (settings.current_dashboard_view_name) {
+      state.setCurrentDashboardViewName(settings.current_dashboard_view_name);
+    }
+
     // Apply theme
     const theme =
       settings.theme || localStorage.getItem("anchormarks_theme") || "dark";

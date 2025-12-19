@@ -10,6 +10,10 @@ import { escapeHtml } from "@utils/index.ts";
 
 let linkCheckAbortController: AbortController | null = null;
 
+// Delay between requests to prevent overwhelming the server with concurrent outgoing HTTP requests
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const CONCURRENCY_DELAY = 200; // ms between requests - needed to prevent server connection floods
+
 /**
  * Initialize maintenance event listeners
  */
@@ -61,7 +65,12 @@ async function refreshFavicons(): Promise<void> {
       completed++;
       const percent = Math.round((completed / total) * 100);
       progressFill.style.width = `${percent}%`;
-      progressText.textContent = `${percent}%`;
+      progressText.textContent = `${percent}% (${completed}/${total})`;
+
+      // Small delay to prevent connection floods
+      if (completed < total) {
+        await delay(CONCURRENCY_DELAY);
+      }
     }
 
     showToast(`Refreshed favicons for ${completed} bookmarks`, "success");
@@ -233,6 +242,11 @@ async function checkBrokenLinks(): Promise<void> {
       progressFill.style.width = `${percent}%`;
       progressText.textContent = `${completed} / ${total}`;
       count.textContent = `${brokenCount} found`;
+
+      // Small delay to prevent connection floods
+      if (completed < total && !linkCheckAbortController.signal.aborted) {
+        await delay(CONCURRENCY_DELAY);
+      }
     }
 
     // Attach event handlers

@@ -13,6 +13,22 @@ function rateLimiter(req, res, next) {
     ) {
       return next();
     }
+
+    // Skip rate limiting for maintenance operations (bulk updates)
+    if (req.path.startsWith("/api/maintenance")) {
+      return next();
+    }
+
+    // Skip rate limiting for bulk bookmark favicon updates (PUT with only favicon field)
+    if (
+      req.method === "PUT" &&
+      req.path.startsWith("/api/bookmarks/") &&
+      req.body &&
+      Object.keys(req.body).length === 1 &&
+      req.body.favicon
+    ) {
+      return next();
+    }
     const now = Date.now();
     const key =
       req.ip ||

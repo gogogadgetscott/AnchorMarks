@@ -808,7 +808,7 @@ body.sidebar-collapsed .nav-section-header {
 
 .sidebar-header {
   padding: 0 1.5rem;
-  height: 78px;
+  height: 80px;
   display: flex;
   align-items: center;
   border-bottom: 1px solid var(--border-color);

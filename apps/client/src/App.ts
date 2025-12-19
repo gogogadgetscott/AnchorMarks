@@ -936,7 +936,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Sidebar toggle buttons for all views
   document
-    .getElementById("toggle-sidebar-btn")
+    .getElementById("toggle-sidebar-btn-dashboard")
     ?.addEventListener("click", () =>
       import("@features/bookmarks/settings.ts").then(({ toggleSidebar }) =>
         toggleSidebar(),
@@ -1105,13 +1105,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     ?.addEventListener("change", () =>
       import("@features/bookmarks/settings.ts").then(
         ({ toggleIncludeChildBookmarks }) => toggleIncludeChildBookmarks(),
-      ),
-    );
-  document
-    .getElementById("toggle-sidebar-btn")
-    ?.addEventListener("click", () =>
-      import("@features/bookmarks/settings.ts").then(({ toggleSidebar }) =>
-        toggleSidebar(),
       ),
     );
   import("@features/bookmarks/settings.ts").then(({ applyFaviconSetting }) =>
