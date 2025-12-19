@@ -41,13 +41,15 @@ export interface Tag {
 
 export interface DashboardWidget {
   id: string;
-  type: "folder" | "tag" | "recent" | "favorites" | "stats";
+  type: "folder" | "tag" | "tag-analytics" | "recent" | "favorites" | "stats";
   title: string;
   config: Record<string, any>;
   x: number;
   y: number;
   w: number;
   h: number;
+  sort?: "a-z" | "z-a" | "recent" | "most_visited";
+  color?: string;
 }
 
 export interface FilterConfig {

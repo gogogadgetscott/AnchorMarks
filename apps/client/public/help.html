@@ -55,6 +55,12 @@
                   >
                 </li>
                 <li>
+                  <a href="#bookmark-colors"
+                    ><span class="nav-icon" aria-hidden="true">🎨</span
+                    ><span class="nav-text">Bookmark Colors</span></a
+                  >
+                </li>
+                <li>
                   <a href="#folders"
                     ><span class="nav-icon" aria-hidden="true">📁</span
                     ><span class="nav-text">Folders</span></a
@@ -64,6 +70,12 @@
                   <a href="#tags"
                     ><span class="nav-icon" aria-hidden="true">🏷️</span
                     ><span class="nav-text">Tags</span></a
+                  >
+                </li>
+                <li>
+                  <a href="#tag-cloud"
+                    ><span class="nav-icon" aria-hidden="true">☁️</span
+                    ><span class="nav-text">Tag Cloud</span></a
                   >
                 </li>
                 <li>
@@ -130,6 +142,12 @@
                   <a href="#dashboard"
                     ><span class="nav-icon" aria-hidden="true">📊</span
                     ><span class="nav-text">Dashboard</span></a
+                  >
+                </li>
+                <li>
+                  <a href="#widget-options"
+                    ><span class="nav-icon" aria-hidden="true">⋮</span
+                    ><span class="nav-text">Widget Options</span></a
                   >
                 </li>
                 <li>
@@ -345,6 +363,48 @@
               </li>
             </ul>
 
+            <h4 id="bookmark-colors">Bookmark Colors</h4>
+            <p>
+              Assign a custom color to any bookmark for visual organization. 
+              Colors appear as a vibrant left border accent and subtle background 
+              tint on bookmark cards.
+            </p>
+            <div class="help-screenshot">
+              <img
+                class="doc-image"
+                src="images/bookmark_colors.png"
+                alt="Bookmark cards showing colorful left border accents"
+                loading="lazy"
+              />
+            </div>
+            <ul>
+              <li>
+                <strong>Setting a color:</strong> When adding or editing a bookmark, 
+                click a color swatch from the color picker below the tags field.
+              </li>
+              <li>
+                <strong>Color palette:</strong> Choose from 16 vibrant colors 
+                including blue, indigo, purple, pink, rose, orange, amber, yellow, 
+                lime, green, emerald, teal, cyan, sky, and slate. Use the crossed 
+                circle to remove color.
+              </li>
+              <li>
+                <strong>Visual display:</strong> Colored bookmarks show an 8px 
+                left border in the selected color, plus a subtle background tint 
+                that adapts to light and dark themes.
+              </li>
+              <li>
+                <strong>Dashboard widgets:</strong> Colors also appear on bookmarks 
+                within dashboard widgets, with a 6px left border accent.
+              </li>
+            </ul>
+            <div class="tip-box">
+              <strong>Color ideas:</strong> Use colors to mark priority levels 
+              (red = urgent, yellow = review), status (green = active, gray = 
+              archived), or categories (blue = work, purple = personal). Colors 
+              work alongside folders and tags for maximum flexibility.
+            </div>
+
             <h3 class="help-anchor" id="views">
               <span class="section-icon" aria-hidden="true">👁️</span>Views
             </h3>
@@ -424,6 +484,82 @@
               a lightweight “color system” for tags. Example tags:
               <code>🔵 reference</code>, <code>🟢 active</code>,
               <code>🟣 personal</code>.
+            </div>
+
+            <h3 class="help-anchor" id="tag-cloud">
+              <span class="section-icon" aria-hidden="true">☁️</span>Tag Cloud
+            </h3>
+            <p class="help-at-a-glance">
+              <strong>At a glance:</strong> The Tag Cloud is an interactive 
+              visualization that displays all your tags sized by their usage 
+              frequency, making it easy to see your most-used tags at a glance 
+              and quickly filter bookmarks.
+            </p>
+            <div class="help-screenshot">
+              <img
+                class="doc-image"
+                src="images/tag_cloud.png"
+                alt="Tag Cloud view showing colorful tags sized by usage frequency"
+                loading="lazy"
+              />
+            </div>
+            <h4>Accessing the Tag Cloud</h4>
+            <ul>
+              <li>
+                <strong>Sidebar:</strong> Click "Tag Cloud" in the sidebar 
+                navigation (below Recent).
+              </li>
+              <li>
+                <strong>Keyboard shortcut:</strong> Press 
+                <kbd>Ctrl+Shift+T</kbd> / <kbd>Cmd+Shift+T</kbd> to open the 
+                Tag Cloud instantly.
+              </li>
+              <li>
+                <strong>Quick Launch:</strong> Open Quick Launch 
+                (<kbd>Ctrl+Shift+P</kbd>) and search for "tag cloud".
+              </li>
+            </ul>
+            <h4>Features</h4>
+            <ul>
+              <li>
+                <strong>Size by frequency:</strong> More frequently used tags 
+                appear larger, while less-used tags appear smaller. This uses 
+                a logarithmic scale for better visual distribution.
+              </li>
+              <li>
+                <strong>Vibrant colors:</strong> Each tag gets a unique color 
+                from a curated palette of modern colors (or uses the tag's 
+                custom color if set in Settings → Tags).
+              </li>
+              <li>
+                <strong>Animated entrance:</strong> Tags animate in with 
+                staggered timing for a delightful visual effect.
+              </li>
+              <li>
+                <strong>Stats header:</strong> See the total number of tags 
+                and combined usage count at the top.
+              </li>
+              <li>
+                <strong>Legend:</strong> A visual guide at the bottom shows 
+                how size relates to usage frequency.
+              </li>
+            </ul>
+            <h4>Interacting with Tags</h4>
+            <ul>
+              <li>
+                <strong>Click to filter:</strong> Click any tag to navigate 
+                to the Bookmarks view filtered by that tag.
+              </li>
+              <li>
+                <strong>Hover for details:</strong> Hover over a tag to see 
+                the exact bookmark count in a tooltip.
+              </li>
+            </ul>
+            <div class="tip-box">
+              <strong>Pro tip:</strong> Use the Tag Cloud to discover less-used 
+              tags that might need cleanup, or to quickly jump to your most 
+              frequently tagged content. It's also a great visual way to 
+              understand your bookmark organization at a glance.
             </div>
 
             <h3 class="help-anchor" id="search">
@@ -678,6 +814,55 @@
                 filter bookmarks within that widget.
               </li>
             </ul>
+
+            <h4 id="widget-options">Widget Options Menu</h4>
+            <p>
+              Each folder and tag widget has an <strong>options menu</strong> (⋮) 
+              in the header that provides quick actions for that widget's bookmarks.
+            </p>
+            <div class="help-screenshot">
+              <img
+                class="doc-image"
+                src="images/widget_options_menu.png"
+                alt="Widget options menu showing sort, add, open all, and color options"
+                loading="lazy"
+              />
+            </div>
+            <ul>
+              <li>
+                <strong>Sort A-Z:</strong> Alphabetically sort bookmarks in this 
+                widget by title (ascending).
+              </li>
+              <li>
+                <strong>Sort Z-A:</strong> Reverse alphabetical sort (descending).
+              </li>
+              <li>
+                <strong>Add Bookmark:</strong> Opens the Add Bookmark modal with 
+                the widget's folder or tag pre-filled, making it easy to add new 
+                bookmarks to this specific location.
+              </li>
+              <li>
+                <strong>Open All:</strong> Opens all bookmarks in the widget in 
+                new browser tabs. A confirmation dialog appears if there are more 
+                than 5 bookmarks. <em>Note: you may need to allow popups for your 
+                browser if only one tab opens.</em>
+              </li>
+              <li>
+                <strong>Show in Bookmarks:</strong> Navigates to the Bookmarks 
+                view filtered to show only this folder's or tag's bookmarks. Great 
+                for editing multiple bookmarks or seeing them in a different view.
+              </li>
+              <li>
+                <strong>Change Color:</strong> Opens a color picker to customize 
+                the widget's header color. Pick from 12 vibrant colors to visually 
+                organize your dashboard.
+              </li>
+            </ul>
+            <div class="tip-box">
+              <strong>Tip:</strong> Sort settings are saved per-widget, so you can 
+              have one widget sorted A-Z and another sorted by most recent—each 
+              widget remembers its own sort preference.
+            </div>
 
             <h3 class="help-anchor" id="tag-analytics">
               <span class="section-icon" aria-hidden="true">🏷️</span>Tag

@@ -148,6 +148,22 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
       description: "Go to dashboard view"
     },
     {
+      label: "View tag cloud",
+      action: () => {
+        state.setCurrentView("tag-cloud");
+        state.setCurrentFolder(null);
+        updateActiveNav();
+        const viewTitle = document.getElementById("view-title");
+        if (viewTitle) viewTitle.textContent = "Tag Cloud";
+        import("@features/bookmarks/tag-cloud.ts").then(({ renderTagCloud }) =>
+          renderTagCloud(),
+        );
+      },
+      icon: "☁️",
+      category: "command",
+      description: "View interactive tag cloud"
+    },
+    {
       label: "View favorites",
       action: () => {
         state.setCurrentView("favorites");

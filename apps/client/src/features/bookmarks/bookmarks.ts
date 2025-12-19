@@ -86,6 +86,10 @@ export async function loadBookmarks(): Promise<void> {
       const { renderDashboard } =
         await import("@features/bookmarks/dashboard.ts");
       renderDashboard();
+    } else if (state.currentView === "tag-cloud") {
+      const { renderTagCloud } =
+        await import("@features/bookmarks/tag-cloud.ts");
+      renderTagCloud();
     } else {
       renderBookmarks();
     }
@@ -95,7 +99,7 @@ export async function loadBookmarks(): Promise<void> {
     updateActiveNav();
 
     // Initialize bookmark views UI if in bookmark view
-    if (state.currentView !== "dashboard") {
+    if (state.currentView !== "dashboard" && state.currentView !== "tag-cloud") {
       initBookmarkViews();
     }
 

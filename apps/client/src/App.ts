@@ -77,9 +77,9 @@ async function setViewMode(mode: string, save = true): Promise<void> {
     );
   }
 
-  // Only render bookmarks if we're not in dashboard view
-  // (otherwise we might overwrite the dashboard with the bookmarks list)
-  if (state.currentView !== "dashboard") {
+  // Only render bookmarks if we're not in dashboard or tag cloud view
+  // (otherwise we might overwrite them with the bookmarks list)
+  if (state.currentView !== "dashboard" && state.currentView !== "tag-cloud") {
     const { renderBookmarks } =
       await import("@features/bookmarks/bookmarks.ts");
     renderBookmarks();
@@ -261,6 +261,15 @@ async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     switchView("dashboard");
   }
 
+  // Ctrl+Shift+T: Tag Cloud
+  if (modifier && e.shiftKey && key === "t") {
+    const activeEl = document.activeElement;
+    if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
+    e.preventDefault();
+    state.setCurrentFolder(null);
+    switchView("tag-cloud");
+  }
+
   async function switchView(view: string): Promise<void> {
     state.setCurrentView(view);
     updateActiveNav();
@@ -270,10 +279,14 @@ async function handleKeyboard(e: KeyboardEvent): Promise<void> {
       saveSettings({ current_view: view }),
     );
 
-    if (state.currentView === "dashboard") {
+    if (view === "dashboard") {
       const { renderDashboard } =
         await import("@features/bookmarks/dashboard.ts");
       renderDashboard();
+    } else if (view === "tag-cloud") {
+      const { renderTagCloud } =
+        await import("@features/bookmarks/tag-cloud.ts");
+      renderTagCloud();
     } else {
       const { loadBookmarks } =
         await import("@features/bookmarks/bookmarks.ts");
@@ -478,6 +491,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (view === "dashboard") {
         import("@features/bookmarks/dashboard.ts").then(({ renderDashboard }) =>
           renderDashboard(),
+        );
+      } else if (view === "tag-cloud") {
+        import("@features/bookmarks/tag-cloud.ts").then(({ renderTagCloud }) =>
+          renderTagCloud(),
         );
       } else {
         import("@features/bookmarks/bookmarks.ts").then(({ loadBookmarks }) =>

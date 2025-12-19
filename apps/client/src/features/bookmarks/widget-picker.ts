@@ -299,9 +299,8 @@ function attachWidgetTagListeners() {
       const x = rect ? rect.width / 2 - 160 : 100;
       const y = rect ? 50 + dropZone.scrollTop : 50;
 
-      // Fix type mismatch for Tag Analytics
-      const widgetType = type === "tag-analytics" ? "tag" : type;
-      addDashboardWidget(widgetType as "tag", id, x, y);
+      // Pass the correct type - tag-analytics needs to be passed as-is
+      addDashboardWidget(type as "tag" | "folder" | "tag-analytics", id, x, y);
 
       if (!widgetDropdownPinned) {
         closeWidgetPicker();
