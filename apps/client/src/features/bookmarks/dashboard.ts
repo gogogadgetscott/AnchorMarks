@@ -780,7 +780,6 @@ function renderFreeformWidgets(): string {
                                 Change Color
                             </button>
                         </div>
-                        </div>
                     </div>
                     <button class="btn-icon widget-remove" data-action="remove-widget" data-index="${index}" title="Remove widget">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
