@@ -64,7 +64,7 @@ AnchorMarks implements the following security measures:
 - [x] No file upload functionality
 - [x] Content-Type enforcement on static assets
 - [x] Subresource Integrity (SRI) infrastructure (see below)
-- [ ] Security audit logging (future enhancement)
+- [x] Security audit logging (see below)
 
 ---
 
@@ -96,4 +96,68 @@ For stylesheets:
       href="https://cdn.example.com/style.css" 
       integrity="sha384-xyz789..." 
       crossorigin="anonymous">
+```
+
+---
+
+## Security Audit Logging
+
+AnchorMarks includes a comprehensive security audit logging system that tracks security-relevant events.
+
+### Logged Events
+
+| Event Type | Severity | Description |
+|------------|----------|-------------|
+| `AUTH_LOGIN_SUCCESS` | INFO | Successful user login |
+| `AUTH_LOGIN_FAILURE` | WARNING | Failed login attempt (wrong password or user not found) |
+| `AUTH_LOGOUT` | INFO | User logout |
+| `AUTH_REGISTER` | INFO | New user registration |
+| `AUTH_PASSWORD_CHANGE` | INFO | Password successfully changed |
+| `AUTH_API_KEY_REGENERATE` | WARNING | API key was regenerated |
+| `ACCESS_DENIED` | WARNING | Authorization failure |
+| `RATE_LIMIT_EXCEEDED` | WARNING | Rate limit triggered |
+| `CSRF_VALIDATION_FAILURE` | CRITICAL | CSRF token validation failed |
+| `SUSPICIOUS_ACTIVITY` | CRITICAL | Potentially malicious behavior detected |
+
+### Stored Data
+
+Each log entry includes:
+- Timestamp
+- Event type and severity
+- User ID (if authenticated)
+- Client IP address
+- User agent
+- Endpoint and HTTP method
+- Additional context details (sanitized, no passwords/tokens)
+
+### Configuration
+
+Environment variables:
+```bash
+# Enable file logging (in addition to database)
+SECURITY_LOG_FILE=true
+
+# Log retention period in days (default: 90)
+SECURITY_LOG_RETENTION_DAYS=90
+```
+
+### Querying Logs
+
+The audit logs are stored in the `security_audit_log` table. Example queries:
+
+```sql
+-- Recent failed login attempts
+SELECT * FROM security_audit_log 
+WHERE event_type = 'AUTH_LOGIN_FAILURE' 
+ORDER BY timestamp DESC LIMIT 50;
+
+-- Security events by user
+SELECT * FROM security_audit_log 
+WHERE user_id = 'user-uuid-here' 
+ORDER BY timestamp DESC;
+
+-- Critical events in last 24 hours
+SELECT * FROM security_audit_log 
+WHERE severity = 'CRITICAL' 
+AND timestamp > datetime('now', '-24 hours');
 ```

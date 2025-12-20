@@ -80,7 +80,16 @@ function createExampleBookmarks(db, userId, folderId = null, fetchFavicon) {
   return created;
 }
 
-function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
+function setupAuthRoutes(app, db, authenticateToken, fetchFavicon, securityAudit = null) {
+  // Helper to safely log security events (no-op if audit logger not provided)
+  const audit = securityAudit || {
+    register: () => {},
+    loginSuccess: () => {},
+    loginFailure: () => {},
+    logout: () => {},
+    passwordChange: () => {},
+    apiKeyRegenerate: () => {},
+  };
   // Register
   app.post("/api/auth/register", async (req, res) => {
     try {
@@ -131,6 +140,9 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
         maxAge: 30 * 24 * 60 * 60 * 1000,
       });
 
+      // Log successful registration
+      audit.register(userId, req, { email: normalizedEmail });
+
       res.json({ user: { id: userId, email, api_key: apiKey }, csrfToken });
     } catch (err) {
       console.error(err);
@@ -147,11 +159,16 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
       const user = db
         .prepare("SELECT * FROM users WHERE email = ?")
         .get(normalizedEmail);
-      if (!user) return res.status(400).json({ error: "Invalid credentials" });
+      if (!user) {
+        audit.loginFailure(null, req, { email: normalizedEmail, reason: 'user_not_found' });
+        return res.status(400).json({ error: "Invalid credentials" });
+      }
 
       const validPassword = await bcrypt.compare(password, user.password);
-      if (!validPassword)
+      if (!validPassword) {
+        audit.loginFailure(user.id, req, { email: normalizedEmail, reason: 'invalid_password' });
         return res.status(400).json({ error: "Invalid credentials" });
+      }
 
       const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
         expiresIn: "30d",
@@ -170,6 +187,9 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
         sameSite: "strict",
         maxAge: 30 * 24 * 60 * 60 * 1000,
       });
+
+      // Log successful login
+      audit.loginSuccess(user.id, req, { email: user.email });
 
       res.json({
         user: { id: user.id, email: user.email, api_key: user.api_key },
@@ -195,6 +215,7 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
 
   // Logout
   app.post("/api/auth/logout", authenticateToken, (req, res) => {
+    audit.logout(req.user.id, req);
     res.clearCookie("token");
     res.clearCookie("csrfToken");
     res.json({ success: true });
@@ -207,6 +228,7 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
       newApiKey,
       req.user.id,
     );
+    audit.apiKeyRegenerate(req.user.id, req);
     res.json({ api_key: newApiKey });
   });
 
@@ -259,6 +281,7 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon) {
       db.prepare(
         "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
       ).run(hashedPassword, req.user.id);
+      audit.passwordChange(req.user.id, req);
       res.json({ success: true });
     } catch (err) {
       console.error("Change password error:", err);

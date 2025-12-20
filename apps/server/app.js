@@ -35,6 +35,14 @@ config.validateSecurityConfig();
 const db = initializeDatabase(config.DB_PATH);
 const { FAVICONS_DIR, THUMBNAILS_DIR } = ensureDirectories();
 
+// Initialize security audit logging
+const { initializeAuditLog, createSecurityAuditLogger } = require('./helpers/security-audit');
+initializeAuditLog(db);
+const securityAudit = createSecurityAuditLogger(db, {
+  enableFileLogging: process.env.SECURITY_LOG_FILE === 'true',
+  retentionDays: parseInt(process.env.SECURITY_LOG_RETENTION_DAYS) || 90,
+});
+
 // Middleware functions
 const authenticateTokenMiddleware = authenticateToken(db);
 const validateCsrfTokenMiddleware = validateCsrfToken(db);
@@ -120,8 +128,9 @@ const setupTagsRoutes = require("./routes/tags");
 const controllerTags = require("./controllers/tags");
 const setupImportExportRoutes = require("./routes/importExport");
 
+
 // Register authentication routes (login/register/me/logout)
-setupAuthRoutes(app, db, authenticateTokenMiddleware, fetchFaviconWrapper);
+setupAuthRoutes(app, db, authenticateTokenMiddleware, fetchFaviconWrapper, securityAudit);
 const setupSyncRoutes = require("./routes/sync");
 const { setupApiRoutes } = require("./routes/api");
 
@@ -232,5 +241,6 @@ process.on("SIGTERM", () => {
 // Expose helpers for tests
 app._isPrivateAddress = isPrivateAddress;
 app.db = db;
+app.securityAudit = securityAudit;
 
 module.exports = app;
