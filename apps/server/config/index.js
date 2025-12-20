@@ -6,7 +6,12 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
 const SSL_KEY = process.env.SSL_KEY || null;
 const SSL_CERT = process.env.SSL_CERT || null;
-const SSL_ENABLED = Boolean(SSL_KEY && SSL_CERT);
+const fs = require("fs");
+const SSL_ENABLED = Boolean(
+  SSL_KEY && SSL_CERT &&
+  fs.existsSync(SSL_KEY) &&
+  fs.existsSync(SSL_CERT)
+);
 const DEFAULT_JWT_SECRET = "anchormarks-secret-key-change-in-production";
 const INSECURE_SECRETS = [
   DEFAULT_JWT_SECRET,

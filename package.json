@@ -49,7 +49,7 @@
     "clean": "rm -rf node_modules coverage apps/client/dist",
     "reinstall": "npm run clean && npm install",
     "docker:build": "docker compose -f tooling/docker/docker-compose.yml build",
-    "docker:up": "[ -f ./apps/.env ] && export PORT=$(grep -E '^PORT=' ./apps/.env | cut -d'=' -f2- | tr -d '\\r') || true && docker compose -f tooling/docker/docker-compose.yml up -d",
+    "docker:up": "[ -f ./apps/.env ] && export PORT=$(grep -E '^PORT=' ./apps/.env | cut -d'=' -f2- | tr -d '\\r') || true && docker compose -f tooling/docker/docker-compose.yml pull && docker compose -f tooling/docker/docker-compose.yml up -d && docker compose -f tooling/docker/docker-compose.yml logs -f",
     "docker:down": "docker compose -f tooling/docker/docker-compose.yml down",
     "docker:logs": "docker compose -f tooling/docker/docker-compose.yml logs -f",
     "docker:shell": "docker compose -f tooling/docker/docker-compose.yml exec -it anchormarks /bin/sh",

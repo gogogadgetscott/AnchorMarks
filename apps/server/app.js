@@ -78,8 +78,8 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],  // Required for Vite dev
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      fontSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       connectSrc: ["'self'", "https:", "wss:"],
       frameSrc: ["'none'"],
@@ -91,6 +91,7 @@ app.use(helmet({
       // If external CDN scripts are added, use the SRI helper: helpers/sri.js
     },
   },
+  hsts: config.SSL_ENABLED, // Enable HSTS only if SSL is enabled
   crossOriginEmbedderPolicy: false,  // Required for favicon loading from external sources
   xContentTypeOptions: true,  // Prevent MIME type sniffing
   xXssProtection: true,  // Legacy XSS protection header
