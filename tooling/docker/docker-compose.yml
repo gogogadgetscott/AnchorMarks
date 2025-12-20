@@ -3,6 +3,15 @@ services:
     build:
       context: ../..
       dockerfile: ./tooling/docker/Dockerfile
+      args:
+        NODE_ENV: ${NODE_ENV}
+        PORT: ${PORT}
+        HOST: ${HOST}
+        DB_PATH: ${DB_PATH}
+        JWT_SECRET: ${JWT_SECRET}
+        CORS_ORIGIN: ${CORS_ORIGIN}
+        SSL_KEY: ${SSL_KEY}
+        SSL_CERT: ${SSL_CERT}
     env_file:
       - .env
     container_name: anchormarks
