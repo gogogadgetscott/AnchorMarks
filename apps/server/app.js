@@ -64,7 +64,26 @@ const bg = createBackgroundJobs({
 const rateLimiter = require("./middleware/rateLimiter");
 
 // Middleware registration
-app.use(helmet());
+// Enhanced helmet configuration for security hardening
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],  // Required for Vite dev
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      connectSrc: ["'self'", "https:", "wss:"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,  // Required for favicon loading from external sources
+  xContentTypeOptions: true,  // Prevent MIME type sniffing
+  xXssProtection: true,  // Legacy XSS protection header
+}));
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -169,7 +188,24 @@ const staticDir =
     : path.join(__dirname, "..", "client");
 
 console.log(`Serving frontend from: ${staticDir} (${config.NODE_ENV} mode)`);
-// Serve server-side static assets (favicons, thumbnails)
+
+// Serve server-side static assets with explicit Content-Type enforcement
+// This prevents potential XSS via MIME type confusion
+app.use('/favicons', express.static(path.join(__dirname, 'public', 'favicons'), {
+  setHeaders: (res, filePath) => {
+    // Force image content types for favicon directory - no HTML/SVG execution
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+  }
+}));
+app.use('/thumbnails', express.static(path.join(__dirname, 'public', 'thumbnails'), {
+  setHeaders: (res, filePath) => {
+    // Force image content types for thumbnails directory
+    res.setHeader('Content-Type', 'image/webp');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+  }
+}));
+// Serve remaining public assets (if any)
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.static(staticDir));
 
