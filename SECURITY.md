@@ -53,48 +53,6 @@ AnchorMarks implements the following security measures:
 
 ---
 
-## Security Assessments
-
-### GHSA-3pf9-5cjv-2w7q: Stored XSS via Shared Assets (linkding)
-
-**Date Assessed:** 2024-12-20  
-**Status:** ✅ NOT AFFECTED  
-**Severity:** N/A (not applicable)
-
-#### Vulnerability Summary
-This vulnerability affects linkding versions ≤1.44.1 and allows stored XSS attacks through:
-1. Uploading malicious HTML/SVG files as bookmark assets
-2. Sharing bookmarks with other users
-3. Victim viewing the shared asset, executing malicious scripts
-
-#### Why AnchorMarks is Not Affected
-
-| Attack Prerequisite | linkding | AnchorMarks |
-|---------------------|----------|-------------|
-| File/Asset Upload | ✅ Yes | ❌ No file upload capability |
-| Bookmark Sharing | ✅ Yes | ❌ No sharing feature |
-| Multi-user File Access | ✅ Yes | ❌ All data user-isolated |
-| User-controlled Static Files | ✅ HTML/SVG served | ❌ Only system PNGs (favicons) |
-
-#### Technical Details
-
-1. **No File Upload Mechanism**
-   - No multipart/form-data handling
-   - No multer or similar file upload middleware
-   - Import/export uses JSON text bodies, not file uploads
-
-2. **No Sharing Features**
-   - Database schema has no sharing columns (`is_shared`, `shared_with`, etc.)
-   - All queries enforce `WHERE user_id = ?`
-   - No public bookmark endpoints
-
-3. **Static Assets are Controlled**
-   - Only `/favicons/` (server-fetched PNGs) and `/thumbnails/` directories
-   - No user-uploadable content storage
-   - Static file serving limited to system-generated assets
-
----
-
 ## Security Hardening Checklist
 
 - [x] Helmet.js security headers
@@ -105,5 +63,37 @@ This vulnerability affects linkding versions ≤1.44.1 and allows stored XSS att
 - [x] User data isolation
 - [x] No file upload functionality
 - [x] Content-Type enforcement on static assets
-- [ ] Subresource Integrity (SRI) for external scripts (if any added)
+- [x] Subresource Integrity (SRI) infrastructure (see below)
 - [ ] Security audit logging (future enhancement)
+
+---
+
+## Subresource Integrity (SRI)
+
+**Current Status:** ✅ All scripts and stylesheets are self-hosted. No external CDN dependencies.
+
+If you need to add external scripts or stylesheets from CDNs, use the SRI helper:
+
+```bash
+# Generate SRI hash for a URL
+node apps/server/helpers/sri.js generate https://cdn.example.com/lib.js
+
+# Output example:
+# sha384-abc123...
+```
+
+Then add the `integrity` and `crossorigin` attributes:
+
+```html
+<script src="https://cdn.example.com/lib.js" 
+        integrity="sha384-abc123..." 
+        crossorigin="anonymous"></script>
+```
+
+For stylesheets:
+```html
+<link rel="stylesheet" 
+      href="https://cdn.example.com/style.css" 
+      integrity="sha384-xyz789..." 
+      crossorigin="anonymous">
+```

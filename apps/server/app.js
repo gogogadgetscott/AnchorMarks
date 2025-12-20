@@ -78,6 +78,9 @@ app.use(helmet({
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
+      // Note: 'require-sri-for' is deprecated in CSP Level 3, but 'strict-dynamic' 
+      // with nonces would be the modern approach. Currently all scripts are self-hosted.
+      // If external CDN scripts are added, use the SRI helper: helpers/sri.js
     },
   },
   crossOriginEmbedderPolicy: false,  // Required for favicon loading from external sources
