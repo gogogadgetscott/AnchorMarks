@@ -9,12 +9,12 @@ import * as state from "@features/state.ts";
  * API Helper
  * @param {string} endpoint - The API endpoint to call.
  * @param {RequestInit} options - Standard fetch options.
- * @returns {Promise<any>} - The response data.
+ * @returns {Promise<T>} - The response data with type safety.
  */
-export async function api(
+export async function api<T = any>(
   endpoint: string,
   options: RequestInit = {},
-): Promise<any> {
+): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -37,8 +37,37 @@ export async function api(
     throw new Error("Session expired");
   }
 
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || "API Error");
+  // Handle non-JSON responses (e.g., HTML error pages, empty responses)
+  const contentType = response.headers.get("content-type");
+  const isJson = contentType?.includes("application/json");
+
+  let data: T;
+  try {
+    if (isJson) {
+      data = await response.json();
+    } else {
+      // For non-JSON responses, try to get text for better error messages
+      const text = await response.text();
+      throw new Error(
+        `Invalid response format (expected JSON, got ${contentType || "unknown"}): ${text.substring(0, 100)}`,
+      );
+    }
+  } catch (err) {
+    // If JSON parsing fails or response is not JSON, provide helpful error
+    if (err instanceof SyntaxError) {
+      throw new Error(
+        `Failed to parse JSON response: ${response.status} ${response.statusText}`,
+      );
+    }
+    throw err;
+  }
+
+  if (!response.ok) {
+    const errorMessage =
+      (data as any)?.error || `API Error: ${response.status} ${response.statusText}`;
+    throw new Error(errorMessage);
+  }
+
   return data;
 }
 
