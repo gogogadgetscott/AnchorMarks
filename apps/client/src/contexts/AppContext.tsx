@@ -8,6 +8,7 @@ interface AppState {
   currentUser: User | null;
   currentView: string;
   currentFolder: string | null;
+  currentTag: string | null;
   currentCollection: string | null;
   filterConfig: FilterConfig;
   selectedBookmarks: Set<string>;
@@ -17,6 +18,7 @@ interface AppState {
   dashboardConfig: DashboardWidget[];
   tagMetadata: Record<string, any>;
   isAuthenticated: boolean;
+  searchQuery: string;
 }
 
 interface AppContextValue extends AppState {
@@ -26,6 +28,7 @@ interface AppContextValue extends AppState {
   setCurrentUser: (user: User | null) => void;
   setCurrentView: (view: string) => void;
   setCurrentFolder: (folderId: string | null) => void;
+  setCurrentTag: (tagName: string | null) => void;
   setCurrentCollection: (collection: string | null) => void;
   setFilterConfig: (config: Partial<FilterConfig>) => void;
   setSelectedBookmarks: (bookmarks: Set<string>) => void;
@@ -35,6 +38,7 @@ interface AppContextValue extends AppState {
   setDashboardConfig: (config: DashboardWidget[]) => void;
   setTagMetadata: (metadata: Record<string, any>) => void;
   setIsAuthenticated: (isAuth: boolean) => void;
+  setSearchQuery: (query: string) => void;
   toggleBookmarkSelection: (bookmarkId: string) => void;
   clearSelection: () => void;
 }
@@ -61,7 +65,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children, initialState
   const [currentUser, setCurrentUser] = useState<User | null>(initialState?.currentUser || null);
   const [currentView, setCurrentView] = useState<string>(initialState?.currentView || 'bookmarks');
   const [currentFolder, setCurrentFolder] = useState<string | null>(initialState?.currentFolder || null);
+  const [currentTag, setCurrentTag] = useState<string | null>(initialState?.currentTag || null);
   const [currentCollection, setCurrentCollection] = useState<string | null>(initialState?.currentCollection || null);
+  const [searchQuery, setSearchQuery] = useState<string>(initialState?.searchQuery || '');
   const [filterConfig, setFilterConfigState] = useState<FilterConfig>(initialState?.filterConfig || {
     tags: [],
     sort: 'recently_added',
@@ -103,7 +109,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children, initialState
     currentUser,
     currentView,
     currentFolder,
+    currentTag,
     currentCollection,
+    searchQuery,
     filterConfig,
     selectedBookmarks,
     viewMode,
@@ -118,7 +126,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children, initialState
     setCurrentUser,
     setCurrentView,
     setCurrentFolder,
+    setCurrentTag,
     setCurrentCollection,
+    setSearchQuery,
     setFilterConfig,
     setSelectedBookmarks,
     setViewMode,

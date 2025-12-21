@@ -6,7 +6,9 @@ import type { Bookmark as BookmarkType } from '../types';
 
 interface BookmarkCardProps {
   bookmark: BookmarkType;
-  index: number;
+  index?: number;
+  viewMode?: 'grid' | 'list' | 'compact';
+  isSelected?: boolean;
   onEdit?: (bookmark: BookmarkType) => void;
   onDelete?: (bookmarkId: string) => void;
   onToggleFavorite?: (bookmarkId: string) => void;
