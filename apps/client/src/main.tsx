@@ -1,20 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { loadComponents } from "./layouts/loader";
 import App from "./App";
 import "@assets/styles.css";
 
-// Load HTML fragments first (required for legacy code)
-loadComponents();
+// Mount React app at #app
+const appElement = document.getElementById("app");
+if (!appElement) throw new Error("App mount point not found");
 
-// Don't mount React at #app - it would clear the loaded components
-// Instead, create a hidden React root just for state management
-const reactRoot = document.createElement("div");
-reactRoot.id = "react-root";
-reactRoot.style.display = "none";
-document.body.appendChild(reactRoot);
-
-const root = ReactDOM.createRoot(reactRoot);
+const root = ReactDOM.createRoot(appElement);
 
 root.render(
   <React.StrictMode>

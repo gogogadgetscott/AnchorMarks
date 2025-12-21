@@ -56,17 +56,26 @@ export const Toast = memo<ToastProps>(({
 
 Toast.displayName = 'Toast';
 
-// Toast container for managing multiple toasts
-interface ToastContainerProps {
-  toasts: Array<{
+// Toast container - integrates with global toast system
+export const ToastContainer = memo(() => {
+  const [toasts, setToasts] = useState<Array<{
     id: string;
     message: string;
     type?: 'success' | 'error' | 'info' | 'warning';
-  }>;
-  onRemove: (id: string) => void;
-}
+  }>>([]);
 
-export const ToastContainer = memo<ToastContainerProps>(({ toasts, onRemove }) => {
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  // Expose showToast function globally for legacy code
+  useEffect(() => {
+    (window as any).showToast = (message: string, type: string = 'info') => {
+      const id = Math.random().toString(36).substr(2, 9);
+      setToasts(prev => [...prev, { id, message, type: type as any }]);
+    };
+  }, []);
+
   return (
     <div className="toast-container" id="toast-container">
       {toasts.map(toast => (
@@ -74,7 +83,7 @@ export const ToastContainer = memo<ToastContainerProps>(({ toasts, onRemove }) =
           key={toast.id}
           message={toast.message}
           type={toast.type}
-          onClose={() => onRemove(toast.id)}
+          onClose={() => removeToast(toast.id)}
         />
       ))}
     </div>
