@@ -3796,7 +3796,7 @@ body.sidebar-collapsed .nav-section-header {
     top: 0;
     z-index: 100;
   }
-  
+
   /* Adjust bulk bar position for mobile header height */
   .bulk-bar {
     top: 90px; /* Account for taller mobile header */

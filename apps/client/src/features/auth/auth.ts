@@ -23,11 +23,19 @@ export function showAuthScreen(): void {
     // Re-enable login forms for password managers when showing auth screen
     const loginForm = document.getElementById("login-form");
     const registerForm = document.getElementById("register-form");
-    const loginEmail = document.getElementById("login-email") as HTMLInputElement;
-    const loginPassword = document.getElementById("login-password") as HTMLInputElement;
-    const registerEmail = document.getElementById("register-email") as HTMLInputElement;
-    const registerPassword = document.getElementById("register-password") as HTMLInputElement;
-    
+    const loginEmail = document.getElementById(
+      "login-email",
+    ) as HTMLInputElement;
+    const loginPassword = document.getElementById(
+      "login-password",
+    ) as HTMLInputElement;
+    const registerEmail = document.getElementById(
+      "register-email",
+    ) as HTMLInputElement;
+    const registerPassword = document.getElementById(
+      "register-password",
+    ) as HTMLInputElement;
+
     if (loginForm) {
       loginForm.removeAttribute("data-bitwarden-watching");
       loginForm.removeAttribute("aria-hidden");
@@ -115,11 +123,19 @@ export function showMainApp(): void {
     // This prevents Bitwarden and other password managers from detecting the forms
     const loginForm = document.getElementById("login-form");
     const registerForm = document.getElementById("register-form");
-    const loginEmail = document.getElementById("login-email") as HTMLInputElement;
-    const loginPassword = document.getElementById("login-password") as HTMLInputElement;
-    const registerEmail = document.getElementById("register-email") as HTMLInputElement;
-    const registerPassword = document.getElementById("register-password") as HTMLInputElement;
-    
+    const loginEmail = document.getElementById(
+      "login-email",
+    ) as HTMLInputElement;
+    const loginPassword = document.getElementById(
+      "login-password",
+    ) as HTMLInputElement;
+    const registerEmail = document.getElementById(
+      "register-email",
+    ) as HTMLInputElement;
+    const registerPassword = document.getElementById(
+      "register-password",
+    ) as HTMLInputElement;
+
     // Hide and disable forms completely
     if (loginForm) {
       loginForm.setAttribute("data-bitwarden-watching", "false");
