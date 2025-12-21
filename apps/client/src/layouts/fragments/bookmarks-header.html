@@ -1,20 +1,7 @@
-<header
-  class="content-header bookmarks-header"
-  id="bookmarks-header"
-  style="display: none"
->
+<header class="content-header bookmarks-header" id="bookmarks-header" style="display: none">
   <div class="header-left">
-    <button
-      class="btn-icon"
-      id="toggle-sidebar-btn-bookmarks"
-      title="Toggle Sidebar"
-    >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-      >
+    <button class="btn-icon" id="toggle-sidebar-btn-bookmarks" title="Toggle Sidebar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="3" y1="6" x2="21" y2="6" />
         <line x1="3" y1="12" x2="21" y2="12" />
         <line x1="3" y1="18" x2="21" y2="18" />
@@ -26,21 +13,11 @@
   <div class="header-right">
     <div class="omnibar-container">
       <div class="header-search-bar omnibar-input">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8" />
           <path d="M21 21l-4.35-4.35" />
         </svg>
-        <input
-          type="text"
-          id="search-input"
-          placeholder="Search or type > for commands..."
-          autocomplete="off"
-        />
+        <input type="text" id="search-input" placeholder="Search or type > for commands..." autocomplete="off" />
         <kbd>Ctrl+K</kbd>
       </div>
 
@@ -88,14 +65,18 @@
         </div>
       </div>
     </div>
+
+    <!-- Filters Button -->
+    <button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
+        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+      </svg>
+      <span class="filter-btn-text">Filters</span>
+    </button>
+
     <div class="view-toggle">
       <button class="view-btn active" data-view-mode="grid" title="Grid View">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="7" height="7" />
           <rect x="14" y="3" width="7" height="7" />
           <rect x="3" y="14" width="7" height="7" />
@@ -103,12 +84,7 @@
         </svg>
       </button>
       <button class="view-btn" data-view-mode="list" title="List View">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="8" y1="6" x2="21" y2="6" />
           <line x1="8" y1="12" x2="21" y2="12" />
           <line x1="8" y1="18" x2="21" y2="18" />
@@ -118,12 +94,7 @@
         </svg>
       </button>
       <button class="view-btn" data-view-mode="compact" title="Compact List">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="4" y1="6" x2="20" y2="6" />
           <line x1="4" y1="10" x2="20" y2="10" />
           <line x1="4" y1="14" x2="20" y2="14" />
