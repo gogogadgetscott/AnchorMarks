@@ -120,7 +120,56 @@ export function showToast(message: string, type: string = ""): void {
 // Open modal
 export function openModal(id: string): void {
   const modal = document.getElementById(id);
-  if (modal) modal.classList.remove("hidden");
+  if (modal) {
+    modal.classList.remove("hidden");
+    
+    // Attach modal close listeners
+    const closeBtn = modal.querySelector(".modal-close") as HTMLElement | null;
+    const backdrop = modal.querySelector(".modal-backdrop") as HTMLElement | null;
+    
+    const closeHandler = () => {
+      modal.classList.add("hidden");
+    };
+    
+    if (closeBtn) {
+      closeBtn.addEventListener("click", closeHandler);
+    }
+    
+    if (backdrop) {
+      backdrop.addEventListener("click", closeHandler);
+    }
+    
+    // Re-attach settings tab listeners if opening settings modal
+    if (id === "settings-modal") {
+      attachSettingsTabListeners();
+    }
+  }
+}
+
+// Attach settings tab listeners
+function attachSettingsTabListeners(): void {
+  document.querySelectorAll(".settings-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const tabName = (tab as HTMLElement).dataset.settingsTab;
+      if (!tabName) return;
+
+      // Remove active class from all tabs and panels
+      document.querySelectorAll(".settings-tab").forEach((t) => {
+        t.classList.remove("active");
+      });
+      document.querySelectorAll(".settings-panel").forEach((p) => {
+        p.classList.remove("active");
+      });
+
+      // Add active class to clicked tab and corresponding panel
+      tab.classList.add("active");
+      const panelId = `settings-${tabName}`;
+      const panel = document.getElementById(panelId);
+      if (panel) {
+        panel.classList.add("active");
+      }
+    });
+  });
 }
 
 // Close all modals
