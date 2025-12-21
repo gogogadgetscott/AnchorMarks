@@ -23,10 +23,14 @@
    - Settings persistence (`/api/settings`)
 
 2. **Frontend (apps/client)** – Vite + TypeScript app under `apps/client/src`:
-   - `apps/client/src/App.ts` and `apps/client/src/main.ts` are the main entry points
-   - UI rendering (grid/list/compact views), dashboard widgets, search, filtering, sorting
-   - Local state: `bookmarks[]`, `folders[]`, `currentUser`, `dashboardConfig`, `filterConfig`
-   - API calls via `api()` helper (handles CSRF tokens, JWT via cookies)
+   - **Build System**: Vite for fast HMR and optimized production builds
+   - **Language**: TypeScript (strict mode) with type definitions in `apps/client/src/types.ts`
+   - **Entry Points**: `apps/client/src/main.ts` (initializes components) → `apps/client/src/App.ts` (main app logic)
+   - **Module System**: ES modules with path aliases (`@features/`, `@components/`, `@utils/`, `@services/`)
+   - **State Management**: Module-level variables in `apps/client/src/features/state.ts` (no framework state management)
+   - **UI Rendering**: DOM manipulation via `innerHTML` (grid/list/compact views), dashboard widgets, search, filtering, sorting
+   - **API Communication**: `apps/client/src/services/api.ts` helper function (handles CSRF tokens, JWT via cookies, TypeScript generics)
+   - **Build Output**: Static bundle in `apps/server/public/` (served by Express in production)
 
 3. **`apps/server/helpers/smart-organization.js`** – Tag suggestion engine:
    - Domain-based categorization (GitHub → dev tags)
@@ -84,7 +88,13 @@ npm run dev                # Start dev server(s) (see root and apps/client packa
 npm run prod               # Production build (requires JWT_SECRET, CORS_ORIGIN env vars)
 ```
 
-If you need to run only the server or client, use the `package.json` in `server/` or `apps/client/` respectively.
+**Development Options**:
+- `npm run dev` - Backend only (serves built frontend from `apps/server/public/`)
+- `npm run dev:vite` - Frontend only with Vite HMR (requires backend running on port 3000)
+- `npm run dev:full` - Both backend and frontend with HMR (uses concurrently)
+- `npm run build` - Build frontend for production (outputs to `apps/server/public/`)
+
+If you need to run only the server or client, use the `package.json` in `apps/server/` or `apps/client/` respectively.
 
 ### Testing
 
@@ -176,8 +186,12 @@ app.post("/api/bookmarks", requireAuth, validateCsrf, (req, res) => {
 **Frontend API Call (apps/client/src)**:
 
 ```typescript
-async function saveBookmark(bookmark: Bookmark) {
+import { api } from "@services/api.ts";
+import type { Bookmark } from "@types.ts";
+
+async function saveBookmark(bookmark: Bookmark): Promise<void> {
   try {
+    // TypeScript generic provides type safety for response
     const result = await api<Bookmark>("/bookmarks", {
       method: "POST",
       body: JSON.stringify(bookmark),
@@ -186,10 +200,14 @@ async function saveBookmark(bookmark: Bookmark) {
     await loadBookmarks();
     renderBookmarks();
   } catch (err) {
-    showToast(err.message, "error");
+    showToast((err as Error).message, "error");
   }
 }
 ```
+
+**TypeScript Type Definitions** (`apps/client/src/types.ts`):
+- `Bookmark`, `Folder`, `Tag`, `User`, `DashboardWidget`, `FilterConfig` interfaces
+- All API responses should match these types for type safety
 
 **URL/SSRF Validation**:
 
