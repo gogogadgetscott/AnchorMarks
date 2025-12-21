@@ -216,6 +216,12 @@
                     ><span class="nav-text">Roadmap</span></a
                   >
                 </li>
+                <li>
+                  <a href="#screenshots"
+                    ><span class="nav-icon" aria-hidden="true">📸</span
+                    ><span class="nav-text">Screenshot Pipeline</span></a
+                  >
+                </li>
               </ul>
             </div>
           </div>
@@ -1940,7 +1946,51 @@
               dev server npm run dev:vite # Stop both servers npm run stop #
               Restart both servers npm run restart # Build for production npm
               run build # Run in production mode npm run prod # Run tests npm
-              test
+              test # Run screenshot pipeline npm run screenshots
+            </div>
+
+            <h3 class="help-anchor" id="screenshots">
+              <span class="section-icon" aria-hidden="true">📸</span>Screenshot
+              Pipeline
+            </h3>
+            <p>
+              AnchorMarks includes an automated screenshot pipeline using
+              <strong>Playwright</strong> to generate UI snapshots across
+              different themes, viewports, and app states.
+            </p>
+
+            <h4>Setup & Prerequisites</h4>
+            <p>
+              The pipeline requires the Playwright browsers and system
+              dependencies to be installed:
+            </p>
+            <div class="code-block">
+              # Install Playwright browsers npx playwright install chromium #
+              Install system dependencies (Linux) sudo npx playwright
+              install-deps chromium
+            </div>
+
+            <h4>Running the Pipeline</h4>
+            <p>
+              Ensure your development servers are running (<code>npm start</code
+              >), then run the following in a separate terminal:
+            </p>
+            <div class="code-block">
+              # Generate all screenshots npm run screenshots # Generate a
+              limited set (e.g., 5) npm run screenshots -- 5
+            </div>
+
+            <p>
+              Screenshots are saved to the <code>screenshots/</code> directory
+              with descriptive filenames including the theme, viewport, and
+              state.
+            </p>
+
+            <div class="tip-box">
+              <span class="callout-icon" aria-hidden="true">💡</span
+              ><strong>Configuration:</strong> You can customize themes,
+              viewports, and routes in
+              <code>tooling/scripts/capture-screenshots.js</code>.
             </div>
 
             <div class="tip-box">
