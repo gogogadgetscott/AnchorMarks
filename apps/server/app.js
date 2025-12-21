@@ -143,6 +143,7 @@ const setupCollectionsRoutes = require("./routes/collections");
 const setupTagsRoutes = require("./routes/tags");
 const controllerTags = require("./controllers/tags");
 const setupImportExportRoutes = require("./routes/importExport");
+const setupHealthRoutes = require("./routes/health");
 
 // Register authentication routes (login/register/me/logout)
 setupAuthRoutes(
@@ -171,6 +172,10 @@ setupImportExportRoutes(app, db, {
   fetchFaviconWrapper,
 });
 setupSyncRoutes(app, db, { authenticateTokenMiddleware, fetchFaviconWrapper });
+setupHealthRoutes(app, db, {
+  authenticateTokenMiddleware,
+  fetchFaviconWrapper,
+}); // Must be before setupApiRoutes to avoid /api/bookmarks/by-domain being shadowed
 setupApiRoutes(app, db, {
   authenticateTokenMiddleware,
   validateCsrfTokenMiddleware,
@@ -189,14 +194,9 @@ const { parseBookmarkHtml } = require("./helpers/import");
 // Route groups moved to dedicated modules
 const setupQuickSearchRoutes = require("./routes/quickSearch");
 const setupStatsRoutes = require("./routes/stats");
-const setupHealthRoutes = require("./routes/health");
 
 setupQuickSearchRoutes(app, db, { authenticateTokenMiddleware });
 setupStatsRoutes(app, db, { authenticateTokenMiddleware });
-setupHealthRoutes(app, db, {
-  authenticateTokenMiddleware,
-  fetchFaviconWrapper,
-});
 
 // Smart organization routes moved to `routes/smartOrganization.js`
 const setupSmartOrganizationRoutes = require("./routes/smartOrganization");
@@ -210,7 +210,7 @@ setupSmartOrganizationRoutes(app, db, {
 // In production: Express serves built Vite assets from dist/
 const staticDir =
   config.NODE_ENV === "production" &&
-  fs.existsSync(path.join(__dirname, "..", "client", "dist"))
+    fs.existsSync(path.join(__dirname, "..", "client", "dist"))
     ? path.join(__dirname, "..", "client", "dist")
     : path.join(__dirname, "..", "client");
 
