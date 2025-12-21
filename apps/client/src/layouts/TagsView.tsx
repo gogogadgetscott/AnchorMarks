@@ -6,6 +6,16 @@ import { EmptyState } from "../components/EmptyState.tsx";
 import { useAppState } from "../contexts/AppContext";
 import type { Tag } from "../types";
 
+declare global {
+  interface Window {
+    AnchorMarks?: {
+      filterByTag?: (tagName: string) => void;
+      showTagModal?: (tag?: Tag) => void;
+      deleteTag?: (tagId: string) => void;
+    };
+  }
+}
+
 interface TagItemProps {
   tag: Tag;
   onSelect: (tagName: string) => void;

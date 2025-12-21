@@ -103,21 +103,21 @@ export const FoldersView = memo(() => {
   }, [folders]);
 
   const handleSelectFolder = useCallback((folderId: string) => {
-    window.AnchorMarks?.selectFolder?.(folderId);
+    (window as any).AnchorMarks?.selectFolder?.(folderId);
   }, []);
 
   const handleEditFolder = useCallback((folder: Folder) => {
-    window.AnchorMarks?.showFolderModal?.(folder);
+    (window as any).AnchorMarks?.showFolderModal?.(folder);
   }, []);
 
   const handleDeleteFolder = useCallback((folderId: string) => {
     if (confirm("Are you sure you want to delete this folder?")) {
-      window.AnchorMarks?.deleteFolder?.(folderId);
+      (window as any).AnchorMarks?.deleteFolder?.(folderId);
     }
   }, []);
 
   const handleCreateFolder = useCallback(() => {
-    window.AnchorMarks?.showFolderModal?.();
+    (window as any).AnchorMarks?.showFolderModal?.();
   }, []);
 
   if (folders.length === 0) {

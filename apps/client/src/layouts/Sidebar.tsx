@@ -144,7 +144,7 @@ export const Sidebar = memo<SidebarProps>(({ onAddBookmark, onToggle }) => {
                   data-folder-id={folder.id}
                 >
                   <Icon
-                    name={folder.icon || "folder"}
+                    name={(folder as any).icon || "folder"}
                     size={20}
                     color={folder.color}
                   />

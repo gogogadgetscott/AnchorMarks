@@ -81,7 +81,7 @@ export const BookmarksView = memo(() => {
           actionLabel={!searchQuery ? "Add Bookmark" : undefined}
           onAction={
             !searchQuery
-              ? () => window.AnchorMarks?.showBookmarkModal?.()
+              ? () => (window as any).AnchorMarks?.showBookmarkModal?.()
               : undefined
           }
         />

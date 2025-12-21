@@ -66,7 +66,7 @@ export const BookmarkModal = memo<BookmarkModalProps>(
             title,
             description,
             tags,
-            folder_id: folderId || null,
+            folder_id: folderId || undefined,
           });
           onClose();
         } catch (err) {
