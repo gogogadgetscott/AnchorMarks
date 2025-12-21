@@ -292,12 +292,12 @@ export function renderBookmarks(): void {
 
   attachBookmarkCardListeners();
   updateBulkUI();
-  
+
   // Lazy load OG images for rich cards that don't have them
   if (state.richLinkPreviewsEnabled && state.viewMode === "grid") {
     lazyLoadOGImages();
   }
-  
+
   // Note: updateCounts() is now called explicitly by callers to avoid race conditions
 }
 
@@ -318,7 +318,7 @@ async function lazyLoadOGImages(): Promise<void> {
   // Process sequentially with delays to respect rate limits
   // Rate limit is 100 requests/minute, so we'll do max 1 request per second to be safe
   let rateLimitHit = false;
-  
+
   for (const placeholder of placeholders) {
     // If we hit rate limit, wait longer before continuing
     if (rateLimitHit) {
@@ -356,7 +356,10 @@ async function lazyLoadOGImages(): Promise<void> {
           );
           rateLimitHit = false; // Reset rate limit flag on success
         } catch (err: any) {
-          if (err.message?.includes("429") || err.message?.includes("Too Many Requests")) {
+          if (
+            err.message?.includes("429") ||
+            err.message?.includes("Too Many Requests")
+          ) {
             rateLimitHit = true;
             // Exponential backoff: wait 2^retries seconds
             const waitTime = Math.min(1000 * Math.pow(2, retries), 10000);
