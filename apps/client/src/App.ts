@@ -54,7 +54,7 @@ import { initInteractions } from "@features/ui/interactions.ts";
 import { initTagListeners } from "@features/ui/tags.ts";
 
 /**
- * Set view mode (grid / list)
+ * Set view mode (grid / list / compact)
  */
 export async function setViewMode(mode: string, save = true): Promise<void> {
   state.setViewMode(mode as any);
@@ -75,6 +75,22 @@ export async function setViewMode(mode: string, save = true): Promise<void> {
       await import("@features/bookmarks/bookmarks.ts");
     renderBookmarks();
   }
+}
+
+/**
+ * Attach click listeners to view-toggle buttons
+ */
+export function attachViewToggleListeners(): void {
+  document.querySelectorAll(".view-btn").forEach((btn) => {
+    btn.removeEventListener("click", (btn as any)._viewToggleHandler);
+    const handler = async (e: Event) => {
+      e.preventDefault();
+      const mode = (btn as HTMLElement).dataset.viewMode;
+      if (mode) await setViewMode(mode);
+    };
+    (btn as any)._viewToggleHandler = handler;
+    btn.addEventListener("click", handler);
+  });
 }
 
 /**

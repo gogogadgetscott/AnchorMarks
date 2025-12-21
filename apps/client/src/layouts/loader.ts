@@ -72,7 +72,7 @@ export function loadComponents(): void {
           bulkActions: ["archive", "move", "tag", "delete"],
           clearBtnId: "clear-selection-btn",
           selectionCountId: "header-selection-count",
-          countId: "dashboard-view-name"
+          countId: "dashboard-view-name",
         }),
 
         // 2. Bookmarks Header
@@ -152,6 +152,10 @@ export function loadComponents(): void {
           bulkActions: ["unarchive", "delete"],
         }),
       ].join("\n");
+      // Attach view-toggle listeners after header render
+      import("@/App.ts").then(({ attachViewToggleListeners }) =>
+        attachViewToggleListeners(),
+      );
     }
 
     // Inject Bulk Bar

@@ -89,6 +89,7 @@ npm run prod               # Production build (requires JWT_SECRET, CORS_ORIGIN 
 ```
 
 **Development Options**:
+
 - `npm run dev` - Backend only (serves built frontend from `apps/server/public/`)
 - `npm run dev:vite` - Frontend only with Vite HMR (requires backend running on port 3000)
 - `npm run dev:full` - Both backend and frontend with HMR (uses concurrently)
@@ -206,6 +207,7 @@ async function saveBookmark(bookmark: Bookmark): Promise<void> {
 ```
 
 **TypeScript Type Definitions** (`apps/client/src/types.ts`):
+
 - `Bookmark`, `Folder`, `Tag`, `User`, `DashboardWidget`, `FilterConfig` interfaces
 - All API responses should match these types for type safety
 

@@ -1,10 +1,10 @@
 import { Icon } from "./Icon.ts";
 
 interface OmnibarOptions {
-    id?: string;
-    placeholder?: string;
-    shortcut?: string;
-    showDropdown?: boolean;
+  id?: string;
+  placeholder?: string;
+  shortcut?: string;
+  showDropdown?: boolean;
 }
 
 /**
@@ -17,14 +17,15 @@ interface OmnibarOptions {
  * @returns {string} - HTML string of the omnibar.
  */
 export function Omnibar(options: OmnibarOptions = {}): string {
-    const {
-        id = "search-input",
-        placeholder = "Search or type > for commands...",
-        shortcut = "Ctrl+K",
-        showDropdown = true,
-    } = options;
+  const {
+    id = "search-input",
+    placeholder = "Search or type > for commands...",
+    shortcut = "Ctrl+K",
+    showDropdown = true,
+  } = options;
 
-    const dropdownHtml = showDropdown ? `
+  const dropdownHtml = showDropdown
+    ? `
     <div id="omnibar-panel" class="omnibar-panel hidden">
       <!-- Recent Searches Section -->
       <div class="omnibar-section" id="omnibar-recent">
@@ -65,9 +66,10 @@ export function Omnibar(options: OmnibarOptions = {}): string {
         <span class="tip"><kbd>Enter</kbd> select</span>
       </div>
     </div>
-  ` : "";
+  `
+    : "";
 
-    return `
+  return `
     <div class="omnibar-container">
       <div class="header-search-bar omnibar-input">
         ${Icon("search", { size: 18 })}

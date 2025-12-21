@@ -1,10 +1,10 @@
 import { Icon } from "./Icon.ts";
 
 interface UserProfileOptions {
-    name?: string;
-    avatarChar?: string;
-    plan?: string;
-    className?: string;
+  name?: string;
+  avatarChar?: string;
+  plan?: string;
+  className?: string;
 }
 
 /**
@@ -17,14 +17,14 @@ interface UserProfileOptions {
  * @returns {string} - HTML string of the user profile component.
  */
 export function UserProfile(options: UserProfileOptions = {}): string {
-    const {
-        name = "User",
-        avatarChar = "U",
-        plan = "Free Plan",
-        className = "",
-    } = options;
+  const {
+    name = "User",
+    avatarChar = "U",
+    plan = "Free Plan",
+    className = "",
+  } = options;
 
-    return `
+  return `
     <div class="user-profile-menu ${className}">
       <button class="user-avatar-btn header-user-avatar-btn">
         <div class="user-avatar header-user-avatar">${avatarChar}</div>

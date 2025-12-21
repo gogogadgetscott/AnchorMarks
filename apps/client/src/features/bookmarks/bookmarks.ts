@@ -166,6 +166,11 @@ export function renderBookmarks(): void {
   // Show view toggle
   document.querySelector(".view-toggle")?.classList.remove("hidden");
 
+  // Attach view-toggle listeners (fixes broken toggle after header render)
+  import("@/App.ts").then(({ attachViewToggleListeners }) =>
+    attachViewToggleListeners(),
+  );
+
   // Set container class based on view mode
   const classMap = {
     grid: "bookmarks-grid",

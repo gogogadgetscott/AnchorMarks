@@ -3,9 +3,9 @@ import { Icon } from "./Icon.ts";
 export type BulkAction = "archive" | "unarchive" | "move" | "tag" | "delete";
 
 interface SelectionUIOptions {
-    actions?: BulkAction[];
-    selectionCountId?: string;
-    clearBtnId?: string;
+  actions?: BulkAction[];
+  selectionCountId?: string;
+  clearBtnId?: string;
 }
 
 /**
@@ -17,35 +17,38 @@ interface SelectionUIOptions {
  * @returns {string} - HTML string of the selection UI.
  */
 export function SelectionUI(options: SelectionUIOptions = {}): string {
-    const {
-        actions = ["archive", "move", "tag", "delete"],
-        selectionCountId = "",
-        clearBtnId = "",
-    } = options;
+  const {
+    actions = ["archive", "move", "tag", "delete"],
+    selectionCountId = "",
+    clearBtnId = "",
+  } = options;
 
-    const actionIcons: Record<BulkAction, { icon: string; title: string; className?: string }> = {
-        archive: { icon: "archive", title: "Archive Selected" },
-        unarchive: { icon: "unarchive", title: "Unarchive Selected" },
-        move: { icon: "folder", title: "Move to Folder" },
-        tag: { icon: "tag", title: "Add Tags" },
-        delete: { icon: "trash", title: "Delete", className: "text-danger" },
-    };
+  const actionIcons: Record<
+    BulkAction,
+    { icon: string; title: string; className?: string }
+  > = {
+    archive: { icon: "archive", title: "Archive Selected" },
+    unarchive: { icon: "unarchive", title: "Unarchive Selected" },
+    move: { icon: "folder", title: "Move to Folder" },
+    tag: { icon: "tag", title: "Add Tags" },
+    delete: { icon: "trash", title: "Delete", className: "text-danger" },
+  };
 
-    const actionButtons = actions
-        .map((action) => {
-            const { icon, title, className = "" } = actionIcons[action];
-            return `
+  const actionButtons = actions
+    .map((action) => {
+      const { icon, title, className = "" } = actionIcons[action];
+      return `
         <button class="btn-icon btn-bulk-${action} ${className}" title="${title}">
           ${Icon(icon, { size: 20 })}
         </button>
       `;
-        })
-        .join("");
+    })
+    .join("");
 
-    const clearIdAttr = clearBtnId ? `id="${clearBtnId}"` : "";
-    const countIdAttr = selectionCountId ? `id="${selectionCountId}"` : "";
+  const clearIdAttr = clearBtnId ? `id="${clearBtnId}"` : "";
+  const countIdAttr = selectionCountId ? `id="${selectionCountId}"` : "";
 
-    return `
+  return `
     <div class="header-selection-ui">
       <div class="header-left">
         <button class="btn-icon btn-clear-selection" ${clearIdAttr} title="Clear Selection">
