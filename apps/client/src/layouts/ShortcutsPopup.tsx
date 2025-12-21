@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useRef, useCallback } from "react";
-import { Icon } from "../components/Icon";
+import { Icon } from "../components/Icon.tsx";
 
 export const ShortcutsPopup = memo(() => {
   const popupRef = useRef<HTMLDivElement>(null);

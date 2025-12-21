@@ -1,5 +1,5 @@
 import React, { memo, useState, useCallback, useEffect, useRef } from "react";
-import { Icon } from "../components/Icon";
+import { Icon } from "./Icon.tsx";
 import { useAppState } from "../contexts/AppContext";
 
 interface OmnibarProps {

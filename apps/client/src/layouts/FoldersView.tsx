@@ -1,7 +1,7 @@
 import React, { memo, useMemo, useCallback } from "react";
-import { Icon } from "../components/Icon";
-import { Button } from "../components/Button";
-import { EmptyState } from "../components/EmptyState";
+import { Icon } from "../components/Icon.tsx";
+import { Button } from "../components/Button.tsx";
+import { EmptyState } from "../components/EmptyState.tsx";
 import { useAppState } from "../contexts/AppContext";
 import type { Folder } from "../types";
 

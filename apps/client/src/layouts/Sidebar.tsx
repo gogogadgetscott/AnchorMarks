@@ -1,6 +1,6 @@
 import React, { memo, useCallback } from "react";
-import { Icon } from "../components/Icon";
-import { Button } from "../components/Button";
+import { Icon } from "../components/Icon.tsx";
+import { Button } from "../components/Button.tsx";
 import { useAppState } from "../contexts/AppContext";
 
 interface SidebarProps {

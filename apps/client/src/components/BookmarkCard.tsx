@@ -1,6 +1,6 @@
 import React, { memo, useCallback } from "react";
-import { Icon } from "./Icon";
-import { Badge } from "./Badge";
+import { Icon } from "./Icon.tsx";
+import { Badge } from "./Badge.tsx";
 import { useAppState } from "../contexts/AppContext";
 import type { Bookmark as BookmarkType } from "../types";
 
@@ -56,12 +56,19 @@ export const BookmarkCard = memo<BookmarkCardProps>(
       [bookmark.id, toggleBookmarkSelection],
     );
 
-    const handleCheckboxClick = useCallback(
-      (e: React.MouseEvent) => {
+    const handleCheckboxChange = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
         e.stopPropagation();
         toggleBookmarkSelection(bookmark.id);
       },
       [bookmark.id, toggleBookmarkSelection],
+    );
+
+    const handleCheckboxClick = useCallback(
+      (e: React.MouseEvent<HTMLInputElement>) => {
+        e.stopPropagation();
+      },
+      [],
     );
 
     const handleOpenLink = useCallback(
@@ -111,7 +118,7 @@ export const BookmarkCard = memo<BookmarkCardProps>(
             type="checkbox"
             className="bookmark-checkbox"
             checked={isSelected}
-            onChange={handleCheckboxClick}
+            onChange={handleCheckboxChange}
             onClick={handleCheckboxClick}
           />
         </div>

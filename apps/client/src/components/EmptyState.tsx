@@ -1,6 +1,6 @@
 import React, { memo } from "react";
-import { Icon } from "../components/Icon";
-import { Button } from "../components/Button";
+import { Icon } from "./Icon.tsx";
+import { Button } from "./Button.tsx";
 
 interface EmptyStateProps {
   icon?: string;

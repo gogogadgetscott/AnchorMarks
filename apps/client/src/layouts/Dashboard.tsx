@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from "react";
-import { Icon } from "../components/Icon";
+import { Icon } from "../components/Icon.tsx";
 import { useAppState } from "../contexts/AppContext";
 
 export const Dashboard = memo(() => {

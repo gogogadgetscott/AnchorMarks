@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useState } from "react";
-import { Icon } from "../components/Icon";
+import { Icon } from "../components/Icon.tsx";
 
 interface ToastProps {
   message: string;

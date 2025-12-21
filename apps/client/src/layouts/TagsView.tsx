@@ -1,8 +1,8 @@
 import React, { memo, useMemo, useCallback, useState } from "react";
-import { Icon } from "../components/Icon";
-import { Button } from "../components/Button";
-import { Badge } from "../components/Badge";
-import { EmptyState } from "../components/EmptyState";
+import { Icon } from "../components/Icon.tsx";
+import { Button } from "../components/Button.tsx";
+import { Badge } from "../components/Badge.tsx";
+import { EmptyState } from "../components/EmptyState.tsx";
 import { useAppState } from "../contexts/AppContext";
 import type { Tag } from "../types";
 
