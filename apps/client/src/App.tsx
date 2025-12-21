@@ -90,9 +90,9 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // The actual HTML is rendered by the loader, so return null
-  // This component exists for state management and initialization only
-  return null;
+  // Return empty fragment - the loader has already populated the DOM
+  // This component just manages React state and initialization
+  return <></>;
 };
 
 // ============================================================
