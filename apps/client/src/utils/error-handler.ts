@@ -57,10 +57,7 @@ export function hideServerStatusBanner(): void {
  * @param showBanner - Whether to show server status banner for network errors
  * @returns The error message to display to user
  */
-export function handleApiError(
-  error: unknown,
-  showBanner = true,
-): string {
+export function handleApiError(error: unknown, showBanner = true): string {
   const err = error instanceof Error ? error : new Error(String(error));
   const message = err.message || "An unexpected error occurred";
 
@@ -95,32 +92,41 @@ import { logger } from "./logger.ts";
 
 export function initGlobalErrorHandlers(): void {
   // Handle unhandled promise rejections
-  window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => {
-    logger.error("Unhandled Promise Rejection", event.reason);
-    
-    // Prevent default browser error logging in production
-    if (import.meta.env.PROD) {
-      event.preventDefault();
-    }
-    
-    // Show user-friendly error message
-    const error = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
-    const errorMessage = handleApiError(error, false);
-    
-    // Only show toast if we have the UI helper available
-    try {
-      import("@utils/ui-helpers.ts").then(({ showToast }) => {
-        showToast(`An error occurred: ${errorMessage}`, "error");
-      });
-    } catch {
-      // UI helper not available yet, just log
-    }
-  });
+  window.addEventListener(
+    "unhandledrejection",
+    (event: PromiseRejectionEvent) => {
+      logger.error("Unhandled Promise Rejection", event.reason);
+
+      // Prevent default browser error logging in production
+      if (import.meta.env.PROD) {
+        event.preventDefault();
+      }
+
+      // Show user-friendly error message
+      const error =
+        event.reason instanceof Error
+          ? event.reason
+          : new Error(String(event.reason));
+      const errorMessage = handleApiError(error, false);
+
+      // Only show toast if we have the UI helper available
+      try {
+        import("@utils/ui-helpers.ts").then(({ showToast }) => {
+          showToast(`An error occurred: ${errorMessage}`, "error");
+        });
+      } catch {
+        // UI helper not available yet, just log
+      }
+    },
+  );
 
   // Handle general JavaScript errors
   window.addEventListener("error", (event: ErrorEvent) => {
-    logger.error("Global Error Handler", event.error || new Error(event.message));
-    
+    logger.error(
+      "Global Error Handler",
+      event.error || new Error(event.message),
+    );
+
     // Show user-friendly error message for runtime errors
     if (event.error) {
       const errorMessage = handleApiError(event.error, false);
@@ -134,4 +140,3 @@ export function initGlobalErrorHandlers(): void {
     }
   });
 }
-

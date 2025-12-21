@@ -24,6 +24,7 @@ favicons/
 apps/dist/
 dist/
 .vite/
+tooling/screenshots/
 
 # SSL certs/keys (can be generated locally or provided by deploy scripts)
 # Keep these out of the repo for security; the installer may create apps/ssl/

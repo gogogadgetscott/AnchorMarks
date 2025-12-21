@@ -21,7 +21,7 @@ class Logger {
 
   private shouldLog(level: LogLevel): boolean {
     if (this.isDevelopment()) return true;
-    
+
     // In production, only log warnings and errors
     return level === "warn" || level === "error";
   }
@@ -82,9 +82,12 @@ export function logWarn(message: string, ...args: unknown[]): void {
   logger.warn(message, ...args);
 }
 
-export function logError(message: string, error?: unknown, ...args: unknown[]): void {
+export function logError(
+  message: string,
+  error?: unknown,
+  ...args: unknown[]
+): void {
   logger.error(message, error, ...args);
 }
 
 export default logger;
-

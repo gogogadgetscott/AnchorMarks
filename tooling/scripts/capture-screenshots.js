@@ -16,11 +16,19 @@ const viewports = [
 ];
 
 const states = [
-  { label: "home", path: "/" },
-  { label: "grid-view", path: "/?view_mode=grid" },
-  { label: "list-view", path: "/?view_mode=list" },
-  { label: "favorites", path: "/?filter=starred" }, // Adjusting based on common patterns, may need refinement
-  { label: "recent", path: "/?filter=recent" },
+  { label: "home", selector: '.nav-item[data-view="dashboard"]' },
+  {
+    label: "grid-view",
+    selector: '.nav-item[data-view="all"]',
+    subSelector: '.view-btn[data-view-mode="grid"]',
+  },
+  {
+    label: "list-view",
+    selector: '.nav-item[data-view="all"]',
+    subSelector: '.view-btn[data-view-mode="list"]',
+  },
+  { label: "favorites", selector: '.nav-item[data-view="favorites"]' },
+  { label: "recent", selector: '.nav-item[data-view="recent"]' },
 ];
 
 async function captureScreenshots(limit = Infinity) {
@@ -36,11 +44,61 @@ async function captureScreenshots(limit = Infinity) {
   let count = 0;
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 
-  // We might need to login. For now, let's assume we can skip or handle it if needed.
-  // If the app requires login, we can add a login helper here.
+  // Generate random credentials
+  const randomId = Math.random().toString(36).substring(7);
+  const email = `temp_${randomId}@example.com`;
+  const password = "password123";
 
   try {
+    console.log(`Creating temporary user: ${email}`);
+    await page.goto(`${BASE_URL}/`);
+
+    // Switch to register tab
+    await page.click('.auth-tab[data-tab="register"]');
+
+    // Fill register form
+    await page.fill("#register-email", email);
+    await page.fill("#register-password", password);
+    await page.click('#register-form button[type="submit"]');
+
+    // Wait for app to load and verify we are truly logged in
+    await page.waitForSelector("#main-app", { state: "visible" });
+
+    // Extra verification
+    const isLoggedIn = await page.evaluate(() => {
+      const logoutBtn = document.getElementById("logout-btn");
+      return !!logoutBtn;
+    });
+
+    if (!isLoggedIn) {
+      throw new Error(
+        "Registration appeared successful but logout button not found. Login may have failed.",
+      );
+    }
+
+    console.log("Logged in successfully as temporary user.");
+
+    // Dismiss the onboarding tour if it appears
+    try {
+      const tourSkip = await page.waitForSelector(".tour-skip", {
+        timeout: 5000,
+      });
+      if (tourSkip) {
+        console.log("Dismissing onboarding tour...");
+        await tourSkip.click();
+        await page.waitForSelector("#tour-popover", { state: "hidden" });
+      }
+    } catch (e) {
+      console.log("Onboarding tour not detected or already dismissed.");
+    }
+
     for (const theme of themes) {
+      // Set theme once per theme group
+      await page.evaluate((t) => {
+        document.documentElement.setAttribute("data-theme", t);
+        localStorage.setItem("anchormarks_theme", t);
+      }, theme);
+
       for (const viewport of viewports) {
         await page.setViewportSize({
           width: viewport.width,
@@ -50,20 +108,18 @@ async function captureScreenshots(limit = Infinity) {
         for (const state of states) {
           if (count >= limit) break;
 
-          const url = `${BASE_URL}${state.path}`;
           console.log(
             `[${count + 1}] Capturing: Theme=${theme}, Viewport=${viewport.label}, State=${state.label}`,
           );
 
-          await page.goto(url, { waitUntil: "networkidle" });
+          // Use UI interaction
+          await page.click(state.selector);
+          if (state.subSelector) {
+            await page.click(state.subSelector);
+          }
 
-          // Switch theme
-          await page.evaluate((t) => {
-            document.documentElement.setAttribute("data-theme", t);
-            localStorage.setItem("anchormarks_theme", t);
-          }, theme);
-
-          // Wait for animations/theme transitions
+          // Wait for app to be ready and settled
+          await page.waitForSelector("#main-app", { state: "visible" });
           await page.waitForTimeout(WAIT_AFTER_ANIMATION);
 
           const filename = `${timestamp}_${theme}_${viewport.label}_${state.label}.png`;
@@ -79,6 +135,28 @@ async function captureScreenshots(limit = Infinity) {
   } catch (error) {
     console.error("Error during screenshot capture:", error);
   } finally {
+    try {
+      console.log(`Cleaning up: Deleting temporary user ${email}`);
+      await page.evaluate(async () => {
+        const getCookie = (name) => {
+          const value = `; ${document.cookie}`;
+          const parts = value.split(`; ${name}=`);
+          if (parts.length === 2) return parts.pop().split(";").shift();
+        };
+        const csrfToken = getCookie("csrfToken");
+
+        await fetch("/api/auth/me", {
+          method: "DELETE",
+          headers: {
+            "X-CSRF-Token": csrfToken,
+          },
+        });
+      });
+      console.log("Cleanup complete.");
+    } catch (cleanupError) {
+      console.error("Error during cleanup:", cleanupError);
+    }
+
     await browser.close();
     console.log(
       `Finished! Generated ${count} screenshots in ${SCREENSHOT_DIR}`,

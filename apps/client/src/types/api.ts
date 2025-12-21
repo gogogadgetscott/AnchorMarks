@@ -186,4 +186,3 @@ export interface DuplicateBookmarksResponse {
     bookmarks: Bookmark[];
   }>;
 }
-

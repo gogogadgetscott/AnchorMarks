@@ -859,7 +859,10 @@ async function saveCurrentBookmarkView() {
       tag_mode: state.filterConfig.tagMode || "OR",
     };
 
-    logger.debug("Saving bookmark view", { config, filterConfig: state.filterConfig });
+    logger.debug("Saving bookmark view", {
+      config,
+      filterConfig: state.filterConfig,
+    });
 
     const view = await api<{ id: string }>("/bookmark/views", {
       method: "POST",
@@ -912,12 +915,18 @@ async function restoreBookmarkView(id: string) {
   try {
     logger.debug("Restoring bookmark view", { viewId: id });
 
-    const response = await api<{ config: any }>(`/bookmark/views/${id}/restore`, {
-      method: "POST",
-    });
+    const response = await api<{ config: any }>(
+      `/bookmark/views/${id}/restore`,
+      {
+        method: "POST",
+      },
+    );
     const config = response.config;
 
-    logger.debug("Received bookmark view config", { config, filterConfig: state.filterConfig });
+    logger.debug("Received bookmark view config", {
+      config,
+      filterConfig: state.filterConfig,
+    });
 
     // Ensure we're in bookmark view (not dashboard)
     if (state.currentView === "dashboard") {
@@ -934,7 +943,9 @@ async function restoreBookmarkView(id: string) {
       tagMode: config.tag_mode || "OR",
     });
 
-    logger.debug("Filter config after restore", { filterConfig: state.filterConfig });
+    logger.debug("Filter config after restore", {
+      filterConfig: state.filterConfig,
+    });
 
     // Set current folder if specified
     if (config.filter_folder) {
@@ -968,7 +979,8 @@ async function restoreBookmarkView(id: string) {
     document.getElementById("bookmark-views-dropdown")?.remove();
   } catch (err) {
     logger.error("Error restoring bookmark view", err);
-    const errorMessage = err instanceof Error ? err.message : "Failed to restore view";
+    const errorMessage =
+      err instanceof Error ? err.message : "Failed to restore view";
     showToast(errorMessage, "error");
   }
 }

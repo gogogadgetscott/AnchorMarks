@@ -233,6 +233,35 @@ function setupAuthRoutes(
     res.json({ success: true });
   });
 
+  // Delete account
+  app.delete("/api/auth/me", authenticateToken, (req, res) => {
+    try {
+      const userId = req.user.id;
+
+      // Delete from security audit log
+      db.prepare("DELETE FROM security_audit_log WHERE user_id = ?").run(
+        userId,
+      );
+
+      // Delete user (cascades to all other tables)
+      const result = db.prepare("DELETE FROM users WHERE id = ?").run(userId);
+
+      if (result.changes === 0) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.clearCookie("token");
+      res.clearCookie("csrfToken");
+      res.json({
+        success: true,
+        message: "Account and data deleted successfully",
+      });
+    } catch (err) {
+      console.error("Delete account error:", err);
+      res.status(500).json({ error: "Failed to delete account" });
+    }
+  });
+
   // Regenerate API key
   app.post("/api/auth/regenerate-key", authenticateToken, (req, res) => {
     const newApiKey = "lv_" + uuidv4().replace(/-/g, "");

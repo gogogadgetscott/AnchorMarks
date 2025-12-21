@@ -50,9 +50,7 @@ export async function api<T = unknown>(
   if (state.csrfToken) headers["X-CSRF-Token"] = state.csrfToken;
 
   // Create AbortController if signal provided or for cancellable requests
-  const abortController = options.signal
-    ? undefined
-    : new AbortController();
+  const abortController = options.signal ? undefined : new AbortController();
   const signal = options.signal || abortController?.signal;
 
   // Create the fetch promise
@@ -152,7 +150,10 @@ export function createAbortController(): AbortController {
  * Cancel a pending request by endpoint and options
  * Note: This only works for GET requests that were deduplicated
  */
-export function cancelRequest(endpoint: string, options: RequestInit = {}): void {
+export function cancelRequest(
+  endpoint: string,
+  options: RequestInit = {},
+): void {
   const requestKey = getRequestKey(endpoint, options);
   if (requestKey && pendingRequests.has(requestKey)) {
     const promise = pendingRequests.get(requestKey);
