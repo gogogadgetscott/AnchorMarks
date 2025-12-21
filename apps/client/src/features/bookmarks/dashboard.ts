@@ -9,6 +9,7 @@ import { showToast, dom, updateCounts } from "@utils/ui-helpers.ts";
 // Settings imported dynamically
 import { api } from "@services/api.ts";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
+import { logger } from "@utils/logger.ts";
 
 // Grid size for snap-to-grid feature
 const GRID_SIZE = 20;
@@ -831,7 +832,7 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
       }
     });
   } catch (err) {
-    console.error("Failed to load tag analytics", err);
+    logger.error("Failed to load tag analytics", err);
   }
 }
 

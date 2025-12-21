@@ -6,6 +6,7 @@
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { escapeHtml } from "@utils/index.ts";
+import { logger } from "@utils/logger.ts";
 import {
   dom,
   showToast,
@@ -107,7 +108,7 @@ export async function loadBookmarks(): Promise<void> {
       // Store in state for use in rendering
       state.setTagMetadata(tagMap);
     } catch (err) {
-      console.error("Failed to load tag metadata:", err);
+      logger.error("Failed to load tag metadata", err);
       // Continue without tag metadata
     }
 
@@ -530,7 +531,7 @@ export async function updateBookmark(
     closeModals();
     showToast("Bookmark updated", "success");
   } catch (err) {
-    console.error("Failed to update bookmark:", err);
+    logger.error("Failed to update bookmark", err);
     showToast("Failed to update bookmark", "error");
   }
 }
@@ -546,7 +547,7 @@ export async function archiveBookmark(id: string): Promise<void> {
     await updateCounts();
     showToast("Bookmark archived", "success");
   } catch (err) {
-    console.error("Failed to archive bookmark:", err);
+    logger.error("Failed to archive bookmark", err);
     showToast("Failed to archive bookmark", "error");
   }
 }
@@ -562,7 +563,7 @@ export async function unarchiveBookmark(id: string): Promise<void> {
     await updateCounts();
     showToast("Bookmark unarchived", "success");
   } catch (err) {
-    console.error("Failed to unarchive bookmark:", err);
+    logger.error("Failed to unarchive bookmark", err);
     showToast("Failed to unarchive bookmark", "error");
   }
 }
@@ -858,18 +859,14 @@ async function saveCurrentBookmarkView() {
       tag_mode: state.filterConfig.tagMode || "OR",
     };
 
-    console.log("[Bookmark View] Saving view with config:", config);
-    console.log(
-      "[Bookmark View] Current filterConfig state:",
-      state.filterConfig,
-    );
+    logger.debug("Saving bookmark view", { config, filterConfig: state.filterConfig });
 
-    const view = await api("/bookmark/views", {
+    const view = await api<{ id: string }>("/bookmark/views", {
       method: "POST",
       body: JSON.stringify({ name, config }),
     });
 
-    console.log("[Bookmark View] View saved with ID:", view.id);
+    logger.debug("Bookmark view saved", { viewId: view.id });
 
     showToast("View saved!", "success");
     document.getElementById("bookmark-views-dropdown")?.remove();
@@ -913,18 +910,14 @@ async function deleteBookmarkView(id: string) {
 // Restore bookmark view
 async function restoreBookmarkView(id: string) {
   try {
-    console.log("[Bookmark View] Restoring view ID:", id);
+    logger.debug("Restoring bookmark view", { viewId: id });
 
-    const response = await api(`/bookmark/views/${id}/restore`, {
+    const response = await api<{ config: any }>(`/bookmark/views/${id}/restore`, {
       method: "POST",
     });
     const config = response.config;
 
-    console.log("[Bookmark View] Received config:", config);
-    console.log(
-      "[Bookmark View] Current filterConfig before restore:",
-      state.filterConfig,
-    );
+    logger.debug("Received bookmark view config", { config, filterConfig: state.filterConfig });
 
     // Ensure we're in bookmark view (not dashboard)
     if (state.currentView === "dashboard") {
@@ -941,10 +934,7 @@ async function restoreBookmarkView(id: string) {
       tagMode: config.tag_mode || "OR",
     });
 
-    console.log(
-      "[Bookmark View] filterConfig after restore:",
-      state.filterConfig,
-    );
+    logger.debug("Filter config after restore", { filterConfig: state.filterConfig });
 
     // Set current folder if specified
     if (config.filter_folder) {
@@ -964,7 +954,7 @@ async function restoreBookmarkView(id: string) {
     ) as HTMLSelectElement;
     if (tagSortSelect) tagSortSelect.value = config.tag_sort || "count_desc";
 
-    console.log("[Bookmark View] Reloading bookmarks...");
+    logger.debug("Reloading bookmarks after view restore");
 
     // Reload bookmarks with filters applied (this will fetch from server with filters)
     await loadBookmarks();
@@ -976,9 +966,10 @@ async function restoreBookmarkView(id: string) {
 
     showToast("View restored!", "success");
     document.getElementById("bookmark-views-dropdown")?.remove();
-  } catch (err: any) {
-    console.error("[Bookmark View] Error restoring view:", err);
-    showToast(err.message, "error");
+  } catch (err) {
+    logger.error("Error restoring bookmark view", err);
+    const errorMessage = err instanceof Error ? err.message : "Failed to restore view";
+    showToast(errorMessage, "error");
   }
 }
 

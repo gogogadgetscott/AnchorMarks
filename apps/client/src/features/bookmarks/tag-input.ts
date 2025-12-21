@@ -5,6 +5,7 @@
 
 import * as state from "@features/state.ts";
 import { escapeHtml } from "@utils/index.ts";
+import { logger } from "@utils/logger.ts";
 
 let selectedTags: string[] = [];
 let autocompleteIndex = -1;
@@ -19,7 +20,7 @@ export function initTagInput(): void {
   const autocomplete = document.getElementById("tag-autocomplete");
 
   if (!container || !input || !hiddenInput || !autocomplete) {
-    console.warn("Tag input elements not found");
+    logger.warn("Tag input elements not found");
     return;
   }
 

@@ -17,6 +17,7 @@ import { api } from "@services/api.ts";
 
 // Import utilities
 import { escapeHtml, getHostname, parseTagInput } from "@utils/index.ts";
+import { logger } from "@utils/logger.ts";
 
 // Import command palette
 import {
@@ -867,7 +868,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const id = idEl?.value;
       const tagsValue = tagsEl?.value;
-      console.log("[Bookmark Form] Tags value:", tagsValue);
+      logger.debug("Bookmark form tags value", { tagsValue });
       const data = {
         url: urlEl?.value,
         title: titleEl?.value || undefined,
@@ -876,7 +877,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         tags: tagsValue || undefined,
         color: colorEl?.value || undefined,
       };
-      console.log("[Bookmark Form] Submitting data:", data);
+      logger.debug("Bookmark form submitting data", { data });
 
       const bookmarksModule = await import("@features/bookmarks/bookmarks.ts");
       if (id) {

@@ -4,6 +4,10 @@ import "@assets/styles.css";
 // Import the component loader
 import { loadComponents } from "@layouts/loader.ts";
 
+// Initialize global error handlers before anything else
+import { initGlobalErrorHandlers } from "@utils/error-handler.ts";
+initGlobalErrorHandlers();
+
 // Initialize components immediately
 loadComponents();
 
