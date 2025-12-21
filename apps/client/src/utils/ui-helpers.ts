@@ -230,7 +230,13 @@ export function updateViewHeader(): void {
   }
 
   const activeHeader = document.getElementById(headerId);
-  if (activeHeader) activeHeader.style.display = "flex";
+  if (activeHeader) {
+    activeHeader.style.display = "flex";
+    // Ensure sticky positioning is maintained when header is shown
+    activeHeader.style.position = "sticky";
+    activeHeader.style.top = "0";
+    activeHeader.style.zIndex = "100";
+  }
 }
 
 // Update active navigation
@@ -281,37 +287,59 @@ export async function updateCounts(): Promise<void> {
     // Fetch counts from server to avoid issues with filtered state.bookmarks
     const counts = await api("/bookmarks/counts");
 
+    // Validate API response
+    if (!counts || typeof counts !== "object") {
+      console.warn("Invalid counts response from server", counts);
+      // Don't return early - still try to show badges with default values
+    }
+
+    // Ensure all expected count properties exist with defaults
+    // Convert to numbers in case API returns strings (defensive programming)
+    const safeCounts = {
+      all: Number(counts?.all) || 0,
+      favorites: Number(counts?.favorites) || 0,
+      recent: Number(counts?.recent) || 0,
+      archived: Number(counts?.archived) || 0,
+    };
+
     // Elements
     const bookmarkCountEl = document.getElementById("bookmark-count");
     const favCountEl = document.getElementById("fav-count");
-    const recentCountEl = document.getElementById("count-recent"); // Fixed: was "recent-count"
+    const recentCountEl = document.getElementById("count-recent");
     const dashboardCountEl = document.getElementById("dashboard-count");
     const archivedCountEl = document.getElementById("count-archived");
 
-    // Update sidebar counts from server
-    if (bookmarkCountEl) {
-      bookmarkCountEl.textContent = counts.all.toString();
-    }
+    // Helper function to update badge with count
+    const updateBadge = (el: HTMLElement | null, count: number): void => {
+      if (!el) {
+        console.warn("Badge element not found");
+        return;
+      }
+      // Always show the badge with the count
+      el.textContent = count.toString();
+      // Ensure badge is visible by removing any inline styles that might hide it
+      el.style.removeProperty("display");
+      el.style.removeProperty("visibility");
+      el.style.removeProperty("opacity");
+      el.classList.remove("badge-empty");
+    };
 
-    if (favCountEl) {
-      favCountEl.textContent = counts.favorites.toString();
-    }
+    // Update sidebar counts from server - always show all badges
+    updateBadge(bookmarkCountEl, safeCounts.all);
+    updateBadge(favCountEl, safeCounts.favorites);
+    updateBadge(recentCountEl, safeCounts.recent);
+    updateBadge(archivedCountEl, safeCounts.archived);
 
-    if (recentCountEl) {
-      recentCountEl.textContent = counts.recent.toString();
-    }
-
-    if (archivedCountEl) {
-      archivedCountEl.textContent = counts.archived.toString();
-    }
-
-    // Calculate dashboard count from widgets (only when not in filtered views)
-    // Dashboard count needs full bookmark data, so skip if in favorites/archived view
-    const inFilteredView =
-      state.currentView === "favorites" || state.currentView === "archived";
+    // Calculate dashboard count from widgets
+    // Always calculate dashboard count regardless of current view
     let dashboardVal = 0;
 
-    if (!inFilteredView) {
+    // Ensure state.dashboardWidgets and state.bookmarks are available
+    if (
+      Array.isArray(state.dashboardWidgets) &&
+      Array.isArray(state.bookmarks) &&
+      state.dashboardWidgets.length > 0
+    ) {
       const displayedIds = new Set();
       state.dashboardWidgets.forEach((w) => {
         if (w.type === "folder") {
@@ -333,11 +361,10 @@ export async function updateCounts(): Promise<void> {
         }
       });
       dashboardVal = displayedIds.size;
-
-      if (dashboardCountEl) {
-        dashboardCountEl.textContent = dashboardVal.toString();
-      }
     }
+
+    // Update dashboard badge
+    updateBadge(dashboardCountEl, dashboardVal);
 
     // Update View Count Label on specific headers
     const bookmarksViewCount = document.getElementById("bookmarks-view-count");
@@ -359,17 +386,17 @@ export async function updateCounts(): Promise<void> {
         break;
       case "favorites":
         if (favoritesViewCount) {
-          favoritesViewCount.textContent = `${counts.favorites} favorite${counts.favorites !== 1 ? "s" : ""}`;
+          favoritesViewCount.textContent = `${safeCounts.favorites} favorite${safeCounts.favorites !== 1 ? "s" : ""}`;
         }
         break;
       case "recent":
         if (recentsViewCount) {
-          recentsViewCount.textContent = `${counts.recent} recent`;
+          recentsViewCount.textContent = `${safeCounts.recent} recent`;
         }
         break;
       case "archived":
         if (archivedViewCount) {
-          archivedViewCount.textContent = `${counts.archived} archived`;
+          archivedViewCount.textContent = `${safeCounts.archived} archived`;
         }
         break;
     }
@@ -377,6 +404,24 @@ export async function updateCounts(): Promise<void> {
     updateStats();
   } catch (err) {
     console.error("Error updating counts:", err);
+    // On error, try to at least show that counts couldn't be loaded
+    // Don't hide badges - let them show their last known value or "0"
+    const badgeIds = [
+      "bookmark-count",
+      "fav-count",
+      "count-recent",
+      "dashboard-count",
+      "count-archived",
+    ];
+    badgeIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        // Ensure badge is visible even on error
+        el.style.removeProperty("display");
+        el.style.removeProperty("visibility");
+        el.style.removeProperty("opacity");
+      }
+    });
   }
 }
 

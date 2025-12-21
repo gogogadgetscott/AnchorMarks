@@ -528,6 +528,8 @@ textarea {
 .main-app {
   display: flex;
   min-height: 100vh;
+  /* Ensure no overflow that would prevent sticky positioning */
+  overflow: visible;
 }
 
 .sidebar {
@@ -1738,23 +1740,17 @@ body.sidebar-collapsed .nav-section-header {
   min-height: 100vh;
   background: var(--bg-secondary);
   transition: margin-left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  /* Ensure proper flex layout for sticky header */
+  /* Ensure no overflow that would prevent sticky positioning */
+  overflow: visible;
+  position: relative;
 }
 
+/* Headers Container */
 #headers-container {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background: var(--bg-primary);
-  width: 100%;
-  border-bottom: 1px solid var(--border-color);
-}
-
-#bulk-bar-container {
-  position: sticky;
-  top: 64px;
-  z-index: 999;
-  background: var(--bg-primary);
-  width: 100%;
+  /* Container for headers */
 }
 
 /* Content Header */
@@ -1764,9 +1760,18 @@ body.sidebar-collapsed .nav-section-header {
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 1rem;
-  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-primary) !important;
   gap: 1rem;
   height: 64px;
+  position: -webkit-sticky; /* Safari support */
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  /* Ensure header stays above content when scrolling */
+  /* Force background to cover content when scrolling */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 /* Content Header Selection Mode */
@@ -1903,9 +1908,10 @@ body.sidebar-collapsed .nav-section-header {
 .dashboard-header,
 .bookmarks-header,
 .favorites-header,
-.recents-header {
+.recents-header,
+.archived-header {
   display: none;
-  position: relative;
+  /* Remove position: relative to allow sticky positioning */
   /* Allow header to grow when wrapped */
   min-height: 60px;
   height: auto;
@@ -2034,6 +2040,11 @@ body.sidebar-collapsed .nav-section-header {
   box-shadow: var(--shadow-md);
 }
 
+/* Bulk Bar Container */
+#bulk-bar-container {
+  /* Container for bulk bar */
+}
+
 .bulk-bar {
   display: flex;
   align-items: center;
@@ -2042,6 +2053,10 @@ body.sidebar-collapsed .nav-section-header {
   padding: 0.75rem 2rem;
   background: var(--card-bg);
   box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 64px; /* Position below sticky header (header height is 64px) */
+  z-index: 99; /* Just below header z-index */
+  width: 100%;
 }
 
 .bulk-actions {
@@ -3751,6 +3766,15 @@ body.sidebar-collapsed .nav-section-header {
     /* Let header grow vertically on mobile to prevent overlap */
     min-height: 90px;
     height: auto;
+    /* Ensure sticky header works on mobile */
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  
+  /* Adjust bulk bar position for mobile header height */
+  .bulk-bar {
+    top: 90px; /* Account for taller mobile header */
   }
 
   /* Stack header sections on mobile */
