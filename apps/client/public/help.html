@@ -45,6 +45,10 @@
                     class="nav-text">Bookmarks</span></a>
               </li>
               <li>
+                <a href="#archiving"><span class="nav-icon" aria-hidden="true">📦</span><span
+                    class="nav-text">Archiving</span></a>
+              </li>
+              <li>
                 <a href="#bookmark-colors"><span class="nav-icon" aria-hidden="true">🎨</span><span
                     class="nav-text">Bookmark Colors</span></a>
               </li>
@@ -335,6 +339,16 @@
             navigation item to close it.
           </div>
 
+          <div class="tip-box">
+            <span class="callout-icon" aria-hidden="true">📊</span><strong>Sidebar Count Badges:</strong> Each
+            navigation item
+            in the sidebar displays a count badge showing the number of bookmarks in that view. These counts update
+            automatically
+            when you add, edit, archive, or delete bookmarks. The badges use a consistent, modern design across all
+            views
+            (Dashboard, Bookmarks, Favorites, Recent, and Archived).
+          </div>
+
           <h3 class="help-anchor" id="bookmarks">
             <span class="section-icon" aria-hidden="true">🔖</span>Getting
             Started → Advanced Features (Bookmarks)
@@ -360,17 +374,62 @@
             <li>
               Edit a bookmark’s title, URL, description, folder, and tags.
             </li>
-            <li>Star important items as favorites for quick access.</li>
+            <li>
+              <strong>Star button:</strong> Click the star (⭐) button on any bookmark card to mark it as a favorite.
+              The star fills in with a yellow color when favorited. Click again to remove from favorites.
+              Favorited bookmarks appear in the "Favorites" view in the sidebar.
+            </li>
           </ul>
 
-          <h4>Bulk actions</h4>
+          <h4>Bulk actions & Selection Mode</h4>
+          <p>
+            Select multiple bookmarks to perform actions on all of them at once.
+            When one or more bookmarks are selected, the header transforms into
+            <strong>Selection Mode</strong>.
+          </p>
+
           <ul>
             <li>
-              Select multiple bookmarks with
-              <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+click and <kbd>Shift</kbd>+click.
+              <strong>Enter selection mode:</strong> Click the checkbox in the
+              top-left corner of any bookmark card.
             </li>
             <li>
-              Use bulk actions to add/remove tags, move, favorite, or delete.
+              <strong>Multi-select:</strong> Use
+              <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+click to add individual items, or
+              <kbd>Shift</kbd>+click to select a range.
+            </li>
+            <li>
+              <strong>Selection Header:</strong> The blue header displays the
+              current count and provides tools for bulk archiving, moving,
+              tagging, or deleting.
+            </li>
+            <li>
+              <strong>Clear selection:</strong> Click the "X" in the selection
+              header or press <kbd>Esc</kbd>.
+            </li>
+          </ul>
+
+          <h3 class="help-anchor" id="archiving">
+            <span class="section-icon" aria-hidden="true">📦</span>Archiving
+          </h3>
+          <p>
+            Archive bookmarks you don't need immediately but want to keep.
+            Archived bookmarks are hidden from main views (All, Folders,
+            Favorites) but remain searchable.
+          </p>
+          <ul>
+            <li>
+              <strong>Archive:</strong> Click the archive icon (box) on any
+              bookmark card or use the bulk action bar.
+            </li>
+            <li>
+              <strong>Archived View:</strong> Access all your archived items
+              via the "Archived" link in the sidebar.
+            </li>
+            <li>
+              <strong>Restore:</strong> Click the unarchive icon (box with up
+              arrow) in the Archived view to return a bookmark to its original
+              place.
             </li>
           </ul>
 
