@@ -1,0 +1,212 @@
+/**
+ * AnchorMarks - Forms UI Module
+ * Handles all form-related event listeners (Auth, Bookmarks, Folders)
+ */
+
+import * as state from "@features/state.ts";
+import { openModal, closeModals } from "@utils/ui-helpers.ts";
+
+/**
+ * Initialize all form-related listeners
+ */
+export function initFormListeners(): void {
+  initAuthForms();
+  initBookmarkForms();
+  initFolderForms();
+}
+
+/**
+ * Handle Login and Registration forms
+ */
+function initAuthForms(): void {
+  // Login form
+  document
+    .getElementById("login-form")
+    ?.addEventListener("submit", async (e: Event) => {
+      e.preventDefault();
+      const emailEl = document.getElementById(
+        "login-email",
+      ) as HTMLInputElement;
+      const passwordEl = document.getElementById(
+        "login-password",
+      ) as HTMLInputElement;
+      const email = emailEl?.value;
+      const password = passwordEl?.value;
+
+      const { login } = await import("@features/auth/auth.ts");
+      if (await login(email, password)) {
+        const { loadSettings } =
+          await import("@features/bookmarks/settings.ts");
+        await loadSettings();
+        // Re-initialize app state (assuming initializeApp is globally available or we import it)
+        const { initializeApp } = await import("../../App.ts");
+        await initializeApp();
+      }
+    });
+
+  // Register form
+  document
+    .getElementById("register-form")
+    ?.addEventListener("submit", async (e: Event) => {
+      e.preventDefault();
+      const emailEl = document.getElementById(
+        "register-email",
+      ) as HTMLInputElement;
+      const passwordEl = document.getElementById(
+        "register-password",
+      ) as HTMLInputElement;
+      const email = emailEl?.value;
+      const password = passwordEl?.value;
+
+      const { register } = await import("@features/auth/auth.ts");
+      if (await register(email, password)) {
+        const { loadSettings } =
+          await import("@features/bookmarks/settings.ts");
+        await loadSettings();
+        const { initializeApp } = await import("../../App.ts");
+        await initializeApp();
+      }
+    });
+}
+
+/**
+ * Handle Bookmark Create/Edit forms
+ */
+function initBookmarkForms(): void {
+  // Open bookmark modal
+  document
+    .getElementById("sidebar-add-bookmark-btn")
+    ?.addEventListener("click", () => {
+      openModal("bookmark-modal");
+    });
+
+  // Bookmark form submission
+  document
+    .getElementById("bookmark-form")
+    ?.addEventListener("submit", async (e: Event) => {
+      e.preventDefault();
+      const idEl = document.getElementById("bookmark-id") as HTMLInputElement;
+      const titleEl = document.getElementById(
+        "bookmark-title",
+      ) as HTMLInputElement;
+      const urlEl = document.getElementById("bookmark-url") as HTMLInputElement;
+      const folderEl = document.getElementById(
+        "bookmark-folder",
+      ) as HTMLSelectElement;
+      const colorEl = document.getElementById(
+        "bookmark-color",
+      ) as HTMLInputElement;
+      const descEl = document.getElementById(
+        "bookmark-description",
+      ) as HTMLTextAreaElement;
+
+      const id = idEl?.value;
+      const data = {
+        title: titleEl?.value,
+        url: urlEl?.value,
+        folder_id: folderEl?.value || undefined,
+        color: colorEl?.value,
+        description: descEl?.value,
+        tags: "", // Tags are handled separately by tag-input.ts
+      };
+
+      const bookmarksModule = await import("@features/bookmarks/bookmarks.ts");
+      if (id) {
+        await bookmarksModule.updateBookmark(id, data);
+      } else {
+        await bookmarksModule.createBookmark(data);
+      }
+    });
+
+  // Bookmark color options (delegation could be used here but keeping simple for now)
+  document.querySelectorAll(".color-option-bookmark").forEach((opt) => {
+    opt.addEventListener("click", () => {
+      document
+        .querySelectorAll(".color-option-bookmark")
+        .forEach((o) => o.classList.remove("active"));
+      opt.classList.add("active");
+      const colorInput = document.getElementById(
+        "bookmark-color",
+      ) as HTMLInputElement;
+      if (colorInput)
+        colorInput.value = (opt as HTMLElement).dataset.color || "";
+    });
+  });
+}
+
+/**
+ * Handle Folder Create/Edit forms
+ */
+function initFolderForms(): void {
+  // Open new folder modal
+  document
+    .getElementById("sidebar-add-folder-btn")
+    ?.addEventListener("click", async () => {
+      const modalTitle = document.getElementById("folder-modal-title");
+      if (modalTitle) modalTitle.textContent = "New Folder";
+      (document.getElementById("folder-form") as HTMLFormElement).reset();
+
+      const idInput = document.getElementById("folder-id") as HTMLInputElement;
+      if (idInput) idInput.value = "";
+
+      const colorInput = document.getElementById(
+        "folder-color",
+      ) as HTMLInputElement;
+      if (colorInput) colorInput.value = "#6366f1";
+
+      const form = document.getElementById("folder-form");
+      if (form) {
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn) btn.textContent = "Create Folder";
+      }
+
+      const { updateFolderParentSelect } =
+        await import("@features/bookmarks/folders.ts");
+      updateFolderParentSelect();
+      openModal("folder-modal");
+    });
+
+  // Folder form submission
+  document
+    .getElementById("folder-form")
+    ?.addEventListener("submit", async (e: Event) => {
+      e.preventDefault();
+      const idEl = document.getElementById("folder-id") as HTMLInputElement;
+      const nameEl = document.getElementById("folder-name") as HTMLInputElement;
+      const colorEl = document.getElementById(
+        "folder-color",
+      ) as HTMLInputElement;
+      const parentEl = document.getElementById(
+        "folder-parent",
+      ) as HTMLSelectElement;
+
+      const id = idEl?.value;
+      const data = {
+        name: nameEl?.value,
+        color: colorEl?.value,
+        parent_id: parentEl?.value || undefined, // Use undefined instead of null to match Folder type
+      };
+
+      const foldersModule = await import("@features/bookmarks/folders.ts");
+      if (id) {
+        await foldersModule.updateFolder(id, data);
+      } else {
+        await foldersModule.createFolder(data);
+      }
+    });
+
+  // Folder color options
+  document.querySelectorAll(".color-option").forEach((opt) => {
+    opt.addEventListener("click", () => {
+      document
+        .querySelectorAll(".color-option")
+        .forEach((o) => o.classList.remove("active"));
+      opt.classList.add("active");
+      const colorInput = document.getElementById(
+        "folder-color",
+      ) as HTMLInputElement;
+      if (colorInput)
+        colorInput.value = (opt as HTMLElement).dataset.color || "#6366f1";
+    });
+  });
+}
