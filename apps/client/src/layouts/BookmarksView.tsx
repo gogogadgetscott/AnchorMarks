@@ -95,7 +95,7 @@ export const BookmarksView = memo(() => {
         {filteredBookmarks.map((bookmark) => (
           <BookmarkCard
             key={bookmark.id}
-            bookmark={bookmark}
+            {...bookmark}
             viewMode={viewMode}
             isSelected={selectedBookmarks.has(bookmark.id)}
           />
