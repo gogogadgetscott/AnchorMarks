@@ -94,7 +94,7 @@ export async function loadBookmarks(): Promise<void> {
     } else {
       renderBookmarks();
     }
-    updateCounts();
+    await updateCounts();
 
     // Update active nav to reflect current view
     updateActiveNav();
@@ -250,7 +250,7 @@ export function renderBookmarks(): void {
 
   attachBookmarkCardListeners();
   updateBulkUI();
-  updateCounts();
+  // Note: updateCounts() is now called explicitly by callers to avoid race conditions
 }
 
 // Attach event listeners to bookmark cards
@@ -444,7 +444,7 @@ export async function createBookmark(data: Partial<Bookmark>): Promise<void> {
     });
     state.bookmarks.unshift(bookmark);
     renderBookmarks();
-    updateCounts();
+    await updateCounts();
     closeModals();
     showToast("Bookmark added!", "success");
   } catch (err: any) {
@@ -475,7 +475,7 @@ export async function updateBookmark(
       renderBookmarks();
     }
 
-    updateCounts();
+    await updateCounts();
     closeModals();
     showToast("Bookmark updated", "success");
   } catch (err) {
@@ -492,7 +492,7 @@ export async function archiveBookmark(id: string): Promise<void> {
     if (bm) bm.is_archived = 1;
 
     renderBookmarks();
-    updateCounts();
+    await updateCounts();
     showToast("Bookmark archived", "success");
   } catch (err) {
     console.error("Failed to archive bookmark:", err);
@@ -508,7 +508,7 @@ export async function unarchiveBookmark(id: string): Promise<void> {
     if (bm) bm.is_archived = 0;
 
     renderBookmarks();
-    updateCounts();
+    await updateCounts();
     showToast("Bookmark unarchived", "success");
   } catch (err) {
     console.error("Failed to unarchive bookmark:", err);
@@ -533,7 +533,7 @@ export async function deleteBookmark(id: string): Promise<void> {
       renderBookmarks();
     }
 
-    updateCounts();
+    await updateCounts();
     showToast("Bookmark deleted", "success");
   } catch (err: any) {
     showToast(err.message, "error");
@@ -552,7 +552,7 @@ export async function toggleFavorite(id: string): Promise<void> {
     });
     bookmark.is_favorite = !bookmark.is_favorite;
     renderBookmarks();
-    updateCounts();
+    await updateCounts();
   } catch (err: any) {
     showToast(err.message, "error");
   }

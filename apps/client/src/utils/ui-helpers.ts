@@ -5,6 +5,7 @@
 
 import * as state from "@features/state.ts";
 import { escapeHtml, parseTagInput } from "@utils/index.ts";
+import { api } from "@services/api.ts";
 
 // DOM Element references (initialized on DOMContentLoaded)
 export const dom: {
@@ -275,162 +276,107 @@ export function updateActiveNav(): void {
 }
 
 // Update counts display
-export function updateCounts(): void {
-  const hasFullData =
-    !state.currentFolder &&
-    state.currentView !== "favorites" &&
-    state.currentView !== "collection";
+export async function updateCounts(): Promise<void> {
+  try {
+    // Fetch counts from server to avoid issues with filtered state.bookmarks
+    const counts = await api("/bookmarks/counts");
 
-  // Elements
-  const bookmarkCountEl = document.getElementById("bookmark-count");
-  const favCountEl = document.getElementById("fav-count");
-  const recentCountEl = document.getElementById("recent-count");
-  const dashboardCountEl = document.getElementById("dashboard-count");
-  const archivedCountEl = document.getElementById("count-archived");
+    // Elements
+    const bookmarkCountEl = document.getElementById("bookmark-count");
+    const favCountEl = document.getElementById("fav-count");
+    const recentCountEl = document.getElementById("count-recent"); // Fixed: was "recent-count"
+    const dashboardCountEl = document.getElementById("dashboard-count");
+    const archivedCountEl = document.getElementById("count-archived");
 
-  // 1. Calculate Dashboard Count
-  let dashboardVal = 0;
-  if (state.currentView === "dashboard" || hasFullData) {
-    const displayedIds = new Set();
-    state.dashboardWidgets.forEach((w) => {
-      if (w.type === "folder") {
-        state.bookmarks
-          .filter((b) => b.folder_id === w.id)
-          .forEach((b) => displayedIds.add(b.id));
-      } else if (w.type === "tag") {
-        state.bookmarks
-          .filter(
-            (b) =>
-              b.tags &&
-              b.tags
-                .split(",")
-                .map((t) => t.trim())
-                .includes(w.id),
-          )
-          .forEach((b) => displayedIds.add(b.id));
-      }
-    });
-    dashboardVal = displayedIds.size;
-  }
+    // Update sidebar counts from server
+    if (bookmarkCountEl) {
+      bookmarkCountEl.textContent = counts.all.toString();
+    }
 
-  // 2. Calculate Recent Count
-  // Assuming 'Recent' shows top 20 or everything if less
-  let recentVal = 0;
-  if (state.currentView === "recent") {
-    recentVal = state.renderedBookmarks.length;
-  } else if (hasFullData) {
-    recentVal = Math.min(state.bookmarks.length, 20);
-  }
+    if (favCountEl) {
+      favCountEl.textContent = counts.favorites.toString();
+    }
 
-  // 2.5 Calculate Archived Count
-  let archivedVal = 0;
-  if (state.currentView === "archived") {
-    archivedVal = state.renderedBookmarks.length;
-  } else {
-    archivedVal = state.bookmarks.filter((b) => b.is_archived).length;
-  }
+    if (recentCountEl) {
+      recentCountEl.textContent = counts.recent.toString();
+    }
 
-  // 3. Favorites Count
-  let favVal = 0;
-  if (state.currentView === "favorites") {
-    favVal = state.bookmarks.length;
-  } else {
-    favVal = state.bookmarks.filter((b) => b.is_favorite).length;
-  }
+    if (archivedCountEl) {
+      archivedCountEl.textContent = counts.archived.toString();
+    }
 
-  // 4. Bookmarks Count (Filtered)
-  let bookmarkVal = 0;
-  if (
-    state.currentView === "all" ||
-    state.currentView === "folder" ||
-    state.currentView === "collection"
-  ) {
-    bookmarkVal = state.renderedBookmarks.length;
-  } else if (hasFullData) {
-    // Calculate expected filtered count
-    if (state.filterConfig.tags.length > 0) {
-      const tags = state.filterConfig.tags;
-      bookmarkVal = state.bookmarks.filter((b) => {
-        if (!b.tags) return false;
-        const bTags = b.tags.split(",").map((t) => t.trim());
-        if (state.filterConfig.tagMode === "AND") {
-          return tags.every((t) => bTags.includes(t));
-        } else {
-          return tags.some((t) => bTags.includes(t));
+    // Calculate dashboard count from widgets (only when not in filtered views)
+    // Dashboard count needs full bookmark data, so skip if in favorites/archived view
+    const inFilteredView = state.currentView === "favorites" || state.currentView === "archived";
+    let dashboardVal = 0;
+
+    if (!inFilteredView) {
+      const displayedIds = new Set();
+      state.dashboardWidgets.forEach((w) => {
+        if (w.type === "folder") {
+          state.bookmarks
+            .filter((b) => b.folder_id === w.id && !b.is_archived)
+            .forEach((b) => displayedIds.add(b.id));
+        } else if (w.type === "tag") {
+          state.bookmarks
+            .filter(
+              (b) =>
+                !b.is_archived &&
+                b.tags &&
+                b.tags
+                  .split(",")
+                  .map((t) => t.trim())
+                  .includes(w.id),
+            )
+            .forEach((b) => displayedIds.add(b.id));
         }
-      }).length;
-    } else {
-      bookmarkVal = state.bookmarks.length;
+      });
+      dashboardVal = displayedIds.size;
+
+      if (dashboardCountEl) {
+        dashboardCountEl.textContent = dashboardVal.toString();
+      }
     }
-  }
 
-  // Update Badges
-  if (dashboardCountEl && (state.currentView === "dashboard" || hasFullData)) {
-    dashboardCountEl.textContent = dashboardVal.toString();
-  }
+    // Update View Count Label on specific headers
+    const bookmarksViewCount = document.getElementById("bookmarks-view-count");
+    const favoritesViewCount = document.getElementById("favorites-view-count");
+    const recentsViewCount = document.getElementById("recents-view-count");
+    const archivedViewCount = document.getElementById("archived-view-count");
 
-  if (recentCountEl && (state.currentView === "recent" || hasFullData)) {
-    recentCountEl.textContent = recentVal.toString();
-  }
+    let currentViewCount = state.renderedBookmarks.length;
+    if (state.currentView === "dashboard") currentViewCount = dashboardVal;
 
-  if (archivedCountEl) {
-    archivedCountEl.textContent = archivedVal.toString();
-  }
-
-  if (favCountEl) {
-    // Use logic: if we are in favorites view, use rendered count (effectively).
-    // If not, use calculated favVal if hasFullData.
-    if (state.currentView === "favorites" || hasFullData) {
-      favCountEl.textContent = favVal.toString();
+    // Update the appropriate view-specific count
+    switch (state.currentView) {
+      case "all":
+      case "folder":
+      case "collection":
+        if (bookmarksViewCount) {
+          bookmarksViewCount.textContent = `${currentViewCount} bookmark${currentViewCount !== 1 ? "s" : ""}`;
+        }
+        break;
+      case "favorites":
+        if (favoritesViewCount) {
+          favoritesViewCount.textContent = `${counts.favorites} favorite${counts.favorites !== 1 ? "s" : ""}`;
+        }
+        break;
+      case "recent":
+        if (recentsViewCount) {
+          recentsViewCount.textContent = `${counts.recent} recent`;
+        }
+        break;
+      case "archived":
+        if (archivedViewCount) {
+          archivedViewCount.textContent = `${counts.archived} archived`;
+        }
+        break;
     }
+
+    updateStats();
+  } catch (err) {
+    console.error("Error updating counts:", err);
   }
-
-  if (bookmarkCountEl) {
-    if (
-      state.currentView === "all" ||
-      state.currentView === "folder" ||
-      hasFullData
-    ) {
-      bookmarkCountEl.textContent = bookmarkVal.toString();
-    }
-  }
-
-  // Update View Count Label on specific headers
-  const bookmarksViewCount = document.getElementById("bookmarks-view-count");
-  const favoritesViewCount = document.getElementById("favorites-view-count");
-  const recentsViewCount = document.getElementById("recents-view-count");
-  const archivedViewCount = document.getElementById("archived-view-count");
-
-  let currentViewCount = state.renderedBookmarks.length;
-  if (state.currentView === "dashboard") currentViewCount = dashboardVal;
-
-  // Update the appropriate view-specific count
-  switch (state.currentView) {
-    case "all":
-    case "folder":
-    case "collection":
-      if (bookmarksViewCount) {
-        bookmarksViewCount.textContent = `${currentViewCount} bookmark${currentViewCount !== 1 ? "s" : ""}`;
-      }
-      break;
-    case "favorites":
-      if (favoritesViewCount) {
-        favoritesViewCount.textContent = `${favVal} favorite${favVal !== 1 ? "s" : ""}`;
-      }
-      break;
-    case "recent":
-      if (recentsViewCount) {
-        recentsViewCount.textContent = `${recentVal} recent`;
-      }
-      break;
-    case "archived":
-      if (archivedViewCount) {
-        archivedViewCount.textContent = `${archivedVal} archived`;
-      }
-      break;
-  }
-
-  updateStats();
 }
 
 // Update stats

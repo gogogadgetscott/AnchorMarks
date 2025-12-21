@@ -23,7 +23,7 @@ export async function bulkDelete(): Promise<void> {
   );
   const { clearSelections } = await import("@features/bookmarks/bookmarks.ts");
   clearSelections();
-  updateCounts();
+  await updateCounts();
   showToast("Bookmarks deleted", "success");
 }
 
@@ -43,7 +43,7 @@ export async function bulkFavorite(): Promise<void> {
 
   const { renderBookmarks } = await import("@features/bookmarks/bookmarks.ts");
   renderBookmarks();
-  updateCounts();
+  await updateCounts();
   showToast("Marked as favorite", "success");
 }
 
@@ -69,7 +69,7 @@ export async function bulkMove(): Promise<void> {
 
   const { clearSelections } = await import("@features/bookmarks/bookmarks.ts");
   clearSelections();
-  updateCounts();
+  await updateCounts();
   showToast("Bookmarks moved", "success");
 }
 
@@ -103,7 +103,7 @@ export async function bulkAddTags(): Promise<void> {
     await import("@features/bookmarks/bookmarks.ts");
   const { renderSidebarTags } = await import("@features/bookmarks/search.ts");
   clearSelections();
-  updateCounts();
+  await updateCounts();
   renderBookmarks();
   renderSidebarTags();
   showToast("Tags added to selection", "success");
@@ -142,7 +142,7 @@ export async function bulkRemoveTags(): Promise<void> {
     await import("@features/bookmarks/bookmarks.ts");
   const { renderSidebarTags } = await import("@features/bookmarks/search.ts");
   clearSelections();
-  updateCounts();
+  await updateCounts();
   renderBookmarks();
   renderSidebarTags();
   showToast("Tags removed from selection", "success");
@@ -153,10 +153,17 @@ export async function bulkArchive(): Promise<void> {
   if (state.selectedBookmarks.size === 0) return;
 
   const ids = Array.from(state.selectedBookmarks);
-  await api("/bookmarks/bulk/archive", {
-    method: "POST",
-    body: JSON.stringify({ ids }),
-  });
+
+  try {
+    await api("/bookmarks/bulk/archive", {
+      method: "POST",
+      body: JSON.stringify({ ids }),
+    });
+  } catch (err) {
+    console.error("[bulkArchive] API call failed:", err);
+    showToast("Failed to archive bookmarks", "error");
+    return;
+  }
 
   state.setBookmarks(
     state.bookmarks.map((b) => {
@@ -168,8 +175,8 @@ export async function bulkArchive(): Promise<void> {
   const { clearSelections, renderBookmarks } =
     await import("@features/bookmarks/bookmarks.ts");
   clearSelections();
-  updateCounts();
   renderBookmarks();
+  await updateCounts();
   showToast(`${ids.length} bookmarks archived`, "success");
 }
 
@@ -193,8 +200,8 @@ export async function bulkUnarchive(): Promise<void> {
   const { clearSelections, renderBookmarks } =
     await import("@features/bookmarks/bookmarks.ts");
   clearSelections();
-  updateCounts();
   renderBookmarks();
+  await updateCounts();
   showToast(`${ids.length} bookmarks unarchived`, "success");
 }
 

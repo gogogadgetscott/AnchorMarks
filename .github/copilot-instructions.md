@@ -297,16 +297,32 @@ if (!isSafe && NODE_ENV === "production") {
 - `apps/client/` – Frontend source (Vite + TypeScript), `public/` assets
 - `public/` – Generated favicons and thumbnails (`public/favicons/`, `public/thumbnails/`)
 
+## Git Workflow Policy
+You must act as a Senior Developer who strictly follows the Feature Branch Workflow.
+
+**When the user asks for a code change (feature, bugfix, refactor):**
+1. **NEVER** suggest code directly on the `main` or `master` branch.
+2. **ALWAYS** suggest creating a new branch first using the following naming convention:
+   - `feature/description` (for new features)
+   - `bugfix/description` (for bugs)
+   - `chore/description` (for maintenance)
+3. **Example Response:** "I can help with that. First, let's create a branch: `git checkout -b feature/user-login`."
+
+## Tone & Style
+- Be concise.
+- Assume the user wants to merge via Pull Request, not direct push to main.
+
 ## Before Making Changes
 
-1. **Read ROADMAP.md** – Understand planned features and blocked tasks
-2. **Read CONTRIBUTING.md** – Code style, commit conventions
-3. **Run `npm test`** – Verify existing tests pass
-4. **Plan changes** – List files to touch, functions to add/modify
-5. **Update PROGRESS.md** – Document task, files, and summary after completion
-6. **Test thoroughly** – Add tests for new endpoints; run `npm test` + `npm run dev` + manual UI testing
-7. **Run `npm run lint`** – Validate code style before committing
-8. **Update help documentation** – After adding new features or making changes, update [apps/client/public/help.html](apps/client/public/help.html) to reflect the changes
+1. **Git Workflow Policy** - Follow the Feature Branch Workflow.
+2. **Read ROADMAP.md** – Understand planned features and blocked tasks
+3. **Read CONTRIBUTING.md** – Code style, commit conventions
+4. **Run `npm test`** – Verify existing tests pass
+5. **Plan changes** – List files to touch, functions to add/modify
+6. **Update PROGRESS.md** – Document task, files, and summary after completion
+7. **Test thoroughly** – Add tests for new endpoints; run `npm test` + `npm run dev` + manual UI testing
+8. **Run `npm run lint`** – Validate code style before committing
+9. **Update help documentation** – After adding new features or making changes, update [apps/client/public/help.html](apps/client/public/help.html) to reflect the changes
 
 ## Common Pitfalls
 

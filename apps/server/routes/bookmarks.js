@@ -56,6 +56,41 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
     }
   });
 
+  // Get bookmark counts for sidebar
+  app.get("/api/bookmarks/counts", authenticateTokenMiddleware, (req, res) => {
+    try {
+      const userId = req.user.id;
+
+      // Total non-archived bookmarks
+      const allCount = db.prepare(
+        "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND is_archived = 0"
+      ).get(userId).count;
+
+      // Favorites (non-archived)
+      const favoritesCount = db.prepare(
+        "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND is_favorite = 1 AND is_archived = 0"
+      ).get(userId).count;
+
+      // Recent (top 20 non-archived)
+      const recentCount = Math.min(allCount, 20);
+
+      // Archived
+      const archivedCount = db.prepare(
+        "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND is_archived = 1"
+      ).get(userId).count;
+
+      res.json({
+        all: allCount,
+        favorites: favoritesCount,
+        recent: recentCount,
+        archived: archivedCount
+      });
+    } catch (err) {
+      console.error("Error fetching bookmark counts:", err);
+      res.status(500).json({ error: "Failed to fetch counts" });
+    }
+  });
+
   app.get("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
     try {
       const bookmark = bookmarkModel.getBookmarkById(
@@ -184,35 +219,16 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
     }
   });
 
-  // Archive/Unarchive single bookmark
-  app.post("/api/bookmarks/:id/archive", authenticateTokenMiddleware, (req, res) => {
-    try {
-      bookmarkModel.updateBookmark(db, req.user.id, req.params.id, { is_archived: 1 });
-      res.json({ success: true, message: "Bookmark archived" });
-    } catch (err) {
-      console.error("Error archiving bookmark:", err);
-      res.status(500).json({ error: "Failed to archive bookmark" });
-    }
-  });
-
-  app.post("/api/bookmarks/:id/unarchive", authenticateTokenMiddleware, (req, res) => {
-    try {
-      bookmarkModel.updateBookmark(db, req.user.id, req.params.id, { is_archived: 0 });
-      res.json({ success: true, message: "Bookmark unarchived" });
-    } catch (err) {
-      console.error("Error unarchiving bookmark:", err);
-      res.status(500).json({ error: "Failed to unarchive bookmark" });
-    }
-  });
-
-  // Bulk Archive/Unarchive
+  // Bulk Archive/Unarchive (MUST come before /:id/archive routes!)
   app.post("/api/bookmarks/bulk/archive", authenticateTokenMiddleware, (req, res) => {
     const { ids } = req.body;
     if (!Array.isArray(ids)) return res.status(400).json({ error: "IDs must be an array" });
     try {
       const stmt = db.prepare("UPDATE bookmarks SET is_archived = 1 WHERE id = ? AND user_id = ?");
       const transaction = db.transaction((ids, userId) => {
-        for (const id of ids) stmt.run(id, userId);
+        for (const id of ids) {
+          stmt.run(id, userId);
+        }
       });
       transaction(ids, req.user.id);
       res.json({ success: true, archived: ids.length });
@@ -235,6 +251,27 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
     } catch (err) {
       console.error("Error bulk unarchiving bookmarks:", err);
       res.status(500).json({ error: "Failed to bulk unarchive bookmarks" });
+    }
+  });
+
+  // Archive/Unarchive single bookmark
+  app.post("/api/bookmarks/:id/archive", authenticateTokenMiddleware, (req, res) => {
+    try {
+      bookmarkModel.updateBookmark(db, req.user.id, req.params.id, { is_archived: 1 });
+      res.json({ success: true, message: "Bookmark archived" });
+    } catch (err) {
+      console.error("Error archiving bookmark:", err);
+      res.status(500).json({ error: "Failed to archive bookmark" });
+    }
+  });
+
+  app.post("/api/bookmarks/:id/unarchive", authenticateTokenMiddleware, (req, res) => {
+    try {
+      bookmarkModel.updateBookmark(db, req.user.id, req.params.id, { is_archived: 0 });
+      res.json({ success: true, message: "Bookmark unarchived" });
+    } catch (err) {
+      console.error("Error unarchiving bookmark:", err);
+      res.status(500).json({ error: "Failed to unarchive bookmark" });
     }
   });
 
