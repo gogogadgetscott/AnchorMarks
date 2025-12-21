@@ -1,6 +1,41 @@
 const requestCounts = new Map();
 const RATE_LIMIT_WINDOW = 60000; // 1 minute
 const RATE_LIMIT_MAX = 100; // requests per minute
+const CLEANUP_INTERVAL = 300000; // 5 minutes
+
+// Periodic cleanup of expired rate limit entries to prevent memory leak
+function cleanupExpiredEntries() {
+  const now = Date.now();
+  let cleaned = 0;
+  for (const [key, times] of requestCounts.entries()) {
+    // Filter out expired entries
+    const recent = times.filter((t) => now - t < RATE_LIMIT_WINDOW);
+    if (recent.length === 0) {
+      // Remove entries with no recent activity
+      requestCounts.delete(key);
+      cleaned++;
+    } else if (recent.length < times.length) {
+      // Update with filtered array if some entries were expired
+      requestCounts.set(key, recent);
+    }
+  }
+  if (process.env.NODE_ENV === "development" && cleaned > 0) {
+    console.log(`[Rate Limiter] Cleaned up ${cleaned} expired entries`);
+  }
+}
+
+// Start periodic cleanup
+let cleanupInterval = null;
+if (process.env.NODE_ENV === "production") {
+  cleanupInterval = setInterval(cleanupExpiredEntries, CLEANUP_INTERVAL);
+  // Cleanup on process exit
+  process.on("SIGTERM", () => {
+    if (cleanupInterval) clearInterval(cleanupInterval);
+  });
+  process.on("SIGINT", () => {
+    if (cleanupInterval) clearInterval(cleanupInterval);
+  });
+}
 
 function rateLimiter(req, res, next) {
   try {
