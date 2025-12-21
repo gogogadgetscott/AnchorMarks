@@ -109,7 +109,6 @@ export default defineConfig({
           ],
           ui: [
             "src/utils/ui-helpers.js",
-            "src/layouts/loader.js",
             "src/components/index.js",
           ],
         },

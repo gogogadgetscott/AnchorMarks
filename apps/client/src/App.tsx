@@ -9,6 +9,8 @@ import { FoldersView } from './layouts/FoldersView';
 import { TagsView } from './layouts/TagsView';
 import { SettingsView } from './layouts/SettingsView';
 import { ToastContainer } from './layouts/Toast';
+import { ShortcutsPopup } from './layouts/ShortcutsPopup';
+import { OnboardingTour } from './layouts/OnboardingTour';
 
 /**
  * Main app component that renders the appropriate view based on state
@@ -81,6 +83,8 @@ const MainApp = memo(() => {
         {renderContent()}
       </main>
       <ToastContainer />
+      <ShortcutsPopup />
+      <OnboardingTour />
     </div>
   );
 });
@@ -122,6 +126,21 @@ const App: React.FC = () => {
     initializeApp();
 
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const runTourCheck = async () => {
+      try {
+        const { checkWelcomeTour } = await import('@features/bookmarks/tour.ts');
+        checkWelcomeTour();
+      } catch (err) {
+        console.error('Failed to run welcome tour check', err);
+      }
+    };
+
+    runTourCheck();
+  }, [isAuthenticated]);
 
   if (!isInitialized) {
     return (

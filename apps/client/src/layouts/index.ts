@@ -8,3 +8,5 @@ export { TagsView } from './TagsView';
 export { BookmarkModal } from './BookmarkModal';
 export { Toast, ToastContainer } from './Toast';
 export { SettingsView } from './SettingsView';
+export { ShortcutsPopup } from './ShortcutsPopup';
+export { OnboardingTour } from './OnboardingTour';
