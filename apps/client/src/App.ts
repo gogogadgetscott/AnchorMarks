@@ -620,6 +620,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkAddTags());
     } else if (btn.classList.contains("btn-bulk-untag") || btn.id === "bulk-untag-btn") {
       import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkRemoveTags());
+    } else if (btn.classList.contains("btn-bulk-archive") || btn.id === "bulk-archive-btn") {
+      import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkArchive());
+    } else if (btn.classList.contains("btn-bulk-unarchive") || btn.id === "bulk-unarchive-btn") {
+      import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkUnarchive());
     }
   });
 
@@ -956,6 +960,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     );
   document
     .getElementById("toggle-sidebar-btn-recents")
+    ?.addEventListener("click", () =>
+      import("@features/bookmarks/settings.ts").then(({ toggleSidebar }) =>
+        toggleSidebar(),
+      ),
+    );
+  document
+    .getElementById("toggle-sidebar-btn-archived")
     ?.addEventListener("click", () =>
       import("@features/bookmarks/settings.ts").then(({ toggleSidebar }) =>
         toggleSidebar(),
@@ -1572,6 +1583,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (id)
           import("@features/bookmarks/bookmarks.ts").then(
             ({ deleteBookmark }) => deleteBookmark(id),
+          );
+        break;
+      case "archive-bookmark":
+        e.stopPropagation();
+        if (id)
+          import("@features/bookmarks/bookmarks.ts").then(
+            ({ archiveBookmark }) => archiveBookmark(id),
+          );
+        break;
+      case "unarchive-bookmark":
+        e.stopPropagation();
+        if (id)
+          import("@features/bookmarks/bookmarks.ts").then(
+            ({ unarchiveBookmark }) => unarchiveBookmark(id),
           );
         break;
       case "filter-by-tag":

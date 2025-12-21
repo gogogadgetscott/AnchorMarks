@@ -1,5 +1,5 @@
 const { setupAuthRoutes } = require("./auth");
-const { setupBookmarksRoutes } = require("../controllers/bookmarks");
+const setupBookmarksRoutes = require("./bookmarks");
 
 function setupApiRoutes(app, db, helpers) {
   const {
@@ -333,7 +333,7 @@ function setupApiRoutes(app, db, helpers) {
 
           // Fetch favicon in background
           if (fetchFaviconWrapper) {
-            fetchFaviconWrapper(bm.url, id).catch(() => {});
+            fetchFaviconWrapper(bm.url, id).catch(() => { });
           }
           bookmarksCreated++;
         }

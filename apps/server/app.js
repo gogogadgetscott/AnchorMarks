@@ -124,7 +124,6 @@ const {
 const setupDashboardRoutes = require("./routes/dashboard");
 const setupBookmarkViewsRoutes = require("./routes/bookmarkViews");
 const setupCollectionsRoutes = require("./routes/collections");
-const setupBookmarksRoutes = require("./routes/bookmarks");
 const setupTagsRoutes = require("./routes/tags");
 const controllerTags = require("./controllers/tags");
 const setupImportExportRoutes = require("./routes/importExport");
@@ -144,12 +143,6 @@ setupBookmarkViewsRoutes(app, db, {
   validateCsrfTokenMiddleware,
 });
 setupCollectionsRoutes(app, db, { authenticateTokenMiddleware });
-setupBookmarksRoutes(app, db, {
-  authenticateTokenMiddleware,
-  validateCsrfTokenMiddleware,
-  fetchFaviconWrapper,
-  config,
-});
 setupTagsRoutes(app, db, { authenticateTokenMiddleware });
 controllerTags.setupTagsRoutes(app, db, { authenticateTokenMiddleware });
 setupImportExportRoutes(app, db, {
@@ -196,7 +189,7 @@ setupSmartOrganizationRoutes(app, db, {
 // In production: Express serves built Vite assets from dist/
 const staticDir =
   config.NODE_ENV === "production" &&
-  fs.existsSync(path.join(__dirname, "..", "client", "dist"))
+    fs.existsSync(path.join(__dirname, "..", "client", "dist"))
     ? path.join(__dirname, "..", "client", "dist")
     : path.join(__dirname, "..", "client");
 

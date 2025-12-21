@@ -32,6 +32,7 @@ function listBookmarks(db, userId, opts = {}) {
     sort,
     limit,
     offset,
+    archived,
   } = opts;
 
   const baseSelect = _baseSelect();
@@ -85,6 +86,18 @@ function listBookmarks(db, userId, opts = {}) {
     query += " AND tg.tags_joined LIKE ?";
     countQuery += " AND tg.tags_joined LIKE ?";
     params.push(`%${tags}%`);
+  }
+
+  // Handle archiving filter
+  if (archived === true || archived === "true") {
+    query += " AND b.is_archived = 1";
+    countQuery += " AND b.is_archived = 1";
+  } else if (archived === "all") {
+    // Show both archived and non-archived
+  } else {
+    // Default: show only non-archived
+    query += " AND b.is_archived = 0";
+    countQuery += " AND b.is_archived = 0";
   }
 
   let orderClause = " ORDER BY position, created_at DESC";
@@ -190,6 +203,7 @@ function updateBookmark(db, userId, id, fields = {}) {
     tags,
     tag_colors,
     color,
+    is_archived,
   } = fields;
   db.prepare(
     `
@@ -202,6 +216,7 @@ function updateBookmark(db, userId, id, fields = {}) {
       position = COALESCE(?, position),
       favicon = COALESCE(?, favicon),
       color = COALESCE(?, color),
+      is_archived = COALESCE(?, is_archived),
       updated_at = CURRENT_TIMESTAMP
     WHERE id = ? AND user_id = ?
   `,
@@ -214,6 +229,7 @@ function updateBookmark(db, userId, id, fields = {}) {
     position,
     favicon,
     color !== undefined ? color : null,
+    is_archived !== undefined ? is_archived : null,
     id,
     userId,
   );

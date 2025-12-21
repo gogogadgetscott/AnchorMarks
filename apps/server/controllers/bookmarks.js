@@ -143,9 +143,9 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
 
   // List bookmarks
   app.get("/api/bookmarks", authenticateTokenMiddleware, (req, res) => {
-    const { folder_id, search, favorites, tags, sort, limit, offset } =
+    const { folder_id, search, favorites, tags, sort, limit, offset, archived } =
       req.query;
-    const opts = { folder_id, search, favorites, tags, sort, limit, offset };
+    const opts = { folder_id, search, favorites, tags, sort, limit, offset, archived };
     try {
       const result = bookmarkModel.listBookmarks(db, req.user.id, opts);
       if (result.total !== undefined) {
@@ -280,4 +280,9 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
   );
 }
 
-module.exports = { setupBookmarksRoutes };
+module.exports = {
+  fetchUrlMetadata,
+  detectContentType,
+  parseTagsDetailed,
+  normalizeTagColorOverrides,
+};

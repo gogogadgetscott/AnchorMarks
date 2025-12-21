@@ -21,6 +21,7 @@ export interface Bookmark {
   created_at?: string;
   updated_at?: string;
   color?: string;
+  is_archived?: number;
 }
 
 export interface Folder {

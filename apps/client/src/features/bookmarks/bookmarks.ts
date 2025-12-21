@@ -36,6 +36,7 @@ export async function loadBookmarks(): Promise<void> {
     }
 
     if (state.currentView === "favorites") params.append("favorites", "true");
+    if (state.currentView === "archived") params.append("archived", "true");
     if (
       state.currentFolder &&
       state.currentView !== "dashboard" &&
@@ -145,6 +146,13 @@ export function renderBookmarks(): void {
   const searchTerm =
     (searchInput as HTMLInputElement)?.value.toLowerCase() || "";
   let filtered = [...state.bookmarks];
+
+  // Apply archive filter
+  if (state.currentView === "archived") {
+    filtered = filtered.filter((b) => b.is_archived === 1);
+  } else {
+    filtered = filtered.filter((b) => !b.is_archived);
+  }
 
   // Apply search filter
   if (searchTerm) {
@@ -469,9 +477,42 @@ export async function updateBookmark(
 
     updateCounts();
     closeModals();
-    showToast("Bookmark updated!", "success");
-  } catch (err: any) {
-    showToast(err.message, "error");
+    showToast("Bookmark updated", "success");
+  } catch (err) {
+    console.error("Failed to update bookmark:", err);
+    showToast("Failed to update bookmark", "error");
+  }
+}
+
+// Archive a bookmark
+export async function archiveBookmark(id: string): Promise<void> {
+  try {
+    await api(`/bookmarks/${id}/archive`, { method: "POST" });
+    const bm = state.bookmarks.find((b) => b.id === id);
+    if (bm) bm.is_archived = 1;
+
+    renderBookmarks();
+    updateCounts();
+    showToast("Bookmark archived", "success");
+  } catch (err) {
+    console.error("Failed to archive bookmark:", err);
+    showToast("Failed to archive bookmark", "error");
+  }
+}
+
+// Unarchive a bookmark
+export async function unarchiveBookmark(id: string): Promise<void> {
+  try {
+    await api(`/bookmarks/${id}/unarchive`, { method: "POST" });
+    const bm = state.bookmarks.find((b) => b.id === id);
+    if (bm) bm.is_archived = 0;
+
+    renderBookmarks();
+    updateCounts();
+    showToast("Bookmark unarchived", "success");
+  } catch (err) {
+    console.error("Failed to unarchive bookmark:", err);
+    showToast("Failed to unarchive bookmark", "error");
   }
 }
 

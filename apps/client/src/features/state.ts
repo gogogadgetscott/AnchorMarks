@@ -196,6 +196,13 @@ export let viewToolbarConfig: Record<string, any> = {
     showTimeRange: true,
     customActions: [],
   },
+  archived: {
+    title: "Archived",
+    showViewToggle: true,
+    showSearch: true,
+    showSort: true,
+    customActions: ["bulk-unarchive"],
+  },
 };
 
 // State setters

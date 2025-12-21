@@ -148,10 +148,59 @@ export async function bulkRemoveTags(): Promise<void> {
   showToast("Tags removed from selection", "success");
 }
 
+// Bulk archive
+export async function bulkArchive(): Promise<void> {
+  if (state.selectedBookmarks.size === 0) return;
+
+  const ids = Array.from(state.selectedBookmarks);
+  await api("/bookmarks/bulk/archive", {
+    method: "POST",
+    body: JSON.stringify({ ids }),
+  });
+
+  state.setBookmarks(
+    state.bookmarks.map((b) => {
+      if (!state.selectedBookmarks.has(b.id)) return b;
+      return { ...b, is_archived: 1 };
+    }),
+  );
+
+  const { clearSelections, renderBookmarks } =
+    await import("@features/bookmarks/bookmarks.ts");
+  clearSelections();
+  updateCounts();
+  renderBookmarks();
+  showToast(`${ids.length} bookmarks archived`, "success");
+}
+
+// Bulk unarchive
+export async function bulkUnarchive(): Promise<void> {
+  if (state.selectedBookmarks.size === 0) return;
+
+  const ids = Array.from(state.selectedBookmarks);
+  await api("/bookmarks/bulk/unarchive", {
+    method: "POST",
+    body: JSON.stringify({ ids }),
+  });
+
+  state.setBookmarks(
+    state.bookmarks.map((b) => {
+      if (!state.selectedBookmarks.has(b.id)) return b;
+      return { ...b, is_archived: 0 };
+    }),
+  );
+
+  const { clearSelections, renderBookmarks } =
+    await import("@features/bookmarks/bookmarks.ts");
+  clearSelections();
+  updateCounts();
+  renderBookmarks();
+  showToast(`${ids.length} bookmarks unarchived`, "success");
+}
+
 export default {
-  bulkDelete,
-  bulkFavorite,
-  bulkMove,
   bulkAddTags,
   bulkRemoveTags,
+  bulkArchive,
+  bulkUnarchive,
 };

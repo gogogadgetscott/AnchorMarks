@@ -200,6 +200,7 @@ export function updateViewHeader(): void {
     "bookmarks-header",
     "favorites-header",
     "recents-header",
+    "archived-header",
   ].forEach((id) => {
     const header = document.getElementById(id);
     if (header) header.style.display = "none";
@@ -216,6 +217,9 @@ export function updateViewHeader(): void {
       break;
     case "recent":
       headerId = "recents-header";
+      break;
+    case "archived":
+      headerId = "archived-header";
       break;
     case "all":
     case "folder":
@@ -282,6 +286,7 @@ export function updateCounts(): void {
   const favCountEl = document.getElementById("fav-count");
   const recentCountEl = document.getElementById("recent-count");
   const dashboardCountEl = document.getElementById("dashboard-count");
+  const archivedCountEl = document.getElementById("count-archived");
 
   // 1. Calculate Dashboard Count
   let dashboardVal = 0;
@@ -315,6 +320,14 @@ export function updateCounts(): void {
     recentVal = state.renderedBookmarks.length;
   } else if (hasFullData) {
     recentVal = Math.min(state.bookmarks.length, 20);
+  }
+
+  // 2.5 Calculate Archived Count
+  let archivedVal = 0;
+  if (state.currentView === "archived") {
+    archivedVal = state.renderedBookmarks.length;
+  } else {
+    archivedVal = state.bookmarks.filter((b) => b.is_archived).length;
   }
 
   // 3. Favorites Count
@@ -360,6 +373,10 @@ export function updateCounts(): void {
     recentCountEl.textContent = recentVal.toString();
   }
 
+  if (archivedCountEl) {
+    archivedCountEl.textContent = archivedVal.toString();
+  }
+
   if (favCountEl) {
     // Use logic: if we are in favorites view, use rendered count (effectively).
     // If not, use calculated favVal if hasFullData.
@@ -382,6 +399,7 @@ export function updateCounts(): void {
   const bookmarksViewCount = document.getElementById("bookmarks-view-count");
   const favoritesViewCount = document.getElementById("favorites-view-count");
   const recentsViewCount = document.getElementById("recents-view-count");
+  const archivedViewCount = document.getElementById("archived-view-count");
 
   let currentViewCount = state.renderedBookmarks.length;
   if (state.currentView === "dashboard") currentViewCount = dashboardVal;
@@ -403,6 +421,11 @@ export function updateCounts(): void {
     case "recent":
       if (recentsViewCount) {
         recentsViewCount.textContent = `${recentVal} recent`;
+      }
+      break;
+    case "archived":
+      if (archivedViewCount) {
+        archivedViewCount.textContent = `${archivedVal} archived`;
       }
       break;
   }

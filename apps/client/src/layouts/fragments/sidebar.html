@@ -46,13 +46,22 @@
         <span>Favorites</span>
         <span class="badge" id="fav-count">0</span>
       </div>
-      <div class="nav-item" data-view="recent" data-tooltip="Recent">
+      <div class="nav-item" data-view="recent">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10" />
-          <polyline points="12,6 12,12 16,14" />
+          <polyline points="12 6 12 12 16 14" />
         </svg>
-        <span>Recent</span>
-        <span class="badge" id="recent-count">0</span>
+        <span class="nav-text">Recent</span>
+        <span class="nav-count" id="count-recent">0</span>
+      </div>
+      <div class="nav-item" data-view="archived">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="21 8 21 21 3 21 3 8" />
+          <rect x="1" y="3" width="22" height="5" />
+          <line x1="10" y1="12" x2="14" y2="12" />
+        </svg>
+        <span class="nav-text">Archived</span>
+        <span class="nav-count" id="count-archived">0</span>
       </div>
       <div class="nav-item" data-view="tag-cloud" data-tooltip="Tag Cloud">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

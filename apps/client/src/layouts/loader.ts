@@ -5,6 +5,7 @@ import dashboardHeader from "./fragments/dashboard-header.html?raw";
 import bookmarksHeader from "./fragments/bookmarks-header.html?raw";
 import favoritesHeader from "./fragments/favorites-header.html?raw";
 import recentsHeader from "./fragments/recents-header.html?raw";
+import archivedHeader from "./fragments/archived-header.html?raw";
 import bulkBar from "./fragments/bulk-bar.html?raw";
 import emptyState from "./fragments/empty-state.html?raw";
 import bookmarkModal from "./fragments/bookmark-modal.html?raw";
@@ -66,6 +67,7 @@ export function loadComponents(): void {
         bookmarksHeader,
         favoritesHeader,
         recentsHeader,
+        archivedHeader,
       ].join("\n");
     }
 
