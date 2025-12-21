@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
@@ -82,7 +83,7 @@ export default defineConfig({
   root: __dirname,
   base: "/",
   publicDir: "public",
-  plugins: [httpRedirectPlugin()],
+  plugins: [react(), httpRedirectPlugin()],
   build: {
     outDir: path.resolve(__dirname, "dist"),
     emptyOutDir: true,

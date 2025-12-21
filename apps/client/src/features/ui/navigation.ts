@@ -17,7 +17,7 @@ export function initNavigationListeners(): void {
       state.setCurrentView(view);
       
       // Update header content for the new view
-      const { updateHeaderContent } = await import("@/App.ts");
+      const { updateHeaderContent } = await import("@/App.tsx");
       updateHeaderContent();
       
       updateActiveNav();

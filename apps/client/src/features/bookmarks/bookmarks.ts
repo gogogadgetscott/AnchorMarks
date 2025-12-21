@@ -167,7 +167,7 @@ export function renderBookmarks(): void {
   document.querySelector(".view-toggle")?.classList.remove("hidden");
 
   // Attach view-toggle listeners (fixes broken toggle after header render)
-  import("@/App.ts").then(({ attachViewToggleListeners }) =>
+  import("@/App.tsx").then(({ attachViewToggleListeners }) =>
     attachViewToggleListeners(),
   );
 

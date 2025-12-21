@@ -75,7 +75,7 @@ export function loadComponents(): void {
         bulkActions: ["archive", "move", "tag", "delete"],
       });
       // Attach view-toggle listeners after header render
-      import("@/App.ts").then(({ attachViewToggleListeners }) =>
+      import("@/App.tsx").then(({ attachViewToggleListeners }) =>
         attachViewToggleListeners(),
       );
     }

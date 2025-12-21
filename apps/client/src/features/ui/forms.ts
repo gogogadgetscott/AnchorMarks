@@ -39,7 +39,7 @@ function initAuthForms(): void {
           await import("@features/bookmarks/settings.ts");
         await loadSettings();
         // Re-initialize app state (assuming initializeApp is globally available or we import it)
-        const { initializeApp } = await import("../../App.ts");
+        const { initializeApp } = await import("../../App.tsx");
         await initializeApp();
       }
     });
@@ -63,7 +63,7 @@ function initAuthForms(): void {
         const { loadSettings } =
           await import("@features/bookmarks/settings.ts");
         await loadSettings();
-        const { initializeApp } = await import("../../App.ts");
+        const { initializeApp } = await import("../../App.tsx");
         await initializeApp();
       }
     });
