@@ -26,7 +26,7 @@ export function UserProfile(options: UserProfileOptions = {}): string {
 
   return `
     <div class="user-profile-menu ${className}">
-      <button class="user-avatar-btn header-user-avatar-btn">
+      <button class="user-avatar-btn header-user-avatar-btn" data-action="toggle-user-dropdown">
         <div class="user-avatar header-user-avatar">${avatarChar}</div>
       </button>
       <div class="user-dropdown-menu hidden header-user-dropdown">
@@ -38,11 +38,11 @@ export function UserProfile(options: UserProfileOptions = {}): string {
           </div>
         </div>
         <div class="user-dropdown-actions">
-          <button class="dropdown-item header-settings-btn">
+          <button class="dropdown-item header-settings-btn" data-action="open-settings">
             ${Icon("settings", { size: 16 })}
             Settings
           </button>
-          <button class="dropdown-item header-logout-btn">
+          <button class="dropdown-item header-logout-btn" data-action="logout-user">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
               <polyline points="16 17 21 12 16 7" />

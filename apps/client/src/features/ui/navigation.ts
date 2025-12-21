@@ -15,6 +15,11 @@ export function initNavigationListeners(): void {
     item.addEventListener("click", async () => {
       const view = (item as HTMLElement).dataset.view || "all";
       state.setCurrentView(view);
+      
+      // Update header content for the new view
+      const { updateHeaderContent } = await import("@/App.ts");
+      updateHeaderContent();
+      
       updateActiveNav();
 
       // Save view preference
@@ -37,7 +42,7 @@ export function initNavigationListeners(): void {
     });
   });
 
-  // Sidebar toggle buttons (Multiple IDs exist for different headers)
+  // Sidebar toggle buttons (now just one toggle for the main header)
   const sidebarToggleIds = [
     "toggle-sidebar-btn-dashboard",
     "toggle-sidebar-btn-bookmarks",

@@ -21,6 +21,49 @@ export function initInteractions(): void {
   initFaviconErrorHandling();
   initAuthTabListeners();
   initImportExportListeners();
+  
+  // Directly attach user dropdown listeners as fallback
+  attachUserDropdownDirectly();
+}
+
+/**
+ * Attach user dropdown listeners directly to elements
+ */
+export function attachUserDropdownDirectly(): void {
+  // Avatar button - always reattach when called
+  const avatarBtn = document.querySelector(
+    "[data-action='toggle-user-dropdown']",
+  ) as HTMLElement | null;
+  if (avatarBtn) {
+    avatarBtn.onclick = (e: Event) => {
+      e.stopPropagation();
+      toggleUserDropdown();
+    };
+  }
+
+  // Settings button
+  const settingsBtn = document.querySelector(
+    "[data-action='open-settings']",
+  ) as HTMLElement | null;
+  if (settingsBtn) {
+    settingsBtn.onclick = (e: Event) => {
+      e.stopPropagation();
+      openModal("settings-modal");
+      closeUserDropdown();
+    };
+  }
+
+  // Logout button
+  const logoutBtn = document.querySelector(
+    "[data-action='logout-user']",
+  ) as HTMLElement | null;
+  if (logoutBtn) {
+    logoutBtn.onclick = (e: Event) => {
+      e.stopPropagation();
+      import("@features/auth/auth.ts").then(({ logout }) => logout());
+      closeUserDropdown();
+    };
+  }
 }
 
 /**
@@ -310,6 +353,20 @@ function initGlobalDelegation(): void {
           clearSelections(),
         );
         break;
+      case "toggle-user-dropdown":
+        e.stopPropagation();
+        toggleUserDropdown();
+        break;
+      case "open-settings":
+        e.stopPropagation();
+        openModal("settings-modal");
+        closeUserDropdown();
+        break;
+      case "logout-user":
+        e.stopPropagation();
+        import("@features/auth/auth.ts").then(({ logout }) => logout());
+        closeUserDropdown();
+        break;
     }
   });
 
@@ -321,6 +378,7 @@ function initGlobalDelegation(): void {
  * Handle specific bulk action buttons not covered by delegation
  */
 function initBulkActionListeners(): void {
+  // Bulk action buttons
   document.addEventListener("click", (e) => {
     const target = e.target as HTMLElement;
     const btn = target.closest(".btn-icon, .btn-secondary, .dropdown-item");
@@ -371,6 +429,57 @@ function initBulkActionListeners(): void {
       import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkUnarchive());
     }
   });
+}
+
+/**
+ * Toggle user dropdown menu visibility
+ */
+function toggleUserDropdown(): void {
+  const dropdown = document.querySelector(
+    ".user-dropdown-menu",
+  ) as HTMLElement | null;
+  if (dropdown) {
+    dropdown.classList.toggle("hidden");
+    
+    if (!dropdown.classList.contains("hidden")) {
+      // Dropdown is now open - add click-outside listener
+      setTimeout(() => {
+        document.addEventListener("click", handleUserDropdownClickOutside);
+      }, 0);
+    } else {
+      // Dropdown is now closed - remove click-outside listener
+      document.removeEventListener("click", handleUserDropdownClickOutside);
+    }
+  }
+}
+
+/**
+ * Close user dropdown menu
+ */
+function closeUserDropdown(): void {
+  const dropdown = document.querySelector(
+    ".user-dropdown-menu",
+  ) as HTMLElement | null;
+  if (dropdown) {
+    dropdown.classList.add("hidden");
+    document.removeEventListener("click", handleUserDropdownClickOutside);
+  }
+}
+
+/**
+ * Handle clicks outside the user dropdown
+ */
+function handleUserDropdownClickOutside(e: Event): void {
+  const dropdown = document.querySelector(".user-dropdown-menu");
+  const userAvatar = document.querySelector(".header-user-avatar-btn");
+  
+  if (
+    dropdown &&
+    !dropdown.contains(e.target as Node) &&
+    !userAvatar?.contains(e.target as Node)
+  ) {
+    closeUserDropdown();
+  }
 }
 
 /**

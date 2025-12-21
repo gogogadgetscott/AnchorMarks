@@ -192,53 +192,6 @@ export function addTagToInput(tag: string): void {
   current.add(tag);
   dom.bookmarkTagsInput.value = Array.from(current).join(", ");
 }
-
-// Show/hide view-specific headers
-export function updateViewHeader(): void {
-  // Hide all headers
-  [
-    "dashboard-header",
-    "bookmarks-header",
-    "favorites-header",
-    "recents-header",
-    "archived-header",
-  ].forEach((id) => {
-    const header = document.getElementById(id);
-    if (header) header.style.display = "none";
-  });
-
-  // Show active view header
-  let headerId;
-  switch (state.currentView) {
-    case "dashboard":
-      headerId = "dashboard-header";
-      break;
-    case "favorites":
-      headerId = "favorites-header";
-      break;
-    case "recent":
-      headerId = "recents-header";
-      break;
-    case "archived":
-      headerId = "archived-header";
-      break;
-    case "all":
-    case "folder":
-    default:
-      headerId = "bookmarks-header";
-      break;
-  }
-
-  const activeHeader = document.getElementById(headerId);
-  if (activeHeader) {
-    activeHeader.style.display = "flex";
-    // Ensure sticky positioning is maintained when header is shown
-    activeHeader.style.position = "sticky";
-    activeHeader.style.top = "0";
-    activeHeader.style.zIndex = "100";
-  }
-}
-
 // Update active navigation
 export function updateActiveNav(): void {
   document.querySelectorAll(".nav-item").forEach((item) => {
@@ -263,9 +216,6 @@ export function updateActiveNav(): void {
       .querySelector(`.nav-item[data-view="${state.currentView}"]`)
       ?.classList.add("active");
   }
-
-  // Update view-specific header
-  updateViewHeader();
 
   // Toggle sidebar sections visibility based on view
   // Only hide Filters section in Dashboard (keep Folders/Tags for drag & drop)
@@ -580,7 +530,6 @@ export default {
   closeModals,
   resetForms,
   addTagToInput,
-  updateViewHeader,
   updateActiveNav,
   updateCounts,
   updateStats,
