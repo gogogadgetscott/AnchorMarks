@@ -7,98 +7,13 @@
 ### Technology Stack
 
 - **Backend**: Node.js 18+ / Express.js on SQLite (better-sqlite3)
-- **Frontend**: Vanilla JS (no frameworks) with responsive HTML/CSS
-- **Security**: bcryptjs (passwords), JWT (auth tokens), CSRF tokens (state mutations), SSRF guards
-- **Extensions**: Chrome/Edge/Firefox browser extension, Flow Launcher plugin
-
-### Core Components
-
-1. **`apps/server/app.js`** (entry) – Single monolithic Express app handling:
-   - Authentication endpoints (`/api/auth/*`)
-   - Bookmark CRUD (`/api/bookmarks/*`)
-   - Folder management (`/api/folders/*`)
-   - Tags system (`/api/tags/*`)
-   - Smart Collections (`/api/smart-collections/*`)
-   - Health tools (duplicate detection, dead link checker)
-   - Settings persistence (`/api/settings`)
-
-2. **`apps/public/js/app.js`** (3418 lines) – Frontend state machine:
-   - UI rendering (grid/list/compact views)
-   - Dashboard with freeform widgets
-   - Search, filtering, sorting logic
-   - Local state: `bookmarks[]`, `folders[]`, `currentUser`, `dashboardConfig`, `filterConfig`
-   - API calls via `api()` helper (handles CSRF tokens, JWT via cookies)
-
-3. **`apps/server/helpers/smart-organization.js`** – Tag suggestion engine:
-   - Domain-based categorization (GitHub → dev tags)
-   - Tag co-occurrence analysis
-   - Used in bookmark creation/import workflows
-
-4. **Database Schema**:
-   - `users` – id, username, email, password (hashed), api_key, settings
-   - `bookmarks` – id, user_id, folder_id, url, tags, favicon, content_type, is_favorite, click_count
-   - `folders` – id, user_id, parent_id, name, color, icon, position (tree structure)
-   - `tags` – id, user_id, name, color, icon (separate from bookmark_tags junction)
-   - `bookmark_tags` – junction table (many-to-many)
-   - `smart_collections` – saved filters with JSON rules
-   - `user_settings` – theme, view_mode, dashboard_config, widget_order (JSON stored)
-   - Indexes on user_id, folder_id for query performance; WAL mode enabled
-
-## Key Architectural Patterns
-
-### Authentication Flow
-
-1. User logs in/registers → `POST /api/auth/login` or `/api/auth/register`
-2. Server sets **httpOnly cookie** with JWT (no localStorage)
-3. Frontend receives **CSRF token** in response, stores in memory
-4. All state-changing requests include `X-CSRF-Token` header
-5. API key (for Flow Launcher, third-party tools) sent as query param or header, whitelisted to read-only endpoints
-
-### Data Flow
-
-- **GET requests** – Fetch from DB, serialize to JSON, serve to frontend
-- **POST/PUT/DELETE** – Validate CSRF token, validate user ownership (check `user_id`), mutate DB, return updated record
-- **Error handling** – Return HTTP status codes + JSON `{ error: "reason" }`; frontend catches 401 → logs out
-
-### Frontend State Management
-
-- No Redux/Vue/React; state lives in module-level variables
-- Views: `'dashboard'` (widgets), `'bookmarks'` (folder/filtered list), `'settings'`, etc.
-- Rendering: `renderBookmarks()`, `renderDashboard()`, `renderFolders()` (DOM manipulation via `innerHTML`)
-- User action → API call → reload state → re-render
-- **Sidebar**: folder tree (nested); click folder → `currentFolder = folderId` → re-render bookmarks
-
-### Database Access Pattern
-
-- All queries in `apps/server/**/*.js` use `db.prepare().all()` or `db.prepare().run()` (synchronous)
-- No ORM; raw SQL with parameterized queries (prevent SQL injection)
-- User isolation: **every query filters by `user_id`** (critical for security)
-- Transactions for multi-step operations (e.g., bulk tag rename)
-
-## Critical Developer Workflows
-
-### Running the Application
-
-```bash
-npm install                # Install deps (Express, bcryptjs, better-sqlite3, JWT, etc.)
-npm run dev                # Start server on http://localhost:3000 (NODE_ENV=development)
-````instructions
-# AnchorMarks Copilot Instructions
-
-**Project**: Self-hosted bookmark manager with browser sync, REST API, Flow Launcher integration, and SQLite backend.
-
-## Architecture Overview
-
-### Technology Stack
-
-- **Backend**: Node.js 18+ / Express.js on SQLite (better-sqlite3)
 - **Frontend**: TypeScript + Vite (apps/client) producing a static `public/` bundle
 - **Security**: bcryptjs (passwords), JWT (auth tokens), CSRF tokens (state mutations), SSRF guards
 - **Extensions**: Chrome/Edge/Firefox browser extension, Flow Launcher plugin
 
 ### Core Components
 
-1. **`server/app.js`** (entry) – Express app handling:
+1. **`apps/server/app.js`** (entry) – Express app handling:
    - Authentication endpoints (`/api/auth/*`)
    - Bookmark CRUD (`/api/bookmarks/*`)
    - Folder management (`/api/folders/*`)
@@ -113,7 +28,7 @@ npm run dev                # Start server on http://localhost:3000 (NODE_ENV=dev
    - Local state: `bookmarks[]`, `folders[]`, `currentUser`, `dashboardConfig`, `filterConfig`
    - API calls via `api()` helper (handles CSRF tokens, JWT via cookies)
 
-3. **`server/helpers/smart-organization.js`** – Tag suggestion engine:
+3. **`apps/server/helpers/smart-organization.js`** – Tag suggestion engine:
    - Domain-based categorization (GitHub → dev tags)
    - Tag co-occurrence analysis
    - Used in bookmark creation/import workflows
@@ -154,7 +69,7 @@ npm run dev                # Start server on http://localhost:3000 (NODE_ENV=dev
 
 ### Database Access Pattern
 
-- All server-side queries in `server/**/*.js` use `db.prepare().all()` or `db.prepare().run()` (synchronous)
+- All server-side queries in `apps/server/**/*.js` use `db.prepare().all()` or `db.prepare().run()` (synchronous)
 - No ORM; raw SQL with parameterized queries (prevent SQL injection)
 - User isolation: **every query filters by `user_id`** (critical for security)
 - Transactions for multi-step operations (e.g., bulk tag rename)
@@ -190,7 +105,7 @@ npm run test:coverage      # Coverage report
 
 ```bash
 npm run lint               # Run ESLint to check code style
-node --check server/app.js
+node --check apps/server/app.js
 node --check apps/client/src/main.ts
 ```
 
@@ -260,10 +175,10 @@ app.post("/api/bookmarks", requireAuth, validateCsrf, (req, res) => {
 
 **Frontend API Call (apps/client/src)**:
 
-```javascript
-async function saveBookmark(bookmark) {
+```typescript
+async function saveBookmark(bookmark: Bookmark) {
   try {
-    const result = await api("/bookmarks", {
+    const result = await api<Bookmark>("/bookmarks", {
       method: "POST",
       body: JSON.stringify(bookmark),
     });
@@ -271,7 +186,7 @@ async function saveBookmark(bookmark) {
     await loadBookmarks();
     renderBookmarks();
   } catch (err) {
-    alert("Failed: " + err.message);
+    showToast(err.message, "error");
   }
 }
 ```
@@ -288,14 +203,14 @@ if (!isSafe && NODE_ENV === "production") {
 
 ## File Organization
 
-- `server/app.js` – All API routes, middleware, DB logic (monolithic by design)
-- `server/controllers/` – Route handlers (`auth.js`, `bookmarks.js`, `folders.js`, `tags.js`)
-- `server/helpers/` – Helpers (favicon.js, import.js, metadata.js, smart-organization.js, etc.)
-- `server/models/` – Data access models and DB helpers
-- `server/routes/` – Express route wiring
-- `server/__tests__/` – Jest test files
+- `apps/server/app.js` – All API routes, middleware, DB logic (monolithic by design)
+- `apps/server/controllers/` – Route handlers (`auth.js`, `bookmarks.js`, `folders.js`, `tags.js`)
+- `apps/server/helpers/` – Helpers (favicon.js, import.js, metadata.js, smart-organization.js, etc.)
+- `apps/server/models/` – Data access models and DB helpers
+- `apps/server/routes/` – Express route wiring
+- `apps/server/__tests__/` – Jest test files
 - `apps/client/` – Frontend source (Vite + TypeScript), `public/` assets
-- `public/` – Generated favicons and thumbnails (`public/favicons/`, `public/thumbnails/`)
+- `apps/server/public/` – Generated favicons and thumbnails (`public/favicons/`, `public/thumbnails/`)
 
 ## Before Making Changes
 
