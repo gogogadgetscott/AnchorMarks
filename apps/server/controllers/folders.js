@@ -14,6 +14,36 @@ function setupFoldersRoutes(app, db, helpers = {}) {
     }
   });
 
+  app.post("/api/folders", authenticateTokenMiddleware, (req, res) => {
+    const { name, parent_id, color, icon } = req.body;
+    if (!name || !name.trim())
+      return res.status(400).json({ error: "Folder name is required" });
+    try {
+      const id = uuidv4();
+      const maxPos = db
+        .prepare(
+          "SELECT MAX(position) as max FROM folders WHERE user_id = ? AND (parent_id = ? OR (? IS NULL AND parent_id IS NULL))",
+        )
+        .get(req.user.id, parent_id || null, parent_id || null);
+      const position = (maxPos.max || 0) + 1;
+
+      folderModel.createFolder(
+        db,
+        id,
+        req.user.id,
+        name.trim(),
+        color || "#6366f1",
+        icon || "folder",
+        position,
+      );
+      const folder = folderModel.getFolderById(db, id);
+      res.json(folder);
+    } catch (err) {
+      console.error("Error creating folder:", err);
+      res.status(500).json({ error: "Failed to create folder" });
+    }
+  });
+
   app.put("/api/folders/:id", authenticateTokenMiddleware, (req, res) => {
     const { name, parent_id, color, icon, position } = req.body;
     try {
