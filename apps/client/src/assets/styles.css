@@ -1745,35 +1745,36 @@ body.sidebar-collapsed .nav-section-header {
   /* Make this the scrollable container for sticky header to work */
   overflow-y: auto;
   overflow-x: hidden;
-  position: relative;
+  /* CRITICAL: NO position property! This would break sticky positioning for child elements */
 }
 
-/* Headers Container */
+/* Headers Container - Sticky Wrapper */
 #headers-container {
-  /* Container for headers */
+  /* This container acts as the sticky element relative to .main-content */
+  position: sticky !important;
+  position: -webkit-sticky !important;
+  top: 0 !important;
+  z-index: 100 !important;
+  width: 100%;
 }
 
-/* Content Header */
-/* Content Header Refinement */
+/* Content Header - Inner Content */
 .content-header {
+  /* No longer needs to be sticky itself since parent is sticky */
+
+  /* Layout and appearance */
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--bg-primary) !important;
   gap: 1rem;
   height: 64px;
-  position: -webkit-sticky;
-  /* Safari support */
-  position: sticky;
-  top: 0;
-  z-index: 100;
   width: 100%;
-  /* Ensure header stays above content when scrolling */
-  /* Force background to cover content when scrolling */
+
+  /* Visual styling */
+  background: var(--bg-primary) !important;
+  border-bottom: 1px solid var(--border-color);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  /* Hide by default - JavaScript will show the active header */
 }
 
 /* Content Header Selection Mode */
@@ -2042,10 +2043,7 @@ body.sidebar-collapsed .nav-section-header {
   box-shadow: var(--shadow-md);
 }
 
-/* Bulk Bar Container */
-#bulk-bar-container {
-  /* Container for bulk bar */
-}
+/* Bulk Bar Container - handled by loader.ts injection */
 
 .bulk-bar {
   display: flex;

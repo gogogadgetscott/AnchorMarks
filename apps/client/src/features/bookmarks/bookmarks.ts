@@ -295,7 +295,8 @@ export function renderBookmarks(): void {
 
   // Lazy load OG images for rich cards that don't have them
   if (state.richLinkPreviewsEnabled && state.viewMode === "grid") {
-    lazyLoadOGImages();
+    // todo Disable for now
+    // lazyLoadOGImages();
   }
 
   // Note: updateCounts() is now called explicitly by callers to avoid race conditions
