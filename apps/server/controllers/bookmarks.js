@@ -99,6 +99,51 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
     }
   });
 
+  // Get bookmark counts for sidebar (must be before /:id route)
+  app.get("/api/bookmarks/counts", authenticateTokenMiddleware, (req, res) => {
+    try {
+      const userId = req.user.id;
+
+      // Total non-archived bookmarks
+      // Ensure count is converted to number (SQLite may return string or bigint)
+      const allCountResult = db
+        .prepare(
+          "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND is_archived = 0",
+        )
+        .get(userId);
+      const allCount = Number(allCountResult?.count || 0);
+
+      // Favorites (non-archived)
+      const favoritesCountResult = db
+        .prepare(
+          "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND is_favorite = 1 AND is_archived = 0",
+        )
+        .get(userId);
+      const favoritesCount = Number(favoritesCountResult?.count || 0);
+
+      // Recent (top 20 non-archived)
+      const recentCount = Math.min(allCount, 20);
+
+      // Archived
+      const archivedCountResult = db
+        .prepare(
+          "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND is_archived = 1",
+        )
+        .get(userId);
+      const archivedCount = Number(archivedCountResult?.count || 0);
+
+      res.json({
+        all: allCount,
+        favorites: favoritesCount,
+        recent: recentCount,
+        archived: archivedCount,
+      });
+    } catch (err) {
+      console.error("Error fetching bookmark counts:", err);
+      res.status(500).json({ error: "Failed to fetch counts" });
+    }
+  });
+
   // Get single bookmark
   app.get("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
     try {
