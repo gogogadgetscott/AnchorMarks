@@ -36,6 +36,7 @@ Create a new user account.
 **CSRF Required**: No
 
 **Request Body**:
+
 ```json
 {
   "email": "user@example.com",
@@ -44,6 +45,7 @@ Create a new user account.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "user": {
@@ -56,6 +58,7 @@ Create a new user account.
 ```
 
 **Error Responses**:
+
 - `400` - Missing fields or password too short (< 6 characters)
 - `400` - User already exists
 - `500` - Server error
@@ -71,6 +74,7 @@ Authenticate and receive JWT token.
 **CSRF Required**: No
 
 **Request Body**:
+
 ```json
 {
   "email": "user@example.com",
@@ -79,6 +83,7 @@ Authenticate and receive JWT token.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "user": {
@@ -91,10 +96,12 @@ Authenticate and receive JWT token.
 ```
 
 **Cookies Set**:
+
 - `token` (httpOnly) - JWT authentication token
 - `csrfToken` - CSRF protection token
 
 **Error Responses**:
+
 - `400` - Invalid credentials
 - `500` - Server error
 
@@ -108,6 +115,7 @@ Get authenticated user information.
 **Auth Required**: Yes (JWT or API Key)
 
 **Response** (200 OK):
+
 ```json
 {
   "user": {
@@ -120,6 +128,7 @@ Get authenticated user information.
 ```
 
 **Error Responses**:
+
 - `401` - Not authenticated
 
 ---
@@ -133,6 +142,7 @@ Invalidate current session.
 **CSRF Required**: Yes
 
 **Response** (200 OK):
+
 ```json
 {
   "success": true
@@ -150,6 +160,7 @@ Generate a new API key (invalidates old key).
 **CSRF Required**: Yes
 
 **Response** (200 OK):
+
 ```json
 {
   "api_key": "lv_new_xxxxxxxxxxxxxxxx"
@@ -168,6 +179,7 @@ Get paginated list of bookmarks with filtering options.
 **Auth Required**: Yes
 
 **Query Parameters**:
+
 - `folder_id` (string, optional) - Filter by folder ID
 - `search` (string, optional) - Search in title/URL/description
 - `favorites` (boolean, optional) - Filter favorites only
@@ -178,6 +190,7 @@ Get paginated list of bookmarks with filtering options.
 - `archived` (boolean, optional) - Include archived bookmarks
 
 **Response** (200 OK):
+
 ```json
 {
   "bookmarks": [
@@ -212,6 +225,7 @@ Get paginated list of bookmarks with filtering options.
 ```
 
 **Error Responses**:
+
 - `401` - Not authenticated
 - `500` - Server error
 
@@ -226,6 +240,7 @@ Create a new bookmark.
 **CSRF Required**: Yes
 
 **Request Body**:
+
 ```json
 {
   "url": "https://example.com",
@@ -239,6 +254,7 @@ Create a new bookmark.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "id": "uuid",
@@ -256,6 +272,7 @@ Create a new bookmark.
 ```
 
 **Error Responses**:
+
 - `400` - Invalid URL or missing required fields
 - `401` - Not authenticated
 - `403` - CSRF token invalid
@@ -272,9 +289,11 @@ Update an existing bookmark.
 **CSRF Required**: Yes
 
 **Path Parameters**:
+
 - `id` (string) - Bookmark ID
 
 **Request Body** (all fields optional):
+
 ```json
 {
   "title": "Updated Title",
@@ -287,6 +306,7 @@ Update an existing bookmark.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "id": "uuid",
@@ -297,6 +317,7 @@ Update an existing bookmark.
 ```
 
 **Error Responses**:
+
 - `400` - Invalid data
 - `401` - Not authenticated
 - `403` - Not authorized or CSRF token invalid
@@ -314,9 +335,11 @@ Delete a bookmark.
 **CSRF Required**: Yes
 
 **Path Parameters**:
+
 - `id` (string) - Bookmark ID
 
 **Response** (200 OK):
+
 ```json
 {
   "success": true
@@ -324,6 +347,7 @@ Delete a bookmark.
 ```
 
 **Error Responses**:
+
 - `401` - Not authenticated
 - `403` - Not authorized or CSRF token invalid
 - `404` - Bookmark not found
@@ -340,6 +364,7 @@ Fetch metadata (title, description, favicon) from a URL.
 **CSRF Required**: Yes
 
 **Request Body**:
+
 ```json
 {
   "url": "https://example.com"
@@ -347,6 +372,7 @@ Fetch metadata (title, description, favicon) from a URL.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "title": "Example Site",
@@ -356,6 +382,7 @@ Fetch metadata (title, description, favicon) from a URL.
 ```
 
 **Error Responses**:
+
 - `400` - Invalid URL
 - `403` - SSRF protection (private IP blocked in production)
 - `500` - Server error
@@ -371,9 +398,11 @@ Manually refresh favicon for a bookmark.
 **CSRF Required**: Yes
 
 **Path Parameters**:
+
 - `id` (string) - Bookmark ID
 
 **Response** (200 OK):
+
 ```json
 {
   "favicon": "/favicons/example.com.png"
@@ -391,9 +420,11 @@ Increment click count for a bookmark.
 **CSRF Required**: Yes
 
 **Path Parameters**:
+
 - `id` (string) - Bookmark ID
 
 **Response** (200 OK):
+
 ```json
 {
   "click_count": 6
@@ -412,6 +443,7 @@ Get all folders for the authenticated user.
 **Auth Required**: Yes
 
 **Response** (200 OK):
+
 ```json
 [
   {
@@ -439,6 +471,7 @@ Create a new folder.
 **CSRF Required**: Yes
 
 **Request Body**:
+
 ```json
 {
   "name": "New Folder",
@@ -449,6 +482,7 @@ Create a new folder.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "id": "uuid",
@@ -474,9 +508,11 @@ Update folder properties.
 **CSRF Required**: Yes
 
 **Path Parameters**:
+
 - `id` (string) - Folder ID
 
 **Request Body** (all fields optional):
+
 ```json
 {
   "name": "Updated Folder",
@@ -488,6 +524,7 @@ Update folder properties.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "id": "uuid",
@@ -508,9 +545,11 @@ Delete a folder (bookmarks are moved to parent or root).
 **CSRF Required**: Yes
 
 **Path Parameters**:
+
 - `id` (string) - Folder ID
 
 **Response** (200 OK):
+
 ```json
 {
   "success": true
@@ -529,6 +568,7 @@ Get all tags for the authenticated user.
 **Auth Required**: Yes
 
 **Response** (200 OK):
+
 ```json
 [
   {
@@ -555,6 +595,7 @@ Create a new tag.
 **CSRF Required**: Yes
 
 **Request Body**:
+
 ```json
 {
   "name": "new-tag",
@@ -564,6 +605,7 @@ Create a new tag.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "id": "uuid",
@@ -588,9 +630,11 @@ Update tag properties.
 **CSRF Required**: Yes
 
 **Path Parameters**:
+
 - `id` (string) - Tag ID
 
 **Request Body** (all fields optional):
+
 ```json
 {
   "name": "updated-tag",
@@ -600,6 +644,7 @@ Update tag properties.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "id": "uuid",
@@ -620,9 +665,11 @@ Delete a tag (removes from all bookmarks).
 **CSRF Required**: Yes
 
 **Path Parameters**:
+
 - `id` (string) - Tag ID
 
 **Response** (200 OK):
+
 ```json
 {
   "success": true
@@ -640,6 +687,7 @@ Rename a tag across all bookmarks.
 **CSRF Required**: Yes
 
 **Request Body**:
+
 ```json
 {
   "from": "old-tag-name",
@@ -648,6 +696,7 @@ Rename a tag across all bookmarks.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "success": true,
@@ -667,6 +716,7 @@ Get all smart collections.
 **Auth Required**: Yes
 
 **Response** (200 OK):
+
 ```json
 [
   {
@@ -696,6 +746,7 @@ Create a new smart collection.
 **CSRF Required**: Yes
 
 **Request Body**:
+
 ```json
 {
   "name": "Development",
@@ -709,6 +760,7 @@ Create a new smart collection.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "id": "uuid",
@@ -731,9 +783,11 @@ Update collection properties.
 **CSRF Required**: Yes
 
 **Path Parameters**:
+
 - `id` (string) - Collection ID
 
 **Request Body** (all fields optional):
+
 ```json
 {
   "name": "Updated Collection",
@@ -755,9 +809,11 @@ Delete a smart collection.
 **CSRF Required**: Yes
 
 **Path Parameters**:
+
 - `id` (string) - Collection ID
 
 **Response** (200 OK):
+
 ```json
 {
   "success": true
@@ -776,6 +832,7 @@ Get all saved dashboard views.
 **Auth Required**: Yes
 
 **Response** (200 OK):
+
 ```json
 [
   {
@@ -805,6 +862,7 @@ Create a new dashboard view.
 **CSRF Required**: Yes
 
 **Request Body**:
+
 ```json
 {
   "name": "My Dashboard",
@@ -827,9 +885,11 @@ Update dashboard view configuration.
 **CSRF Required**: Yes
 
 **Path Parameters**:
+
 - `id` (string) - Dashboard view ID
 
 **Request Body**:
+
 ```json
 {
   "name": "Updated Dashboard",
@@ -852,6 +912,7 @@ Delete a dashboard view.
 **CSRF Required**: Yes
 
 **Path Parameters**:
+
 - `id` (string) - Dashboard view ID
 
 ---
@@ -866,6 +927,7 @@ Get user settings.
 **Auth Required**: Yes
 
 **Response** (200 OK):
+
 ```json
 {
   "view_mode": "grid",
@@ -896,6 +958,7 @@ Update user settings.
 **CSRF Required**: Yes
 
 **Request Body** (all fields optional):
+
 ```json
 {
   "view_mode": "list",
@@ -905,6 +968,7 @@ Update user settings.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "success": true
@@ -923,6 +987,7 @@ Get browser sync status.
 **Auth Required**: Yes
 
 **Response** (200 OK):
+
 ```json
 {
   "last_sync": "2024-01-01T00:00:00.000Z",
@@ -942,6 +1007,7 @@ Push bookmarks and folders for browser sync.
 **CSRF Required**: Yes
 
 **Request Body**:
+
 ```json
 {
   "bookmarks": [
@@ -964,6 +1030,7 @@ Push bookmarks and folders for browser sync.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "bookmarks_created": 5,
@@ -983,6 +1050,7 @@ Pull all bookmarks and folders for browser sync.
 **Auth Required**: Yes
 
 **Response** (200 OK):
+
 ```json
 {
   "bookmarks": [
@@ -1015,6 +1083,7 @@ Export all bookmarks as JSON.
 **Auth Required**: Yes
 
 **Response** (200 OK):
+
 ```json
 {
   "bookmarks": [],
@@ -1046,9 +1115,11 @@ Import bookmarks from Netscape HTML format.
 **CSRF Required**: Yes
 
 **Request Body** (multipart/form-data):
+
 - `file` - HTML file
 
 **Response** (200 OK):
+
 ```json
 {
   "imported": 50,
@@ -1068,6 +1139,7 @@ Find duplicate bookmarks.
 **Auth Required**: Yes
 
 **Response** (200 OK):
+
 ```json
 {
   "duplicates": [
@@ -1091,6 +1163,7 @@ Check bookmarks for dead/broken links.
 **CSRF Required**: Yes
 
 **Request Body**:
+
 ```json
 {
   "bookmark_ids": ["uuid1", "uuid2"]
@@ -1098,6 +1171,7 @@ Check bookmarks for dead/broken links.
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "checked": 10,
@@ -1124,6 +1198,7 @@ Check API health status.
 **Auth Required**: No
 
 **Response** (200 OK):
+
 ```json
 {
   "status": "ok",
@@ -1147,6 +1222,7 @@ All endpoints may return the following error responses:
 - `500 Internal Server Error` - Server error
 
 Error response format:
+
 ```json
 {
   "error": "Error message description"
@@ -1171,6 +1247,7 @@ Error response format:
 3. No CSRF token required for API key requests
 
 **Example**:
+
 ```bash
 curl -H "X-API-Key: lv_xxxxxxxxxxxxxxxx" \
   https://your-instance.com/api/bookmarks
@@ -1207,4 +1284,3 @@ All endpoints automatically filter data by the authenticated user's `user_id`. U
 - Favicon and metadata fetching endpoints check for private IP addresses
 - In production, private IPs (10.x.x.x, 192.168.x.x, 127.x.x.x) are blocked
 - Returns `403 Forbidden` for blocked URLs
-
