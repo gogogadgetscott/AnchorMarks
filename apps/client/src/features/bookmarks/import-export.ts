@@ -13,7 +13,11 @@ export async function importHtml(file: File): Promise<void> {
   const html = await file.text();
   setImportProgress("start");
   try {
-    const result = await api("/import/html", {
+    const result = await api<{
+      imported: number;
+      skipped: number;
+      import_log?: Array<{ status: string; url: string; reason?: string }>;
+    }>("/import/html", {
       method: "POST",
       body: JSON.stringify({ html }),
     });
@@ -45,7 +49,7 @@ export async function importHtml(file: File): Promise<void> {
       }.`,
     );
 
-    if (hasLog) {
+    if (hasLog && result.import_log) {
       const logContent = result.import_log
         .map(
           (entry: any) =>
@@ -114,7 +118,10 @@ export async function resetBookmarks(): Promise<void> {
     return;
 
   try {
-    const data = await api("/settings/reset-bookmarks", { method: "POST" });
+    const data = await api<{ bookmarks_created: number }>(
+      "/settings/reset-bookmarks",
+      { method: "POST" },
+    );
     state.setCurrentFolder(null);
     state.setCurrentView("all");
 
@@ -142,7 +149,7 @@ export async function resetBookmarks(): Promise<void> {
 // Export dashboard views as JSON
 export async function exportDashboardViews(): Promise<void> {
   try {
-    const views = await api("/dashboard/views");
+    const views = await api<any[]>("/dashboard/views");
     if (!views || views.length === 0) {
       showToast("No dashboard views to export", "info");
       return;

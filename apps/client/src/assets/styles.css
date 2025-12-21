@@ -1758,6 +1758,8 @@ body.sidebar-collapsed .nav-section-header {
   top: 0 !important;
   z-index: 100 !important;
   width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Content Header - Inner Content */
@@ -1916,7 +1918,7 @@ body.sidebar-collapsed .nav-section-header {
 .recents-header,
 .archived-header {
   display: none;
-  /* Remove position: relative to allow sticky positioning */
+  position: relative;
   /* Allow header to grow when wrapped */
   min-height: 60px;
   height: auto;
@@ -5636,8 +5638,10 @@ body.dragging-widget .widget-sidebar-overlay {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  z-index: 100;
+  z-index: 99;
   opacity: 1 !important;
+  display: block !important;
+  order: 2;
 }
 
 .filter-dropdown-header {

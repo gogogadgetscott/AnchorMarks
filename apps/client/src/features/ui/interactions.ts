@@ -298,6 +298,12 @@ function initGlobalDelegation(): void {
           );
         }
         break;
+      case "toggle-widget-picker":
+        e.stopPropagation();
+        import("@features/bookmarks/widget-picker.ts").then(
+          ({ toggleWidgetPicker }) => toggleWidgetPicker(),
+        );
+        break;
       case "clear-folder-filter":
         state.setCurrentFolder(null);
         state.setCurrentCollection(null);

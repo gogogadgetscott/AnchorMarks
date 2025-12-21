@@ -80,7 +80,8 @@ export function updateFilterButtonVisibility(): void {
 export function initFilterDropdown(): void {
   const btn = document.getElementById("filter-dropdown-btn");
   if (!btn) {
-    console.warn("Filter button not found in DOM");
+    // Button doesn't exist in this view - silently return without warning
+    // This is expected for views like dashboard, favorites, recent, etc.
     return;
   }
 
@@ -219,9 +220,18 @@ export async function showFilterDropdown(): Promise<void> {
             </div>
         `;
 
+    const headersContainer = document.getElementById("headers-container");
     const bookmarksHeader = document.getElementById("bookmarks-header");
 
-    if (bookmarksHeader && bookmarksHeader.style.display !== "none") {
+    if (headersContainer) {
+      // Insert into headers container as a sibling
+      if (bookmarksHeader && bookmarksHeader.parentElement === headersContainer) {
+        bookmarksHeader.insertAdjacentElement("afterend", dropdown);
+      } else {
+        headersContainer.appendChild(dropdown);
+      }
+    } else if (bookmarksHeader && bookmarksHeader.style.display !== "none") {
+      // Fallback: insert after bookmarks header
       bookmarksHeader.style.position = "relative";
       bookmarksHeader.insertAdjacentElement("afterend", dropdown);
     } else {
@@ -714,7 +724,7 @@ function attachFilterDropdownListeners(): void {
 
 function handleFilterDropdownClickOutside(e: MouseEvent): void {
   const dropdown = document.getElementById("filter-dropdown");
-  const btn = document.getElementById("bookmarks-filter-btn");
+  const btn = document.getElementById("filter-dropdown-btn");
 
   if (
     dropdown &&

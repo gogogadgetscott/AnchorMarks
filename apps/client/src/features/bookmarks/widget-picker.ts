@@ -66,14 +66,23 @@ export function openWidgetPicker() {
     </div>
   `;
 
-  // Find the dashboard header and insert after it
+  // Find the headers container and insert the dropdown there
+  const headersContainer = document.getElementById("headers-container");
   const dashboardHeader = document.getElementById("dashboard-header");
 
-  if (dashboardHeader && dashboardHeader.style.display !== "none") {
+  if (headersContainer) {
+    // Insert into headers container as a sibling
+    if (dashboardHeader && dashboardHeader.parentElement === headersContainer) {
+      dashboardHeader.insertAdjacentElement("afterend", dropdown);
+    } else {
+      headersContainer.appendChild(dropdown);
+    }
+  } else if (dashboardHeader && dashboardHeader.style.display !== "none") {
+    // Fallback: insert after dashboard header
     dashboardHeader.style.position = "relative";
     dashboardHeader.insertAdjacentElement("afterend", dropdown);
   } else {
-    // Fallback: append to body if header not found
+    // Last resort: append to body if header not found
     document.body.appendChild(dropdown);
   }
 
