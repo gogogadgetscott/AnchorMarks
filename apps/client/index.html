@@ -23,36 +23,36 @@
     <!-- Inline script to hide login forms immediately to prevent Bitwarden detection -->
     <script>
       // Run immediately to hide forms before Bitwarden scans
-      (function() {
+      (function () {
         function hideLoginForms() {
-          const loginForm = document.getElementById('login-form');
-          const registerForm = document.getElementById('register-form');
+          const loginForm = document.getElementById("login-form");
+          const registerForm = document.getElementById("register-form");
           if (loginForm) {
-            loginForm.setAttribute('data-bitwarden-watching', 'false');
-            loginForm.setAttribute('data-lpignore', 'true');
-            loginForm.style.display = 'none';
+            loginForm.setAttribute("data-bitwarden-watching", "false");
+            loginForm.setAttribute("data-lpignore", "true");
+            loginForm.style.display = "none";
           }
           if (registerForm) {
-            registerForm.setAttribute('data-bitwarden-watching', 'false');
-            registerForm.setAttribute('data-lpignore', 'true');
-            registerForm.style.display = 'none';
+            registerForm.setAttribute("data-bitwarden-watching", "false");
+            registerForm.setAttribute("data-lpignore", "true");
+            registerForm.style.display = "none";
           }
         }
-        
+
         // Try immediately
         hideLoginForms();
-        
+
         // Also watch for when forms are added to DOM
-        const observer = new MutationObserver(function(mutations) {
-          const authScreen = document.getElementById('auth-screen');
-          if (authScreen && authScreen.classList.contains('hidden')) {
+        const observer = new MutationObserver(function (mutations) {
+          const authScreen = document.getElementById("auth-screen");
+          if (authScreen && authScreen.classList.contains("hidden")) {
             hideLoginForms();
           }
         });
-        
+
         // Start observing when DOM is ready
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', function() {
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", function () {
             observer.observe(document.body, { childList: true, subtree: true });
             hideLoginForms();
           });
