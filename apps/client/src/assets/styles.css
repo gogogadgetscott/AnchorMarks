@@ -7123,3 +7123,91 @@ body.fullscreen-mode #dashboard-fullscreen-btn .fullscreen-exit-icon {
   color: #b45309;
 }
 
+
+/* Micro-Animations & Skeleton Loading */
+
+@keyframes shimmer {
+  0% {
+    background-position: -468px 0;
+  }
+  100% {
+    background-position: 468px 0;
+  }
+}
+
+.skeleton {
+  background: var(--bg-tertiary);
+  background-image: linear-gradient(
+    to right,
+    var(--bg-tertiary) 0%,
+    var(--bg-hover) 20%,
+    var(--bg-tertiary) 40%,
+    var(--bg-tertiary) 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 800px 104px;
+  display: inline-block;
+  position: relative;
+  animation: shimmer 1.5s infinite linear forward;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-text {
+  height: 1rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-title {
+  height: 1.25rem;
+  width: 70%;
+  margin-bottom: 0.75rem;
+}
+
+.skeleton-url {
+  height: 0.875rem;
+  width: 40%;
+  margin-bottom: 1rem;
+}
+
+.skeleton-favicon {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-tag {
+  width: 60px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  margin-right: 0.5rem;
+}
+
+/* Entrance Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.entrance-animation {
+  animation: fadeInUp 0.4s ease forwards;
+  opacity: 0;
+}
+
+/* Staggered animation delay utility classes */
+.delay-0 { animation-delay: 0ms; }
+.delay-1 { animation-delay: 50ms; }
+.delay-2 { animation-delay: 100ms; }
+.delay-3 { animation-delay: 150ms; }
+.delay-4 { animation-delay: 200ms; }
+.delay-5 { animation-delay: 250ms; }
+.delay-6 { animation-delay: 300ms; }
+.delay-7 { animation-delay: 350ms; }
+.delay-8 { animation-delay: 400ms; }
+.delay-9 { animation-delay: 450ms; }

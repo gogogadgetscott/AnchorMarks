@@ -18,15 +18,36 @@ import {
 } from "@utils/ui-helpers.ts";
 import { Bookmark } from "@/types";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
-import { BookmarkCard as createBookmarkCard } from "@components/index.ts";
+import { BookmarkCard as createBookmarkCard, SkeletonCard } from "@components/index.ts";
 export { createBookmarkCard };
 
-// Note: renderDashboard, renderSidebarTags, and checkWelcomeTour are loaded dynamically
-// to avoid circular dependencies
+/**
+ * Render skeletons while loading
+ */
+export function renderSkeletons(): void {
+  const container =
+    dom.bookmarksContainer || document.getElementById("bookmarks-container");
+  if (!container) return;
+
+  // Set container class based on view mode
+  const classMap = {
+    grid: "bookmarks-grid",
+    list: "bookmarks-list",
+    compact: "bookmarks-compact",
+  };
+  container.className = classMap[state.viewMode] || "bookmarks-grid";
+
+  // Render 8 skeleton cards
+  container.innerHTML = Array(8).fill(null).map(() => SkeletonCard()).join("");
+}
 
 // Load bookmarks from server
 export async function loadBookmarks(): Promise<void> {
   try {
+    state.setIsLoading(true);
+    // Show skeletons immediately
+    renderSkeletons();
+
     let endpoint = "/bookmarks";
     const params = new URLSearchParams();
 
@@ -116,6 +137,8 @@ export async function loadBookmarks(): Promise<void> {
     checkWelcomeTour();
   } catch (err) {
     showToast("Failed to load bookmarks", "error");
+  } finally {
+    state.setIsLoading(false);
   }
 }
 

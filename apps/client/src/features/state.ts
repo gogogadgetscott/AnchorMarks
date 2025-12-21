@@ -117,6 +117,7 @@ export let isInitialLoad: boolean = true;
 export const BOOKMARKS_PER_PAGE = 50;
 export let displayedCount: number = BOOKMARKS_PER_PAGE;
 export let isLoadingMore: boolean = false;
+export let isLoading: boolean = false;
 
 // Drag and Drop State
 export let draggedWidget: any = null;
@@ -327,6 +328,9 @@ export function setDisplayedCount(val: number) {
 }
 export function setIsLoadingMore(val: boolean) {
   isLoadingMore = val;
+}
+export function setIsLoading(val: boolean) {
+  isLoading = val;
 }
 export function setDraggedWidget(val: any) {
   draggedWidget = val;
