@@ -14,13 +14,13 @@ interface ButtonOptions {
  * Component for rendering buttons.
  * @param {string} text - The button text.
  * @param {object} options - Optional parameters:
- *   @param {string} options.id - Button ID.
- *   @param {string} options.className - Additional CSS classes.
- *   @param {string} options.variant - 'primary', 'secondary', 'danger', 'ghost', 'icon'.
- *   @param {string} options.icon - Icon name from Icon component.
- *   @param {string} options.title - Tooltip title.
- *   @param {string} options.type - 'button', 'submit'.
- *   @param {object} options.data - Data attributes.
+ * @param {string} options.id - Button ID.
+ * @param {string} options.className - Additional CSS classes.
+ * @param {string} options.variant - 'primary', 'secondary', 'danger', 'ghost', 'icon'.
+ * @param {string} options.icon - Icon name from Icon component.
+ * @param {string} options.title - Tooltip title.
+ * @param {string} options.type - 'button', 'submit'.
+ * @param {object} options.data - Data attributes.
  * @returns {string} - HTML string of the button.
  */
 export function Button(text: string, options: ButtonOptions = {}): string {

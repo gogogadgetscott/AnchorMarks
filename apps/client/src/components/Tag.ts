@@ -11,10 +11,10 @@ interface TagOptions {
  * Component for rendering tags.
  * @param {string} name - Tag name.
  * @param {object} options - Optional parameters:
- *   @param {string} options.color - Background color.
- *   @param {string} options.className - Additional CSS classes.
- *   @param {object} options.data - Data attributes.
- *   @param {boolean} options.clickable - Whether the tag should look clickable.
+ * @param {string} options.color - Background color.
+ * @param {string} options.className - Additional CSS classes.
+ * @param {object} options.data - Data attributes.
+ * @param {boolean} options.clickable - Whether the tag should look clickable.
  * @returns {string} - HTML string of the tag.
  */
 export function Tag(name: string, options: TagOptions = {}): string {

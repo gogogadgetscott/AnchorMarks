@@ -2,10 +2,10 @@
  * Component for rendering SVG icons.
  * @param {string} name - The name of the icon.
  * @param {object} options - Optional parameters:
- *   @param {string} options.className - Additional CSS classes.
- *   @param {string} options.style - Inline styles.
- *   @param {number} options.size - Square size in pixels.
- *   @param {string} options.strokeWidth - SVG stroke width.
+ * @param {string} options.className - Additional CSS classes.
+ * @param {string} options.style - Inline styles.
+ * @param {number} options.size - Square size in pixels.
+ * @param {string} options.strokeWidth - SVG stroke width.
  * @returns {string} - HTML string of the SVG icon.
  */
 interface IconOptions {
@@ -19,10 +19,10 @@ interface IconOptions {
  * Component for rendering SVG icons.
  * @param {string} name - The name of the icon.
  * @param {object} options - Optional parameters:
- *   @param {string} options.className - Additional CSS classes.
- *   @param {string} options.style - Inline styles.
- *   @param {number} options.size - Square size in pixels.
- *   @param {string} options.strokeWidth - SVG stroke width.
+ * @param {string} options.className - Additional CSS classes.
+ * @param {string} options.style - Inline styles.
+ * @param {number} options.size - Square size in pixels.
+ * @param {string} options.strokeWidth - SVG stroke width.
  * @returns {string} - HTML string of the SVG icon.
  */
 export function Icon(name: string, options: IconOptions = {}): string {
