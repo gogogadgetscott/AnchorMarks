@@ -29,7 +29,7 @@
       <button class="auth-tab" data-tab="register">Register</button>
     </div>
 
-    <form id="login-form" class="auth-form">
+    <form id="login-form" class="auth-form" data-bitwarden-watching="false" data-lpignore="true">
       <div class="form-group">
         <label for="login-email">Email</label>
         <input
@@ -38,6 +38,7 @@
           required
           placeholder="you@example.com"
           autocomplete="username"
+          data-lpignore="true"
         />
       </div>
       <div class="form-group">
@@ -48,6 +49,7 @@
           required
           placeholder="••••••••"
           autocomplete="current-password"
+          data-lpignore="true"
         />
       </div>
       <button type="submit" class="btn btn-primary btn-full">
@@ -63,7 +65,7 @@
       </button>
     </form>
 
-    <form id="register-form" class="auth-form hidden">
+    <form id="register-form" class="auth-form hidden" data-bitwarden-watching="false" data-lpignore="true">
       <div class="form-group">
         <label for="register-email">Email</label>
         <input
@@ -72,6 +74,7 @@
           required
           placeholder="you@example.com"
           autocomplete="username"
+          data-lpignore="true"
         />
       </div>
       <div class="form-group">
@@ -83,6 +86,7 @@
           placeholder="••••••••"
           minlength="6"
           autocomplete="new-password"
+          data-lpignore="true"
         />
       </div>
       <button type="submit" class="btn btn-primary btn-full">

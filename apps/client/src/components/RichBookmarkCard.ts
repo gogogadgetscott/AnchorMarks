@@ -77,7 +77,7 @@ export function RichBookmarkCard(bookmark: Bookmark, index: number): string {
     ? `<div class="rich-card-image">
          <img src="${bookmark.og_image}" alt="" loading="lazy">
        </div>`
-    : `<div class="rich-card-image-placeholder">
+    : `<div class="rich-card-image-placeholder" data-bookmark-id="${bookmark.id}" data-bookmark-url="${escapeHtml(bookmark.url)}">
          ${Icon("image", { size: 48 })}
        </div>`;
 

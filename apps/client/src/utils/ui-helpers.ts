@@ -230,7 +230,13 @@ export function updateViewHeader(): void {
   }
 
   const activeHeader = document.getElementById(headerId);
-  if (activeHeader) activeHeader.style.display = "flex";
+  if (activeHeader) {
+    activeHeader.style.display = "flex";
+    // Ensure sticky positioning is maintained when header is shown
+    activeHeader.style.position = "sticky";
+    activeHeader.style.top = "0";
+    activeHeader.style.zIndex = "100";
+  }
 }
 
 // Update active navigation
