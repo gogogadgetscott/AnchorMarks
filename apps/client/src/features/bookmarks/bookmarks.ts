@@ -292,7 +292,142 @@ export function renderBookmarks(): void {
 
   attachBookmarkCardListeners();
   updateBulkUI();
+  
+  // Lazy load OG images for rich cards that don't have them
+  if (state.richLinkPreviewsEnabled && state.viewMode === "grid") {
+    lazyLoadOGImages();
+  }
+  
   // Note: updateCounts() is now called explicitly by callers to avoid race conditions
+}
+
+// Lazy load OG images for rich cards that don't have them
+async function lazyLoadOGImages(): Promise<void> {
+  const container = document.getElementById("bookmarks-container");
+  if (!container) return;
+
+  // Find all placeholders that need OG images
+  const placeholders = Array.from(
+    container.querySelectorAll(
+      ".rich-card-image-placeholder[data-bookmark-id]",
+    ),
+  ) as HTMLElement[];
+
+  if (placeholders.length === 0) return;
+
+  // Process sequentially with delays to respect rate limits
+  // Rate limit is 100 requests/minute, so we'll do max 1 request per second to be safe
+  let rateLimitHit = false;
+  
+  for (const placeholder of placeholders) {
+    // If we hit rate limit, wait longer before continuing
+    if (rateLimitHit) {
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds
+      rateLimitHit = false;
+    }
+
+    const bookmarkId = placeholder.dataset.bookmarkId;
+    const bookmarkUrl = placeholder.dataset.bookmarkUrl;
+
+    if (!bookmarkId || !bookmarkUrl) continue;
+
+    // Check if bookmark already has og_image (might have been updated)
+    const bookmark = state.bookmarks.find((b) => b.id === bookmarkId);
+    if (bookmark?.og_image) {
+      // Update the card if og_image was found
+      updateRichCardImage(bookmarkId, bookmark.og_image);
+      continue;
+    }
+
+    try {
+      // Fetch metadata with retry logic
+      let metadata: { og_image?: string } | null = null;
+      let retries = 0;
+      const maxRetries = 3;
+
+      while (retries < maxRetries && !metadata) {
+        try {
+          metadata = await api<{ og_image?: string }>(
+            "/bookmarks/fetch-metadata",
+            {
+              method: "POST",
+              body: JSON.stringify({ url: bookmarkUrl }),
+            },
+          );
+          rateLimitHit = false; // Reset rate limit flag on success
+        } catch (err: any) {
+          if (err.message?.includes("429") || err.message?.includes("Too Many Requests")) {
+            rateLimitHit = true;
+            // Exponential backoff: wait 2^retries seconds
+            const waitTime = Math.min(1000 * Math.pow(2, retries), 10000);
+            await new Promise((resolve) => setTimeout(resolve, waitTime));
+            retries++;
+            if (retries >= maxRetries) {
+              logger.debug("Rate limited, skipping remaining OG image fetches");
+              return; // Stop processing if we hit rate limit multiple times
+            }
+            continue;
+          }
+          throw err; // Re-throw non-rate-limit errors
+        }
+      }
+
+      if (metadata?.og_image) {
+        // Update bookmark in state
+        const bookmarkIndex = state.bookmarks.findIndex(
+          (b) => b.id === bookmarkId,
+        );
+        if (bookmarkIndex !== -1) {
+          state.bookmarks[bookmarkIndex].og_image = metadata.og_image;
+
+          // Update bookmark on server (with retry for rate limits)
+          try {
+            await api(`/bookmarks/${bookmarkId}`, {
+              method: "PUT",
+              body: JSON.stringify({ og_image: metadata.og_image }),
+            });
+          } catch (err: any) {
+            if (err.message?.includes("429")) {
+              rateLimitHit = true;
+              // If update fails due to rate limit, we'll retry on next render
+              logger.debug("Rate limited on bookmark update, will retry later");
+            }
+          }
+
+          // Update the card visually
+          updateRichCardImage(bookmarkId, metadata.og_image);
+        }
+      }
+    } catch (err) {
+      // Log but continue processing other bookmarks
+      logger.debug("Failed to fetch OG image for bookmark", {
+        bookmarkId,
+        error: err,
+      });
+    }
+
+    // Delay between requests to avoid rate limiting (1 request per second max)
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+}
+
+// Update a rich card's image when OG image is loaded
+function updateRichCardImage(bookmarkId: string, ogImage: string): void {
+  const container = document.getElementById("bookmarks-container");
+  if (!container) return;
+
+  const card = container.querySelector(
+    `.rich-bookmark-card[data-id="${bookmarkId}"]`,
+  ) as HTMLElement;
+  if (!card) return;
+
+  const placeholder = card.querySelector(".rich-card-image-placeholder");
+  if (!placeholder) return;
+
+  // Replace placeholder with image
+  placeholder.outerHTML = `<div class="rich-card-image">
+    <img src="${escapeHtml(ogImage)}" alt="" loading="lazy">
+  </div>`;
 }
 
 // Attach event listeners to bookmark cards

@@ -62,28 +62,32 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
       const userId = req.user.id;
 
       // Total non-archived bookmarks
-      const allCount = db
+      // Ensure count is converted to number (SQLite may return string or bigint)
+      const allCountResult = db
         .prepare(
           "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND is_archived = 0",
         )
-        .get(userId).count;
+        .get(userId);
+      const allCount = Number(allCountResult?.count || 0);
 
       // Favorites (non-archived)
-      const favoritesCount = db
+      const favoritesCountResult = db
         .prepare(
           "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND is_favorite = 1 AND is_archived = 0",
         )
-        .get(userId).count;
+        .get(userId);
+      const favoritesCount = Number(favoritesCountResult?.count || 0);
 
       // Recent (top 20 non-archived)
       const recentCount = Math.min(allCount, 20);
 
       // Archived
-      const archivedCount = db
+      const archivedCountResult = db
         .prepare(
           "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND is_archived = 1",
         )
-        .get(userId).count;
+        .get(userId);
+      const archivedCount = Number(archivedCountResult?.count || 0);
 
       res.json({
         all: allCount,

@@ -425,6 +425,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (themeSelect) themeSelect.value = savedTheme;
   }
 
+  // Immediately hide login forms if user might be authenticated (before Bitwarden scans)
+  // Check localStorage first for quick check
+  const authScreen = document.getElementById("auth-screen");
+  if (authScreen && !authScreen.classList.contains("hidden")) {
+    // User might be logged in, hide forms immediately
+    const loginForm = document.getElementById("login-form");
+    const registerForm = document.getElementById("register-form");
+    if (loginForm) {
+      loginForm.setAttribute("data-bitwarden-watching", "false");
+      loginForm.setAttribute("data-lpignore", "true");
+      loginForm.style.display = "none";
+    }
+    if (registerForm) {
+      registerForm.setAttribute("data-bitwarden-watching", "false");
+      registerForm.setAttribute("data-lpignore", "true");
+      registerForm.style.display = "none";
+    }
+  }
+
   // Check authentication
   const { checkAuth, showMainApp } = await import("@features/auth/auth.ts");
   const isAuthed = await checkAuth();
