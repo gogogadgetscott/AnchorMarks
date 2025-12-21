@@ -46,6 +46,35 @@ function setupMiddleware(app, { config, validateCsrfTokenMiddleware }) {
   const requestCounts = new Map();
   const RATE_LIMIT_WINDOW = 60000; // 1 minute
   const RATE_LIMIT_MAX = 100; // requests per minute
+  const CLEANUP_INTERVAL = 300000; // 5 minutes
+
+  // Periodic cleanup of expired rate limit entries to prevent memory leak
+  function cleanupExpiredEntries() {
+    const now = Date.now();
+    let cleaned = 0;
+    for (const [key, record] of requestCounts.entries()) {
+      if (now > record.resetTime) {
+        requestCounts.delete(key);
+        cleaned++;
+      }
+    }
+    if (config.NODE_ENV === "development" && cleaned > 0) {
+      console.log(`[Rate Limiter] Cleaned up ${cleaned} expired entries`);
+    }
+  }
+
+  // Start periodic cleanup (only in production where rate limiting is active)
+  let cleanupInterval = null;
+  if (config.NODE_ENV === "production") {
+    cleanupInterval = setInterval(cleanupExpiredEntries, CLEANUP_INTERVAL);
+    // Cleanup on process exit
+    process.on("SIGTERM", () => {
+      if (cleanupInterval) clearInterval(cleanupInterval);
+    });
+    process.on("SIGINT", () => {
+      if (cleanupInterval) clearInterval(cleanupInterval);
+    });
+  }
 
   function rateLimiter(req, res, next) {
     if (config.NODE_ENV !== "production") return next();
