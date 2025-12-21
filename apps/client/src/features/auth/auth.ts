@@ -6,6 +6,12 @@
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { showToast, closeModals } from "@utils/ui-helpers.ts";
+import {
+  handleApiError,
+  hideServerStatusBanner,
+} from "@utils/error-handler.ts";
+import { logger } from "@utils/logger.ts";
+import type { User } from "@types.ts";
 
 // Show auth screen
 export function showAuthScreen(): void {
@@ -27,7 +33,10 @@ export function showMainApp(): void {
 // Login
 export async function login(email: string, password: string): Promise<boolean> {
   try {
-    const data = await api("/auth/login", {
+    const data = await api<{
+      csrfToken: string;
+      user: User;
+    }>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
@@ -37,26 +46,10 @@ export async function login(email: string, password: string): Promise<boolean> {
     showMainApp();
     showToast("Welcome back!", "success");
     return true;
-  } catch (err: any) {
-    showToast(err.message, "error");
-
-    // Show server status banner for network errors
-    if (
-      err.message.includes("Failed to fetch") ||
-      err.message.includes("NetworkError") ||
-      err.message.includes("Unexpected token") ||
-      err.message.match(/5\d\d/)
-    ) {
-      const banner = document.getElementById("server-status-banner");
-      const message = document.getElementById("server-status-message");
-      if (banner) {
-        banner.classList.remove("hidden");
-        if (message)
-          message.textContent =
-            "Server is unreachable. Please check your connection.";
-      }
-    }
-
+  } catch (err) {
+    logger.error("Login failed", err);
+    const errorMessage = handleApiError(err, true);
+    showToast(errorMessage, "error");
     return false;
   }
 }
@@ -67,7 +60,10 @@ export async function register(
   password: string,
 ): Promise<boolean> {
   try {
-    const data = await api("/auth/register", {
+    const data = await api<{
+      csrfToken: string;
+      user: User;
+    }>("/auth/register", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
@@ -77,26 +73,10 @@ export async function register(
     showMainApp();
     showToast("Account created successfully!", "success");
     return true;
-  } catch (err: any) {
-    showToast(err.message, "error");
-
-    // Show server status banner for network errors
-    if (
-      err.message.includes("Failed to fetch") ||
-      err.message.includes("NetworkError") ||
-      err.message.includes("Unexpected token") ||
-      err.message.match(/5\d\d/)
-    ) {
-      const banner = document.getElementById("server-status-banner");
-      const message = document.getElementById("server-status-message");
-      if (banner) {
-        banner.classList.remove("hidden");
-        if (message)
-          message.textContent =
-            "Server is unreachable. Please check your connection.";
-      }
-    }
-
+  } catch (err) {
+    logger.error("Register failed", err);
+    const errorMessage = handleApiError(err, true);
+    showToast(errorMessage, "error");
     return false;
   }
 }
@@ -104,7 +84,10 @@ export async function register(
 // Logout
 export function logout(): void {
   api("/auth/logout", { method: "POST" })
-    .catch(() => {})
+    .catch((err) => {
+      // Log logout errors but don't block logout process
+      logger.error("Logout failed", err);
+    })
     .finally(() => {
       state.setCsrfToken(null);
       state.setCurrentUser(null);
@@ -116,52 +99,25 @@ export function logout(): void {
 // Check authentication status
 export async function checkAuth(): Promise<boolean> {
   try {
-    const data = await api("/auth/me");
+    const data = await api<{
+      user: User;
+      csrfToken: string;
+    }>("/auth/me");
     state.setCurrentUser(data.user);
     state.setCsrfToken(data.csrfToken);
     state.setIsAuthenticated(true);
     // Clear any previous error banner
-    const banner = document.getElementById("server-status-banner");
-    if (banner) banner.classList.add("hidden");
+    hideServerStatusBanner();
     return true;
-  } catch (err: any) {
-    console.error("Auth check failed:", err.message);
+  } catch (err) {
+    logger.error("Auth check failed", err);
     state.setCsrfToken(null);
     state.setCurrentUser(null);
     state.setIsAuthenticated(false);
     showAuthScreen();
 
-    // Check for server/connection errors
-    const banner = document.getElementById("server-status-banner");
-    const message = document.getElementById("server-status-message");
-
-    let isServerError = false;
-    let errorMsg = "Server Unavailable";
-
-    // Network error (fetch failed) or JSON parse error (likely HTML error page like Nginx 502)
-    if (
-      err.message.includes("Failed to fetch") ||
-      err.message.includes("NetworkError") ||
-      err.message.includes("Unexpected token") ||
-      err.message.includes("JSON")
-    ) {
-      isServerError = true;
-      errorMsg = "Server is unreachable. Please check your connection.";
-    }
-    // Explicit 5xx errors if returned as JSON
-    else if (err.message.match(/5\d\d/) || err.message === "API Error") {
-      isServerError = true;
-      errorMsg = "Server error. Please try again later.";
-    }
-
-    if (banner) {
-      if (isServerError) {
-        banner.classList.remove("hidden");
-        if (message) message.textContent = errorMsg;
-      } else {
-        banner.classList.add("hidden");
-      }
-    }
+    // Handle server/connection errors
+    handleApiError(err, true);
 
     return false;
   }
@@ -191,15 +147,19 @@ export async function regenerateApiKey(): Promise<void> {
   if (!confirm("Regenerate API key? Old keys will stop working.")) return;
 
   try {
-    const data = await api("/auth/regenerate-key", { method: "POST" });
+    const data = await api<{ api_key: string }>("/auth/regenerate-key", {
+      method: "POST",
+    });
     if (state.currentUser) {
       state.currentUser.api_key = data.api_key;
     }
     const apiKeyValue = document.getElementById("api-key-value");
     if (apiKeyValue) apiKeyValue.textContent = data.api_key;
     showToast("API key regenerated!", "success");
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err) {
+    logger.error("Regenerate API key failed", err);
+    const errorMessage = handleApiError(err, false);
+    showToast(errorMessage, "error");
   }
 }
 
@@ -213,7 +173,7 @@ export function copyApiKey(): void {
 // Update profile (email)
 export async function updateProfile(email: string): Promise<boolean> {
   try {
-    const data = await api("/auth/profile", {
+    const data = await api<{ email: string }>("/auth/profile", {
       method: "PUT",
       body: JSON.stringify({ email }),
     });
@@ -221,8 +181,10 @@ export async function updateProfile(email: string): Promise<boolean> {
     updateUserInfo();
     showToast("Profile updated!", "success");
     return true;
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err) {
+    logger.error("Update profile failed", err);
+    const errorMessage = handleApiError(err, false);
+    showToast(errorMessage, "error");
     return false;
   }
 }
@@ -239,8 +201,10 @@ export async function updatePassword(
     });
     showToast("Password updated successfully!", "success");
     return true;
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err) {
+    logger.error("Update password failed", err);
+    const errorMessage = handleApiError(err, false);
+    showToast(errorMessage, "error");
     return false;
   }
 }
