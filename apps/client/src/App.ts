@@ -156,7 +156,18 @@ async function initializeApp(): Promise<void> {
 
   updateUserInfo();
   await Promise.all([loadFolders(), loadBookmarks()]);
+
+  // Ensure the correct view is rendered (especially for dashboard)
+  if (state.currentView === "dashboard") {
+    const { renderDashboard } = await import("@features/bookmarks/dashboard.ts");
+    renderDashboard();
+  }
+
   setViewMode(state.viewMode, false);
+
+  // Update UI state based on current view/folder
+  updateActiveNav();
+
   initFilterDropdown();
   updateFilterButtonVisibility();
 
@@ -591,39 +602,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
     });
 
-  // Bulk actions
-  document
-    .getElementById("bulk-delete-btn")
-    ?.addEventListener("click", () =>
-      import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkDelete()),
-    );
-  document
-    .getElementById("bulk-favorite-btn")
-    ?.addEventListener("click", () =>
-      import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkFavorite()),
-    );
-  document
-    .getElementById("bulk-move-btn")
-    ?.addEventListener("click", () =>
-      import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkMove()),
-    );
-  document
-    .getElementById("bulk-clear-btn")
-    ?.addEventListener("click", () =>
-      import("@features/bookmarks/bookmarks.ts").then(({ clearSelections }) =>
-        clearSelections(),
-      ),
-    );
-  document
-    .getElementById("bulk-tag-btn")
-    ?.addEventListener("click", () =>
-      import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkAddTags()),
-    );
-  document
-    .getElementById("bulk-untag-btn")
-    ?.addEventListener("click", () =>
-      import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkRemoveTags()),
-    );
+  // Bulk actions (Event delegation on headers)
+  document.addEventListener("click", (e) => {
+    const target = e.target as HTMLElement;
+    const btn = target.closest(".btn-icon, .btn-secondary, .dropdown-item");
+    if (!btn) return;
+
+    if (btn.classList.contains("btn-bulk-delete") || btn.id === "bulk-delete-btn") {
+      import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkDelete());
+    } else if (btn.classList.contains("btn-bulk-favorite") || btn.id === "bulk-favorite-btn") {
+      import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkFavorite());
+    } else if (btn.classList.contains("btn-bulk-move") || btn.id === "bulk-move-btn") {
+      import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkMove());
+    } else if (btn.classList.contains("btn-clear-selection") || btn.id === "bulk-clear-btn" || btn.id === "clear-selection-btn") {
+      import("@features/bookmarks/bookmarks.ts").then(({ clearSelections }) => clearSelections());
+    } else if (btn.classList.contains("btn-bulk-tag") || btn.id === "bulk-tag-btn") {
+      import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkAddTags());
+    } else if (btn.classList.contains("btn-bulk-untag") || btn.id === "bulk-untag-btn") {
+      import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkRemoveTags());
+    }
+  });
 
   // Command palette
   const commandPaletteInput = document.getElementById("quick-launch-input");
@@ -1046,10 +1044,59 @@ document.addEventListener("DOMContentLoaded", async () => {
     );
   });
 
-  // Settings
-  document.getElementById("settings-btn")?.addEventListener("click", () => {
-    openModal("settings-modal");
+  // Header User Profile Menu (Event delegation)
+  document.addEventListener("click", (e) => {
+    const target = e.target as HTMLElement;
+
+    // Avatar button toggle
+    const avatarBtn = target.closest(".header-user-avatar-btn");
+    if (avatarBtn) {
+      e.stopPropagation();
+      const dropdown = avatarBtn.parentElement?.querySelector(".header-user-dropdown");
+      document.querySelectorAll(".header-user-dropdown").forEach(d => {
+        if (d === dropdown) {
+          d.classList.toggle("hidden");
+        } else {
+          d.classList.add("hidden");
+        }
+      });
+      return;
+    }
+
+    // Settings button
+    const settingsBtn = target.closest(".header-settings-btn");
+    if (settingsBtn) {
+      document.querySelectorAll(".header-user-dropdown").forEach(d => d.classList.add("hidden"));
+      openModal("settings-modal");
+      return;
+    }
+
+    // Logout button
+    const logoutBtn = target.closest(".header-logout-btn");
+    if (logoutBtn) {
+      import("@features/auth/auth.ts").then(({ logout }) => logout());
+      return;
+    }
+
+    // Global click to close user dropdown
+    if (!target.closest(".header-user-dropdown")) {
+      document.querySelectorAll(".header-user-dropdown").forEach(d => d.classList.add("hidden"));
+    }
   });
+
+  // Touch support for hover actions
+  document.addEventListener("touchstart", (e) => {
+    const card = (e.target as HTMLElement).closest(".bookmark-card, .compact-item");
+    if (card) {
+      // Remove touch-active from others
+      document.querySelectorAll(".touch-active").forEach((el) => {
+        if (el !== card) el.classList.remove("touch-active");
+      });
+      card.classList.toggle("touch-active");
+    } else {
+      document.querySelectorAll(".touch-active").forEach((el) => el.classList.remove("touch-active"));
+    }
+  }, { passive: true });
 
   document.querySelectorAll(".settings-tab").forEach((tab) => {
     tab.addEventListener("click", () => {

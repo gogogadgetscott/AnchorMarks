@@ -104,7 +104,7 @@ export async function register(
 // Logout
 export function logout(): void {
   api("/auth/logout", { method: "POST" })
-    .catch(() => {})
+    .catch(() => { })
     .finally(() => {
       state.setCsrfToken(null);
       state.setCurrentUser(null);
@@ -170,13 +170,16 @@ export async function checkAuth(): Promise<boolean> {
 // Update user info display
 export function updateUserInfo(): void {
   if (state.currentUser) {
-    const userName = document.getElementById("user-name");
-    const userAvatar = document.getElementById("user-avatar");
+    const userNames = document.querySelectorAll(".header-user-name");
+    const userAvatars = document.querySelectorAll(".header-user-avatar");
+    const userAvatarsLarge = document.querySelectorAll(".header-user-avatar-large");
     const apiKeyValue = document.getElementById("api-key-value");
 
-    if (userName) userName.textContent = state.currentUser.email;
-    if (userAvatar)
-      userAvatar.textContent = state.currentUser.email.charAt(0).toUpperCase();
+    const initials = (state.currentUser.email || "U").charAt(0).toUpperCase();
+
+    userNames.forEach((el) => (el.textContent = state.currentUser!.email));
+    userAvatars.forEach((el) => (el.textContent = initials));
+    userAvatarsLarge.forEach((el) => (el.textContent = initials));
     if (apiKeyValue) apiKeyValue.textContent = state.currentUser.api_key || "";
   }
 }

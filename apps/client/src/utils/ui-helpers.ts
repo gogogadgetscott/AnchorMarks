@@ -537,14 +537,24 @@ export function getEmptyStateMessage(): string {
 
 // Update bulk selection UI
 export function updateBulkUI(): void {
-  if (!dom.bulkBar) return;
-  if (state.selectedBookmarks.size === 0) {
-    dom.bulkBar.classList.add("hidden");
-    return;
+  const selectionMode = state.selectedBookmarks.size > 0;
+  const headers = document.querySelectorAll(".content-header");
+
+  headers.forEach((header) => {
+    header.classList.toggle("selection-mode", selectionMode);
+  });
+
+  if (selectionMode) {
+    const counts = document.querySelectorAll(".header-selection-count");
+    counts.forEach((count) => {
+      count.textContent = `${state.selectedBookmarks.size} selected`;
+    });
   }
-  dom.bulkBar.classList.remove("hidden");
-  if (dom.bulkCount)
-    dom.bulkCount.textContent = `${state.selectedBookmarks.size} selected`;
+
+  // Hide old bulk bar if it exists
+  if (dom.bulkBar) {
+    dom.bulkBar.classList.add("hidden");
+  }
 }
 
 export default {
