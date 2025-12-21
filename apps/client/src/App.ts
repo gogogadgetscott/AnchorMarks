@@ -1107,6 +1107,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         ({ toggleIncludeChildBookmarks }) => toggleIncludeChildBookmarks(),
       ),
     );
+  document
+    .getElementById("rich-link-previews-toggle")
+    ?.addEventListener("change", () =>
+      import("@features/bookmarks/settings.ts").then(
+        ({ toggleRichLinkPreviews }) => toggleRichLinkPreviews(),
+      ),
+    );
   import("@features/bookmarks/settings.ts").then(({ applyFaviconSetting }) =>
     applyFaviconSetting(),
   );

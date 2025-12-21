@@ -53,6 +53,7 @@ function upsertUserSettings(db, userId, body = {}) {
       v ? 1 : 0,
     );
     pushIf("theme", body.theme);
+    pushIf("rich_link_previews_enabled", body.rich_link_previews_enabled, (v) => (v ? 1 : 0));
     pushIf("dashboard_mode", body.dashboard_mode);
     pushIf("dashboard_tags", body.dashboard_tags, (v) =>
       v ? JSON.stringify(v) : null,
@@ -92,9 +93,9 @@ function upsertUserSettings(db, userId, body = {}) {
     .prepare(
       `
     INSERT INTO user_settings (
-      user_id, view_mode, hide_favicons, hide_sidebar, ai_suggestions_enabled, theme, dashboard_mode,
+      user_id, view_mode, hide_favicons, hide_sidebar, ai_suggestions_enabled, theme, rich_link_previews_enabled, dashboard_mode,
       dashboard_tags, dashboard_sort, widget_order, dashboard_widgets, collapsed_sections, include_child_bookmarks, tour_completed
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     )
     .run(
@@ -109,6 +110,7 @@ function upsertUserSettings(db, userId, body = {}) {
           : 0
         : 1,
       body.theme || "light",
+      body.rich_link_previews_enabled ? 1 : 0,
       body.dashboard_mode || "folder",
       body.dashboard_tags ? JSON.stringify(body.dashboard_tags) : null,
       body.dashboard_sort || "updated_desc",

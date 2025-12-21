@@ -49,94 +49,7 @@ function normalizeTagColorOverrides(raw, tagMap = {}) {
   return overrides;
 }
 
-async function fetchUrlMetadata(url, redirectCount = 0) {
-  if (redirectCount > 5) throw new Error("Too many redirects");
-
-  return new Promise((resolve, reject) => {
-    const protocol = url.startsWith("https") ? https : http;
-    const options = {
-      timeout: 5000,
-      headers: { "User-Agent": "Mozilla/5.0", Accept: "text/html" },
-    };
-
-    const req = protocol.get(url, options, (res) => {
-      if (
-        res.statusCode >= 300 &&
-        res.statusCode < 400 &&
-        res.headers.location
-      ) {
-        try {
-          const redirectUrl = new URL(res.headers.location, url).toString();
-          return fetchUrlMetadata(redirectUrl, redirectCount + 1)
-            .then(resolve)
-            .catch(reject);
-        } catch (e) {
-          return reject(e);
-        }
-      }
-
-      if (res.statusCode !== 200)
-        return reject(new Error(`HTTP ${res.statusCode}`));
-
-      const contentType = res.headers["content-type"] || "";
-      if (!contentType.includes("text/html")) {
-        return resolve({ title: new URL(url).hostname, description: "", url });
-      }
-
-      let html = "";
-      res.setEncoding("utf8");
-      res.on("data", (chunk) => {
-        html += chunk;
-        if (html.length > 500000) res.destroy();
-      });
-      res.on("end", () => {
-        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-        const metadata = {
-          title: titleMatch ? titleMatch[1].trim() : new URL(url).hostname,
-          description: "",
-          url,
-        };
-        const descMatch =
-          html.match(
-            /<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i,
-          ) ||
-          html.match(
-            /<meta\s+content=["']([^"']+)["']\s+name=["']description["']/i,
-          );
-        if (descMatch) metadata.description = descMatch[1].trim();
-        resolve(metadata);
-      });
-    });
-
-    req.on("error", reject);
-    req.on("timeout", () => {
-      req.destroy();
-      reject(new Error("Request timeout"));
-    });
-  });
-}
-
-function detectContentType(url) {
-  try {
-    const urlObj = new URL(url);
-    const hostname = urlObj.hostname;
-    const pathname = urlObj.pathname.toLowerCase();
-    if (
-      hostname.includes("youtube.com") ||
-      hostname.includes("youtu.be") ||
-      hostname.includes("vimeo.com")
-    )
-      return "video";
-    if (hostname.includes("twitter.com") || hostname.includes("x.com"))
-      return "tweet";
-    if (pathname.endsWith(".pdf")) return "pdf";
-    if (/\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(pathname)) return "image";
-    if (hostname.includes("github.com")) return "repo";
-    return "link";
-  } catch (e) {
-    return "link";
-  }
-}
+const { fetchUrlMetadata, detectContentType } = require("../helpers/metadata");
 
 function setupBookmarksRoutes(app, db, helpers = {}) {
   const { authenticateTokenMiddleware, fetchFaviconWrapper } = helpers;
@@ -215,11 +128,25 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
   );
 
   // Create bookmark
-  app.post("/api/bookmarks", authenticateTokenMiddleware, (req, res) => {
-    const { title, url, description, folder_id, tags, color } = req.body;
+  app.post("/api/bookmarks", authenticateTokenMiddleware, async (req, res) => {
+    let { title, url, description, folder_id, tags, color, og_image } = req.body;
     const id = uuidv4();
     if (!url) return res.status(400).json({ error: "URL is required" });
     try {
+      // Fetch metadata if title or description is missing, or if we want to ensure we have og_image
+      if (!title || !description || !og_image) {
+        try {
+          const metadata = await fetchUrlMetadata(url);
+          if (metadata) {
+            if (!title) title = metadata.title;
+            if (!description) description = metadata.description;
+            if (!og_image) og_image = metadata.og_image;
+          }
+        } catch (metaErr) {
+          console.warn("Could not fetch metadata during bookmark creation:", metaErr.message);
+        }
+      }
+
       const maxPos = db
         .prepare("SELECT MAX(position) as max FROM bookmarks WHERE user_id = ?")
         .get(req.user.id);
@@ -238,6 +165,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
         position,
         content_type: contentType,
         color: color || null,
+        og_image: og_image || null,
       });
 
       if (tags && tags.trim()) {
