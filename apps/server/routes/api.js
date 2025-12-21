@@ -23,18 +23,18 @@ function setupApiRoutes(app, db, helpers) {
   // Auth routes (register/login/etc.)
   setupAuthRoutes(app, db, authenticateTokenMiddleware, fetchFaviconWrapper);
 
-  // Bookmarks routes from controllers (includes POST /api/bookmarks)
-  setupBookmarksRoutes(app, db, {
-    authenticateTokenMiddleware,
-    fetchFaviconWrapper,
-  });
-
   // Legacy bookmarks routes from routes/bookmarks.js (GET/PUT/DELETE, counts, archive)
   setupBookmarksRoutesLegacy(app, db, {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     fetchFaviconWrapper,
     config,
+  });
+
+  // Bookmarks routes from controllers (includes POST /api/bookmarks)
+  setupBookmarksRoutes(app, db, {
+    authenticateTokenMiddleware,
+    fetchFaviconWrapper,
   });
 
   // Folders routes (migrated into controller)
