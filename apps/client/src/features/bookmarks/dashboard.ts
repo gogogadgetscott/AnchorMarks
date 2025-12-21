@@ -831,6 +831,29 @@ function renderFreeformWidgets(): string {
   let html = "";
 
   state.dashboardWidgets.forEach((widget: any, index) => {
+    if (state.isLoading) {
+      // Show skeleton widget while loading
+      html += `
+        <div class="dashboard-widget-freeform skeleton-card" 
+             style="left: ${widget.x || 0}px; top: ${widget.y || 0}px; width: ${widget.w || 320}px; height: ${widget.h || 400}px;">
+            <div class="widget-header">
+                <div class="skeleton" style="width: 100px; height: 16px;"></div>
+            </div>
+            <div class="widget-body">
+                <div class="compact-list">
+                    ${Array(5).fill(null).map(() => `
+                        <div class="compact-item">
+                            <div class="skeleton skeleton-favicon"></div>
+                            <div class="skeleton" style="width: 80%; height: 14px;"></div>
+                        </div>
+                    `).join("")}
+                </div>
+            </div>
+        </div>
+      `;
+      return;
+    }
+
     const widgetData = getWidgetData(widget);
     if (!widgetData) return;
 

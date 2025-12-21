@@ -12,14 +12,69 @@
       <span class="bookmark-count" id="bookmarks-view-count">0 bookmarks</span>
     </div>
     <div class="header-right">
-      <div class="header-search-bar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8" />
-          <path d="M21 21l-4.35-4.35" />
-        </svg>
-        <input type="text" id="search-input" placeholder="Search bookmarks..." />
-        <kbd>Ctrl+K</kbd>
+      <div class="omnibar-container">
+        <div class="header-search-bar omnibar-input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
+          <input type="text" id="search-input" placeholder="Search or type > for commands..." autocomplete="off" />
+          <kbd>Ctrl+K</kbd>
+        </div>
+
+        <!-- Omnibar Dropdown Panel -->
+        <div id="omnibar-panel" class="omnibar-panel hidden">
+          <!-- Recent Searches Section -->
+          <div class="omnibar-section" id="omnibar-recent">
+            <div class="omnibar-section-header">
+              <span>Recent Searches</span>
+              <button class="omnibar-clear-btn" id="omnibar-clear-recent">
+                Clear
+              </button>
+            </div>
+            <div class="omnibar-section-content" id="omnibar-recent-list"></div>
+          </div>
+
+          <!-- Suggested Tags Section -->
+          <div class="omnibar-section" id="omnibar-tags">
+            <div class="omnibar-section-header">
+              <span>Suggested Tags</span>
+            </div>
+            <div class="omnibar-section-content" id="omnibar-tags-list"></div>
+          </div>
+
+          <!-- Quick Actions Section -->
+          <div class="omnibar-section" id="omnibar-actions">
+            <div class="omnibar-section-header">
+              <span>Quick Actions</span>
+            </div>
+            <div class="omnibar-section-content" id="omnibar-actions-list"></div>
+          </div>
+
+          <!-- Search Results / Command Results -->
+          <div class="omnibar-section hidden" id="omnibar-results">
+            <div class="omnibar-section-content" id="omnibar-results-list"></div>
+          </div>
+
+          <!-- Tips Footer -->
+          <div class="omnibar-tips">
+            <span class="tip"><kbd>></kbd> commands</span>
+            <span class="tip"><kbd>@</kbd> folders</span>
+            <span class="tip"><kbd>#</kbd> tags</span>
+            <span class="tip"><kbd>↑↓</kbd> navigate</span>
+            <span class="tip"><kbd>Enter</kbd> select</span>
+          </div>
+        </div>
       </div>
+
+      <!-- Filters Button -->
+      <button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+        </svg>
+        <span class="filter-btn-text">Filters</span>
+      </button>
+
       <div class="view-toggle">
         <button class="view-btn active" data-view-mode="grid" title="Grid View">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

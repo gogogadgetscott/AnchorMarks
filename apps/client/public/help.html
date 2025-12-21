@@ -49,8 +49,8 @@
                     class="nav-text">Bookmark Colors</span></a>
               </li>
               <li>
-                <a href="#archiving"><span class="nav-icon" aria-hidden="true">📦</span><span
-                    class="nav-text">Archiving</span></a>
+                <a href="#rich-card-view"><span class="nav-icon" aria-hidden="true">🖼️</span><span
+                    class="nav-text">Rich Card View</span></a>
               </li>
               <li>
                 <a href="#folders"><span class="nav-icon" aria-hidden="true">📁</span><span
@@ -91,6 +91,9 @@
               <li>
                 <a href="#need-more-help"><span class="nav-icon" aria-hidden="true">💬</span><span class="nav-text">Need
                     More Help</span></a>
+              </li>
+              <li>
+                <a href="#faq"><span class="nav-icon" aria-hidden="true">❓</span><span class="nav-text">FAQ</span></a>
               </li>
               <li>
                 <a href="#settings"><span class="nav-icon" aria-hidden="true">⚙️</span><span
@@ -162,6 +165,10 @@
                 <a href="#roadmap"><span class="nav-icon" aria-hidden="true">🗺️</span><span
                     class="nav-text">Roadmap</span></a>
               </li>
+              <li>
+                <a href="#screenshots"><span class="nav-icon" aria-hidden="true">📸</span><span
+                    class="nav-text">Screenshot Pipeline</span></a>
+              </li>
             </ul>
           </div>
         </div>
@@ -179,6 +186,11 @@
             details.
           </p>
 
+          <div class="help-hero-actions" role="navigation" aria-label="Start here shortcuts">
+            <a class="btn btn-outline" href="#getting-started">Just Started</a>
+            <a class="btn btn-outline" href="#power-user-features">Power User Features</a>
+            <a class="btn btn-outline" href="#self-hosting-api">Self-hosting &amp; API</a>
+          </div>
           <div class="help-hero-actions" role="navigation" aria-label="Start here shortcuts">
             <a class="btn btn-outline" href="#getting-started">Just Started</a>
             <a class="btn btn-outline" href="#power-user-features">Power User Features</a>
@@ -323,16 +335,6 @@
             navigation item to close it.
           </div>
 
-          <div class="tip-box">
-            <span class="callout-icon" aria-hidden="true">📊</span><strong>Sidebar Count Badges:</strong> Each
-            navigation item
-            in the sidebar displays a count badge showing the number of bookmarks in that view. These counts update
-            automatically
-            when you add, edit, archive, or delete bookmarks. The badges use a consistent, modern design across all
-            views
-            (Dashboard, Bookmarks, Favorites, Recent, and Archived).
-          </div>
-
           <h3 class="help-anchor" id="bookmarks">
             <span class="section-icon" aria-hidden="true">🔖</span>Getting
             Started → Advanced Features (Bookmarks)
@@ -358,61 +360,17 @@
             <li>
               Edit a bookmark’s title, URL, description, folder, and tags.
             </li>
-            <li>
-              <strong>Star button:</strong> Click the star (⭐) button on any bookmark card to mark it as a favorite.
-              The star fills in with a yellow color when favorited. Click again to remove from favorites.
-              Favorited bookmarks appear in the "Favorites" view in the sidebar.
-            </li>
+            <li>Star important items as favorites for quick access.</li>
           </ul>
 
-          <h4>Bulk actions & Selection Mode</h4>
-          <p>
-            Select multiple bookmarks to perform actions on all of them at once.
-            When one or more bookmarks are selected, the header transforms into
-            <strong>Selection Mode</strong>.
-          </p>
+          <h4>Bulk actions</h4>
           <ul>
             <li>
-              <strong>Enter selection mode:</strong> Click the checkbox in the
-              top-left corner of any bookmark card.
+              Select multiple bookmarks with
+              <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+click and <kbd>Shift</kbd>+click.
             </li>
             <li>
-              <strong>Multi-select:</strong> Use
-              <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+click to add individual items, or
-              <kbd>Shift</kbd>+click to select a range.
-            </li>
-            <li>
-              <strong>Selection Header:</strong> The blue header displays the
-              current count and provides tools for bulk archiving, moving,
-              tagging, or deleting.
-            </li>
-            <li>
-              <strong>Clear selection:</strong> Click the "X" in the selection
-              header or press <kbd>Esc</kbd>.
-            </li>
-          </ul>
-
-          <h3 class="help-anchor" id="archiving">
-            <span class="section-icon" aria-hidden="true">📦</span>Archiving
-          </h3>
-          <p>
-            Archive bookmarks you don't need immediately but want to keep.
-            Archived bookmarks are hidden from main views (All, Folders,
-            Favorites) but remain searchable.
-          </p>
-          <ul>
-            <li>
-              <strong>Archive:</strong> Click the archive icon (box) on any
-              bookmark card or use the bulk action bar.
-            </li>
-            <li>
-              <strong>Archived View:</strong> Access all your archived items
-              via the "Archived" link in the sidebar.
-            </li>
-            <li>
-              <strong>Restore:</strong> Click the unarchive icon (box with up
-              arrow) in the Archived view to return a bookmark to its original
-              place.
+              Use bulk actions to add/remove tags, move, favorite, or delete.
             </li>
           </ul>
 
@@ -473,6 +431,87 @@
               bookmark, if enabled).
             </li>
           </ul>
+
+          <h3 class="help-anchor" id="rich-card-view">
+            <span class="section-icon" aria-hidden="true">🖼️</span>Rich Card View
+          </h3>
+          <p class="help-at-a-glance">
+            <span class="callout-icon" aria-hidden="true">👁️</span><strong>At a glance:</strong> Display your bookmarks
+            in a visually engaging Pinterest-style card layout with OpenGraph images when available.
+          </p>
+          <h4>What is Rich Card View?</h4>
+          <p>
+            Rich Card View transforms your bookmark grid into a visual gallery by displaying OpenGraph (OG) images from
+            websites. Instead of just seeing favicons and titles, you'll see large preview images that make it easier to
+            recognize and browse your bookmarks at a glance.
+          </p>
+          <h4>Enabling Rich Card View</h4>
+          <ol>
+            <li>Open <strong>Settings</strong> (gear icon in top-right)</li>
+            <li>Navigate to the <strong>General</strong> tab</li>
+            <li>Find the <strong>"Enable Rich Link Previews"</strong> toggle</li>
+            <li>Click the toggle to enable it</li>
+            <li>Close the settings modal</li>
+          </ol>
+          <p>
+            Your bookmarks will automatically reload and display in the rich card layout (Grid view only).
+          </p>
+          <h4>Features</h4>
+          <ul>
+            <li>
+              <strong>OpenGraph Images:</strong> Displays hero images from websites (og:image or twitter:image)
+            </li>
+            <li>
+              <strong>Automatic Extraction:</strong> OG images are fetched automatically when you add new bookmarks
+            </li>
+            <li>
+              <strong>Graceful Fallback:</strong> Bookmarks without images show a placeholder icon
+            </li>
+            <li>
+              <strong>Grid View Only:</strong> Rich cards only appear in Grid view mode, not List or Compact
+            </li>
+            <li>
+              <strong>Responsive Layout:</strong> Cards adapt to different screen sizes with a minimum width of 280px
+            </li>
+            <li>
+              <strong>Hover Effects:</strong> Cards lift and show action buttons when you hover over them
+            </li>
+            <li>
+              <strong>Image Zoom:</strong> Images subtly zoom on hover for a polished effect
+            </li>
+          </ul>
+          <h4>What You'll See</h4>
+          <p>Each rich card displays:</p>
+          <ul>
+            <li><strong>Preview Image:</strong> Large OG image at the top (16:9 aspect ratio)</li>
+            <li><strong>Favicon & Hostname:</strong> Small header showing the site's icon and domain</li>
+            <li><strong>Title:</strong> Bookmark title (truncated to 2 lines)</li>
+            <li><strong>Description:</strong> Bookmark description (truncated to 3 lines)</li>
+            <li><strong>Tags:</strong> All associated tags at the bottom</li>
+            <li><strong>Action Buttons:</strong> Edit, delete, and open buttons (visible on hover)</li>
+          </ul>
+          <div class="tip-box">
+            <span class="callout-icon" aria-hidden="true">💡</span><strong>Pro tip:</strong> Rich Card View works best
+            for visual content like articles, videos, and design resources. For text-heavy or technical bookmarks, the
+            standard grid view might be more efficient.
+          </div>
+          <h4>Existing Bookmarks</h4>
+          <p>
+            Bookmarks added before enabling Rich Card View may not have OG images. To fetch images for existing
+            bookmarks:
+          </p>
+          <ol>
+            <li>Edit the bookmark</li>
+            <li>Click <strong>"Fetch Metadata"</strong> button</li>
+            <li>Save the bookmark</li>
+          </ol>
+          <p>
+            The OG image will be fetched and displayed the next time you view the bookmark in Rich Card View.
+          </p>
+          <div class="tip-box">
+            <span class="callout-icon" aria-hidden="true">💡</span><strong>Note:</strong> Not all websites provide OG
+            images. Bookmarks from sites without OG images will display a placeholder icon instead.
+          </div>
 
           <h3 class="help-anchor" id="folders">
             <span class="section-icon" aria-hidden="true">📁</span>Folders
@@ -1517,6 +1556,90 @@
             Quick Launch.
           </div>
 
+          <section class="help-section" id="faq">
+            <h2>
+              <span class="section-icon" aria-hidden="true">❓</span>Frequently Asked Questions
+            </h2>
+            <p class="help-at-a-glance">
+              <span class="callout-icon" aria-hidden="true">👁️</span><strong>At a glance:</strong> Quick answers to
+              common questions about using AnchorMarks.
+            </p>
+            <details>
+              <summary><strong>How do I backup my bookmarks?</strong></summary>
+              <p>
+                Use the export feature in Settings → Export to download your
+                bookmarks as JSON. For dashboard layouts and views, use Settings
+                → Views → Export.
+              </p>
+            </details>
+            <details>
+              <summary>
+                <strong>Can I import bookmarks from my browser?</strong>
+              </summary>
+              <p>
+                Yes! Use Settings → Import → Browser Bookmarks. AnchorMarks
+                supports HTML bookmark files from Chrome, Firefox, Edge, and
+                Safari.
+              </p>
+            </details>
+            <details>
+              <summary>
+                <strong>How do I organize bookmarks with folders and tags?</strong>
+              </summary>
+              <p>
+                Folders are for hierarchical organization (like file folders),
+                while tags are for flexible categorization (one bookmark can
+                have multiple tags). Use both together for maximum organization.
+              </p>
+            </details>
+            <details>
+              <summary>
+                <strong>What's the difference between Smart Collections and
+                  Views?</strong>
+              </summary>
+              <p>
+                Smart Collections are dynamic groupings based on rules (e.g.,
+                all GitHub links). Views are saved filter/sort states that you
+                can restore later.
+              </p>
+            </details>
+            <details>
+              <summary><strong>How do I reset my password?</strong></summary>
+              <p>
+                If you're self-hosting, passwords are managed locally. For the
+                hosted version, use the "Forgot Password" link on the login
+                page.
+              </p>
+            </details>
+            <details>
+              <summary><strong>Can I use AnchorMarks offline?</strong></summary>
+              <p>
+                The web app requires a server connection, but you can self-host
+                it on your local network for offline use.
+              </p>
+            </details>
+            <details>
+              <summary>
+                <strong>How do I customize the dashboard?</strong>
+              </summary>
+              <p>
+                Click "Add Widget" to add folder or tag widgets. Drag to
+                rearrange, resize handles to adjust size, and use the widget
+                options menu (⋮) for per-widget settings.
+              </p>
+            </details>
+            <details>
+              <summary>
+                <strong>Why aren't my favicons loading?</strong>
+              </summary>
+              <p>
+                Favicons are fetched automatically when adding bookmarks. If
+                they're missing, the server may be blocking external requests or
+                the site doesn't provide favicons.
+              </p>
+            </details>
+          </section>
+
           <section class="help-section" id="settings">
             <h2>
               <span class="section-icon" aria-hidden="true">⚙️</span>Settings
@@ -1891,7 +2014,51 @@
             dev server npm run dev:vite # Stop both servers npm run stop #
             Restart both servers npm run restart # Build for production npm
             run build # Run in production mode npm run prod # Run tests npm
-            test
+            test # Run screenshot pipeline npm run screenshots
+          </div>
+
+          <h3 class="help-anchor" id="screenshots">
+            <span class="section-icon" aria-hidden="true">📸</span>Screenshot
+            Pipeline
+          </h3>
+          <p>
+            AnchorMarks includes an automated screenshot pipeline using
+            <strong>Playwright</strong> to generate UI snapshots across
+            different themes, viewports, and app states.
+          </p>
+
+          <h4>Setup & Prerequisites</h4>
+          <p>
+            The pipeline requires the Playwright browsers and system
+            dependencies to be installed:
+          </p>
+          <div class="code-block">
+            # Install Playwright browsers npx playwright install chromium #
+            Install system dependencies (Linux) sudo npx playwright
+            install-deps chromium
+          </div>
+
+          <h4>Running the Pipeline</h4>
+          <p>
+            Ensure your development servers are running (<code>npm start</code>), then run the following in a separate
+            terminal:
+          </p>
+          <div class="code-block">
+            # Generate all screenshots npm run screenshots # Generate a
+            limited set (e.g., 5) npm run screenshots -- 5
+          </div>
+
+          <p>
+            Screenshots are saved to the <code>screenshots/</code> directory
+            with descriptive filenames including the theme, viewport, and
+            state.
+          </p>
+
+          <div class="tip-box">
+            <span class="callout-icon" aria-hidden="true">💡</span><strong>Configuration:</strong> You can customize
+            themes,
+            viewports, and routes in
+            <code>tooling/scripts/capture-screenshots.js</code>.
           </div>
 
           <div class="tip-box">
@@ -1922,84 +2089,6 @@
             automatically reads these values and configures the proxy to route
             API requests to the correct backend port.
           </p>
-
-          <h3 class="help-anchor" id="faq">
-            <span class="section-icon" aria-hidden="true">❓</span>FAQ
-          </h3>
-          <details>
-            <summary><strong>How do I backup my bookmarks?</strong></summary>
-            <p>
-              Use the export feature in Settings → Export to download your
-              bookmarks as JSON. For dashboard layouts and views, use Settings
-              → Views → Export.
-            </p>
-          </details>
-          <details>
-            <summary>
-              <strong>Can I import bookmarks from my browser?</strong>
-            </summary>
-            <p>
-              Yes! Use Settings → Import → Browser Bookmarks. AnchorMarks
-              supports HTML bookmark files from Chrome, Firefox, Edge, and
-              Safari.
-            </p>
-          </details>
-          <details>
-            <summary>
-              <strong>How do I organize bookmarks with folders and tags?</strong>
-            </summary>
-            <p>
-              Folders are for hierarchical organization (like file folders),
-              while tags are for flexible categorization (one bookmark can
-              have multiple tags). Use both together for maximum organization.
-            </p>
-          </details>
-          <details>
-            <summary>
-              <strong>What's the difference between Smart Collections and
-                Views?</strong>
-            </summary>
-            <p>
-              Smart Collections are dynamic groupings based on rules (e.g.,
-              all GitHub links). Views are saved filter/sort states that you
-              can restore later.
-            </p>
-          </details>
-          <details>
-            <summary><strong>How do I reset my password?</strong></summary>
-            <p>
-              If you're self-hosting, passwords are managed locally. For the
-              hosted version, use the "Forgot Password" link on the login
-              page.
-            </p>
-          </details>
-          <details>
-            <summary><strong>Can I use AnchorMarks offline?</strong></summary>
-            <p>
-              The web app requires a server connection, but you can self-host
-              it on your local network for offline use.
-            </p>
-          </details>
-          <details>
-            <summary>
-              <strong>How do I customize the dashboard?</strong>
-            </summary>
-            <p>
-              Click "Add Widget" to add folder or tag widgets. Drag to
-              rearrange, resize handles to adjust size, and use the widget
-              options menu (⋮) for per-widget settings.
-            </p>
-          </details>
-          <details>
-            <summary>
-              <strong>Why aren't my favicons loading?</strong>
-            </summary>
-            <p>
-              Favicons are fetched automatically when adding bookmarks. If
-              they're missing, the server may be blocking external requests or
-              the site doesn't provide favicons.
-            </p>
-          </details>
 
           <h3 class="help-anchor" id="for-developers">
             <span class="section-icon" aria-hidden="true">👨‍💻</span>For

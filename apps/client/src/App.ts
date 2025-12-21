@@ -29,6 +29,17 @@ import {
   closeShortcutsPopup,
 } from "@features/bookmarks/commands.ts";
 
+// Import omnibar
+import {
+  openOmnibar,
+  closeOmnibar,
+  renderOmnibarPanel,
+  navigateOmnibar,
+  executeActiveItem,
+  addRecentSearch,
+  clearRecentSearches,
+} from "@features/bookmarks/omnibar.ts";
+
 // Import UI helpers (needed for global export)
 import {
   showToast,
@@ -214,7 +225,7 @@ async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     }
   }
 
-  // Ctrl+F: Focus search
+  // Ctrl+F: Focus search (opens omnibar)
   if (modifier && key === "f") {
     const activeEl = document.activeElement;
     if (
@@ -223,13 +234,17 @@ async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     )
       return; // Shift+F is for favorites
     e.preventDefault();
-    document.getElementById("search-input")?.focus();
+    const searchInput = document.getElementById("search-input") as HTMLInputElement;
+    searchInput?.focus();
+    openOmnibar();
   }
 
-  // Ctrl+K: Focus search
+  // Ctrl+K: Focus search (opens omnibar)
   if (modifier && key === "k" && !state.commandPaletteOpen) {
     e.preventDefault();
-    document.getElementById("search-input")?.focus();
+    const searchInput = document.getElementById("search-input") as HTMLInputElement;
+    searchInput?.focus();
+    openOmnibar();
   }
 
   // Ctrl+Shift+P: Command palette
@@ -523,9 +538,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  // Search
+  // Search and Omnibar
   let searchTimeout: ReturnType<typeof setTimeout> | undefined;
-  document.getElementById("search-input")?.addEventListener("input", () => {
+  let omnibarCloseTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  const searchInput = document.getElementById("search-input") as HTMLInputElement;
+
+  // Focus - open omnibar
+  searchInput?.addEventListener("focus", () => {
+    if (omnibarCloseTimeout) clearTimeout(omnibarCloseTimeout);
+    openOmnibar();
+  });
+
+  // Blur - close omnibar (with delay to allow clicks)
+  searchInput?.addEventListener("blur", () => {
+    omnibarCloseTimeout = setTimeout(() => {
+      closeOmnibar();
+    }, 200);
+  });
+
+  // Input - update omnibar and search
+  searchInput?.addEventListener("input", (e) => {
+    const query = (e.target as HTMLInputElement).value;
+
+    // Update omnibar panel
+    renderOmnibarPanel(query);
+
+    // Debounced bookmark search
     if (searchTimeout) clearTimeout(searchTimeout);
     state.setDisplayedCount(state.BOOKMARKS_PER_PAGE);
     searchTimeout = setTimeout(() => {
@@ -534,6 +573,56 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
       updateFilterButtonText();
     }, 300);
+  });
+
+  // Keyboard navigation in omnibar
+  searchInput?.addEventListener("keydown", (e) => {
+    const panel = document.getElementById("omnibar-panel");
+    const isPanelOpen = panel && !panel.classList.contains("hidden");
+
+    if (!isPanelOpen) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      navigateOmnibar("down");
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      navigateOmnibar("up");
+    } else if (e.key === "Enter") {
+      const query = searchInput.value.trim();
+      const resultsSection = document.getElementById("omnibar-results");
+      const isShowingResults = resultsSection && !resultsSection.classList.contains("hidden");
+
+      if (isShowingResults && query) {
+        e.preventDefault();
+        executeActiveItem();
+
+        // Add to recent searches if it's a plain search (not a command)
+        if (!query.startsWith(">") && !query.startsWith("@") && !query.startsWith("#")) {
+          addRecentSearch(query);
+        }
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      closeOmnibar();
+      searchInput.blur();
+    }
+  });
+
+  // Click outside to close omnibar
+  document.addEventListener("click", (e) => {
+    const omnibarContainer = document.querySelector(".omnibar-container");
+    const target = e.target as HTMLElement;
+
+    if (omnibarContainer && !omnibarContainer.contains(target)) {
+      closeOmnibar();
+    }
+  });
+
+  // Clear recent searches button
+  document.getElementById("omnibar-clear-recent")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    clearRecentSearches();
   });
 
   // Keyboard shortcuts
@@ -1163,6 +1252,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     ?.addEventListener("change", () =>
       import("@features/bookmarks/settings.ts").then(
         ({ toggleIncludeChildBookmarks }) => toggleIncludeChildBookmarks(),
+      ),
+    );
+  document
+    .getElementById("rich-link-previews-toggle")
+    ?.addEventListener("change", () =>
+      import("@features/bookmarks/settings.ts").then(
+        ({ toggleRichLinkPreviews }) => toggleRichLinkPreviews(),
       ),
     );
   import("@features/bookmarks/settings.ts").then(({ applyFaviconSetting }) =>

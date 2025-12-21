@@ -172,9 +172,10 @@ function createBookmark(db, userIdOrData, maybeData) {
   const description = data.description || null;
   const content_type = data.content_type || data.contentType || "link";
   const color = data.color || null;
+  const og_image = data.og_image || null;
 
   db.prepare(
-    `INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, position, content_type, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, position, content_type, color, og_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     userId,
@@ -186,6 +187,7 @@ function createBookmark(db, userIdOrData, maybeData) {
     position,
     content_type,
     color,
+    og_image,
   );
 
   return getBookmarkById(db, userId, id);
@@ -204,6 +206,7 @@ function updateBookmark(db, userId, id, fields = {}) {
     tag_colors,
     color,
     is_archived,
+    og_image,
   } = fields;
   db.prepare(
     `
@@ -217,6 +220,7 @@ function updateBookmark(db, userId, id, fields = {}) {
       favicon = COALESCE(?, favicon),
       color = COALESCE(?, color),
       is_archived = COALESCE(?, is_archived),
+      og_image = COALESCE(?, og_image),
       updated_at = CURRENT_TIMESTAMP
     WHERE id = ? AND user_id = ?
   `,
@@ -230,9 +234,11 @@ function updateBookmark(db, userId, id, fields = {}) {
     favicon,
     color !== undefined ? color : null,
     is_archived !== undefined ? is_archived : null,
+    og_image !== undefined ? og_image : null,
     id,
     userId,
   );
+
 
   if (tags !== undefined) {
     const tagHelpers = require("../helpers/tag-helpers");

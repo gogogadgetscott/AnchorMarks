@@ -44,6 +44,7 @@ function initializeDatabase(DB_PATH) {
         favicon TEXT,
         favicon_local TEXT,
         thumbnail_local TEXT,
+        og_image TEXT,
         position INTEGER DEFAULT 0,
         is_favorite INTEGER DEFAULT 0,
         click_count INTEGER DEFAULT 0,
@@ -82,6 +83,7 @@ function initializeDatabase(DB_PATH) {
         hide_sidebar INTEGER DEFAULT 0,
         ai_suggestions_enabled INTEGER DEFAULT 1,
         theme TEXT DEFAULT 'light',
+        rich_link_previews_enabled INTEGER DEFAULT 0,
         dashboard_mode TEXT DEFAULT 'folder',
         dashboard_tags TEXT,
         dashboard_sort TEXT DEFAULT 'updated_desc',
@@ -208,6 +210,14 @@ function initializeDatabase(DB_PATH) {
   } catch (err) { }
   try {
     db.prepare("ALTER TABLE bookmarks ADD COLUMN color TEXT").run();
+  } catch (err) { }
+  try {
+    db.prepare("ALTER TABLE bookmarks ADD COLUMN og_image TEXT").run();
+  } catch (err) { }
+  try {
+    db.prepare(
+      "ALTER TABLE user_settings ADD COLUMN rich_link_previews_enabled INTEGER DEFAULT 0",
+    ).run();
   } catch (err) { }
   // Run formal migrations
   try {

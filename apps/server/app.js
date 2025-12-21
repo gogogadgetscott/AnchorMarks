@@ -236,5 +236,6 @@ process.on("SIGTERM", () => {
 app._isPrivateAddress = isPrivateAddress;
 app.db = db;
 app.securityAudit = securityAudit;
+app.fetchUrlMetadata = fetchUrlMetadata;
 
 module.exports = app;

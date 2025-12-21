@@ -18,15 +18,36 @@ import {
 } from "@utils/ui-helpers.ts";
 import { Bookmark } from "@/types";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
-import { BookmarkCard as createBookmarkCard } from "@components/index.ts";
+import { BookmarkCard as createBookmarkCard, SkeletonCard, RichBookmarkCard } from "@components/index.ts";
 export { createBookmarkCard };
 
-// Note: renderDashboard, renderSidebarTags, and checkWelcomeTour are loaded dynamically
-// to avoid circular dependencies
+/**
+ * Render skeletons while loading
+ */
+export function renderSkeletons(): void {
+  const container =
+    dom.bookmarksContainer || document.getElementById("bookmarks-container");
+  if (!container) return;
+
+  // Set container class based on view mode
+  const classMap = {
+    grid: "bookmarks-grid",
+    list: "bookmarks-list",
+    compact: "bookmarks-compact",
+  };
+  container.className = classMap[state.viewMode] || "bookmarks-grid";
+
+  // Render 8 skeleton cards
+  container.innerHTML = Array(8).fill(null).map(() => SkeletonCard()).join("");
+}
 
 // Load bookmarks from server
 export async function loadBookmarks(): Promise<void> {
   try {
+    state.setIsLoading(true);
+    // Show skeletons immediately
+    renderSkeletons();
+
     let endpoint = "/bookmarks";
     const params = new URLSearchParams();
 
@@ -117,6 +138,8 @@ export async function loadBookmarks(): Promise<void> {
     checkWelcomeTour();
   } catch (err) {
     showToast("Failed to load bookmarks", "error");
+  } finally {
+    state.setIsLoading(false);
   }
 }
 
@@ -141,7 +164,14 @@ export function renderBookmarks(): void {
     list: "bookmarks-list",
     compact: "bookmarks-compact",
   };
-  container.className = classMap[state.viewMode] || "bookmarks-grid";
+  let containerClass = classMap[state.viewMode] || "bookmarks-grid";
+
+  // Add rich-link-previews class if enabled
+  if (state.richLinkPreviewsEnabled && state.viewMode === "grid") {
+    containerClass += " rich-link-previews";
+  }
+
+  container.className = containerClass;
 
   const searchTerm =
     (searchInput as HTMLInputElement)?.value.toLowerCase() || "";
@@ -234,8 +264,13 @@ export function renderBookmarks(): void {
   const toRender = filtered.slice(0, state.displayedCount);
   const hasMore = filtered.length > state.displayedCount;
 
+  // Use RichBookmarkCard if rich link previews are enabled
+  const cardRenderer = state.richLinkPreviewsEnabled && state.viewMode === "grid"
+    ? RichBookmarkCard
+    : createBookmarkCard;
+
   container.innerHTML = toRender
-    .map((b, i) => createBookmarkCard(b, i))
+    .map((b, i) => cardRenderer(b, i))
     .join("");
 
   if (hasMore) {
@@ -258,7 +293,7 @@ export function attachBookmarkCardListeners(): void {
   const container = document.getElementById("bookmarks-container");
   if (!container) return;
 
-  container.querySelectorAll(".bookmark-card").forEach((card) => {
+  container.querySelectorAll(".bookmark-card, .rich-bookmark-card").forEach((card) => {
     if ((card as HTMLElement).dataset.listenerAttached) return;
     (card as HTMLElement).dataset.listenerAttached = "true";
 

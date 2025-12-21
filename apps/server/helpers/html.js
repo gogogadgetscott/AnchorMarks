@@ -21,6 +21,7 @@ function parseHtmlMetadata(html, url) {
   const metadata = {
     title: "",
     description: "",
+    og_image: "",
     url: url,
   };
 
@@ -78,6 +79,26 @@ function parseHtmlMetadata(html, url) {
     );
   if (twitterDescMatch && !metadata.description) {
     metadata.description = decodeHtmlEntities(twitterDescMatch[1].trim());
+  }
+
+  const ogImageMatch =
+    html.match(
+      /<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i,
+    ) ||
+    html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:image["']/i);
+  if (ogImageMatch) {
+    metadata.og_image = decodeHtmlEntities(ogImageMatch[1].trim());
+  }
+
+  const twitterImageMatch =
+    html.match(
+      /<meta\s+name=["']twitter:image["']\s+content=["']([^"']+)["']/i,
+    ) ||
+    html.match(
+      /<meta\s+content=["']([^"']+)["']\s+name=["']twitter:image["']/i,
+    );
+  if (twitterImageMatch && !metadata.og_image) {
+    metadata.og_image = decodeHtmlEntities(twitterImageMatch[1].trim());
   }
 
   if (!metadata.title) {
@@ -142,19 +163,19 @@ function generateBookmarkHtml(bookmarks, folders) {
 
   function generateLevel(items, indent = "    ") {
     let output = "";
-    
+
     // Process items. If items is mixed (roots), we iterate. 
     // If we are inside a folder, we need to process its childrenFolders and childrenBookmarks
-    
+
     // Sort logic: Folders first, then bookmarks, or by position if available. 
     // Assuming 'items' passed here is a mixed list for root, 
     // but for folders we have separate arrays.
-    
+
     // Helper to render a bookmark
     const renderBookmark = (bm) => {
       const tagsAttr = bm.tags ? ` TAGS="${bm.tags}"` : "";
       const dateAttr = bm.created_at ? ` ADD_DATE="${Math.floor(new Date(bm.created_at).getTime() / 1000)}"` : "";
-      
+
       let extraAttrs = "";
       if (bm.updated_at) {
         extraAttrs += ` LAST_MODIFIED="${Math.floor(new Date(bm.updated_at).getTime() / 1000)}"`;
@@ -162,10 +183,10 @@ function generateBookmarkHtml(bookmarks, folders) {
       if (bm.last_clicked) {
         extraAttrs += ` LAST_VISIT="${Math.floor(new Date(bm.last_clicked).getTime() / 1000)}"`;
       }
-      
+
       // Debug logging for color
       if (bm.id === '0aee44e1-9883-4046-bc47-a66e6f5912ec') {
-          console.log(`[Export] Processing target bookmark ${bm.id}. Color: ${bm.color}`);
+        console.log(`[Export] Processing target bookmark ${bm.id}. Color: ${bm.color}`);
       }
 
       if (bm.color) {
@@ -185,10 +206,10 @@ function generateBookmarkHtml(bookmarks, folders) {
       if (folder.color) {
         headerAttrs += ` COLOR="${folder.color}"`;
       }
-      
+
       let chunk = `${indent}<DT><H3${headerAttrs}>${folder.name}</H3>\n`;
       chunk += `${indent}<DL><p>\n`;
-      
+
       // Recursively render children
       if (folder.childrenFolders.length > 0) {
         folder.childrenFolders.forEach(sub => {
@@ -200,7 +221,7 @@ function generateBookmarkHtml(bookmarks, folders) {
           chunk += renderBookmark(bm);
         });
       }
-      
+
       chunk += `${indent}</DL><p>\n`;
       return chunk;
     };
@@ -218,7 +239,7 @@ function generateBookmarkHtml(bookmarks, folders) {
 
   // Generate valid root list
   // Note: rootItems contains {type, data} wrappers.
-  
+
   // Sort root items: folders first?
   rootItems.sort((a, b) => {
     if (a.type === b.type) return 0;
@@ -227,7 +248,7 @@ function generateBookmarkHtml(bookmarks, folders) {
 
   html += generateLevel(rootItems);
   html += `</DL><p>`;
-  
+
   return html;
 }
 

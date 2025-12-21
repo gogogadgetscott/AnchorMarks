@@ -78,34 +78,25 @@ export function updateFilterButtonVisibility(): void {
 
 // Initialize filter dropdown
 export function initFilterDropdown(): void {
-  const headerRight = document.querySelector(".header-right");
-  if (!headerRight) return;
+  const btn = document.getElementById("filter-dropdown-btn");
+  if (!btn) {
+    console.warn("Filter button not found in DOM");
+    return;
+  }
 
-  // Remove existing filter button
-  document.getElementById("filter-dropdown-btn")?.remove();
+  // Remove existing event listener if any
+  const newBtn = btn.cloneNode(true) as HTMLElement;
+  btn.parentNode?.replaceChild(newBtn, btn);
 
-  const btn = document.createElement("button");
-  btn.id = "filter-dropdown-btn";
-  btn.className = "btn btn-secondary";
-  btn.title = "Filters";
-  btn.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-        </svg>
-        <span class="filter-btn-text">Filters</span>
-    `;
-
-  btn.addEventListener("click", (e) => {
+  newBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     toggleFilterDropdown();
   });
 
-  // Insert after search input or at beginning
-  const searchInput = document.getElementById("search-input");
-  if (searchInput && searchInput.parentElement) {
-    searchInput.parentElement.after(btn);
-  } else {
-    headerRight.insertBefore(btn, headerRight.firstChild);
+  // Ensure button is visible initially for bookmarks views
+  const bookmarksViews = ["all", "folder", "collection"];
+  if (bookmarksViews.includes(state.currentView)) {
+    newBtn.style.display = "";
   }
 }
 

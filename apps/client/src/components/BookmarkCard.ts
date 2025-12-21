@@ -33,6 +33,9 @@ export function BookmarkCard(bookmark: Bookmark, index: number): string {
       .split(",")
       .map((t) => t.trim())
       .filter((t) => t)
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => t)
     : [];
 
   const tagEntries = Array.isArray(bookmark.tags_detailed)
@@ -79,8 +82,10 @@ export function BookmarkCard(bookmark: Bookmark, index: number): string {
     : "";
   const hasColorClass = bookmark.color ? "has-custom-color" : "";
 
+  const delayClass = `delay-${index % 10}`;
+
   return `
-    <div class="bookmark-card ${isSelected ? "selected" : ""} ${hasColorClass}" data-id="${bookmark.id}" data-index="${index}" style="${colorStyle}">
+    <div class="bookmark-card ${isSelected ? "selected" : ""} ${hasColorClass} entrance-animation ${delayClass}" data-id="${bookmark.id}" data-index="${index}" style="${colorStyle}">
       <label class="bookmark-select">
         <input type="checkbox" ${isSelected ? "checked" : ""}>
       </label>

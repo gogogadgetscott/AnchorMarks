@@ -14,6 +14,7 @@ export async function loadSettings(): Promise<void> {
     state.setHideFavicons(settings.hide_favicons || false);
     state.setHideSidebar(settings.hide_sidebar || false);
     state.setAiSuggestionsEnabled(settings.ai_suggestions_enabled !== false);
+    state.setRichLinkPreviewsEnabled(settings.rich_link_previews_enabled === 1);
     state.setIncludeChildBookmarks(settings.include_child_bookmarks === 1);
     state.setSnapToGrid(settings.snap_to_grid !== false);
     state.setDashboardConfig({
@@ -117,6 +118,11 @@ export function applyFaviconSetting(): void {
   ) as HTMLInputElement;
   if (aiToggle) aiToggle.checked = state.aiSuggestionsEnabled;
 
+  const richToggle = document.getElementById(
+    "rich-link-previews-toggle",
+  ) as HTMLInputElement;
+  if (richToggle) richToggle.checked = state.richLinkPreviewsEnabled;
+
   const childToggle = document.getElementById(
     "include-children-toggle",
   ) as HTMLInputElement;
@@ -141,6 +147,24 @@ export function toggleAiSuggestions(): void {
   const newValue = toggle?.checked !== false;
   state.setAiSuggestionsEnabled(newValue);
   saveSettings({ ai_suggestions_enabled: newValue ? 1 : 0 });
+}
+
+// Toggle rich link previews
+export function toggleRichLinkPreviews(): void {
+  const toggle = document.getElementById(
+    "rich-link-previews-toggle",
+  ) as HTMLInputElement;
+  const newValue = toggle?.checked || false;
+  state.setRichLinkPreviewsEnabled(newValue);
+  saveSettings({ rich_link_previews_enabled: newValue ? 1 : 0 });
+
+  // Reload bookmarks to apply the new view if we matches some criteria?
+  // Actually, the card view logic should handle the switch dynamically.
+  import("@features/bookmarks/bookmarks.ts")
+    .then(({ renderBookmarks }) => {
+      renderBookmarks();
+    })
+    .catch(console.error);
 }
 
 // Toggle child bookmarks
@@ -226,6 +250,7 @@ export default {
   applyFaviconSetting,
   toggleFavicons,
   toggleAiSuggestions,
+  toggleRichLinkPreviews,
   toggleSidebar,
   setViewMode,
   toggleSection,

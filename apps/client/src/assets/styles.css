@@ -893,6 +893,298 @@ body.sidebar-collapsed .nav-section-header {
   pointer-events: none;
 }
 
+/* Omnibar Styles */
+.omnibar-container {
+  position: relative;
+}
+
+.omnibar-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  min-width: 400px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  max-height: 500px;
+  overflow-y: auto;
+  z-index: 2000;
+  animation: omnibarSlideDown 0.2s ease;
+}
+
+@keyframes omnibarSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.omnibar-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.omnibar-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.omnibar-panel::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.omnibar-panel::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+.omnibar-section {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.omnibar-section:last-child {
+  border-bottom: none;
+}
+
+.omnibar-section.hidden {
+  display: none;
+}
+
+.omnibar-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--bg-secondary);
+}
+
+.omnibar-section-content {
+  padding: 0.25rem 0;
+}
+
+.omnibar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  border-left: 3px solid transparent;
+}
+
+.omnibar-item:hover,
+.omnibar-item.active {
+  background: var(--bg-hover);
+}
+
+[data-theme="dark"] .omnibar-item:hover,
+[data-theme="dark"] .omnibar-item.active {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.omnibar-item.bookmark.active,
+.omnibar-item.bookmark:hover {
+  border-left-color: #3b82f6;
+}
+
+.omnibar-item.folder.active,
+.omnibar-item.folder:hover {
+  border-left-color: #f59e0b;
+}
+
+.omnibar-item.empty {
+  color: var(--text-tertiary);
+  font-style: italic;
+  justify-content: center;
+  cursor: default;
+}
+
+.omnibar-item-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.omnibar-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.omnibar-item-label {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.omnibar-item-description {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 0.125rem;
+}
+
+.omnibar-recent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.omnibar-recent-item:hover {
+  background: var(--bg-hover);
+}
+
+.omnibar-recent-remove {
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  color: var(--text-tertiary);
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+}
+
+.omnibar-recent-remove:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.omnibar-recent-item:hover .omnibar-recent-remove {
+  opacity: 1;
+}
+
+.omnibar-tags-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.omnibar-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+.omnibar-tag-pill:hover {
+  background: var(--primary-100);
+  color: var(--primary-600);
+  border-color: var(--primary-200);
+}
+
+[data-theme="dark"] .omnibar-tag-pill:hover {
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--primary-200);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.omnibar-tips {
+  display: flex;
+  gap: 1rem;
+  padding: 0.625rem 1rem;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  flex-wrap: wrap;
+}
+
+.omnibar-tips .tip {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.omnibar-tips kbd {
+  background: var(--bg-tertiary);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.omnibar-clear-btn {
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.omnibar-clear-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.command-category {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-full);
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.command-category.bookmark {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.command-category.folder {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.command-category.tag {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.command-favicon {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  object-fit: contain;
+}
+
+.command-icon {
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+}
+
+
 .sidebar-actions {
   padding: 1rem 0.5rem 0 0.5rem;
   margin-bottom: 0.5rem;
@@ -7339,4 +7631,244 @@ body.fullscreen-mode #dashboard-fullscreen-btn .fullscreen-exit-icon {
 .maintenance-status.warning {
   background: rgba(251, 191, 36, 0.1);
   color: #b45309;
+}
+
+
+/* Micro-Animations & Skeleton Loading */
+
+@keyframes shimmer {
+  0% {
+    background-position: -468px 0;
+  }
+
+  100% {
+    background-position: 468px 0;
+  }
+}
+
+.skeleton {
+  background: var(--bg-tertiary);
+  background-image: linear-gradient(to right,
+      var(--bg-tertiary) 0%,
+      var(--bg-hover) 20%,
+      var(--bg-tertiary) 40%,
+      var(--bg-tertiary) 100%);
+  background-repeat: no-repeat;
+  background-size: 800px 104px;
+  display: inline-block;
+  position: relative;
+  animation: shimmer 1.5s infinite linear forward;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-text {
+  height: 1rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-title {
+  height: 1.25rem;
+  width: 70%;
+  margin-bottom: 0.75rem;
+}
+
+.skeleton-url {
+  height: 0.875rem;
+  width: 40%;
+  margin-bottom: 1rem;
+}
+
+.skeleton-favicon {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-tag {
+  width: 60px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  margin-right: 0.5rem;
+}
+
+/* Entrance Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.entrance-animation {
+  animation: fadeInUp 0.4s ease forwards;
+  opacity: 0;
+}
+
+/* Staggered animation delay utility classes */
+.delay-0 {
+  animation-delay: 0ms;
+}
+
+.delay-1 {
+  animation-delay: 50ms;
+}
+
+.delay-2 {
+  animation-delay: 100ms;
+}
+
+.delay-3 {
+  animation-delay: 150ms;
+}
+
+.delay-4 {
+  animation-delay: 200ms;
+}
+
+.delay-5 {
+  animation-delay: 250ms;
+}
+
+.delay-6 {
+  animation-delay: 300ms;
+}
+
+.delay-7 {
+  animation-delay: 350ms;
+}
+
+.delay-8 {
+  animation-delay: 400ms;
+}
+
+.delay-9 {
+  animation-delay: 450ms;
+}
+
+/* Rich Card View */
+.rich-bookmark-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all 0.2s ease;
+  position: relative;
+  height: 100%;
+}
+
+.rich-bookmark-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent-primary);
+}
+
+.rich-bookmark-card.selected {
+  border-color: var(--accent-primary);
+  background: var(--bg-highlight);
+}
+
+.rich-card-image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rich-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.rich-bookmark-card:hover .rich-card-image img {
+  transform: scale(1.05);
+}
+
+.rich-card-image-placeholder {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+}
+
+.rich-card-content {
+  padding: 1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rich-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.rich-card-content .bookmark-title {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rich-card-content .bookmark-description {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.rich-bookmark-card .bookmark-actions {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.25rem;
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(4px);
+}
+
+.rich-bookmark-card:hover .bookmark-actions {
+  opacity: 1;
+}
+
+.rich-card-content .bookmark-tags {
+  margin-top: auto;
+}
+
+/* Grid layout for rich cards */
+.bookmarks-grid.rich-link-previews {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
 }

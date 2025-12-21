@@ -41,6 +41,7 @@ export let aiSuggestionsEnabled: boolean = true;
 export let includeChildBookmarks: boolean = false;
 export let snapToGrid: boolean = true;
 export let tourCompleted: boolean = false;
+export let richLinkPreviewsEnabled: boolean = false;
 
 // Dashboard State
 export let dashboardConfig = {
@@ -117,6 +118,7 @@ export let isInitialLoad: boolean = true;
 export const BOOKMARKS_PER_PAGE = 50;
 export let displayedCount: number = BOOKMARKS_PER_PAGE;
 export let isLoadingMore: boolean = false;
+export let isLoading: boolean = false;
 
 // Drag and Drop State
 export let draggedWidget: any = null;
@@ -273,6 +275,9 @@ export function setSnapToGrid(val: boolean) {
 export function setTourCompleted(val: boolean) {
   tourCompleted = val;
 }
+export function setRichLinkPreviewsEnabled(val: boolean) {
+  richLinkPreviewsEnabled = val;
+}
 export function setDashboardConfig(val: any) {
   dashboardConfig = val;
 }
@@ -334,6 +339,9 @@ export function setDisplayedCount(val: number) {
 }
 export function setIsLoadingMore(val: boolean) {
   isLoadingMore = val;
+}
+export function setIsLoading(val: boolean) {
+  isLoading = val;
 }
 export function setDraggedWidget(val: any) {
   draggedWidget = val;
