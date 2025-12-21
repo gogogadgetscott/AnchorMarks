@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { AppProvider } from "./contexts/AppContext";
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { logger } from "@utils/logger.ts";
@@ -21,7 +22,7 @@ import { initTagListeners } from "@features/ui/tags.ts";
  * AnchorMarks React App Component
  * Manages state and initialization while delegating rendering to legacy code
  */
-const App: React.FC = () => {
+const AppInner: React.FC = () => {
   // Initialize app on mount
   useEffect(() => {
     const initializeApp = async () => {
@@ -93,6 +94,15 @@ const App: React.FC = () => {
   // Return empty fragment - the loader has already populated the DOM
   // This component just manages React state and initialization
   return <></>;
+};
+
+// Wrap the app with context provider
+const App: React.FC = () => {
+  return (
+    <AppProvider>
+      <AppInner />
+    </AppProvider>
+  );
 };
 
 // ============================================================
