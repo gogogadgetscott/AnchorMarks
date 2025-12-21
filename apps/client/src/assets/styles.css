@@ -196,12 +196,10 @@ textarea {
 .bg-gradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    135deg,
-    var(--primary-600) 0%,
-    #8b5cf6 50%,
-    #ec4899 100%
-  );
+  background: linear-gradient(135deg,
+      var(--primary-600) 0%,
+      #8b5cf6 50%,
+      #ec4899 100%);
   opacity: 0.1;
 }
 
@@ -875,6 +873,298 @@ body.sidebar-collapsed .nav-section-header {
   border-radius: var(--radius-sm);
   pointer-events: none;
 }
+
+/* Omnibar Styles */
+.omnibar-container {
+  position: relative;
+}
+
+.omnibar-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  min-width: 400px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  max-height: 500px;
+  overflow-y: auto;
+  z-index: 2000;
+  animation: omnibarSlideDown 0.2s ease;
+}
+
+@keyframes omnibarSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.omnibar-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.omnibar-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.omnibar-panel::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.omnibar-panel::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+.omnibar-section {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.omnibar-section:last-child {
+  border-bottom: none;
+}
+
+.omnibar-section.hidden {
+  display: none;
+}
+
+.omnibar-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--bg-secondary);
+}
+
+.omnibar-section-content {
+  padding: 0.25rem 0;
+}
+
+.omnibar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  border-left: 3px solid transparent;
+}
+
+.omnibar-item:hover,
+.omnibar-item.active {
+  background: var(--bg-hover);
+}
+
+[data-theme="dark"] .omnibar-item:hover,
+[data-theme="dark"] .omnibar-item.active {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.omnibar-item.bookmark.active,
+.omnibar-item.bookmark:hover {
+  border-left-color: #3b82f6;
+}
+
+.omnibar-item.folder.active,
+.omnibar-item.folder:hover {
+  border-left-color: #f59e0b;
+}
+
+.omnibar-item.empty {
+  color: var(--text-tertiary);
+  font-style: italic;
+  justify-content: center;
+  cursor: default;
+}
+
+.omnibar-item-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.omnibar-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.omnibar-item-label {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.omnibar-item-description {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 0.125rem;
+}
+
+.omnibar-recent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.omnibar-recent-item:hover {
+  background: var(--bg-hover);
+}
+
+.omnibar-recent-remove {
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  color: var(--text-tertiary);
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+}
+
+.omnibar-recent-remove:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.omnibar-recent-item:hover .omnibar-recent-remove {
+  opacity: 1;
+}
+
+.omnibar-tags-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.omnibar-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+.omnibar-tag-pill:hover {
+  background: var(--primary-100);
+  color: var(--primary-600);
+  border-color: var(--primary-200);
+}
+
+[data-theme="dark"] .omnibar-tag-pill:hover {
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--primary-200);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.omnibar-tips {
+  display: flex;
+  gap: 1rem;
+  padding: 0.625rem 1rem;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  flex-wrap: wrap;
+}
+
+.omnibar-tips .tip {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.omnibar-tips kbd {
+  background: var(--bg-tertiary);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.omnibar-clear-btn {
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.omnibar-clear-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.command-category {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-full);
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.command-category.bookmark {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.command-category.folder {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.command-category.tag {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.command-favicon {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  object-fit: contain;
+}
+
+.command-icon {
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+}
+
 
 .sidebar-actions {
   padding: 1rem 0.5rem 0 0.5rem;
@@ -1871,30 +2161,23 @@ body.sidebar-collapsed .nav-section-header {
   padding: 0.25rem 0.625rem;
   font-size: 0.6875rem;
   font-weight: 500;
-  background: color-mix(
-    in srgb,
-    var(--tag-color, var(--primary-500)) 15%,
-    transparent
-  );
+  background: color-mix(in srgb,
+      var(--tag-color, var(--primary-500)) 15%,
+      transparent);
   color: var(--tag-color, var(--primary-700));
   border-radius: var(--radius-full);
-  border: 1px solid
-    color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
   transition: all var(--transition-fast);
   cursor: pointer;
 }
 
 .tag:hover {
-  background: color-mix(
-    in srgb,
-    var(--tag-color, var(--primary-500)) 25%,
-    transparent
-  );
-  border-color: color-mix(
-    in srgb,
-    var(--tag-color, var(--primary-500)) 35%,
-    transparent
-  );
+  background: color-mix(in srgb,
+      var(--tag-color, var(--primary-500)) 25%,
+      transparent);
+  border-color: color-mix(in srgb,
+      var(--tag-color, var(--primary-500)) 35%,
+      transparent);
 }
 
 [data-theme="dark"] .tag {
@@ -2291,6 +2574,7 @@ body.sidebar-collapsed .nav-section-header {
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 1;
@@ -2600,57 +2884,41 @@ body.sidebar-collapsed .nav-section-header {
 
 /* Bookmark card with custom color */
 .bookmark-card.has-custom-color {
-  background: color-mix(
-    in srgb,
-    var(--bookmark-color) 20%,
-    var(--bg-secondary)
-  ) !important;
-  border-color: color-mix(
-    in srgb,
-    var(--bookmark-color) 40%,
-    var(--border-color)
-  ) !important;
+  background: color-mix(in srgb,
+      var(--bookmark-color) 20%,
+      var(--bg-secondary)) !important;
+  border-color: color-mix(in srgb,
+      var(--bookmark-color) 40%,
+      var(--border-color)) !important;
   border-left: 8px solid var(--bookmark-color) !important;
 }
 
 .bookmark-card.has-custom-color:hover {
-  background: color-mix(
-    in srgb,
-    var(--bookmark-color) 28%,
-    var(--bg-secondary)
-  ) !important;
-  border-color: color-mix(
-    in srgb,
-    var(--bookmark-color) 50%,
-    var(--border-color)
-  ) !important;
+  background: color-mix(in srgb,
+      var(--bookmark-color) 28%,
+      var(--bg-secondary)) !important;
+  border-color: color-mix(in srgb,
+      var(--bookmark-color) 50%,
+      var(--border-color)) !important;
 }
 
 [data-theme="dark"] .bookmark-card.has-custom-color {
-  background: color-mix(
-    in srgb,
-    var(--bookmark-color) 18%,
-    var(--bg-secondary)
-  ) !important;
-  border-color: color-mix(
-    in srgb,
-    var(--bookmark-color) 35%,
-    var(--border-color)
-  ) !important;
+  background: color-mix(in srgb,
+      var(--bookmark-color) 18%,
+      var(--bg-secondary)) !important;
+  border-color: color-mix(in srgb,
+      var(--bookmark-color) 35%,
+      var(--border-color)) !important;
   border-left: 8px solid color-mix(in srgb, var(--bookmark-color) 80%, white) !important;
 }
 
 [data-theme="dark"] .bookmark-card.has-custom-color:hover {
-  background: color-mix(
-    in srgb,
-    var(--bookmark-color) 25%,
-    var(--bg-secondary)
-  ) !important;
-  border-color: color-mix(
-    in srgb,
-    var(--bookmark-color) 45%,
-    var(--border-color)
-  ) !important;
+  background: color-mix(in srgb,
+      var(--bookmark-color) 25%,
+      var(--bg-secondary)) !important;
+  border-color: color-mix(in srgb,
+      var(--bookmark-color) 45%,
+      var(--border-color)) !important;
 }
 
 /* Tag modal needs higher z-index since it opens from within settings modal */
@@ -2691,14 +2959,11 @@ body.sidebar-collapsed .nav-section-header {
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
   font-weight: 500;
-  background: color-mix(
-    in srgb,
-    var(--tag-color, var(--primary-500)) 15%,
-    transparent
-  );
+  background: color-mix(in srgb,
+      var(--tag-color, var(--primary-500)) 15%,
+      transparent);
   color: var(--tag-color, var(--primary-700));
-  border: 1px solid
-    color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
   border-radius: var(--radius-full);
   transition: all 0.2s;
 }
@@ -2907,11 +3172,11 @@ body.sidebar-collapsed .nav-section-header {
   box-shadow: var(--shadow-sm);
 }
 
-.toggle input:checked + .toggle-slider {
+.toggle input:checked+.toggle-slider {
   background: var(--primary-500);
 }
 
-.toggle input:checked + .toggle-slider::before {
+.toggle input:checked+.toggle-slider::before {
   transform: translateX(20px);
 }
 
@@ -2925,7 +3190,7 @@ body.sidebar-collapsed .nav-section-header {
   margin-bottom: 0.5rem;
 }
 
-.api-section > p {
+.api-section>p {
   font-size: 0.875rem;
   color: var(--text-secondary);
   margin-bottom: 1rem;
@@ -3187,6 +3452,7 @@ body.sidebar-collapsed .nav-section-header {
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
+
   /* Ensure the main app uses full viewport width on mobile */
   .main-app,
   .main-content,
@@ -3249,6 +3515,7 @@ body.sidebar-collapsed .nav-section-header {
   .dashboard-columns {
     grid-template-columns: 1fr;
   }
+
   /* Sidebar becomes an off-canvas overlay drawer on mobile */
   .sidebar {
     position: fixed;
@@ -3451,7 +3718,7 @@ body.dragging-widget .widget-sidebar-overlay {
   margin-bottom: 0.5rem;
 }
 
-.sync-info > p {
+.sync-info>p {
   color: var(--text-secondary);
   margin-bottom: 1.5rem;
 }
@@ -3473,7 +3740,7 @@ body.dragging-widget .widget-sidebar-overlay {
   margin-bottom: 0.5rem;
 }
 
-.import-section > p {
+.import-section>p {
   font-size: 0.875rem;
   color: var(--text-secondary);
   margin-bottom: 1rem;
@@ -4700,11 +4967,9 @@ body.dragging-widget .widget-sidebar-overlay {
   width: 16px;
   height: 16px;
   cursor: nwse-resize;
-  background: linear-gradient(
-    135deg,
-    transparent 50%,
-    var(--text-tertiary) 50%
-  );
+  background: linear-gradient(135deg,
+      transparent 50%,
+      var(--text-tertiary) 50%);
   opacity: 0.3;
   transition: opacity var(--transition-fast);
 }
@@ -6515,12 +6780,10 @@ html {
   display: flex;
   flex-direction: column;
   padding: 1.25rem;
-  background: linear-gradient(
-    135deg,
-    var(--bg-primary) 0%,
-    var(--bg-secondary) 50%,
-    var(--bg-primary) 100%
-  );
+  background: linear-gradient(135deg,
+      var(--bg-primary) 0%,
+      var(--bg-secondary) 50%,
+      var(--bg-primary) 100%);
   border-radius: var(--radius-xl);
   margin: 0.5rem;
   box-shadow: var(--shadow-lg);
@@ -6537,11 +6800,9 @@ html {
   left: 0;
   right: 0;
   height: 200px;
-  background: linear-gradient(
-    180deg,
-    rgba(99, 102, 241, 0.05) 0%,
-    transparent 100%
-  );
+  background: linear-gradient(180deg,
+      rgba(99, 102, 241, 0.05) 0%,
+      transparent 100%);
   pointer-events: none;
 }
 
@@ -6623,12 +6884,15 @@ html {
   min-height: 0;
   position: relative;
   z-index: 1;
-  overflow: hidden; /* Prevent scrolling */
-  container-type: inline-size; /* Enable container queries */
+  overflow: hidden;
+  /* Prevent scrolling */
+  container-type: inline-size;
+  /* Enable container queries */
 }
 
 .tag-cloud-canvas::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
+  /* Chrome, Safari, Opera */
 }
 
 .tag-cloud-tag {
@@ -6640,21 +6904,14 @@ html {
   font-weight: 600;
   line-height: 1.2;
   color: var(--tag-color, var(--primary-500));
-  background: linear-gradient(
-    135deg,
-    color-mix(
-      in srgb,
-      var(--tag-color, var(--primary-500)) 10%,
-      var(--bg-primary)
-    ),
-    color-mix(
-      in srgb,
-      var(--tag-color, var(--primary-500)) 5%,
-      var(--bg-secondary)
-    )
-  );
-  border: 1px solid
-    color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
+  background: linear-gradient(135deg,
+      color-mix(in srgb,
+        var(--tag-color, var(--primary-500)) 10%,
+        var(--bg-primary)),
+      color-mix(in srgb,
+        var(--tag-color, var(--primary-500)) 5%,
+        var(--bg-secondary)));
+  border: 1px solid color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
   border-radius: var(--radius-full);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -6665,8 +6922,7 @@ html {
   text-shadow: none;
   white-space: nowrap;
   box-shadow:
-    0 2px 8px
-      color-mix(in srgb, var(--tag-color, var(--primary-500)) 15%, transparent),
+    0 2px 8px color-mix(in srgb, var(--tag-color, var(--primary-500)) 15%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   max-width: 95%;
   overflow: hidden;
@@ -6679,6 +6935,7 @@ html {
     opacity: 0;
     transform: var(--tag-rotation, rotate(0deg)) scale(0.7) translateY(10px);
   }
+
   to {
     opacity: var(--tag-opacity, 1);
     transform: var(--tag-rotation, rotate(0deg)) scale(1) translateY(0);
@@ -6687,27 +6944,18 @@ html {
 
 .tag-cloud-tag:hover {
   transform: var(--tag-rotation, rotate(0deg)) scale(1.1) translateY(-2px);
-  background: linear-gradient(
-    135deg,
-    color-mix(
-      in srgb,
-      var(--tag-color, var(--primary-500)) 25%,
-      var(--bg-primary)
-    ),
-    color-mix(
-      in srgb,
-      var(--tag-color, var(--primary-500)) 15%,
-      var(--bg-secondary)
-    )
-  );
-  border-color: color-mix(
-    in srgb,
-    var(--tag-color, var(--primary-500)) 50%,
-    transparent
-  );
+  background: linear-gradient(135deg,
+      color-mix(in srgb,
+        var(--tag-color, var(--primary-500)) 25%,
+        var(--bg-primary)),
+      color-mix(in srgb,
+        var(--tag-color, var(--primary-500)) 15%,
+        var(--bg-secondary)));
+  border-color: color-mix(in srgb,
+      var(--tag-color, var(--primary-500)) 50%,
+      transparent);
   box-shadow:
-    0 8px 24px
-      color-mix(in srgb, var(--tag-color, var(--primary-500)) 30%, transparent),
+    0 8px 24px color-mix(in srgb, var(--tag-color, var(--primary-500)) 30%, transparent),
     0 2px 8px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   z-index: 10;
@@ -6768,12 +7016,10 @@ html {
 .legend-gradient {
   width: 100px;
   height: 4px;
-  background: linear-gradient(
-    90deg,
-    var(--primary-200) 0%,
-    var(--primary-500) 50%,
-    var(--primary-700) 100%
-  );
+  background: linear-gradient(90deg,
+      var(--primary-200) 0%,
+      var(--primary-500) 50%,
+      var(--primary-700) 100%);
   border-radius: var(--radius-full);
 }
 
@@ -6956,8 +7202,15 @@ body.fullscreen-mode .dashboard-freeform-container {
 }
 
 @keyframes pulse-badge {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* Fullscreen Button Icons Toggle */
@@ -7130,6 +7383,7 @@ body.fullscreen-mode #dashboard-fullscreen-btn .fullscreen-exit-icon {
   0% {
     background-position: -468px 0;
   }
+
   100% {
     background-position: 468px 0;
   }
@@ -7137,13 +7391,11 @@ body.fullscreen-mode #dashboard-fullscreen-btn .fullscreen-exit-icon {
 
 .skeleton {
   background: var(--bg-tertiary);
-  background-image: linear-gradient(
-    to right,
-    var(--bg-tertiary) 0%,
-    var(--bg-hover) 20%,
-    var(--bg-tertiary) 40%,
-    var(--bg-tertiary) 100%
-  );
+  background-image: linear-gradient(to right,
+      var(--bg-tertiary) 0%,
+      var(--bg-hover) 20%,
+      var(--bg-tertiary) 40%,
+      var(--bg-tertiary) 100%);
   background-repeat: no-repeat;
   background-size: 800px 104px;
   display: inline-block;
@@ -7189,6 +7441,7 @@ body.fullscreen-mode #dashboard-fullscreen-btn .fullscreen-exit-icon {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -7201,16 +7454,45 @@ body.fullscreen-mode #dashboard-fullscreen-btn .fullscreen-exit-icon {
 }
 
 /* Staggered animation delay utility classes */
-.delay-0 { animation-delay: 0ms; }
-.delay-1 { animation-delay: 50ms; }
-.delay-2 { animation-delay: 100ms; }
-.delay-3 { animation-delay: 150ms; }
-.delay-4 { animation-delay: 200ms; }
-.delay-5 { animation-delay: 250ms; }
-.delay-6 { animation-delay: 300ms; }
-.delay-7 { animation-delay: 350ms; }
-.delay-8 { animation-delay: 400ms; }
-.delay-9 { animation-delay: 450ms; }
+.delay-0 {
+  animation-delay: 0ms;
+}
+
+.delay-1 {
+  animation-delay: 50ms;
+}
+
+.delay-2 {
+  animation-delay: 100ms;
+}
+
+.delay-3 {
+  animation-delay: 150ms;
+}
+
+.delay-4 {
+  animation-delay: 200ms;
+}
+
+.delay-5 {
+  animation-delay: 250ms;
+}
+
+.delay-6 {
+  animation-delay: 300ms;
+}
+
+.delay-7 {
+  animation-delay: 350ms;
+}
+
+.delay-8 {
+  animation-delay: 400ms;
+}
+
+.delay-9 {
+  animation-delay: 450ms;
+}
 
 /* Rich Card View */
 .rich-bookmark-card {
