@@ -73,23 +73,34 @@ const rateLimiter = require("./middleware/rateLimiter");
 
 // Middleware registration
 // Enhanced helmet configuration for security hardening
+// CSP is environment-aware: relaxed for development (Vite HMR), strict for production
+const cspDirectives = {
+  defaultSrc: ["'self'"],
+  styleSrc: ["'self'", "'unsafe-inline'"], // Inline styles needed for dynamic theming
+  fontSrc: ["'self'"],
+  imgSrc: ["'self'", "data:", "https:", "blob:"],
+  connectSrc: ["'self'", "https:", "wss:"],
+  frameSrc: ["'none'"],
+  objectSrc: ["'none'"],
+  baseUri: ["'self'"],
+  formAction: ["'self'"],
+};
+
+// Development: Allow unsafe-inline/unsafe-eval for Vite HMR
+if (config.NODE_ENV === "development") {
+  cspDirectives.scriptSrc = ["'self'", "'unsafe-inline'", "'unsafe-eval'"];
+  cspDirectives.connectSrc.push("ws:", "wss:"); // WebSocket for Vite HMR
+} else {
+  // Production: Strict CSP - no unsafe-inline/unsafe-eval
+  cspDirectives.scriptSrc = ["'self'"];
+  // Note: 'strict-dynamic' with nonces would be the modern approach for production.
+  // Currently all scripts are self-hosted, so 'self' is sufficient.
+  // If external CDN scripts are added, use the SRI helper: helpers/sri.js
+}
+
 app.use(helmet({
   contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],  // Required for Vite dev
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      fontSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https:", "wss:"],
-      frameSrc: ["'none'"],
-      objectSrc: ["'none'"],
-      baseUri: ["'self'"],
-      formAction: ["'self'"],
-      // Note: 'require-sri-for' is deprecated in CSP Level 3, but 'strict-dynamic' 
-      // with nonces would be the modern approach. Currently all scripts are self-hosted.
-      // If external CDN scripts are added, use the SRI helper: helpers/sri.js
-    },
+    directives: cspDirectives,
   },
   hsts: config.SSL_ENABLED, // Enable HSTS only if SSL is enabled
   crossOriginEmbedderPolicy: false,  // Required for favicon loading from external sources
