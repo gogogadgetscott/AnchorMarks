@@ -32,7 +32,7 @@
   "scripts": {
     "dev": "NODE_ENV=development node apps/server",
     "dev:vite": "npm run dev --workspace=anchormarks-client",
-    "dev:full": "concurrently \"npm run dev\" \"npm run dev:vite\"",
+    "dev:full": "npx concurrently \"npm run dev\" \"npm run dev:vite\"",
     "build": "npm run build --workspace=anchormarks-client",
     "prod": "NODE_ENV=production node apps/server",
     "start": "npm run dev:full",
