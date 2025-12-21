@@ -33,10 +33,8 @@ export function BookmarkCard(bookmark: Bookmark, index: number): string {
       .split(",")
       .map((t) => t.trim())
       .filter((t) => t)
-      .split(",")
-      .map((t) => t.trim())
-      .filter((t) => t)
     : [];
+
 
   const tagEntries = Array.isArray(bookmark.tags_detailed)
     ? bookmark.tags_detailed.map((t) => ({
