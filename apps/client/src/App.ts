@@ -98,7 +98,8 @@ export function attachViewToggleListeners(): void {
  * This dynamically renders the header without fully re-rendering
  */
 export async function updateHeaderContent(): Promise<void> {
-  const { Header, Omnibar, Icon, Button } = await import("@components/index.ts");
+  const { Header, Omnibar, Icon, Button } =
+    await import("@components/index.ts");
   const headersContainer = document.getElementById("headers-container");
   if (!headersContainer) return;
 

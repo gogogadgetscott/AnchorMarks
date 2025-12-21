@@ -123,31 +123,43 @@ export function openModal(id: string): void {
   if (modal) {
     modal.classList.remove("hidden");
     
-    // Attach modal close listeners
+    // Attach modal close listeners only once per modal instance
     const closeBtn = modal.querySelector(".modal-close") as HTMLElement | null;
     const backdrop = modal.querySelector(".modal-backdrop") as HTMLElement | null;
     
-    const closeHandler = () => {
+    const closeHandler = (e: Event) => {
+      e.preventDefault();
       modal.classList.add("hidden");
     };
     
+    // Remove existing listeners to avoid duplicates
     if (closeBtn) {
-      closeBtn.addEventListener("click", closeHandler);
+      closeBtn.replaceWith(closeBtn.cloneNode(true));
+      const newCloseBtn = modal.querySelector(".modal-close") as HTMLElement | null;
+      if (newCloseBtn) {
+        newCloseBtn.addEventListener("click", closeHandler);
+      }
     }
     
     if (backdrop) {
-      backdrop.addEventListener("click", closeHandler);
+      backdrop.replaceWith(backdrop.cloneNode(true));
+      const newBackdrop = modal.querySelector(".modal-backdrop") as HTMLElement | null;
+      if (newBackdrop) {
+        newBackdrop.addEventListener("click", closeHandler);
+      }
     }
     
     // Re-attach settings tab listeners if opening settings modal
     if (id === "settings-modal") {
       attachSettingsTabListeners();
+      attachSettingsModalLogout();
     }
   }
 }
 
 // Attach settings tab listeners
 function attachSettingsTabListeners(): void {
+  // Tab switching
   document.querySelectorAll(".settings-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
       const tabName = (tab as HTMLElement).dataset.settingsTab;
@@ -170,6 +182,86 @@ function attachSettingsTabListeners(): void {
       }
     });
   });
+
+  // Theme selector
+  const themeSelect = document.getElementById("theme-select") as HTMLSelectElement;
+  if (themeSelect) {
+    themeSelect.addEventListener("change", async (e) => {
+      const { setTheme } = await import("@features/bookmarks/settings.ts");
+      const themeName = (e.target as HTMLSelectElement).value;
+      setTheme(themeName, true); // true = save to server
+    });
+  }
+
+  // Favicons toggle
+  const faviconToggle = document.getElementById(
+    "hide-favicons-toggle",
+  ) as HTMLInputElement;
+  if (faviconToggle) {
+    faviconToggle.addEventListener("change", async (e) => {
+      const { saveSettings } = await import("@features/bookmarks/settings.ts");
+      const hideFavicons = (e.target as HTMLInputElement).checked;
+      await saveSettings({ hide_favicons: hideFavicons });
+      
+      // Apply the change immediately
+      state.setHideFavicons(hideFavicons);
+      
+      const { renderBookmarks } = await import("@features/bookmarks/bookmarks.ts");
+      renderBookmarks();
+    });
+  }
+
+  // AI suggestions toggle
+  const aiToggle = document.getElementById(
+    "ai-suggestions-toggle",
+  ) as HTMLInputElement;
+  if (aiToggle) {
+    aiToggle.addEventListener("change", async (e) => {
+      const { saveSettings } = await import("@features/bookmarks/settings.ts");
+      const enabled = (e.target as HTMLInputElement).checked;
+      await saveSettings({ ai_suggestions_enabled: enabled });
+      
+      // Apply the change immediately
+      state.setAiSuggestionsEnabled(enabled);
+    });
+  }
+
+  // Rich link previews toggle
+  const richPreviewToggle = document.getElementById(
+    "rich-link-previews-toggle",
+  ) as HTMLInputElement;
+  if (richPreviewToggle) {
+    richPreviewToggle.addEventListener("change", async (e) => {
+      const { saveSettings } = await import("@features/bookmarks/settings.ts");
+      const enabled = (e.target as HTMLInputElement).checked;
+      await saveSettings({ rich_link_previews_enabled: enabled });
+      
+      // Apply the change immediately
+      state.setRichLinkPreviewsEnabled(enabled);
+      
+      const { renderBookmarks } = await import("@features/bookmarks/bookmarks.ts");
+      renderBookmarks();
+    });
+  }
+}
+
+// Attach settings modal logout button listener
+function attachSettingsModalLogout(): void {
+  const logoutBtn = document.getElementById("logout-btn") as HTMLButtonElement;
+  if (logoutBtn) {
+    // Remove existing listener by cloning
+    logoutBtn.replaceWith(logoutBtn.cloneNode(true));
+    const newLogoutBtn = document.getElementById("logout-btn") as HTMLButtonElement;
+    
+    if (newLogoutBtn) {
+      newLogoutBtn.addEventListener("click", async (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const { logout } = await import("@features/auth/auth.ts");
+        logout();
+      });
+    }
+  }
 }
 
 // Close all modals
