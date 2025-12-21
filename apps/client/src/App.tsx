@@ -1,22 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
-import { escapeHtml, getHostname, parseTagInput } from "@utils/index.ts";
-import {
-  showToast,
-  openModal,
-  closeModals,
-  addTagToInput,
-  initDom,
-  updateActiveNav,
-} from "@utils/ui-helpers.ts";
 import { logger } from "@utils/logger.ts";
-
-// Component imports
-import Dashboard from "@components/Dashboard";
-import BookmarksView from "@components/BookmarksView";
-import SettingsView from "@components/SettingsView";
-import AuthScreen from "@components/AuthScreen";
 
 // Feature imports
 import {
@@ -34,49 +19,37 @@ import { initTagListeners } from "@features/ui/tags.ts";
 
 /**
  * AnchorMarks React App Component
- * Main application entry point with routing and state management
+ * Manages state and initialization while delegating rendering to legacy code
  */
 const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentView, setCurrentView] = useState<string>("bookmarks");
-  const [theme, setTheme] = useState<string>("dark");
-
   // Initialize app on mount
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Initialize DOM references
-        initDom();
-
         // Load theme from localStorage
         const savedTheme = localStorage.getItem("anchormarks_theme") || "dark";
-        setTheme(savedTheme);
         document.documentElement.setAttribute("data-theme", savedTheme);
 
         // Check authentication
-        const { checkAuth, showMainApp } = await import(
-          "@features/auth/auth.ts"
-        );
+        const { checkAuth } = await import("@features/auth/auth.ts");
         const isAuthed = await checkAuth();
 
         if (isAuthed) {
-          setIsAuthenticated(true);
-          const { loadSettings } = await import(
-            "@features/bookmarks/settings.ts"
-          );
-          await loadSettings();
-
-          // Load initial data
-          const { updateUserInfo } = await import("@features/auth/auth.ts");
-          const { loadFolders } = await import(
-            "@features/bookmarks/folders.ts"
-          );
-          const { loadBookmarks } = await import(
-            "@features/bookmarks/bookmarks.ts"
-          );
+          // Load settings and initial data
+          const [
+            { loadSettings },
+            { updateUserInfo },
+            { loadFolders },
+            { loadBookmarks },
+          ] = await Promise.all([
+            import("@features/bookmarks/settings.ts"),
+            import("@features/auth/auth.ts"),
+            import("@features/bookmarks/folders.ts"),
+            import("@features/bookmarks/bookmarks.ts"),
+          ]);
 
           await Promise.all([
+            loadSettings(),
             updateUserInfo(),
             loadFolders(),
             loadBookmarks(),
@@ -91,107 +64,40 @@ const App: React.FC = () => {
           initOmnibarListeners();
           initInteractions();
           initTagListeners();
-        }
 
-        setCurrentView(state.currentView);
-        setIsLoading(false);
+          // Show main app
+          const mainApp = document.getElementById("main-app");
+          const authScreen = document.getElementById("auth-screen");
+          if (mainApp) mainApp.classList.remove("hidden");
+          if (authScreen) authScreen.classList.add("hidden");
+        }
       } catch (err) {
         logger.error("Failed to initialize app", err);
-        setIsLoading(false);
       }
     };
 
     initializeApp();
 
     // Global keyboard shortcuts
-    document.addEventListener("keydown", handleKeyboard);
+    const keydownHandler = (e: KeyboardEvent) => handleKeyboard(e);
+    document.addEventListener("keydown", keydownHandler);
     window.addEventListener("focus", () => {
-      document.addEventListener("keydown", handleKeyboard);
+      document.addEventListener("keydown", keydownHandler);
     });
 
     return () => {
-      document.removeEventListener("keydown", handleKeyboard);
+      document.removeEventListener("keydown", keydownHandler);
     };
   }, []);
 
-  // Listen for view changes in state
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (state.currentView !== currentView) {
-        setCurrentView(state.currentView);
-      }
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [currentView]);
-
-  if (isLoading) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-          fontSize: "1.2rem",
-          color: "var(--text-secondary)",
-        }}
-      >
-        Loading AnchorMarks...
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <AuthScreen />;
-  }
-
-  // Render appropriate view
-  return (
-    <div className="app-container" data-theme={theme}>
-      <div className="app-layout">
-        {/* Sidebar - kept from existing structure */}
-        <aside id="sidebar" className="sidebar">
-          {/* Navigation will be populated by legacy JavaScript */}
-        </aside>
-
-        {/* Main content area */}
-        <main id="main-content" className="main-content">
-          {/* Header - will be populated by legacy components */}
-          <div id="headers-container"></div>
-
-          {/* Dynamic view content */}
-          <div id="main-view" className="main-view">
-            {currentView === "dashboard" && <Dashboard />}
-            {currentView === "settings" && <SettingsView />}
-            {[
-              "bookmarks",
-              "folder",
-              "favorites",
-              "recent",
-              "archived",
-              "collection",
-              "tag-cloud",
-              "search",
-            ].includes(currentView) && <BookmarksView />}
-          </div>
-        </main>
-
-        {/* Modals container */}
-        <div id="modals-container"></div>
-      </div>
-    </div>
-  );
+  // The actual HTML is rendered by the loader, so return null
+  // This component exists for state management and initialization only
+  return null;
 };
 
-// Export utility functions and global API
-declare global {
-  interface Window {
-    AnchorMarks: any;
-    launchBookmarkFromPalette: (id: string) => void;
-    searchBookmarks: (query: string) => any[];
-  }
-}
+// ============================================================
+// Utility Functions (backward compatibility)
+// ============================================================
 
 export async function setViewMode(
   mode: string,
@@ -233,24 +139,32 @@ export function attachViewToggleListeners(): void {
 export async function regenerateApiKey(): Promise<void> {
   if (!confirm("Regenerate API key? Old keys will stop working.")) return;
   try {
+    const { showToast } = await import("@utils/ui-helpers.ts");
     const data = await api("/auth/regenerate-key", { method: "POST" });
     if (state.currentUser) state.currentUser.api_key = data.api_key;
     const apiKeyEl = document.getElementById("api-key-value");
     if (apiKeyEl) apiKeyEl.textContent = data.api_key;
     showToast("API key regenerated!", "success");
   } catch (err: any) {
+    const { showToast } = await import("@utils/ui-helpers.ts");
     showToast(err.message, "error");
   }
 }
 
 export function copyApiKey(): void {
   navigator.clipboard.writeText(state.currentUser?.api_key || "");
-  showToast("API key copied!", "success");
+  (async () => {
+    const { showToast } = await import("@utils/ui-helpers.ts");
+    showToast("API key copied!", "success");
+  })();
 }
 
 export async function resetBookmarks(): Promise<void> {
   if (!confirm("Reset all bookmarks? This cannot be undone!")) return;
   try {
+    const { showToast, closeModals, updateActiveNav } = await import(
+      "@utils/ui-helpers.ts"
+    );
     const data = await api("/settings/reset-bookmarks", { method: "POST" });
     state.setCurrentFolder(null);
     state.setCurrentView("all");
@@ -270,11 +184,23 @@ export async function resetBookmarks(): Promise<void> {
       "success",
     );
   } catch (err: any) {
+    const { showToast } = await import("@utils/ui-helpers.ts");
     showToast(err.message, "error");
   }
 }
 
-// Global API exports
+// ============================================================
+// Global API exports (backward compatibility)
+// ============================================================
+
+declare global {
+  interface Window {
+    AnchorMarks: any;
+    launchBookmarkFromPalette: (id: string) => void;
+    searchBookmarks: (query: string) => any[];
+  }
+}
+
 window.AnchorMarks = {
   api,
   isAuthenticated: () => state.isAuthenticated,
@@ -320,14 +246,6 @@ window.AnchorMarks = {
   get dashboardConfig() {
     return state.dashboardConfig;
   },
-
-  showToast,
-  openModal,
-  closeModals,
-  escapeHtml,
-  getHostname,
-  parseTagInput,
-  addTagToInput,
 
   loadBookmarks: async () => {
     const { loadBookmarks } = await import(
