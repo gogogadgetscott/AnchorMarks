@@ -1,4 +1,4 @@
-import React, { useEffect, useState, memo } from "react";
+import React, { useEffect, useState, memo, useCallback } from "react";
 import { api } from "./services/api";
 import { AppProvider, useAppState } from "./contexts/AppContext";
 import { AuthScreen } from "./layouts/AuthScreen";
@@ -11,12 +11,65 @@ import { SettingsView } from "./layouts/SettingsView";
 import { ToastContainer } from "./layouts/Toast";
 import { ShortcutsPopup } from "./layouts/ShortcutsPopup";
 import { OnboardingTour } from "./layouts/OnboardingTour";
+import { BookmarkModal } from "./layouts/BookmarkModal";
+import {
+  initializeWindowAPI,
+  registerShowBookmarkModal,
+  registerShowTagModal,
+  registerDeleteTag,
+  registerFilterByTag,
+} from "./utils/window-api";
+import type { Bookmark, Tag } from "./types";
 
 /**
  * Main app component that renders the appropriate view based on state
  */
 const MainApp = memo(() => {
-  const { currentView, isAuthenticated } = useAppState();
+  const { currentView, isAuthenticated, setCurrentTag, setCurrentFolder } =
+    useAppState();
+  const [bookmarkModalOpen, setBookmarkModalOpen] = useState(false);
+  const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
+
+  // Register window API handlers
+  useEffect(() => {
+    const handler = (bookmark?: Bookmark | null) => {
+      setEditingBookmark(bookmark || null);
+      setBookmarkModalOpen(true);
+    };
+    registerShowBookmarkModal(handler);
+  }, []);
+
+  // Register tag filter handler
+  useEffect(() => {
+    const handler = (tagName: string) => {
+      setCurrentTag(tagName);
+    };
+    registerFilterByTag(handler);
+  }, [setCurrentTag]);
+
+  const handleBookmarkSave = useCallback(
+    async (bookmark: Partial<Bookmark>) => {
+      try {
+        const method = bookmark.id ? "PUT" : "POST";
+        const response = await api("/bookmarks", {
+          method,
+          body: JSON.stringify(bookmark),
+        });
+
+        setBookmarkModalOpen(false);
+        setEditingBookmark(null);
+
+        // Reload bookmarks
+        const bookmarksResponse = await api("/bookmarks");
+        // Update context with new bookmarks
+        console.log("Bookmark saved:", response);
+      } catch (err) {
+        console.error("Failed to save bookmark:", err);
+        throw err;
+      }
+    },
+    [],
+  );
 
   const handleLogin = async (email: string, password: string) => {
     try {
@@ -83,6 +136,15 @@ const MainApp = memo(() => {
       <ToastContainer />
       <ShortcutsPopup />
       <OnboardingTour />
+      <BookmarkModal
+        isOpen={bookmarkModalOpen}
+        bookmark={editingBookmark}
+        onClose={() => {
+          setBookmarkModalOpen(false);
+          setEditingBookmark(null);
+        }}
+        onSave={handleBookmarkSave}
+      />
     </div>
   );
 });
@@ -99,6 +161,9 @@ const App: React.FC = () => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        // Initialize window API
+        initializeWindowAPI();
+
         // Load theme from localStorage
         const savedTheme = localStorage.getItem("anchormarks_theme") || "dark";
         document.documentElement.setAttribute("data-theme", savedTheme);

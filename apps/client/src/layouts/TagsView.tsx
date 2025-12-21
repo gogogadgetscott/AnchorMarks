@@ -6,16 +6,6 @@ import { EmptyState } from "../components/EmptyState.tsx";
 import { useAppState } from "../contexts/AppContext";
 import type { Tag } from "../types";
 
-declare global {
-  interface Window {
-    AnchorMarks?: {
-      filterByTag?: (tagName: string) => void;
-      showTagModal?: (tag?: Tag) => void;
-      deleteTag?: (tagId: string) => void;
-    };
-  }
-}
-
 interface TagItemProps {
   tag: Tag;
   onSelect: (tagName: string) => void;
@@ -79,9 +69,11 @@ const TagItem = memo<TagItemProps>(({ tag, onSelect, onEdit, onDelete }) => {
 TagItem.displayName = "TagItem";
 
 export const TagsView = memo(() => {
-  const { tags, filterConfig } = useAppState();
+  const { tags, filterConfig, setCurrentTag } = useAppState();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "count">("count");
+  const [tagModalOpen, setTagModalOpen] = useState(false);
+  const [editingTag, setEditingTag] = useState<Tag | null>(null);
 
   const filteredTags = useMemo(() => {
     let filtered = [...tags];
@@ -103,19 +95,22 @@ export const TagsView = memo(() => {
   }, [tags, searchQuery, sortBy]);
 
   const handleSelectTag = useCallback((tagName: string) => {
-    window.AnchorMarks?.filterByTag?.(tagName);
-  }, []);
+    setCurrentTag(tagName);
+  }, [setCurrentTag]);
 
   const handleEditTag = useCallback((tag: Tag) => {
-    window.AnchorMarks?.showTagModal?.(tag);
+    setEditingTag(tag);
+    setTagModalOpen(true);
   }, []);
 
   const handleDeleteTag = useCallback((tagId: string) => {
-    window.AnchorMarks?.deleteTag?.(tagId);
+    // API call to delete tag
+    console.log("Delete tag:", tagId);
   }, []);
 
   const handleCreateTag = useCallback(() => {
-    window.AnchorMarks?.showTagModal?.();
+    setEditingTag(null);
+    setTagModalOpen(true);
   }, []);
 
   const handleSearchChange = useCallback(
