@@ -142,6 +142,7 @@ function tryFetchFavicon(sources, index, localPath, callback) {
 }
 
 module.exports = {
+  isPrivateIp,
   isPrivateAddress,
   fetchFavicon,
 };
