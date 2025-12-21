@@ -15,11 +15,11 @@ export function initNavigationListeners(): void {
     item.addEventListener("click", async () => {
       const view = (item as HTMLElement).dataset.view || "all";
       state.setCurrentView(view);
-      
+
       // Update header content for the new view
       const { updateHeaderContent } = await import("@/App.tsx");
       updateHeaderContent();
-      
+
       updateActiveNav();
 
       // Save view preference

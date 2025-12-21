@@ -1,4 +1,370 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/bookmarks-hgxSTBhD.js","assets/auth-CtF7wfY5.js","assets/ui-DJeZlV46.js","assets/settings-B0ZpC5LD.js"])))=>i.map(i=>d[i]);
-import{h as g,_ as u,ai as _,aj as k,d as E,ak as S,al as c,am as I,an as x}from"./auth-CtF7wfY5.js";import{d as f}from"./bookmarks-hgxSTBhD.js";import{s as l}from"./ui-DJeZlV46.js";import"./dashboard-C1Pj_fLe.js";async function T(t){const s=await t.text();m("start");try{const e=await g("/import/html",{method:"POST",body:JSON.stringify({html:s})}),{loadBookmarks:o}=await u(async()=>{const{loadBookmarks:a}=await import("./bookmarks-hgxSTBhD.js").then(d=>d.c);return{loadBookmarks:a}},__vite__mapDeps([0,1,2]));await o(),await o();const{loadFolders:r}=await u(async()=>{const{loadFolders:a}=await import("./bookmarks-hgxSTBhD.js").then(d=>d.f);return{loadFolders:a}},__vite__mapDeps([0,1,2]));await r();const{renderSidebarTags:n}=await u(async()=>{const{renderSidebarTags:a}=await import("./bookmarks-hgxSTBhD.js").then(d=>d.s);return{renderSidebarTags:a}},__vite__mapDeps([0,1,2]));await n();const i=e.import_log&&e.import_log.length>0;if(l(`Imported ${e.imported} bookmarks!${e.skipped?` (${e.skipped} skipped)`:""}${i?". Log file downloaded.":""}`,"success"),m("success",`${e.imported} imported${e.skipped?`, ${e.skipped} skipped`:""}.`),i){const a=e.import_log.map(p=>`[${p.status.toUpperCase()}] ${p.url}${p.reason?` (${p.reason})`:""}`).join(`
-`),d=new Blob([a],{type:"text/plain"});f(d,`import-log-${new Date().toISOString().split("T")[0]}.txt`)}}catch(e){l(e.message,"error"),m("error",e.message)}finally{m("idle")}}async function B(){try{const t=await g("/export"),s=new Blob([JSON.stringify(t,null,2)],{type:"application/json"});f(s,"anchormarks-bookmarks.tson")}catch(t){l(t.message,"error")}}async function L(){try{const t=await fetch(`${_}/export?format=html`,{credentials:"include"});if(t.status===401){const{logout:e}=await u(async()=>{const{logout:o}=await import("./auth-CtF7wfY5.js").then(r=>r.aF);return{logout:o}},__vite__mapDeps([1,2,0]));throw e(),new Error("Session expired")}if(!t.ok)throw new Error("Export failed");const s=await t.blob();f(s,"anchormarks-bookmarks.html"),l("Export successful","success")}catch(t){l(t.message,"error")}}async function $(){try{const t=await g("/dashboard/views");if(!t||t.length===0){l("No dashboard views to export","info");return}const s={version:"1.0",exported_at:new Date().toISOString(),views:t},e=new Blob([JSON.stringify(s,null,2)],{type:"application/json"});f(e,"anchormarks-dashboard-views.json"),l(`Exported ${t.length} dashboard view(s)`,"success")}catch(t){l(t.message,"error")}}async function O(t){h("start");try{const s=await t.text(),e=JSON.parse(s);if(!e.views||!Array.isArray(e.views))throw new Error("Invalid dashboard views file format");let o=0,r=0;for(const i of e.views)try{await g("/dashboard/views",{method:"POST",body:JSON.stringify({name:i.name,config:i.config})}),o++}catch(a){console.error(`Failed to import view "${i.name}":`,a),r++}const n=`Imported ${o} view(s)${r>0?`, skipped ${r}`:""}`;l(n,"success"),h("success",n)}catch(s){l(s.message,"error"),h("error",s.message)}finally{h("idle")}}function m(t,s=""){const e=document.getElementById("import-html-progress"),o=document.getElementById("import-html-btn");if(!e||!o)return;const r=n=>{e.innerHTML=n};switch(t){case"start":{o.disabled=!0,o.setAttribute("aria-busy","true"),r('<span class="spinner" aria-hidden="true"></span><span>Importing bookmarks...</span>');break}case"success":{r(`<span class="success-dot" aria-hidden="true"></span><span>${s||"Import complete"}</span>`);break}case"error":{r(`<span class="error-dot" aria-hidden="true"></span><span>${s||"Import failed"}</span>`);break}case"idle":{o.disabled=!1,o.removeAttribute("aria-busy");break}}}function h(t,s=""){const e=document.getElementById("import-dashboard-views-progress"),o=document.getElementById("import-dashboard-views-btn");if(!e||!o)return;const r=n=>{e.innerHTML=n};switch(t){case"start":{o.disabled=!0,o.setAttribute("aria-busy","true"),r('<span class="spinner" aria-hidden="true"></span><span>Importing dashboard views...</span>');break}case"success":{r(`<span class="success-dot" aria-hidden="true"></span><span>${s||"Import complete"}</span>`);break}case"error":{r(`<span class="error-dot" aria-hidden="true"></span><span>${s||"Import failed"}</span>`);break}case"idle":{o.disabled=!1,o.removeAttribute("aria-busy");break}}}const N=Object.freeze(Object.defineProperty({__proto__:null,exportDashboardViews:$,exportHtml:L,exportJson:B,importDashboardViews:O,importHtml:T},Symbol.toStringTag,{value:"Module"}));async function b(){try{const{saveSettings:t}=await u(async()=>{const{saveSettings:s}=await import("./settings-B0ZpC5LD.js");return{saveSettings:s}},__vite__mapDeps([3,1,2,0]));await t({tour_completed:!0}),S(!0)}catch(t){console.error("Failed to save tour completed state:",t)}}function A(){if(!I||k)return;if(localStorage.getItem("anchormarks_tour_dismissed")){b();return}E.length<20&&setTimeout(()=>{y()},800),x(!1)}function y(){c.active||(c.active=!0,c.currentStep=0,w())}function w(){const t=c.steps[c.currentStep];if(!t)return;const s=document.getElementById("tour-overlay"),e=document.getElementById("tour-popover"),o=document.getElementById("tour-title"),r=document.getElementById("tour-description"),n=document.getElementById("tour-next-btn");if(!s||!e)return;o&&(o.textContent=t.title),r&&(r.textContent=t.description),document.querySelectorAll(".tour-step").forEach((d,p)=>{d.classList.toggle("active",p===c.currentStep)});const i=c.currentStep===c.steps.length-1;n&&(n.textContent=i?"Got it!":"Next");const a=document.getElementById(t.target);a&&(P(e,a,t.position),a.classList.add("tour-highlight"),a.scrollIntoView({behavior:"smooth",block:"center"})),s.classList.remove("hidden"),e.classList.remove("hidden")}function P(t,s,e){const o=s.getBoundingClientRect(),r=t.getBoundingClientRect(),n=16;let i,a;e==="bottom"?(i=o.bottom+n,a=o.left+o.width/2-r.width/2):e==="top"?(i=o.top-r.height-n,a=o.left+o.width/2-r.width/2):e==="right"?(i=o.top+o.height/2-r.height/2,a=o.right+n):(i=o.top+o.height/2-r.height/2,a=o.left-r.width-n);const d=16;a=Math.max(d,Math.min(a,window.innerWidth-r.width-d)),i=Math.max(d,Math.min(i,window.innerHeight-r.height-d)),t.style.left=a+"px",t.style.top=i+"px"}function D(){const t=c.steps[c.currentStep],s=document.getElementById(t?.target);s&&s.classList.remove("tour-highlight"),c.currentStep++,c.currentStep>=c.steps.length?v():w()}function v(){const t=document.getElementById("tour-overlay"),s=document.getElementById("tour-popover");document.querySelectorAll(".tour-highlight").forEach(e=>{e.classList.remove("tour-highlight")}),t&&t.classList.add("hidden"),s&&s.classList.add("hidden"),c.active=!1,b(),localStorage.setItem("anchormarks_tour_dismissed","true"),l("🎉 Tour complete! Happy bookmarking!")}function C(){const t=document.getElementById("tour-overlay"),s=document.getElementById("tour-popover");document.querySelectorAll(".tour-highlight").forEach(e=>{e.classList.remove("tour-highlight")}),t&&t.classList.add("hidden"),s&&s.classList.add("hidden"),c.active=!1,b(),localStorage.setItem("anchormarks_tour_dismissed","true"),l("Tour skipped. You can restart it from Settings anytime!")}const H=Object.freeze(Object.defineProperty({__proto__:null,checkWelcomeTour:A,endTour:v,nextTourStep:D,showTourStep:w,skipTour:C,startTour:y},Symbol.toStringTag,{value:"Module"}));export{N as i,H as t};
+const __vite__mapDeps = (
+  i,
+  m = __vite__mapDeps,
+  d = m.f ||
+    (m.f = [
+      "assets/bookmarks-hgxSTBhD.js",
+      "assets/auth-CtF7wfY5.js",
+      "assets/ui-DJeZlV46.js",
+      "assets/settings-B0ZpC5LD.js",
+    ]),
+) => i.map((i) => d[i]);
+import {
+  h as g,
+  _ as u,
+  ai as _,
+  aj as k,
+  d as E,
+  ak as S,
+  al as c,
+  am as I,
+  an as x,
+} from "./auth-CtF7wfY5.js";
+import { d as f } from "./bookmarks-hgxSTBhD.js";
+import { s as l } from "./ui-DJeZlV46.js";
+import "./dashboard-C1Pj_fLe.js";
+async function T(t) {
+  const s = await t.text();
+  m("start");
+  try {
+    const e = await g("/import/html", {
+        method: "POST",
+        body: JSON.stringify({ html: s }),
+      }),
+      { loadBookmarks: o } = await u(
+        async () => {
+          const { loadBookmarks: a } =
+            await import("./bookmarks-hgxSTBhD.js").then((d) => d.c);
+          return { loadBookmarks: a };
+        },
+        __vite__mapDeps([0, 1, 2]),
+      );
+    (await o(), await o());
+    const { loadFolders: r } = await u(
+      async () => {
+        const { loadFolders: a } = await import("./bookmarks-hgxSTBhD.js").then(
+          (d) => d.f,
+        );
+        return { loadFolders: a };
+      },
+      __vite__mapDeps([0, 1, 2]),
+    );
+    await r();
+    const { renderSidebarTags: n } = await u(
+      async () => {
+        const { renderSidebarTags: a } =
+          await import("./bookmarks-hgxSTBhD.js").then((d) => d.s);
+        return { renderSidebarTags: a };
+      },
+      __vite__mapDeps([0, 1, 2]),
+    );
+    await n();
+    const i = e.import_log && e.import_log.length > 0;
+    if (
+      (l(
+        `Imported ${e.imported} bookmarks!${e.skipped ? ` (${e.skipped} skipped)` : ""}${i ? ". Log file downloaded." : ""}`,
+        "success",
+      ),
+      m(
+        "success",
+        `${e.imported} imported${e.skipped ? `, ${e.skipped} skipped` : ""}.`,
+      ),
+      i)
+    ) {
+      const a = e.import_log.map(
+          (p) =>
+            `[${p.status.toUpperCase()}] ${p.url}${p.reason ? ` (${p.reason})` : ""}`,
+        ).join(`
+`),
+        d = new Blob([a], { type: "text/plain" });
+      f(d, `import-log-${new Date().toISOString().split("T")[0]}.txt`);
+    }
+  } catch (e) {
+    (l(e.message, "error"), m("error", e.message));
+  } finally {
+    m("idle");
+  }
+}
+async function B() {
+  try {
+    const t = await g("/export"),
+      s = new Blob([JSON.stringify(t, null, 2)], { type: "application/json" });
+    f(s, "anchormarks-bookmarks.tson");
+  } catch (t) {
+    l(t.message, "error");
+  }
+}
+async function L() {
+  try {
+    const t = await fetch(`${_}/export?format=html`, {
+      credentials: "include",
+    });
+    if (t.status === 401) {
+      const { logout: e } = await u(
+        async () => {
+          const { logout: o } = await import("./auth-CtF7wfY5.js").then(
+            (r) => r.aF,
+          );
+          return { logout: o };
+        },
+        __vite__mapDeps([1, 2, 0]),
+      );
+      throw (e(), new Error("Session expired"));
+    }
+    if (!t.ok) throw new Error("Export failed");
+    const s = await t.blob();
+    (f(s, "anchormarks-bookmarks.html"), l("Export successful", "success"));
+  } catch (t) {
+    l(t.message, "error");
+  }
+}
+async function $() {
+  try {
+    const t = await g("/dashboard/views");
+    if (!t || t.length === 0) {
+      l("No dashboard views to export", "info");
+      return;
+    }
+    const s = {
+        version: "1.0",
+        exported_at: new Date().toISOString(),
+        views: t,
+      },
+      e = new Blob([JSON.stringify(s, null, 2)], { type: "application/json" });
+    (f(e, "anchormarks-dashboard-views.json"),
+      l(`Exported ${t.length} dashboard view(s)`, "success"));
+  } catch (t) {
+    l(t.message, "error");
+  }
+}
+async function O(t) {
+  h("start");
+  try {
+    const s = await t.text(),
+      e = JSON.parse(s);
+    if (!e.views || !Array.isArray(e.views))
+      throw new Error("Invalid dashboard views file format");
+    let o = 0,
+      r = 0;
+    for (const i of e.views)
+      try {
+        (await g("/dashboard/views", {
+          method: "POST",
+          body: JSON.stringify({ name: i.name, config: i.config }),
+        }),
+          o++);
+      } catch (a) {
+        (console.error(`Failed to import view "${i.name}":`, a), r++);
+      }
+    const n = `Imported ${o} view(s)${r > 0 ? `, skipped ${r}` : ""}`;
+    (l(n, "success"), h("success", n));
+  } catch (s) {
+    (l(s.message, "error"), h("error", s.message));
+  } finally {
+    h("idle");
+  }
+}
+function m(t, s = "") {
+  const e = document.getElementById("import-html-progress"),
+    o = document.getElementById("import-html-btn");
+  if (!e || !o) return;
+  const r = (n) => {
+    e.innerHTML = n;
+  };
+  switch (t) {
+    case "start": {
+      ((o.disabled = !0),
+        o.setAttribute("aria-busy", "true"),
+        r(
+          '<span class="spinner" aria-hidden="true"></span><span>Importing bookmarks...</span>',
+        ));
+      break;
+    }
+    case "success": {
+      r(
+        `<span class="success-dot" aria-hidden="true"></span><span>${s || "Import complete"}</span>`,
+      );
+      break;
+    }
+    case "error": {
+      r(
+        `<span class="error-dot" aria-hidden="true"></span><span>${s || "Import failed"}</span>`,
+      );
+      break;
+    }
+    case "idle": {
+      ((o.disabled = !1), o.removeAttribute("aria-busy"));
+      break;
+    }
+  }
+}
+function h(t, s = "") {
+  const e = document.getElementById("import-dashboard-views-progress"),
+    o = document.getElementById("import-dashboard-views-btn");
+  if (!e || !o) return;
+  const r = (n) => {
+    e.innerHTML = n;
+  };
+  switch (t) {
+    case "start": {
+      ((o.disabled = !0),
+        o.setAttribute("aria-busy", "true"),
+        r(
+          '<span class="spinner" aria-hidden="true"></span><span>Importing dashboard views...</span>',
+        ));
+      break;
+    }
+    case "success": {
+      r(
+        `<span class="success-dot" aria-hidden="true"></span><span>${s || "Import complete"}</span>`,
+      );
+      break;
+    }
+    case "error": {
+      r(
+        `<span class="error-dot" aria-hidden="true"></span><span>${s || "Import failed"}</span>`,
+      );
+      break;
+    }
+    case "idle": {
+      ((o.disabled = !1), o.removeAttribute("aria-busy"));
+      break;
+    }
+  }
+}
+const N = Object.freeze(
+  Object.defineProperty(
+    {
+      __proto__: null,
+      exportDashboardViews: $,
+      exportHtml: L,
+      exportJson: B,
+      importDashboardViews: O,
+      importHtml: T,
+    },
+    Symbol.toStringTag,
+    { value: "Module" },
+  ),
+);
+async function b() {
+  try {
+    const { saveSettings: t } = await u(
+      async () => {
+        const { saveSettings: s } = await import("./settings-B0ZpC5LD.js");
+        return { saveSettings: s };
+      },
+      __vite__mapDeps([3, 1, 2, 0]),
+    );
+    (await t({ tour_completed: !0 }), S(!0));
+  } catch (t) {
+    console.error("Failed to save tour completed state:", t);
+  }
+}
+function A() {
+  if (!I || k) return;
+  if (localStorage.getItem("anchormarks_tour_dismissed")) {
+    b();
+    return;
+  }
+  (E.length < 20 &&
+    setTimeout(() => {
+      y();
+    }, 800),
+    x(!1));
+}
+function y() {
+  c.active || ((c.active = !0), (c.currentStep = 0), w());
+}
+function w() {
+  const t = c.steps[c.currentStep];
+  if (!t) return;
+  const s = document.getElementById("tour-overlay"),
+    e = document.getElementById("tour-popover"),
+    o = document.getElementById("tour-title"),
+    r = document.getElementById("tour-description"),
+    n = document.getElementById("tour-next-btn");
+  if (!s || !e) return;
+  (o && (o.textContent = t.title),
+    r && (r.textContent = t.description),
+    document.querySelectorAll(".tour-step").forEach((d, p) => {
+      d.classList.toggle("active", p === c.currentStep);
+    }));
+  const i = c.currentStep === c.steps.length - 1;
+  n && (n.textContent = i ? "Got it!" : "Next");
+  const a = document.getElementById(t.target);
+  (a &&
+    (P(e, a, t.position),
+    a.classList.add("tour-highlight"),
+    a.scrollIntoView({ behavior: "smooth", block: "center" })),
+    s.classList.remove("hidden"),
+    e.classList.remove("hidden"));
+}
+function P(t, s, e) {
+  const o = s.getBoundingClientRect(),
+    r = t.getBoundingClientRect(),
+    n = 16;
+  let i, a;
+  e === "bottom"
+    ? ((i = o.bottom + n), (a = o.left + o.width / 2 - r.width / 2))
+    : e === "top"
+      ? ((i = o.top - r.height - n), (a = o.left + o.width / 2 - r.width / 2))
+      : e === "right"
+        ? ((i = o.top + o.height / 2 - r.height / 2), (a = o.right + n))
+        : ((i = o.top + o.height / 2 - r.height / 2),
+          (a = o.left - r.width - n));
+  const d = 16;
+  ((a = Math.max(d, Math.min(a, window.innerWidth - r.width - d))),
+    (i = Math.max(d, Math.min(i, window.innerHeight - r.height - d))),
+    (t.style.left = a + "px"),
+    (t.style.top = i + "px"));
+}
+function D() {
+  const t = c.steps[c.currentStep],
+    s = document.getElementById(t?.target);
+  (s && s.classList.remove("tour-highlight"),
+    c.currentStep++,
+    c.currentStep >= c.steps.length ? v() : w());
+}
+function v() {
+  const t = document.getElementById("tour-overlay"),
+    s = document.getElementById("tour-popover");
+  (document.querySelectorAll(".tour-highlight").forEach((e) => {
+    e.classList.remove("tour-highlight");
+  }),
+    t && t.classList.add("hidden"),
+    s && s.classList.add("hidden"),
+    (c.active = !1),
+    b(),
+    localStorage.setItem("anchormarks_tour_dismissed", "true"),
+    l("🎉 Tour complete! Happy bookmarking!"));
+}
+function C() {
+  const t = document.getElementById("tour-overlay"),
+    s = document.getElementById("tour-popover");
+  (document.querySelectorAll(".tour-highlight").forEach((e) => {
+    e.classList.remove("tour-highlight");
+  }),
+    t && t.classList.add("hidden"),
+    s && s.classList.add("hidden"),
+    (c.active = !1),
+    b(),
+    localStorage.setItem("anchormarks_tour_dismissed", "true"),
+    l("Tour skipped. You can restart it from Settings anytime!"));
+}
+const H = Object.freeze(
+  Object.defineProperty(
+    {
+      __proto__: null,
+      checkWelcomeTour: A,
+      endTour: v,
+      nextTourStep: D,
+      showTourStep: w,
+      skipTour: C,
+      startTour: y,
+    },
+    Symbol.toStringTag,
+    { value: "Module" },
+  ),
+);
+export { N as i, H as t };
 //# sourceMappingURL=extras-DCuDXSmT.js.map

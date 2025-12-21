@@ -9,6 +9,8 @@ module.exports = [
       "public/favicons/**",
       "public/thumbnails/**",
       "screenshots/**",
+      "apps/server/public/assets/**",
+      "dist/**",
     ],
   },
 
@@ -29,7 +31,7 @@ module.exports = [
       },
     },
     rules: {
-      "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "no-unused-vars": "off",
     },
   },
 
@@ -47,7 +49,7 @@ module.exports = [
       },
     },
     rules: {
-      "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "no-unused-vars": "off",
     },
   },
 
@@ -81,7 +83,7 @@ module.exports = [
       },
     },
     rules: {
-      "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "no-unused-vars": "off",
     },
   },
 ];

@@ -122,23 +122,25 @@ export function openModal(id: string): void {
   const modal = document.getElementById(id);
   if (modal) {
     modal.classList.remove("hidden");
-    
+
     // Attach modal close listeners
     const closeBtn = modal.querySelector(".modal-close") as HTMLElement | null;
-    const backdrop = modal.querySelector(".modal-backdrop") as HTMLElement | null;
-    
+    const backdrop = modal.querySelector(
+      ".modal-backdrop",
+    ) as HTMLElement | null;
+
     const closeHandler = () => {
       modal.classList.add("hidden");
     };
-    
+
     if (closeBtn) {
       closeBtn.addEventListener("click", closeHandler);
     }
-    
+
     if (backdrop) {
       backdrop.addEventListener("click", closeHandler);
     }
-    
+
     // Re-attach settings tab listeners if opening settings modal
     if (id === "settings-modal") {
       attachSettingsTabListeners();

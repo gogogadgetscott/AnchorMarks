@@ -7,6 +7,7 @@
 **Branch**: `feature/react-client-conversion`
 
 **Files Modified**:
+
 - `apps/client/package.json` - Added React 18, React DOM, and TypeScript React types
 - `apps/client/vite.config.js` - Added @vitejs/plugin-react
 - `apps/client/tsconfig.json` - Added JSX support (`jsx: react-jsx`)
@@ -19,6 +20,7 @@
 - `apps/client/src/layouts/loader.ts` - Updated imports to App.tsx
 
 **Files Created**:
+
 - `apps/client/src/main.tsx` - React entry point
 - `apps/client/src/App.tsx` - Root React component
 - `apps/client/src/components/AuthScreen.tsx` - Authentication screen component
@@ -27,6 +29,7 @@
 - `apps/client/src/components/SettingsView.tsx` - Settings view component
 
 **Files Deleted**:
+
 - `apps/client/src/main.ts` - Replaced with main.tsx
 - `apps/client/src/App.ts` - Replaced with App.tsx
 

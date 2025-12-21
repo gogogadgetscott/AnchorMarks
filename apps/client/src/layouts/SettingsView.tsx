@@ -1,26 +1,29 @@
-import React, { memo, useState, useCallback } from 'react';
-import { Icon } from '../components/Icon';
-import { Button } from '../components/Button';
-import { useAppState } from '../contexts/AppContext';
+import React, { memo, useState, useCallback } from "react";
+import { Icon } from "../components/Icon";
+import { Button } from "../components/Button";
+import { useAppState } from "../contexts/AppContext";
 
 export const SettingsView = memo(() => {
-  const { currentUser, viewMode, setViewMode, hideFavicons, setHideFavicons } = useAppState();
-  const [theme, setThemeState] = useState(localStorage.getItem('anchormarks_theme') || 'dark');
+  const { currentUser, viewMode, setViewMode, hideFavicons, setHideFavicons } =
+    useAppState();
+  const [theme, setThemeState] = useState(
+    localStorage.getItem("anchormarks_theme") || "dark",
+  );
 
   const handleThemeChange = useCallback((newTheme: string) => {
     setThemeState(newTheme);
-    localStorage.setItem('anchormarks_theme', newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem("anchormarks_theme", newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
   }, []);
 
   const handleExportData = useCallback(async () => {
     // TODO: Implement export
-    console.log('Export data');
+    console.log("Export data");
   }, []);
 
   const handleImportData = useCallback(() => {
     // TODO: Implement import
-    console.log('Import data');
+    console.log("Import data");
   }, []);
 
   return (
@@ -30,7 +33,7 @@ export const SettingsView = memo(() => {
 
         <section className="settings-section">
           <h2>Appearance</h2>
-          
+
           <div className="setting-item">
             <label htmlFor="theme-select">Theme</label>
             <select
@@ -73,22 +76,34 @@ export const SettingsView = memo(() => {
 
         <section className="settings-section">
           <h2>Account</h2>
-          
+
           <div className="setting-item">
             <label>Email</label>
-            <p className="setting-value">{currentUser?.email || 'Not logged in'}</p>
+            <p className="setting-value">
+              {currentUser?.email || "Not logged in"}
+            </p>
           </div>
 
           <div className="setting-item">
             <label>API Key</label>
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <div
+              style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}
+            >
               <code id="api-key-value" className="api-key-display">
-                {currentUser?.api_key || 'No API key'}
+                {currentUser?.api_key || "No API key"}
               </code>
-              <Button variant="secondary" onClick={() => navigator.clipboard.writeText(currentUser?.api_key || '')}>
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  navigator.clipboard.writeText(currentUser?.api_key || "")
+                }
+              >
                 Copy
               </Button>
-              <Button variant="secondary" onClick={() => console.log('Regenerate API key')}>
+              <Button
+                variant="secondary"
+                onClick={() => console.log("Regenerate API key")}
+              >
                 Regenerate
               </Button>
             </div>
@@ -97,10 +112,10 @@ export const SettingsView = memo(() => {
 
         <section className="settings-section">
           <h2>Data Management</h2>
-          
+
           <div className="setting-item">
             <label>Import / Export</label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
               <Button
                 variant="secondary"
                 icon={<Icon name="upload" size={16} />}
@@ -123,8 +138,8 @@ export const SettingsView = memo(() => {
             <Button
               variant="danger"
               onClick={() => {
-                if (confirm('Reset all bookmarks? This cannot be undone!')) {
-                  console.log('Reset bookmarks');
+                if (confirm("Reset all bookmarks? This cannot be undone!")) {
+                  console.log("Reset bookmarks");
                 }
               }}
             >
@@ -137,4 +152,4 @@ export const SettingsView = memo(() => {
   );
 });
 
-SettingsView.displayName = 'SettingsView';
+SettingsView.displayName = "SettingsView";

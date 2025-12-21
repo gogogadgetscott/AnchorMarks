@@ -107,10 +107,7 @@ export default defineConfig({
             "src/features/bookmarks/tour.js",
             "src/features/bookmarks/widget-picker.js",
           ],
-          ui: [
-            "src/utils/ui-helpers.js",
-            "src/components/index.js",
-          ],
+          ui: ["src/utils/ui-helpers.js", "src/components/index.js"],
         },
       },
     },

@@ -22,11 +22,22 @@ export const OnboardingTour = memo(() => {
       <div id="tour-popover" className="tour-popover hidden">
         <div className="tour-header">
           <div className="tour-steps">
-            <span className="tour-step" id="tour-step-1">1</span>
-            <span className="tour-step" id="tour-step-2">2</span>
-            <span className="tour-step" id="tour-step-3">3</span>
+            <span className="tour-step" id="tour-step-1">
+              1
+            </span>
+            <span className="tour-step" id="tour-step-2">
+              2
+            </span>
+            <span className="tour-step" id="tour-step-3">
+              3
+            </span>
           </div>
-          <button className="btn-icon tour-close" data-action="skip-tour" onClick={skipTour} aria-label="Skip tour">
+          <button
+            className="btn-icon tour-close"
+            data-action="skip-tour"
+            onClick={skipTour}
+            aria-label="Skip tour"
+          >
             <Icon name="close" size={18} />
           </button>
         </div>
@@ -35,10 +46,20 @@ export const OnboardingTour = memo(() => {
           <p id="tour-description"></p>
         </div>
         <div className="tour-actions">
-          <Button className="tour-skip" variant="secondary" onClick={skipTour} data-action="skip-tour">
+          <Button
+            className="tour-skip"
+            variant="secondary"
+            onClick={skipTour}
+            data-action="skip-tour"
+          >
             Skip
           </Button>
-          <Button className="tour-next" id="tour-next-btn" variant="primary" onClick={nextTourStep}>
+          <Button
+            className="tour-next"
+            id="tour-next-btn"
+            variant="primary"
+            onClick={nextTourStep}
+          >
             Next
           </Button>
         </div>

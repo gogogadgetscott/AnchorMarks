@@ -1,10 +1,10 @@
-import React, { memo, useMemo, useCallback, useState } from 'react';
-import { Icon } from '../components/Icon';
-import { Button } from '../components/Button';
-import { Badge } from '../components/Badge';
-import { EmptyState } from '../components/EmptyState';
-import { useAppState } from '../contexts/AppContext';
-import type { Tag } from '../types';
+import React, { memo, useMemo, useCallback, useState } from "react";
+import { Icon } from "../components/Icon";
+import { Button } from "../components/Button";
+import { Badge } from "../components/Badge";
+import { EmptyState } from "../components/EmptyState";
+import { useAppState } from "../contexts/AppContext";
+import type { Tag } from "../types";
 
 interface TagItemProps {
   tag: Tag;
@@ -18,17 +18,23 @@ const TagItem = memo<TagItemProps>(({ tag, onSelect, onEdit, onDelete }) => {
     onSelect(tag.name);
   }, [tag.name, onSelect]);
 
-  const handleEdit = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    onEdit(tag);
-  }, [tag, onEdit]);
+  const handleEdit = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onEdit(tag);
+    },
+    [tag, onEdit],
+  );
 
-  const handleDelete = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (confirm(`Delete tag "${tag.name}"?`)) {
-      onDelete(tag.id);
-    }
-  }, [tag.id, tag.name, onDelete]);
+  const handleDelete = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (confirm(`Delete tag "${tag.name}"?`)) {
+        onDelete(tag.id);
+      }
+    },
+    [tag.id, tag.name, onDelete],
+  );
 
   return (
     <div className="tag-item" onClick={handleSelect}>
@@ -45,11 +51,7 @@ const TagItem = memo<TagItemProps>(({ tag, onSelect, onEdit, onDelete }) => {
         )}
       </div>
       <div className="tag-actions">
-        <button
-          className="icon-button"
-          onClick={handleEdit}
-          title="Edit tag"
-        >
+        <button className="icon-button" onClick={handleEdit} title="Edit tag">
           <Icon name="edit" size={16} />
         </button>
         <button
@@ -64,12 +66,12 @@ const TagItem = memo<TagItemProps>(({ tag, onSelect, onEdit, onDelete }) => {
   );
 });
 
-TagItem.displayName = 'TagItem';
+TagItem.displayName = "TagItem";
 
 export const TagsView = memo(() => {
   const { tags, filterConfig } = useAppState();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'count'>('count');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"name" | "count">("count");
 
   const filteredTags = useMemo(() => {
     let filtered = [...tags];
@@ -77,11 +79,11 @@ export const TagsView = memo(() => {
     // Filter by search
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(t => t.name.toLowerCase().includes(query));
+      filtered = filtered.filter((t) => t.name.toLowerCase().includes(query));
     }
 
     // Sort
-    if (sortBy === 'name') {
+    if (sortBy === "name") {
       filtered.sort((a, b) => a.name.localeCompare(b.name));
     } else {
       filtered.sort((a, b) => (b.count || 0) - (a.count || 0));
@@ -106,13 +108,19 @@ export const TagsView = memo(() => {
     window.AnchorMarks?.showTagModal?.();
   }, []);
 
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  }, []);
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchQuery(e.target.value);
+    },
+    [],
+  );
 
-  const handleSortChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSortBy(e.target.value as 'name' | 'count');
-  }, []);
+  const handleSortChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setSortBy(e.target.value as "name" | "count");
+    },
+    [],
+  );
 
   if (tags.length === 0) {
     return (
@@ -146,11 +154,7 @@ export const TagsView = memo(() => {
             <option value="count">By Count</option>
             <option value="name">By Name</option>
           </select>
-          <Button
-            variant="primary"
-            onClick={handleCreateTag}
-            icon="add"
-          >
+          <Button variant="primary" onClick={handleCreateTag} icon="add">
             New Tag
           </Button>
         </div>
@@ -158,7 +162,7 @@ export const TagsView = memo(() => {
 
       <div className="tags-grid">
         {filteredTags.length > 0 ? (
-          filteredTags.map(tag => (
+          filteredTags.map((tag) => (
             <TagItem
               key={tag.id}
               tag={tag}
@@ -179,4 +183,4 @@ export const TagsView = memo(() => {
   );
 });
 
-TagsView.displayName = 'TagsView';
+TagsView.displayName = "TagsView";

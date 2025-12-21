@@ -1,6 +1,6 @@
-import React, { memo, useState, useCallback } from 'react';
-import { Icon } from '../components/Icon';
-import { Button } from '../components/Button';
+import React, { memo, useState, useCallback } from "react";
+import { Icon } from "../components/Icon";
+import { Button } from "../components/Button";
 
 interface AuthScreenProps {
   onLogin?: (email: string, password: string) => Promise<boolean>;
@@ -8,31 +8,39 @@ interface AuthScreenProps {
 }
 
 export const AuthScreen = memo<AuthScreenProps>(({ onLogin, onRegister }) => {
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setLoading(true);
+      setError("");
 
-    try {
-      const success = activeTab === 'login' 
-        ? await onLogin?.(email, password)
-        : await onRegister?.(email, password);
-      
-      if (!success) {
-        setError(activeTab === 'login' ? 'Invalid credentials' : 'Registration failed');
+      try {
+        const success =
+          activeTab === "login"
+            ? await onLogin?.(email, password)
+            : await onRegister?.(email, password);
+
+        if (!success) {
+          setError(
+            activeTab === "login"
+              ? "Invalid credentials"
+              : "Registration failed",
+          );
+        }
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, email, password, onLogin, onRegister]);
+    },
+    [activeTab, email, password, onLogin, onRegister],
+  );
 
   return (
     <div id="auth-screen" className="auth-screen">
@@ -54,15 +62,15 @@ export const AuthScreen = memo<AuthScreenProps>(({ onLogin, onRegister }) => {
 
         <div className="auth-tabs">
           <button
-            className={`auth-tab ${activeTab === 'login' ? 'active' : ''}`}
-            onClick={() => setActiveTab('login')}
+            className={`auth-tab ${activeTab === "login" ? "active" : ""}`}
+            onClick={() => setActiveTab("login")}
             type="button"
           >
             Login
           </button>
           <button
-            className={`auth-tab ${activeTab === 'register' ? 'active' : ''}`}
-            onClick={() => setActiveTab('register')}
+            className={`auth-tab ${activeTab === "register" ? "active" : ""}`}
+            onClick={() => setActiveTab("register")}
             type="button"
           >
             Register
@@ -76,11 +84,7 @@ export const AuthScreen = memo<AuthScreenProps>(({ onLogin, onRegister }) => {
           data-bitwarden-watching="false"
           data-lpignore="true"
         >
-          {error && (
-            <div className="form-error">
-              {error}
-            </div>
-          )}
+          {error && <div className="form-error">{error}</div>}
 
           <div className="form-group">
             <label htmlFor={`${activeTab}-email`}>Email</label>
@@ -91,7 +95,7 @@ export const AuthScreen = memo<AuthScreenProps>(({ onLogin, onRegister }) => {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="you@example.com"
-              autoComplete={activeTab === 'login' ? 'username' : 'email'}
+              autoComplete={activeTab === "login" ? "username" : "email"}
               disabled={loading}
             />
           </div>
@@ -105,7 +109,9 @@ export const AuthScreen = memo<AuthScreenProps>(({ onLogin, onRegister }) => {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              autoComplete={activeTab === 'login' ? 'current-password' : 'new-password'}
+              autoComplete={
+                activeTab === "login" ? "current-password" : "new-password"
+              }
               disabled={loading}
               minLength={8}
             />
@@ -118,15 +124,19 @@ export const AuthScreen = memo<AuthScreenProps>(({ onLogin, onRegister }) => {
             loading={loading}
             disabled={loading}
           >
-            {loading ? 'Please wait...' : (activeTab === 'login' ? 'Login' : 'Register')}
+            {loading
+              ? "Please wait..."
+              : activeTab === "login"
+                ? "Login"
+                : "Register"}
           </Button>
         </form>
 
         <div className="auth-footer">
           <p className="auth-help-text">
-            {activeTab === 'login' 
-              ? 'New to AnchorMarks? Switch to Register to create an account.'
-              : 'Already have an account? Switch to Login.'}
+            {activeTab === "login"
+              ? "New to AnchorMarks? Switch to Register to create an account."
+              : "Already have an account? Switch to Login."}
           </p>
         </div>
       </div>
@@ -134,4 +144,4 @@ export const AuthScreen = memo<AuthScreenProps>(({ onLogin, onRegister }) => {
   );
 });
 
-AuthScreen.displayName = 'AuthScreen';
+AuthScreen.displayName = "AuthScreen";

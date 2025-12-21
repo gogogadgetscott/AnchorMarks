@@ -1,16 +1,16 @@
-import React, { useEffect, useState, memo } from 'react';
-import { api } from './services/api';
-import { AppProvider, useAppState } from './contexts/AppContext';
-import { AuthScreen } from './layouts/AuthScreen';
-import { Sidebar } from './layouts/Sidebar';
-import { Dashboard } from './layouts/Dashboard';
-import { BookmarksView } from './layouts/BookmarksView';
-import { FoldersView } from './layouts/FoldersView';
-import { TagsView } from './layouts/TagsView';
-import { SettingsView } from './layouts/SettingsView';
-import { ToastContainer } from './layouts/Toast';
-import { ShortcutsPopup } from './layouts/ShortcutsPopup';
-import { OnboardingTour } from './layouts/OnboardingTour';
+import React, { useEffect, useState, memo } from "react";
+import { api } from "./services/api";
+import { AppProvider, useAppState } from "./contexts/AppContext";
+import { AuthScreen } from "./layouts/AuthScreen";
+import { Sidebar } from "./layouts/Sidebar";
+import { Dashboard } from "./layouts/Dashboard";
+import { BookmarksView } from "./layouts/BookmarksView";
+import { FoldersView } from "./layouts/FoldersView";
+import { TagsView } from "./layouts/TagsView";
+import { SettingsView } from "./layouts/SettingsView";
+import { ToastContainer } from "./layouts/Toast";
+import { ShortcutsPopup } from "./layouts/ShortcutsPopup";
+import { OnboardingTour } from "./layouts/OnboardingTour";
 
 /**
  * Main app component that renders the appropriate view based on state
@@ -20,8 +20,8 @@ const MainApp = memo(() => {
 
   const handleLogin = async (email: string, password: string) => {
     try {
-      const response = await api('/auth/login', {
-        method: 'POST',
+      const response = await api("/auth/login", {
+        method: "POST",
         body: JSON.stringify({ email, password }),
       });
       if (response.success) {
@@ -30,15 +30,15 @@ const MainApp = memo(() => {
       }
       return false;
     } catch (err) {
-      console.error('Login failed:', err);
+      console.error("Login failed:", err);
       return false;
     }
   };
 
   const handleRegister = async (email: string, password: string) => {
     try {
-      const response = await api('/auth/register', {
-        method: 'POST',
+      const response = await api("/auth/register", {
+        method: "POST",
         body: JSON.stringify({ email, password, username: email }),
       });
       if (response.success) {
@@ -46,25 +46,25 @@ const MainApp = memo(() => {
       }
       return false;
     } catch (err) {
-      console.error('Registration failed:', err);
+      console.error("Registration failed:", err);
       return false;
     }
   };
 
   const renderContent = () => {
     switch (currentView) {
-      case 'dashboard':
+      case "dashboard":
         return <Dashboard />;
-      case 'bookmarks':
-      case 'favorites':
-      case 'recent':
-      case 'archived':
+      case "bookmarks":
+      case "favorites":
+      case "recent":
+      case "archived":
         return <BookmarksView />;
-      case 'folders':
+      case "folders":
         return <FoldersView />;
-      case 'tags':
+      case "tags":
         return <TagsView />;
-      case 'settings':
+      case "settings":
         return <SettingsView />;
       default:
         return <BookmarksView />;
@@ -72,16 +72,14 @@ const MainApp = memo(() => {
   };
 
   if (!isAuthenticated) {
-     return <AuthScreen onLogin={handleLogin} onRegister={handleRegister} />;
+    return <AuthScreen onLogin={handleLogin} onRegister={handleRegister} />;
   }
 
   return (
     <div id="main-app" className="main-app">
       <div className="sidebar-backdrop" id="sidebar-backdrop" />
       <Sidebar />
-      <main className="main-content">
-        {renderContent()}
-      </main>
+      <main className="main-content">{renderContent()}</main>
       <ToastContainer />
       <ShortcutsPopup />
       <OnboardingTour />
@@ -89,7 +87,7 @@ const MainApp = memo(() => {
   );
 });
 
-MainApp.displayName = 'MainApp';
+MainApp.displayName = "MainApp";
 
 /**
  * Root app component with initialization logic
@@ -102,29 +100,28 @@ const App: React.FC = () => {
     const initializeApp = async () => {
       try {
         // Load theme from localStorage
-        const savedTheme = localStorage.getItem('anchormarks_theme') || 'dark';
-        document.documentElement.setAttribute('data-theme', savedTheme);
+        const savedTheme = localStorage.getItem("anchormarks_theme") || "dark";
+        document.documentElement.setAttribute("data-theme", savedTheme);
 
         // Check authentication
         try {
-          const response = await api('/auth/me');
+          const response = await api("/auth/me");
           if (response.user) {
             setIsAuthenticated(true);
           }
         } catch (err) {
-          console.log('Not authenticated');
+          console.log("Not authenticated");
         }
 
         setIsInitialized(true);
 
-          console.log('App initialized');
+        console.log("App initialized");
       } catch (err) {
-          console.error('Failed to initialize app', err);
+        console.error("Failed to initialize app", err);
       }
     };
 
     initializeApp();
-
   }, []);
 
   useEffect(() => {
@@ -132,10 +129,11 @@ const App: React.FC = () => {
 
     const runTourCheck = async () => {
       try {
-        const { checkWelcomeTour } = await import('@features/bookmarks/tour.ts');
+        const { checkWelcomeTour } =
+          await import("@features/bookmarks/tour.ts");
         checkWelcomeTour();
       } catch (err) {
-        console.error('Failed to run welcome tour check', err);
+        console.error("Failed to run welcome tour check", err);
       }
     };
 
@@ -151,7 +149,7 @@ const App: React.FC = () => {
   }
 
   return (
-      <AppProvider initialState={{ isAuthenticated }}>
+    <AppProvider initialState={{ isAuthenticated }}>
       <MainApp />
     </AppProvider>
   );

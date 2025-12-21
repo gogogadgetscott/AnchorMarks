@@ -16,31 +16,36 @@ const BookmarksView: React.FC = () => {
     let filtered = [...bookmarks];
 
     if (currentFolder) {
-      filtered = filtered.filter(b => b.folder_id === currentFolder);
+      filtered = filtered.filter((b) => b.folder_id === currentFolder);
     }
 
     if (filterConfig.tags && filterConfig.tags.length > 0) {
-      filtered = filtered.filter(bookmark => {
-        const bookmarkTags = bookmark.tags?.split(',').map(t => t.trim()) || [];
-        if (filterConfig.tagMode === 'AND') {
-          return filterConfig.tags.every(tag => bookmarkTags.includes(tag));
+      filtered = filtered.filter((bookmark) => {
+        const bookmarkTags =
+          bookmark.tags?.split(",").map((t) => t.trim()) || [];
+        if (filterConfig.tagMode === "AND") {
+          return filterConfig.tags.every((tag) => bookmarkTags.includes(tag));
         } else {
-          return filterConfig.tags.some(tag => bookmarkTags.includes(tag));
+          return filterConfig.tags.some((tag) => bookmarkTags.includes(tag));
         }
       });
     }
 
     switch (filterConfig.sort) {
-      case 'recently_added':
-        filtered.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+      case "recently_added":
+        filtered.sort(
+          (a, b) =>
+            new Date(b.created_at || 0).getTime() -
+            new Date(a.created_at || 0).getTime(),
+        );
         break;
-      case 'most_visited':
+      case "most_visited":
         filtered.sort((a, b) => (b.click_count || 0) - (a.click_count || 0));
         break;
-      case 'a_z':
+      case "a_z":
         filtered.sort((a, b) => a.title.localeCompare(b.title));
         break;
-      case 'z_a':
+      case "z_a":
         filtered.sort((a, b) => b.title.localeCompare(a.title));
         break;
     }
@@ -49,15 +54,15 @@ const BookmarksView: React.FC = () => {
   }, [bookmarks, currentFolder, filterConfig]);
 
   const handleEditBookmark = useCallback((bookmark: Bookmark) => {
-    console.log('Edit bookmark:', bookmark);
+    console.log("Edit bookmark:", bookmark);
   }, []);
 
   const handleDeleteBookmark = useCallback((bookmarkId: string) => {
-    console.log('Delete bookmark:', bookmarkId);
+    console.log("Delete bookmark:", bookmarkId);
   }, []);
 
   const handleToggleFavorite = useCallback((bookmarkId: string) => {
-    console.log('Toggle favorite:', bookmarkId);
+    console.log("Toggle favorite:", bookmarkId);
   }, []);
 
   return (
@@ -68,7 +73,10 @@ const BookmarksView: React.FC = () => {
         countSuffix="bookmarks"
         showViewToggle={true}
       />
-      <div id="bookmarks-container" className={`bookmarks-container ${viewMode}`}>
+      <div
+        id="bookmarks-container"
+        className={`bookmarks-container ${viewMode}`}
+      >
         {filteredBookmarks.length === 0 ? (
           <div className="empty-state">
             <p>No bookmarks found</p>

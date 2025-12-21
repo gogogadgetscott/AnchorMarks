@@ -1,6 +1,6 @@
-import React, { memo, useMemo } from 'react';
-import { Icon } from '../components/Icon';
-import { useAppState } from '../contexts/AppContext';
+import React, { memo, useMemo } from "react";
+import { Icon } from "../components/Icon";
+import { useAppState } from "../contexts/AppContext";
 
 export const Dashboard = memo(() => {
   const { bookmarks, folders, tags } = useAppState();
@@ -13,10 +13,16 @@ export const Dashboard = memo(() => {
 
     return {
       total: bookmarks.length,
-      favorites: bookmarks.filter(b => b.is_favorite).length,
-      addedToday: bookmarks.filter(b => new Date(b.created_at || 0).getTime() > dayAgo).length,
-      addedThisWeek: bookmarks.filter(b => new Date(b.created_at || 0).getTime() > weekAgo).length,
-      addedThisMonth: bookmarks.filter(b => new Date(b.created_at || 0).getTime() > monthAgo).length,
+      favorites: bookmarks.filter((b) => b.is_favorite).length,
+      addedToday: bookmarks.filter(
+        (b) => new Date(b.created_at || 0).getTime() > dayAgo,
+      ).length,
+      addedThisWeek: bookmarks.filter(
+        (b) => new Date(b.created_at || 0).getTime() > weekAgo,
+      ).length,
+      addedThisMonth: bookmarks.filter(
+        (b) => new Date(b.created_at || 0).getTime() > monthAgo,
+      ).length,
       folders: folders.length,
       tags: tags.length,
     };
@@ -24,7 +30,11 @@ export const Dashboard = memo(() => {
 
   const recentBookmarks = useMemo(() => {
     return [...bookmarks]
-      .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.created_at || 0).getTime() -
+          new Date(a.created_at || 0).getTime(),
+      )
       .slice(0, 5);
   }, [bookmarks]);
 
@@ -38,7 +48,9 @@ export const Dashboard = memo(() => {
     <div id="dashboard-view" className="dashboard-view">
       <div className="dashboard-header">
         <h1>Dashboard</h1>
-        <p className="dashboard-subtitle">Welcome back! Here's your bookmark overview</p>
+        <p className="dashboard-subtitle">
+          Welcome back! Here's your bookmark overview
+        </p>
       </div>
 
       <div className="dashboard-grid">
@@ -107,7 +119,7 @@ export const Dashboard = memo(() => {
           <h3 className="card-title">Recent Bookmarks</h3>
           <div className="recent-list">
             {recentBookmarks.length > 0 ? (
-              recentBookmarks.map(bookmark => (
+              recentBookmarks.map((bookmark) => (
                 <a
                   key={bookmark.id}
                   href={bookmark.url}
@@ -132,7 +144,7 @@ export const Dashboard = memo(() => {
           <h3 className="card-title">Most Visited</h3>
           <div className="popular-list">
             {mostVisited.length > 0 ? (
-              mostVisited.map(bookmark => (
+              mostVisited.map((bookmark) => (
                 <a
                   key={bookmark.id}
                   href={bookmark.url}
@@ -144,7 +156,9 @@ export const Dashboard = memo(() => {
                     <img src={bookmark.favicon} alt="" width={16} height={16} />
                   )}
                   <span className="popular-title">{bookmark.title}</span>
-                  <span className="popular-count">{bookmark.click_count || 0} clicks</span>
+                  <span className="popular-count">
+                    {bookmark.click_count || 0} clicks
+                  </span>
                 </a>
               ))
             ) : (
@@ -157,4 +171,4 @@ export const Dashboard = memo(() => {
   );
 });
 
-Dashboard.displayName = 'Dashboard';
+Dashboard.displayName = "Dashboard";

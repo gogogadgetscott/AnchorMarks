@@ -1,7 +1,7 @@
-import React, { memo, useCallback } from 'react';
-import { Icon } from '../components/Icon';
-import { Button } from '../components/Button';
-import { useAppState } from '../contexts/AppContext';
+import React, { memo, useCallback } from "react";
+import { Icon } from "../components/Icon";
+import { Button } from "../components/Button";
+import { useAppState } from "../contexts/AppContext";
 
 interface SidebarProps {
   onAddBookmark?: () => void;
@@ -11,19 +11,22 @@ interface SidebarProps {
 export const Sidebar = memo<SidebarProps>(({ onAddBookmark, onToggle }) => {
   const { currentView, setCurrentView, bookmarks, folders } = useAppState();
 
-  const handleNavClick = useCallback((view: string) => {
-    setCurrentView(view);
-  }, [setCurrentView]);
+  const handleNavClick = useCallback(
+    (view: string) => {
+      setCurrentView(view);
+    },
+    [setCurrentView],
+  );
 
   const counts = {
     all: bookmarks.length,
-    favorites: bookmarks.filter(b => b.is_favorite).length,
-    recent: bookmarks.filter(b => {
+    favorites: bookmarks.filter((b) => b.is_favorite).length,
+    recent: bookmarks.filter((b) => {
       const added = new Date(b.created_at || 0);
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       return added > weekAgo;
     }).length,
-    archived: bookmarks.filter(b => b.is_archived).length,
+    archived: bookmarks.filter((b) => b.is_archived).length,
   };
 
   return (
@@ -52,58 +55,68 @@ export const Sidebar = memo<SidebarProps>(({ onAddBookmark, onToggle }) => {
       <nav className="sidebar-nav">
         <div className="nav-section">
           <div
-            className={`nav-item ${currentView === 'dashboard' ? 'active' : ''}`}
-            onClick={() => handleNavClick('dashboard')}
+            className={`nav-item ${currentView === "dashboard" ? "active" : ""}`}
+            onClick={() => handleNavClick("dashboard")}
             data-view="dashboard"
           >
             <Icon name="grid" size={20} />
             <span>Dashboard</span>
-            <span className="badge" id="dashboard-count">{counts.all}</span>
+            <span className="badge" id="dashboard-count">
+              {counts.all}
+            </span>
           </div>
 
           <div
-            className={`nav-item ${currentView === 'all' ? 'active' : ''}`}
-            onClick={() => handleNavClick('all')}
+            className={`nav-item ${currentView === "all" ? "active" : ""}`}
+            onClick={() => handleNavClick("all")}
             data-view="all"
           >
             <Icon name="list" size={20} />
             <span>All Bookmarks</span>
-            <span className="badge" id="all-count">{counts.all}</span>
+            <span className="badge" id="all-count">
+              {counts.all}
+            </span>
           </div>
 
           <div
-            className={`nav-item ${currentView === 'favorites' ? 'active' : ''}`}
-            onClick={() => handleNavClick('favorites')}
+            className={`nav-item ${currentView === "favorites" ? "active" : ""}`}
+            onClick={() => handleNavClick("favorites")}
             data-view="favorites"
           >
             <Icon name="star" size={20} />
             <span>Favorites</span>
-            <span className="badge" id="favorites-count">{counts.favorites}</span>
+            <span className="badge" id="favorites-count">
+              {counts.favorites}
+            </span>
           </div>
 
           <div
-            className={`nav-item ${currentView === 'recent' ? 'active' : ''}`}
-            onClick={() => handleNavClick('recent')}
+            className={`nav-item ${currentView === "recent" ? "active" : ""}`}
+            onClick={() => handleNavClick("recent")}
             data-view="recent"
           >
             <Icon name="refresh" size={20} />
             <span>Recent</span>
-            <span className="badge" id="recent-count">{counts.recent}</span>
+            <span className="badge" id="recent-count">
+              {counts.recent}
+            </span>
           </div>
 
           <div
-            className={`nav-item ${currentView === 'archived' ? 'active' : ''}`}
-            onClick={() => handleNavClick('archived')}
+            className={`nav-item ${currentView === "archived" ? "active" : ""}`}
+            onClick={() => handleNavClick("archived")}
             data-view="archived"
           >
             <Icon name="archive" size={20} />
             <span>Archived</span>
-            <span className="badge" id="archived-count">{counts.archived}</span>
+            <span className="badge" id="archived-count">
+              {counts.archived}
+            </span>
           </div>
 
           <div
-            className={`nav-item ${currentView === 'tag-cloud' ? 'active' : ''}`}
-            onClick={() => handleNavClick('tag-cloud')}
+            className={`nav-item ${currentView === "tag-cloud" ? "active" : ""}`}
+            onClick={() => handleNavClick("tag-cloud")}
             data-view="tag-cloud"
           >
             <Icon name="tag" size={20} />
@@ -124,13 +137,17 @@ export const Sidebar = memo<SidebarProps>(({ onAddBookmark, onToggle }) => {
                 <p>No folders yet</p>
               </div>
             ) : (
-              folders.map(folder => (
+              folders.map((folder) => (
                 <div
                   key={folder.id}
                   className="nav-item folder-item"
                   data-folder-id={folder.id}
                 >
-                  <Icon name={folder.icon || 'folder'} size={20} color={folder.color} />
+                  <Icon
+                    name={folder.icon || "folder"}
+                    size={20}
+                    color={folder.color}
+                  />
                   <span>{folder.name}</span>
                 </div>
               ))
@@ -140,8 +157,8 @@ export const Sidebar = memo<SidebarProps>(({ onAddBookmark, onToggle }) => {
 
         <div className="nav-section">
           <div
-            className={`nav-item ${currentView === 'settings' ? 'active' : ''}`}
-            onClick={() => handleNavClick('settings')}
+            className={`nav-item ${currentView === "settings" ? "active" : ""}`}
+            onClick={() => handleNavClick("settings")}
             data-view="settings"
           >
             <Icon name="settings" size={20} />
@@ -153,4 +170,4 @@ export const Sidebar = memo<SidebarProps>(({ onAddBookmark, onToggle }) => {
   );
 });
 
-Sidebar.displayName = 'Sidebar';
+Sidebar.displayName = "Sidebar";

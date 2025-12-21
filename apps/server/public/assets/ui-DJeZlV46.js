@@ -1,24 +1,172 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/main-BnFaXbWJ.js","assets/auth-CtF7wfY5.js","assets/bookmarks-hgxSTBhD.js","assets/commands-BuWa8uSs.js","assets/main-BOkpivqf.css"])))=>i.map(i=>d[i]);
-import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,U as M,v as z,_ as H,c as y,a as A,f as F,h as q,F as x,d as w,w as $,D as B}from"./auth-CtF7wfY5.js";function k(n,t={}){const{className:e="",style:o="",size:s=24,strokeWidth:i=2}=t,r={plus:'<line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />',edit:'<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',copy:'<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',external:'<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>',star:'<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>',"star-filled":'<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/>',search:'<circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />',folder:'<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />',tag:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" />',menu:'<line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>',close:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',settings:'<circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />',help:'<circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3v1" /><line x1="12" y1="17" x2="12.01" y2="17" />',link:'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',archive:'<polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="10" y1="12" x2="14" y2="12" />',unarchive:'<polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="12" y1="17" x2="12" y2="11" /><polyline points="9 14 12 11 15 14" />',"refresh-cw":'<polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />',image:'<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',monitor:'<rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>',grid:'<rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />',list:'<line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />',compact:'<line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="10" x2="20" y2="10" /><line x1="4" y1="14" x2="20" y2="14" /><line x1="4" y1="18" x2="20" y2="18" />'},c=r[n]||r.link,l=typeof s=="number"?`${s}px`:s;return`<svg 
+const __vite__mapDeps = (
+  i,
+  m = __vite__mapDeps,
+  d = m.f ||
+    (m.f = [
+      "assets/main-BnFaXbWJ.js",
+      "assets/auth-CtF7wfY5.js",
+      "assets/bookmarks-hgxSTBhD.js",
+      "assets/commands-BuWa8uSs.js",
+      "assets/main-BOkpivqf.css",
+    ]),
+) => i.map((i) => d[i]);
+import { e as f, g as S, a as _ } from "./bookmarks-hgxSTBhD.js";
+import {
+  t as C,
+  ao as E,
+  U as M,
+  v as z,
+  _ as H,
+  c as y,
+  a as A,
+  f as F,
+  h as q,
+  F as x,
+  d as w,
+  w as $,
+  D as B,
+} from "./auth-CtF7wfY5.js";
+function k(n, t = {}) {
+  const {
+      className: e = "",
+      style: o = "",
+      size: s = 24,
+      strokeWidth: i = 2,
+    } = t,
+    r = {
+      plus: '<line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />',
+      edit: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',
+      trash:
+        '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+      copy: '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+      external:
+        '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>',
+      star: '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>',
+      "star-filled":
+        '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/>',
+      search: '<circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />',
+      folder:
+        '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />',
+      tag: '<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" />',
+      menu: '<line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>',
+      close:
+        '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+      x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+      settings:
+        '<circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />',
+      help: '<circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3v1" /><line x1="12" y1="17" x2="12.01" y2="17" />',
+      link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+      archive:
+        '<polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="10" y1="12" x2="14" y2="12" />',
+      unarchive:
+        '<polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="12" y1="17" x2="12" y2="11" /><polyline points="9 14 12 11 15 14" />',
+      "refresh-cw":
+        '<polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />',
+      image:
+        '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',
+      monitor:
+        '<rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>',
+      grid: '<rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />',
+      list: '<line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />',
+      compact:
+        '<line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="10" x2="20" y2="10" /><line x1="4" y1="14" x2="20" y2="14" /><line x1="4" y1="18" x2="20" y2="18" />',
+    },
+    c = r[n] || r.link,
+    l = typeof s == "number" ? `${s}px` : s;
+  return `<svg 
     viewBox="0 0 24 24" 
     fill="none" 
     stroke="currentColor" 
     stroke-width="${i}" 
     class="icon icon-${n} ${e}" 
     style="width: ${l}; height: ${l}; ${o}"
-  >${c}</svg>`}function L(n,t={}){const{color:e="#f59e0b",className:o="",data:s={},clickable:i=!0}=t,r=Object.entries(s).map(([l,d])=>`data-${l}="${d}"`).join(" ");return`
-    <span class="tag ${o}" ${r} style="--tag-color: ${e}; ${i?"cursor: pointer;":"cursor: default;"}">
+  >${c}</svg>`;
+}
+function L(n, t = {}) {
+  const {
+      color: e = "#f59e0b",
+      className: o = "",
+      data: s = {},
+      clickable: i = !0,
+    } = t,
+    r = Object.entries(s)
+      .map(([l, d]) => `data-${l}="${d}"`)
+      .join(" ");
+  return `
+    <span class="tag ${o}" ${r} style="--tag-color: ${e}; ${i ? "cursor: pointer;" : "cursor: default;"}">
       ${f(n)}
     </span>
-  `}function m(n,t={}){const{id:e="",className:o="",variant:s="primary",icon:i="",title:r="",type:c="button",data:l={}}=t,d=s==="icon"?"btn-icon":`btn btn-${s}`,a=e?`id="${e}"`:"",p=r?`title="${r}"`:"",h=Object.entries(l).map(([g,b])=>`data-${g}="${b}"`).join(" "),v=i?k(i,{size:s==="icon"?20:16}):"",u=n?`<span>${n}</span>`:"";return`
+  `;
+}
+function m(n, t = {}) {
+  const {
+      id: e = "",
+      className: o = "",
+      variant: s = "primary",
+      icon: i = "",
+      title: r = "",
+      type: c = "button",
+      data: l = {},
+    } = t,
+    d = s === "icon" ? "btn-icon" : `btn btn-${s}`,
+    a = e ? `id="${e}"` : "",
+    p = r ? `title="${r}"` : "",
+    h = Object.entries(l)
+      .map(([g, b]) => `data-${g}="${b}"`)
+      .join(" "),
+    v = i ? k(i, { size: s === "icon" ? 20 : 16 }) : "",
+    u = n ? `<span>${n}</span>` : "";
+  return `
     <button type="${c}" ${a} class="${d} ${o}" ${p} ${h}>
       ${v}
       ${u}
     </button>
-  `}function mn(n,t){const e=n.tags?n.tags.split(",").map(v=>v.trim()).filter(v=>v):[],o=Array.isArray(n.tags_detailed)?n.tags_detailed.map(v=>({name:v.name,color:v.color,color_override:v.color_override})):e.map(v=>({name:v,color:void 0,color_override:void 0})),s=S(n.url),i=_(n.url),r=z==="list"?i:s,c=C.has(n.id),l=o.length?`<div class="bookmark-tags">${o.map(v=>{const u=v.name,g=E[u]||{},b=v.color_override||v.color||g.color||"#f59e0b";return L(u,{color:b,data:{action:"toggle-filter-tag",tag:u}})}).join("")}</div>`:"",d=!M&&n.favicon?`<img src="${n.favicon}" alt="" class="bookmark-favicon-img" data-fallback="true" loading="lazy">`:k("link",{size:24}),a=n.color?`--bookmark-color: ${n.color}; background-color: ${n.color};`:"",p=n.color?"has-custom-color":"",h=`delay-${t%10}`;return`
-    <div class="bookmark-card ${c?"selected":""} ${p} entrance-animation ${h}" data-id="${n.id}" data-index="${t}" style="${a}">
+  `;
+}
+function mn(n, t) {
+  const e = n.tags
+      ? n.tags
+          .split(",")
+          .map((v) => v.trim())
+          .filter((v) => v)
+      : [],
+    o = Array.isArray(n.tags_detailed)
+      ? n.tags_detailed.map((v) => ({
+          name: v.name,
+          color: v.color,
+          color_override: v.color_override,
+        }))
+      : e.map((v) => ({ name: v, color: void 0, color_override: void 0 })),
+    s = S(n.url),
+    i = _(n.url),
+    r = z === "list" ? i : s,
+    c = C.has(n.id),
+    l = o.length
+      ? `<div class="bookmark-tags">${o
+          .map((v) => {
+            const u = v.name,
+              g = E[u] || {},
+              b = v.color_override || v.color || g.color || "#f59e0b";
+            return L(u, {
+              color: b,
+              data: { action: "toggle-filter-tag", tag: u },
+            });
+          })
+          .join("")}</div>`
+      : "",
+    d =
+      !M && n.favicon
+        ? `<img src="${n.favicon}" alt="" class="bookmark-favicon-img" data-fallback="true" loading="lazy">`
+        : k("link", { size: 24 }),
+    a = n.color
+      ? `--bookmark-color: ${n.color}; background-color: ${n.color};`
+      : "",
+    p = n.color ? "has-custom-color" : "",
+    h = `delay-${t % 10}`;
+  return `
+    <div class="bookmark-card ${c ? "selected" : ""} ${p} entrance-animation ${h}" data-id="${n.id}" data-index="${t}" style="${a}">
       <label class="bookmark-select">
-        <input type="checkbox" ${c?"checked":""}>
+        <input type="checkbox" ${c ? "checked" : ""}>
       </label>
       <div class="bookmark-header">
         <div class="bookmark-favicon">
@@ -29,18 +177,21 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
           <div class="bookmark-url" data-full-url="${f(n.url)}">${f(r)}</div>
         </div>
       </div>
-      ${n.description?`<div class="bookmark-description">${f(n.description)}</div>`:""}
+      ${n.description ? `<div class="bookmark-description">${f(n.description)}</div>` : ""}
       ${l}
       <div class="bookmark-actions">
-        ${m("Open",{variant:"primary",className:"bookmark-action-btn",icon:"external",data:{action:"open-bookmark",url:n.url},title:"Open bookmark"})}
-        ${m("Edit",{variant:"secondary",className:"bookmark-action-btn",icon:"edit",data:{action:"edit-bookmark",id:n.id},title:"Edit bookmark"})}
-        ${m("",{variant:n.is_favorite?"warning":"ghost",className:"bookmark-action-btn",icon:n.is_favorite?"star-filled":"star",data:{action:"toggle-favorite",id:n.id},title:n.is_favorite?"Remove from favorites":"Add to favorites"})}
-        ${m("",{variant:"ghost",className:"bookmark-action-btn",icon:"copy",data:{action:"copy-link",url:n.url},title:"Copy link"})}
-        ${n.is_archived?m("",{variant:"ghost",className:"bookmark-action-btn",icon:"unarchive",data:{action:"unarchive-bookmark",id:n.id},title:"Unarchive bookmark"}):m("",{variant:"ghost",className:"bookmark-action-btn",icon:"archive",data:{action:"archive-bookmark",id:n.id},title:"Archive bookmark"})}
-        ${m("",{variant:"danger",className:"bookmark-action-btn",icon:"trash",data:{action:"delete-bookmark",id:n.id},title:"Delete bookmark"})}
+        ${m("Open", { variant: "primary", className: "bookmark-action-btn", icon: "external", data: { action: "open-bookmark", url: n.url }, title: "Open bookmark" })}
+        ${m("Edit", { variant: "secondary", className: "bookmark-action-btn", icon: "edit", data: { action: "edit-bookmark", id: n.id }, title: "Edit bookmark" })}
+        ${m("", { variant: n.is_favorite ? "warning" : "ghost", className: "bookmark-action-btn", icon: n.is_favorite ? "star-filled" : "star", data: { action: "toggle-favorite", id: n.id }, title: n.is_favorite ? "Remove from favorites" : "Add to favorites" })}
+        ${m("", { variant: "ghost", className: "bookmark-action-btn", icon: "copy", data: { action: "copy-link", url: n.url }, title: "Copy link" })}
+        ${n.is_archived ? m("", { variant: "ghost", className: "bookmark-action-btn", icon: "unarchive", data: { action: "unarchive-bookmark", id: n.id }, title: "Unarchive bookmark" }) : m("", { variant: "ghost", className: "bookmark-action-btn", icon: "archive", data: { action: "archive-bookmark", id: n.id }, title: "Archive bookmark" })}
+        ${m("", { variant: "danger", className: "bookmark-action-btn", icon: "trash", data: { action: "delete-bookmark", id: n.id }, title: "Delete bookmark" })}
       </div>
     </div>
-  `}function hn(){return`
+  `;
+}
+function hn() {
+  return `
     <div class="bookmark-card skeleton-card">
       <div class="bookmark-header">
         <div class="bookmark-favicon">
@@ -60,14 +211,53 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
         <div class="skeleton" style="width: 60px; height: 32px; border-radius: 4px;"></div>
       </div>
     </div>
-  `}function gn(n,t){const e=n.tags?n.tags.split(",").map(a=>a.trim()).filter(a=>a):[],o=Array.isArray(n.tags_detailed)?n.tags_detailed.map(a=>({name:a.name,color:a.color,color_override:a.color_override})):e.map(a=>({name:a,color:void 0,color_override:void 0})),s=S(n.url),i=C.has(n.id),r=o.length?`<div class="bookmark-tags">${o.map(a=>{const p=a.name,h=E[p]||{},v=a.color_override||a.color||h.color||"#f59e0b";return L(p,{color:v,data:{action:"toggle-filter-tag",tag:p}})}).join("")}</div>`:"",c=!M&&n.favicon?`<img src="${n.favicon}" alt="" class="bookmark-favicon-img" data-fallback="true" loading="lazy">`:k("link",{size:16}),l=`delay-${t%10}`,d=n.og_image?`<div class="rich-card-image">
+  `;
+}
+function gn(n, t) {
+  const e = n.tags
+      ? n.tags
+          .split(",")
+          .map((a) => a.trim())
+          .filter((a) => a)
+      : [],
+    o = Array.isArray(n.tags_detailed)
+      ? n.tags_detailed.map((a) => ({
+          name: a.name,
+          color: a.color,
+          color_override: a.color_override,
+        }))
+      : e.map((a) => ({ name: a, color: void 0, color_override: void 0 })),
+    s = S(n.url),
+    i = C.has(n.id),
+    r = o.length
+      ? `<div class="bookmark-tags">${o
+          .map((a) => {
+            const p = a.name,
+              h = E[p] || {},
+              v = a.color_override || a.color || h.color || "#f59e0b";
+            return L(p, {
+              color: v,
+              data: { action: "toggle-filter-tag", tag: p },
+            });
+          })
+          .join("")}</div>`
+      : "",
+    c =
+      !M && n.favicon
+        ? `<img src="${n.favicon}" alt="" class="bookmark-favicon-img" data-fallback="true" loading="lazy">`
+        : k("link", { size: 16 }),
+    l = `delay-${t % 10}`,
+    d = n.og_image
+      ? `<div class="rich-card-image">
          <img src="${n.og_image}" alt="" loading="lazy">
-       </div>`:`<div class="rich-card-image-placeholder" data-bookmark-id="${n.id}" data-bookmark-url="${f(n.url)}">
-         ${k("image",{size:48})}
-       </div>`;return`
-    <div class="rich-bookmark-card ${i?"selected":""} entrance-animation ${l}" data-id="${n.id}" data-index="${t}">
+       </div>`
+      : `<div class="rich-card-image-placeholder" data-bookmark-id="${n.id}" data-bookmark-url="${f(n.url)}">
+         ${k("image", { size: 48 })}
+       </div>`;
+  return `
+    <div class="rich-bookmark-card ${i ? "selected" : ""} entrance-animation ${l}" data-id="${n.id}" data-index="${t}">
       <label class="bookmark-select">
-        <input type="checkbox" ${i?"checked":""}>
+        <input type="checkbox" ${i ? "checked" : ""}>
       </label>
       ${d}
       <div class="rich-card-content">
@@ -76,23 +266,50 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
           <div class="bookmark-url">${f(s)}</div>
         </div>
         <div class="bookmark-title">${f(n.title)}</div>
-        ${n.description?`<div class="bookmark-description">${f(n.description)}</div>`:""}
+        ${n.description ? `<div class="bookmark-description">${f(n.description)}</div>` : ""}
         ${r}
         <div class="bookmark-actions">
-          ${m("Open",{variant:"primary",className:"bookmark-action-btn",icon:"external",data:{action:"open-bookmark",url:n.url},title:"Open bookmark"})}
-          ${m("Edit",{variant:"secondary",className:"bookmark-action-btn",icon:"edit",data:{action:"edit-bookmark",id:n.id},title:"Edit bookmark"})}
-          ${m("",{variant:n.is_favorite?"warning":"ghost",className:"bookmark-action-btn",icon:n.is_favorite?"star-filled":"star",data:{action:"toggle-favorite",id:n.id},title:n.is_favorite?"Remove from favorites":"Add to favorites"})}
-          ${m("",{variant:"ghost",className:"bookmark-action-btn",icon:"copy",data:{action:"copy-link",url:n.url},title:"Copy link"})}
-          ${n.is_archived?m("",{variant:"ghost",className:"bookmark-action-btn",icon:"unarchive",data:{action:"unarchive-bookmark",id:n.id},title:"Unarchive bookmark"}):m("",{variant:"ghost",className:"bookmark-action-btn",icon:"archive",data:{action:"archive-bookmark",id:n.id},title:"Archive bookmark"})}
-          ${m("",{variant:"ghost",className:"bookmark-action-btn",icon:"trash",data:{action:"delete-bookmark",id:n.id},title:"Delete bookmark"})}
+          ${m("Open", { variant: "primary", className: "bookmark-action-btn", icon: "external", data: { action: "open-bookmark", url: n.url }, title: "Open bookmark" })}
+          ${m("Edit", { variant: "secondary", className: "bookmark-action-btn", icon: "edit", data: { action: "edit-bookmark", id: n.id }, title: "Edit bookmark" })}
+          ${m("", { variant: n.is_favorite ? "warning" : "ghost", className: "bookmark-action-btn", icon: n.is_favorite ? "star-filled" : "star", data: { action: "toggle-favorite", id: n.id }, title: n.is_favorite ? "Remove from favorites" : "Add to favorites" })}
+          ${m("", { variant: "ghost", className: "bookmark-action-btn", icon: "copy", data: { action: "copy-link", url: n.url }, title: "Copy link" })}
+          ${n.is_archived ? m("", { variant: "ghost", className: "bookmark-action-btn", icon: "unarchive", data: { action: "unarchive-bookmark", id: n.id }, title: "Unarchive bookmark" }) : m("", { variant: "ghost", className: "bookmark-action-btn", icon: "archive", data: { action: "archive-bookmark", id: n.id }, title: "Archive bookmark" })}
+          ${m("", { variant: "ghost", className: "bookmark-action-btn", icon: "trash", data: { action: "delete-bookmark", id: n.id }, title: "Delete bookmark" })}
         </div>
       </div>
     </div>
-  `}function kn(n,t={}){const{id:e="",className:o=""}=t;return`<span ${e?`id="${e}"`:""} class="badge ${o}">${n}</span>`}function V(n={}){const{activeMode:t="grid",modes:e=["grid","list","compact"]}=n,o={grid:{icon:"grid",title:"Grid View"},list:{icon:"list",title:"List View"},compact:{icon:"compact",title:"Compact List"}};return`<div class="view-toggle">${e.map(i=>{const{title:r}=o[i];return`
-        <button class="view-btn ${i===t?"active":""}" data-view-mode="${i}" title="${r}">
-          ${k(i,{size:18})}
+  `;
+}
+function kn(n, t = {}) {
+  const { id: e = "", className: o = "" } = t;
+  return `<span ${e ? `id="${e}"` : ""} class="badge ${o}">${n}</span>`;
+}
+function V(n = {}) {
+  const { activeMode: t = "grid", modes: e = ["grid", "list", "compact"] } = n,
+    o = {
+      grid: { icon: "grid", title: "Grid View" },
+      list: { icon: "list", title: "List View" },
+      compact: { icon: "compact", title: "Compact List" },
+    };
+  return `<div class="view-toggle">${e
+    .map((i) => {
+      const { title: r } = o[i];
+      return `
+        <button class="view-btn ${i === t ? "active" : ""}" data-view-mode="${i}" title="${r}">
+          ${k(i, { size: 18 })}
         </button>
-      `}).join("")}</div>`}function P(n={}){const{name:t="User",avatarChar:e="U",plan:o="Free Plan",className:s=""}=n;return`
+      `;
+    })
+    .join("")}</div>`;
+}
+function P(n = {}) {
+  const {
+    name: t = "User",
+    avatarChar: e = "U",
+    plan: o = "Free Plan",
+    className: s = "",
+  } = n;
+  return `
     <div class="user-profile-menu ${s}">
       <button class="user-avatar-btn header-user-avatar-btn" data-action="toggle-user-dropdown">
         <div class="user-avatar header-user-avatar">${e}</div>
@@ -107,7 +324,7 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
         </div>
         <div class="user-dropdown-actions">
           <button class="dropdown-item header-settings-btn" data-action="open-settings">
-            ${k("settings",{size:16})}
+            ${k("settings", { size: 16 })}
             Settings
           </button>
           <button class="dropdown-item header-logout-btn" data-action="logout-user">
@@ -121,15 +338,38 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
         </div>
       </div>
     </div>
-  `}function D(n={}){const{actions:t=["archive","move","tag","delete"],selectionCountId:e="",clearBtnId:o=""}=n,s={archive:{icon:"archive",title:"Archive Selected"},unarchive:{icon:"unarchive",title:"Unarchive Selected"},move:{icon:"folder",title:"Move to Folder"},tag:{icon:"tag",title:"Add Tags"},delete:{icon:"trash",title:"Delete",className:"text-danger"}},i=t.map(l=>{const{icon:d,title:a,className:p=""}=s[l];return`
+  `;
+}
+function D(n = {}) {
+  const {
+      actions: t = ["archive", "move", "tag", "delete"],
+      selectionCountId: e = "",
+      clearBtnId: o = "",
+    } = n,
+    s = {
+      archive: { icon: "archive", title: "Archive Selected" },
+      unarchive: { icon: "unarchive", title: "Unarchive Selected" },
+      move: { icon: "folder", title: "Move to Folder" },
+      tag: { icon: "tag", title: "Add Tags" },
+      delete: { icon: "trash", title: "Delete", className: "text-danger" },
+    },
+    i = t
+      .map((l) => {
+        const { icon: d, title: a, className: p = "" } = s[l];
+        return `
         <button class="btn-icon btn-bulk-${l} ${p}" title="${a}">
-          ${k(d,{size:20})}
+          ${k(d, { size: 20 })}
         </button>
-      `}).join(""),r=o?`id="${o}"`:"",c=e?`id="${e}"`:"";return`
+      `;
+      })
+      .join(""),
+    r = o ? `id="${o}"` : "",
+    c = e ? `id="${e}"` : "";
+  return `
     <div class="header-selection-ui">
       <div class="header-left">
         <button class="btn-icon btn-clear-selection" ${r} title="Clear Selection">
-          ${k("close",{size:20})}
+          ${k("close", { size: 20 })}
         </button>
         <span class="selection-count header-selection-count" ${c}>0 selected</span>
       </div>
@@ -137,7 +377,17 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
         ${i}
       </div>
     </div>
-  `}function R(n={}){const{id:t="search-input",placeholder:e="Search or type > for commands...",shortcut:o="Ctrl+K",showDropdown:s=!0}=n,i=s?`
+  `;
+}
+function R(n = {}) {
+  const {
+      id: t = "search-input",
+      placeholder: e = "Search or type > for commands...",
+      shortcut: o = "Ctrl+K",
+      showDropdown: s = !0,
+    } = n,
+    i = s
+      ? `
     <div id="omnibar-panel" class="omnibar-panel hidden">
       <!-- Recent Searches Section -->
       <div class="omnibar-section" id="omnibar-recent">
@@ -178,10 +428,12 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
         <span class="tip"><kbd>Enter</kbd> select</span>
       </div>
     </div>
-  `:"";return`
+  `
+      : "";
+  return `
     <div class="omnibar-container">
       <div class="header-search-bar omnibar-input">
-        ${k("search",{size:18})}
+        ${k("search", { size: 18 })}
         <input
           type="text"
           id="${t}"
@@ -192,11 +444,31 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
       </div>
       ${i}
     </div>
-  `}function U(n){const{id:t,title:e,countId:o="",countSuffix:s="bookmarks",className:i="",rightContent:r="",showViewToggle:c=!0,viewModes:l=["grid","list","compact"],showUserProfile:d=!0,bulkActions:a=["archive","move","tag","delete"],selectionCountId:p="header-selection-count",clearBtnId:h="btn-clear-selection"}=n,v=o?`<span class="bookmark-count" id="${o}">0 ${s}</span>`:"",u=c?V({modes:l}):"",g=d?P():"";return`
+  `;
+}
+function U(n) {
+  const {
+      id: t,
+      title: e,
+      countId: o = "",
+      countSuffix: s = "bookmarks",
+      className: i = "",
+      rightContent: r = "",
+      showViewToggle: c = !0,
+      viewModes: l = ["grid", "list", "compact"],
+      showUserProfile: d = !0,
+      bulkActions: a = ["archive", "move", "tag", "delete"],
+      selectionCountId: p = "header-selection-count",
+      clearBtnId: h = "btn-clear-selection",
+    } = n,
+    v = o ? `<span class="bookmark-count" id="${o}">0 ${s}</span>` : "",
+    u = c ? V({ modes: l }) : "",
+    g = d ? P() : "";
+  return `
     <header class="content-header ${i}" id="${t}">
       <div class="header-normal-ui">
         <div class="header-left">
-          <button class="btn-icon" id="toggle-sidebar-btn-${t.replace("-header","")}" title="Toggle Sidebar">
+          <button class="btn-icon" id="toggle-sidebar-btn-${t.replace("-header", "")}" title="Toggle Sidebar">
             ${k("menu")}
           </button>
           <h1>${e}</h1>
@@ -208,9 +480,11 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
           ${g}
         </div>
       </div>
-      ${D({actions:a,selectionCountId:p,clearBtnId:h})}
+      ${D({ actions: a, selectionCountId: p, clearBtnId: h })}
     </header>
-  `}const j=`<div id="auth-screen" class="auth-screen">
+  `;
+}
+const j = `<div id="auth-screen" class="auth-screen">
   <div class="auth-container">
     <div id="server-status-banner" class="status-banner error hidden">
       <svg
@@ -366,7 +640,8 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
     <div class="bg-pattern"></div>
   </div>
 </div>
-`,O=`<aside class="sidebar">
+`,
+  O = `<aside class="sidebar">
   <div class="sidebar-header">
     <div class="logo">
       <div class="logo-icon small">
@@ -562,7 +837,8 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
     </a>
   </div>
 </aside>
-`,G=`<main class="main-content">
+`,
+  G = `<main class="main-content">
   <!-- Content Headers (Injected by loader.js) -->
   <div id="headers-container"></div>
 
@@ -584,7 +860,8 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
     <div id="empty-state-container"></div>
   </div>
 </main>
-`,K=`<div id="bulk-bar" class="bulk-bar hidden">
+`,
+  K = `<div id="bulk-bar" class="bulk-bar hidden">
   <div class="bulk-left">
     <span id="bulk-count">0 selected</span>
     <button
@@ -616,7 +893,8 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
     <button class="btn btn-ghost" id="bulk-clear-btn">Clear</button>
   </div>
 </div>
-`,Q=`<div id="empty-state" class="empty-state hidden">
+`,
+  Q = `<div id="empty-state" class="empty-state hidden">
   <div class="empty-icon">
     <svg
       viewBox="0 0 24 24"
@@ -637,7 +915,8 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
     <span>Add Bookmark</span>
   </button>
 </div>
-`,Z=`<div id="bookmark-modal" class="modal hidden">
+`,
+  Z = `<div id="bookmark-modal" class="modal hidden">
   <div class="modal-backdrop"></div>
   <div class="modal-content">
     <div class="modal-header">
@@ -842,7 +1121,8 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
     </form>
   </div>
 </div>
-`,Y=`<div id="tag-modal" class="modal hidden">
+`,
+  Y = `<div id="tag-modal" class="modal hidden">
   <div class="modal-backdrop"></div>
   <div class="modal-content modal-sm">
     <div class="modal-header">
@@ -934,7 +1214,8 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
     </form>
   </div>
 </div>
-`,J=`<div id="folder-modal" class="modal hidden">
+`,
+  J = `<div id="folder-modal" class="modal hidden">
   <div class="modal-backdrop"></div>
   <div class="modal-content modal-sm">
     <div class="modal-header">
@@ -1043,7 +1324,8 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
     </form>
   </div>
 </div>
-`,W=`<div class="filter-sidebar" id="filter-sidebar">
+`,
+  W = `<div class="filter-sidebar" id="filter-sidebar">
   <div class="filter-header">
     <h3>Filters & Sort</h3>
     <button class="btn-icon" id="close-filter-sidebar">
@@ -1117,7 +1399,8 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
     </div>
   </div>
 </div>
-`,X=`<div id="settings-modal" class="modal hidden">
+`,
+  X = `<div id="settings-modal" class="modal hidden">
   <div class="modal-backdrop"></div>
   <div class="modal-content modal-lg">
     <div class="modal-header">
@@ -1876,7 +2159,8 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
     </div>
   </div>
 </div>
-`,nn=`<div id="shortcuts-popup" class="shortcuts-popup hidden">
+`,
+  nn = `<div id="shortcuts-popup" class="shortcuts-popup hidden">
   <div class="shortcuts-popup-backdrop"></div>
   <div class="shortcuts-popup-panel">
     <div class="shortcuts-popup-header">
@@ -1963,7 +2247,8 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
     </div>
   </div>
 </div>
-`,tn=`<div id="quick-launch" class="quick-launch hidden">
+`,
+  tn = `<div id="quick-launch" class="quick-launch hidden">
   <div class="quick-launch-backdrop"></div>
   <div class="quick-launch-panel">
     <div class="quick-launch-header">
@@ -1987,7 +2272,8 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
     <div id="quick-launch-list" class="quick-launch-list"></div>
   </div>
 </div>
-`,en=`<div id="tour-overlay" class="tour-overlay hidden"></div>
+`,
+  en = `<div id="tour-overlay" class="tour-overlay hidden"></div>
 <div id="tour-popover" class="tour-popover hidden">
   <div class="tour-header">
     <div class="tour-steps">
@@ -2018,17 +2304,310 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
     <button class="btn btn-primary tour-next" id="tour-next-btn">Next</button>
   </div>
 </div>
-`,on=`<div id="toast" class="toast hidden">
+`,
+  on = `<div id="toast" class="toast hidden">
   <span class="toast-message"></span>
 </div>
-`;function yn(){const n=document.getElementById("app");if(!n)return;n.innerHTML="";const t=document.createElement("div");t.innerHTML=j,t.firstElementChild&&n.appendChild(t.firstElementChild);const e=document.createElement("div");e.id="main-app",e.className="main-app hidden";const o=document.createElement("div");o.className="sidebar-backdrop",o.id="sidebar-backdrop",e.appendChild(o);const s=document.createElement("div");s.innerHTML=O,s.firstElementChild&&e.appendChild(s.firstElementChild);const i=document.createElement("div");i.innerHTML=G;const r=i.firstElementChild;if(r){const l=r.querySelector("#headers-container");l&&(l.innerHTML=U({id:"main-header",title:"Bookmarks",className:"main-header",countId:"bookmarks-view-count",countSuffix:"bookmarks",rightContent:`
-          ${R({id:"search-input"})}
+`;
+function yn() {
+  const n = document.getElementById("app");
+  if (!n) return;
+  n.innerHTML = "";
+  const t = document.createElement("div");
+  ((t.innerHTML = j),
+    t.firstElementChild && n.appendChild(t.firstElementChild));
+  const e = document.createElement("div");
+  ((e.id = "main-app"), (e.className = "main-app hidden"));
+  const o = document.createElement("div");
+  ((o.className = "sidebar-backdrop"),
+    (o.id = "sidebar-backdrop"),
+    e.appendChild(o));
+  const s = document.createElement("div");
+  ((s.innerHTML = O),
+    s.firstElementChild && e.appendChild(s.firstElementChild));
+  const i = document.createElement("div");
+  i.innerHTML = G;
+  const r = i.firstElementChild;
+  if (r) {
+    const l = r.querySelector("#headers-container");
+    l &&
+      ((l.innerHTML = U({
+        id: "main-header",
+        title: "Bookmarks",
+        className: "main-header",
+        countId: "bookmarks-view-count",
+        countSuffix: "bookmarks",
+        rightContent: `
+          ${R({ id: "search-input" })}
           <button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
-            ${k("filter",{size:16})}
+            ${k("filter", { size: 16 })}
             <span class="filter-btn-text">Filters</span>
           </button>
-        `,bulkActions:["archive","move","tag","delete"]}),H(async()=>{const{attachViewToggleListeners:p}=await import("./main-BnFaXbWJ.js").then(h=>h.A);return{attachViewToggleListeners:p}},__vite__mapDeps([0,1,2,3,4])).then(({attachViewToggleListeners:p})=>p()));const d=r.querySelector("#bulk-bar-container");d&&(d.innerHTML=K);const a=r.querySelector("#empty-state-container");a&&(a.innerHTML=Q),e.appendChild(r)}n.appendChild(e);const c=document.createElement("div");for(c.id="modals-container",c.innerHTML=[Z,Y,J,W,X,nn,tn,en,on].join(`
-`);c.firstChild;)n.appendChild(c.firstChild)}function sn(n,t=""){const e=document.getElementById("toast");if(!e)return;const o=e.querySelector(".toast-message");o&&(o.textContent=n),e.className=`toast ${t}`,e.classList.remove("hidden"),setTimeout(()=>e.classList.add("hidden"),3e3)}function an(n){const t=document.getElementById(n);if(t){t.classList.remove("hidden");const e=t.querySelector(".modal-close"),o=t.querySelector(".modal-backdrop"),s=()=>{t.classList.add("hidden")};e&&e.addEventListener("click",s),o&&o.addEventListener("click",s),n==="settings-modal"&&ln()}}function ln(){document.querySelectorAll(".settings-tab").forEach(n=>{n.addEventListener("click",()=>{const t=n.dataset.settingsTab;if(!t)return;document.querySelectorAll(".settings-tab").forEach(s=>{s.classList.remove("active")}),document.querySelectorAll(".settings-panel").forEach(s=>{s.classList.remove("active")}),n.classList.add("active");const e=`settings-${t}`,o=document.getElementById(e);o&&o.classList.add("active")})})}function rn(){document.querySelectorAll(".modal").forEach(e=>e.classList.add("hidden")),I();const n=document.getElementById("import-html-progress");n&&(n.innerHTML="");const t=document.getElementById("import-html-btn");t&&(t.disabled=!1,t.removeAttribute("aria-busy"))}function I(){const n=document.getElementById("bookmark-form"),t=document.getElementById("folder-form");n&&n.reset(),t&&t.reset();const e=document.getElementById("bookmark-id"),o=document.getElementById("folder-id");e&&(e.value=""),o&&(o.value="");const s=document.getElementById("bookmark-modal-title"),i=document.getElementById("folder-modal-title");s&&(s.textContent="Add Bookmark"),i&&(i.textContent="New Folder"),document.querySelectorAll(".color-option").forEach((l,d)=>{l.classList.toggle("active",d===0)});const r=document.getElementById("folder-color");r&&(r.value="#6366f1"),document.querySelectorAll(".color-option-bookmark").forEach((l,d)=>{l.classList.toggle("active",d===0)});const c=document.getElementById("bookmark-color");c&&(c.value="")}function dn(){document.querySelectorAll(".nav-item").forEach(e=>{e.classList.remove("active")}),y==="folder"?document.querySelector(`.folder-item[data-folder="${A}"]`)?.classList.add("active"):y==="dashboard"?document.querySelector('.nav-item[data-view="dashboard"]')?.classList.add("active"):y==="collection"?document.querySelector('.nav-item[data-view="all"]')?.classList.add("active"):document.querySelector(`.nav-item[data-view="${y}"]`)?.classList.add("active");const n=["filters-section"],t=y==="dashboard";n.forEach(e=>{const o=document.getElementById(e);o&&(t?o.classList.add("hidden"):o.classList.remove("hidden"))})}async function cn(){try{const n=await q("/bookmarks/counts");(!n||typeof n!="object")&&console.warn("Invalid counts response from server",n);const t={all:Number(n?.all)||0,favorites:Number(n?.favorites)||0,recent:Number(n?.recent)||0,archived:Number(n?.archived)||0},e=document.getElementById("bookmark-count"),o=document.getElementById("fav-count"),s=document.getElementById("count-recent"),i=document.getElementById("dashboard-count"),r=document.getElementById("count-archived"),c=(u,g)=>{if(!u){console.warn("Badge element not found");return}u.textContent=g.toString(),u.style.removeProperty("display"),u.style.removeProperty("visibility"),u.style.removeProperty("opacity"),u.classList.remove("badge-empty")};c(e,t.all),c(o,t.favorites),c(s,t.recent),c(r,t.archived);let l=0;if(Array.isArray(x)&&Array.isArray(w)&&x.length>0){const u=new Set;x.forEach(g=>{g.type==="folder"?w.filter(b=>b.folder_id===g.id&&!b.is_archived).forEach(b=>u.add(b.id)):g.type==="tag"&&w.filter(b=>!b.is_archived&&b.tags&&b.tags.split(",").map(N=>N.trim()).includes(g.id)).forEach(b=>u.add(b.id))}),l=u.size}c(i,l);const d=document.getElementById("bookmarks-view-count"),a=document.getElementById("favorites-view-count"),p=document.getElementById("recents-view-count"),h=document.getElementById("archived-view-count");let v=$.length;switch(y==="dashboard"&&(v=l),y){case"all":case"folder":case"collection":d&&(d.textContent=`${v} bookmark${v!==1?"s":""}`);break;case"favorites":a&&(a.textContent=`${t.favorites} favorite${t.favorites!==1?"s":""}`);break;case"recent":p&&(p.textContent=`${t.recent} recent`);break;case"archived":h&&(h.textContent=`${t.archived} archived`);break}T()}catch(n){console.error("Error updating counts:",n),["bookmark-count","fav-count","count-recent","dashboard-count","count-archived"].forEach(e=>{const o=document.getElementById(e);o&&(o.style.removeProperty("display"),o.style.removeProperty("visibility"),o.style.removeProperty("opacity"))})}}function T(){const n=document.getElementById("stat-bookmarks"),t=document.getElementById("stat-folders"),e=document.getElementById("stat-tags"),o=document.getElementById("folders-count");let s=$.length,i=B.length,r=0;const c=new Set;if($.forEach(l=>{l.tags&&l.tags.split(",").forEach(d=>{const a=d.trim();a&&c.add(a)})}),r=c.size,y==="dashboard"){i=x.filter(d=>d.type==="folder").length,r=x.filter(d=>d.type==="tag").length;const l=new Set;x.forEach(d=>{d.type==="folder"?w.filter(a=>a.folder_id===d.id).forEach(a=>l.add(a.id)):d.type==="tag"&&w.filter(a=>a.tags&&a.tags.split(",").map(p=>p.trim()).includes(d.id)).forEach(a=>l.add(a.id))}),s=l.size}n&&(n.textContent=s.toString()),t&&(t.textContent=i.toString()),e&&(e.textContent=r.toString()),o&&(o.textContent=B.length.toString())}function vn(){return y==="favorites"?`
+        `,
+        bulkActions: ["archive", "move", "tag", "delete"],
+      })),
+      H(
+        async () => {
+          const { attachViewToggleListeners: p } =
+            await import("./main-BnFaXbWJ.js").then((h) => h.A);
+          return { attachViewToggleListeners: p };
+        },
+        __vite__mapDeps([0, 1, 2, 3, 4]),
+      ).then(({ attachViewToggleListeners: p }) => p()));
+    const d = r.querySelector("#bulk-bar-container");
+    d && (d.innerHTML = K);
+    const a = r.querySelector("#empty-state-container");
+    (a && (a.innerHTML = Q), e.appendChild(r));
+  }
+  n.appendChild(e);
+  const c = document.createElement("div");
+  for (
+    c.id = "modals-container",
+      c.innerHTML = [Z, Y, J, W, X, nn, tn, en, on].join(`
+`);
+    c.firstChild;
+  )
+    n.appendChild(c.firstChild);
+}
+function sn(n, t = "") {
+  const e = document.getElementById("toast");
+  if (!e) return;
+  const o = e.querySelector(".toast-message");
+  (o && (o.textContent = n),
+    (e.className = `toast ${t}`),
+    e.classList.remove("hidden"),
+    setTimeout(() => e.classList.add("hidden"), 3e3));
+}
+function an(n) {
+  const t = document.getElementById(n);
+  if (t) {
+    t.classList.remove("hidden");
+    const e = t.querySelector(".modal-close"),
+      o = t.querySelector(".modal-backdrop"),
+      s = () => {
+        t.classList.add("hidden");
+      };
+    (e && e.addEventListener("click", s),
+      o && o.addEventListener("click", s),
+      n === "settings-modal" && ln());
+  }
+}
+function ln() {
+  document.querySelectorAll(".settings-tab").forEach((n) => {
+    n.addEventListener("click", () => {
+      const t = n.dataset.settingsTab;
+      if (!t) return;
+      (document.querySelectorAll(".settings-tab").forEach((s) => {
+        s.classList.remove("active");
+      }),
+        document.querySelectorAll(".settings-panel").forEach((s) => {
+          s.classList.remove("active");
+        }),
+        n.classList.add("active"));
+      const e = `settings-${t}`,
+        o = document.getElementById(e);
+      o && o.classList.add("active");
+    });
+  });
+}
+function rn() {
+  (document
+    .querySelectorAll(".modal")
+    .forEach((e) => e.classList.add("hidden")),
+    I());
+  const n = document.getElementById("import-html-progress");
+  n && (n.innerHTML = "");
+  const t = document.getElementById("import-html-btn");
+  t && ((t.disabled = !1), t.removeAttribute("aria-busy"));
+}
+function I() {
+  const n = document.getElementById("bookmark-form"),
+    t = document.getElementById("folder-form");
+  (n && n.reset(), t && t.reset());
+  const e = document.getElementById("bookmark-id"),
+    o = document.getElementById("folder-id");
+  (e && (e.value = ""), o && (o.value = ""));
+  const s = document.getElementById("bookmark-modal-title"),
+    i = document.getElementById("folder-modal-title");
+  (s && (s.textContent = "Add Bookmark"),
+    i && (i.textContent = "New Folder"),
+    document.querySelectorAll(".color-option").forEach((l, d) => {
+      l.classList.toggle("active", d === 0);
+    }));
+  const r = document.getElementById("folder-color");
+  (r && (r.value = "#6366f1"),
+    document.querySelectorAll(".color-option-bookmark").forEach((l, d) => {
+      l.classList.toggle("active", d === 0);
+    }));
+  const c = document.getElementById("bookmark-color");
+  c && (c.value = "");
+}
+function dn() {
+  (document.querySelectorAll(".nav-item").forEach((e) => {
+    e.classList.remove("active");
+  }),
+    y === "folder"
+      ? document
+          .querySelector(`.folder-item[data-folder="${A}"]`)
+          ?.classList.add("active")
+      : y === "dashboard"
+        ? document
+            .querySelector('.nav-item[data-view="dashboard"]')
+            ?.classList.add("active")
+        : y === "collection"
+          ? document
+              .querySelector('.nav-item[data-view="all"]')
+              ?.classList.add("active")
+          : document
+              .querySelector(`.nav-item[data-view="${y}"]`)
+              ?.classList.add("active"));
+  const n = ["filters-section"],
+    t = y === "dashboard";
+  n.forEach((e) => {
+    const o = document.getElementById(e);
+    o && (t ? o.classList.add("hidden") : o.classList.remove("hidden"));
+  });
+}
+async function cn() {
+  try {
+    const n = await q("/bookmarks/counts");
+    (!n || typeof n != "object") &&
+      console.warn("Invalid counts response from server", n);
+    const t = {
+        all: Number(n?.all) || 0,
+        favorites: Number(n?.favorites) || 0,
+        recent: Number(n?.recent) || 0,
+        archived: Number(n?.archived) || 0,
+      },
+      e = document.getElementById("bookmark-count"),
+      o = document.getElementById("fav-count"),
+      s = document.getElementById("count-recent"),
+      i = document.getElementById("dashboard-count"),
+      r = document.getElementById("count-archived"),
+      c = (u, g) => {
+        if (!u) {
+          console.warn("Badge element not found");
+          return;
+        }
+        ((u.textContent = g.toString()),
+          u.style.removeProperty("display"),
+          u.style.removeProperty("visibility"),
+          u.style.removeProperty("opacity"),
+          u.classList.remove("badge-empty"));
+      };
+    (c(e, t.all), c(o, t.favorites), c(s, t.recent), c(r, t.archived));
+    let l = 0;
+    if (Array.isArray(x) && Array.isArray(w) && x.length > 0) {
+      const u = new Set();
+      (x.forEach((g) => {
+        g.type === "folder"
+          ? w
+              .filter((b) => b.folder_id === g.id && !b.is_archived)
+              .forEach((b) => u.add(b.id))
+          : g.type === "tag" &&
+            w
+              .filter(
+                (b) =>
+                  !b.is_archived &&
+                  b.tags &&
+                  b.tags
+                    .split(",")
+                    .map((N) => N.trim())
+                    .includes(g.id),
+              )
+              .forEach((b) => u.add(b.id));
+      }),
+        (l = u.size));
+    }
+    c(i, l);
+    const d = document.getElementById("bookmarks-view-count"),
+      a = document.getElementById("favorites-view-count"),
+      p = document.getElementById("recents-view-count"),
+      h = document.getElementById("archived-view-count");
+    let v = $.length;
+    switch ((y === "dashboard" && (v = l), y)) {
+      case "all":
+      case "folder":
+      case "collection":
+        d && (d.textContent = `${v} bookmark${v !== 1 ? "s" : ""}`);
+        break;
+      case "favorites":
+        a &&
+          (a.textContent = `${t.favorites} favorite${t.favorites !== 1 ? "s" : ""}`);
+        break;
+      case "recent":
+        p && (p.textContent = `${t.recent} recent`);
+        break;
+      case "archived":
+        h && (h.textContent = `${t.archived} archived`);
+        break;
+    }
+    T();
+  } catch (n) {
+    (console.error("Error updating counts:", n),
+      [
+        "bookmark-count",
+        "fav-count",
+        "count-recent",
+        "dashboard-count",
+        "count-archived",
+      ].forEach((e) => {
+        const o = document.getElementById(e);
+        o &&
+          (o.style.removeProperty("display"),
+          o.style.removeProperty("visibility"),
+          o.style.removeProperty("opacity"));
+      }));
+  }
+}
+function T() {
+  const n = document.getElementById("stat-bookmarks"),
+    t = document.getElementById("stat-folders"),
+    e = document.getElementById("stat-tags"),
+    o = document.getElementById("folders-count");
+  let s = $.length,
+    i = B.length,
+    r = 0;
+  const c = new Set();
+  if (
+    ($.forEach((l) => {
+      l.tags &&
+        l.tags.split(",").forEach((d) => {
+          const a = d.trim();
+          a && c.add(a);
+        });
+    }),
+    (r = c.size),
+    y === "dashboard")
+  ) {
+    ((i = x.filter((d) => d.type === "folder").length),
+      (r = x.filter((d) => d.type === "tag").length));
+    const l = new Set();
+    (x.forEach((d) => {
+      d.type === "folder"
+        ? w.filter((a) => a.folder_id === d.id).forEach((a) => l.add(a.id))
+        : d.type === "tag" &&
+          w
+            .filter(
+              (a) =>
+                a.tags &&
+                a.tags
+                  .split(",")
+                  .map((p) => p.trim())
+                  .includes(d.id),
+            )
+            .forEach((a) => l.add(a.id));
+    }),
+      (s = l.size));
+  }
+  (n && (n.textContent = s.toString()),
+    t && (t.textContent = i.toString()),
+    e && (e.textContent = r.toString()),
+    o && (o.textContent = B.length.toString()));
+}
+function vn() {
+  return y === "favorites"
+    ? `
             <div class="empty-state-content">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;color:var(--primary-400);margin-bottom:1rem">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
@@ -2036,7 +2615,9 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
                 <h3>No favorites yet</h3>
                 <p>Click the star icon on any bookmark<br>to add it to your favorites.</p>
             </div>
-        `:F.tags.length>0?`
+        `
+    : F.tags.length > 0
+      ? `
             <div class="empty-state-content">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;color:var(--text-tertiary);margin-bottom:1rem">
                     <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
@@ -2045,7 +2626,9 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
                 <h3>No bookmarks with these tags</h3>
                 <p>No bookmarks match your selected tags.<br><button class="btn-link" data-action="clear-filters">Clear filters</button></p>
             </div>
-        `:y==="folder"&&A?`
+        `
+      : y === "folder" && A
+        ? `
             <div class="empty-state-content">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;color:var(--text-tertiary);margin-bottom:1rem">
                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
@@ -2053,7 +2636,8 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
                 <h3>This folder is empty</h3>
                 <p>Add bookmarks to this folder by clicking<br>"Add Bookmark" and selecting it.</p>
             </div>
-        `:`
+        `
+        : `
         <div class="empty-state-content">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;color:var(--primary-400);margin-bottom:1rem">
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
@@ -2063,5 +2647,50 @@ import{e as f,g as S,a as _}from"./bookmarks-hgxSTBhD.js";import{t as C,ao as E,
             <p>Click "Add Bookmark" to save your first link,<br>or import bookmarks from your browser.</p>
             <button class="btn btn-primary" data-action="open-modal" data-modal-target="bookmark-modal" style="margin-top:1rem">Add Your First Bookmark</button>
         </div>
-    `}function pn(){const n=C.size>0;document.querySelectorAll(".content-header").forEach(e=>{e.classList.toggle("selection-mode",n)}),n&&document.querySelectorAll(".header-selection-count").forEach(o=>{o.textContent=`${C.size} selected`})}const fn=Object.freeze(Object.defineProperty({__proto__:null,closeModals:rn,getEmptyStateMessage:vn,openModal:an,resetForms:I,showToast:sn,updateActiveNav:dn,updateBulkUI:pn,updateCounts:cn,updateStats:T},Symbol.toStringTag,{value:"Module"}));export{mn as B,k as I,gn as R,hn as S,cn as a,dn as b,rn as c,kn as d,fn as e,vn as g,yn as l,an as o,sn as s,pn as u};
+    `;
+}
+function pn() {
+  const n = C.size > 0;
+  (document.querySelectorAll(".content-header").forEach((e) => {
+    e.classList.toggle("selection-mode", n);
+  }),
+    n &&
+      document.querySelectorAll(".header-selection-count").forEach((o) => {
+        o.textContent = `${C.size} selected`;
+      }));
+}
+const fn = Object.freeze(
+  Object.defineProperty(
+    {
+      __proto__: null,
+      closeModals: rn,
+      getEmptyStateMessage: vn,
+      openModal: an,
+      resetForms: I,
+      showToast: sn,
+      updateActiveNav: dn,
+      updateBulkUI: pn,
+      updateCounts: cn,
+      updateStats: T,
+    },
+    Symbol.toStringTag,
+    { value: "Module" },
+  ),
+);
+export {
+  mn as B,
+  k as I,
+  gn as R,
+  hn as S,
+  cn as a,
+  dn as b,
+  rn as c,
+  kn as d,
+  fn as e,
+  vn as g,
+  yn as l,
+  an as o,
+  sn as s,
+  pn as u,
+};
 //# sourceMappingURL=ui-DJeZlV46.js.map
