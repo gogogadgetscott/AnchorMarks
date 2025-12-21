@@ -1740,6 +1740,23 @@ body.sidebar-collapsed .nav-section-header {
   transition: margin-left 0.3s ease;
 }
 
+#headers-container {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--bg-primary);
+  width: 100%;
+  border-bottom: 1px solid var(--border-color);
+}
+
+#bulk-bar-container {
+  position: sticky;
+  top: 64px;
+  z-index: 999;
+  background: var(--bg-primary);
+  width: 100%;
+}
+
 /* Content Header */
 /* Content Header Refinement */
 .content-header {
@@ -1747,7 +1764,6 @@ body.sidebar-collapsed .nav-section-header {
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--border-color);
   background: var(--bg-primary);
   gap: 1rem;
   height: 64px;
@@ -2025,12 +2041,7 @@ body.sidebar-collapsed .nav-section-header {
   gap: 1rem;
   padding: 0.75rem 2rem;
   background: var(--card-bg);
-  border-top: 1px solid var(--border-color);
-  border-bottom: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
-  position: sticky;
-  top: 0;
-  z-index: 5;
 }
 
 .bulk-actions {
