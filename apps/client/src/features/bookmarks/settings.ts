@@ -155,16 +155,14 @@ export function toggleRichLinkPreviews(): void {
     "rich-link-previews-toggle",
   ) as HTMLInputElement;
   const newValue = toggle?.checked || false;
+  console.log("[Settings] Toggling rich link previews:", newValue);
   state.setRichLinkPreviewsEnabled(newValue);
   saveSettings({ rich_link_previews_enabled: newValue ? 1 : 0 });
 
-  // Reload bookmarks to apply the new view if we matches some criteria?
-  // Actually, the card view logic should handle the switch dynamically.
-  import("@features/bookmarks/bookmarks.ts")
-    .then(({ renderBookmarks }) => {
-      renderBookmarks();
-    })
-    .catch(console.error);
+  // Refresh view
+  import("@features/bookmarks/bookmarks.ts").then(({ renderBookmarks }) => {
+    renderBookmarks();
+  });
 }
 
 // Toggle child bookmarks

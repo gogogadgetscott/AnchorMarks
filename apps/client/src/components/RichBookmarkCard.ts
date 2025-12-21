@@ -95,23 +95,22 @@ export function RichBookmarkCard(bookmark: Bookmark, index: number): string {
         <div class="bookmark-title">${escapeHtml(bookmark.title)}</div>
         ${bookmark.description ? `<div class="bookmark-description">${escapeHtml(bookmark.description)}</div>` : ""}
         ${tagsHtml}
-      </div>
-      <div class="bookmark-actions">
-        ${Button("", {
-    variant: "ghost",
+        <div class="bookmark-actions">
+          ${Button("Open", {
+    variant: "primary",
     className: "bookmark-action-btn",
     icon: "external",
     data: { action: "open-bookmark", url: bookmark.url },
     title: "Open bookmark",
   })}
-        ${Button("", {
-    variant: "ghost",
+          ${Button("Edit", {
+    variant: "secondary",
     className: "bookmark-action-btn",
     icon: "edit",
     data: { action: "edit-bookmark", id: bookmark.id },
     title: "Edit bookmark",
   })}
-        ${Button("", {
+          ${Button("", {
     variant: bookmark.is_favorite ? "warning" : "ghost",
     className: "bookmark-action-btn",
     icon: bookmark.is_favorite ? "star-filled" : "star",
@@ -120,14 +119,14 @@ export function RichBookmarkCard(bookmark: Bookmark, index: number): string {
       ? "Remove from favorites"
       : "Add to favorites",
   })}
-        ${Button("", {
+          ${Button("", {
     variant: "ghost",
     className: "bookmark-action-btn",
     icon: "copy",
     data: { action: "copy-link", url: bookmark.url },
     title: "Copy link",
   })}
-        ${bookmark.is_archived
+          ${bookmark.is_archived
       ? Button("", {
         variant: "ghost",
         className: "bookmark-action-btn",
@@ -143,13 +142,14 @@ export function RichBookmarkCard(bookmark: Bookmark, index: number): string {
         title: "Archive bookmark",
       })
     }
-        ${Button("", {
+          ${Button("", {
       variant: "ghost",
       className: "bookmark-action-btn",
       icon: "trash",
       data: { action: "delete-bookmark", id: bookmark.id },
       title: "Delete bookmark",
     })}
+        </div>
       </div>
     </div>
   `;

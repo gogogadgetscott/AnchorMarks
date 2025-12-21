@@ -59,6 +59,7 @@ function setupApiRoutes(app, db, helpers) {
     validateCsrfTokenMiddleware,
     (req, res) => {
       try {
+        console.log(`[Settings] Saving for user ${req.user.id}:`, req.body);
         userSettingsModel.upsertUserSettings(db, req.user.id, req.body);
 
         const settings = db
