@@ -30,7 +30,7 @@ export async function importHtml(file: File): Promise<void> {
     await renderSidebarTags();
 
     const hasLog = result.import_log && result.import_log.length > 0;
-    
+
     showToast(
       `Imported ${result.imported} bookmarks!${
         result.skipped ? ` (${result.skipped} skipped)` : ""

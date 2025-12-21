@@ -104,7 +104,7 @@ export async function register(
 // Logout
 export function logout(): void {
   api("/auth/logout", { method: "POST" })
-    .catch(() => { })
+    .catch(() => {})
     .finally(() => {
       state.setCsrfToken(null);
       state.setCurrentUser(null);
@@ -172,7 +172,9 @@ export function updateUserInfo(): void {
   if (state.currentUser) {
     const userNames = document.querySelectorAll(".header-user-name");
     const userAvatars = document.querySelectorAll(".header-user-avatar");
-    const userAvatarsLarge = document.querySelectorAll(".header-user-avatar-large");
+    const userAvatarsLarge = document.querySelectorAll(
+      ".header-user-avatar-large",
+    );
     const apiKeyValue = document.getElementById("api-key-value");
 
     const initials = (state.currentUser.email || "U").charAt(0).toUpperCase();

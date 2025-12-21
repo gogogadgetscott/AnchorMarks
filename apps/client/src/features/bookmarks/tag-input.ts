@@ -185,9 +185,13 @@ function showAutocomplete(searchTerm: string, autocomplete: HTMLElement): void {
 
   if (!searchTerm) {
     // Show top 20 popular tags if no search term
-     matches = allTags
+    matches = allTags
       .filter((tag) => !selectedTags.includes(tag))
-      .sort((a, b) => ((state.tagMetadata[b] as any)?.count || 0) - ((state.tagMetadata[a] as any)?.count || 0))
+      .sort(
+        (a, b) =>
+          ((state.tagMetadata[b] as any)?.count || 0) -
+          ((state.tagMetadata[a] as any)?.count || 0),
+      )
       .slice(0, 20);
   } else {
     // Filter by search term
@@ -215,7 +219,11 @@ function showAutocomplete(searchTerm: string, autocomplete: HTMLElement): void {
     .join("");
 
   // Add "Create new" option if search term exists and is not an exact match
-  if (searchTerm && !matches.some(t => t.toLowerCase() === searchTerm.toLowerCase()) && !selectedTags.includes(searchTerm)) {
+  if (
+    searchTerm &&
+    !matches.some((t) => t.toLowerCase() === searchTerm.toLowerCase()) &&
+    !selectedTags.includes(searchTerm)
+  ) {
     const isFirst = matches.length === 0;
     html += `
         <div class="tag-autocomplete-item tag-autocomplete-create ${isFirst ? "active" : ""}" data-tag="${escapeHtml(searchTerm)}">
@@ -224,26 +232,36 @@ function showAutocomplete(searchTerm: string, autocomplete: HTMLElement): void {
         </div>
     `;
   } else if (matches.length > 0 && searchTerm) {
-      // If we have matches and a search term, make sure the first one is active
-      html = html.replace('class="tag-autocomplete-item', 'class="tag-autocomplete-item active');
+    // If we have matches and a search term, make sure the first one is active
+    html = html.replace(
+      'class="tag-autocomplete-item',
+      'class="tag-autocomplete-item active',
+    );
   }
 
   if (!html) {
-      if (searchTerm) {
-         // Should have been handled by Create New, but double check
-         autocomplete.innerHTML = '<div class="tag-autocomplete-empty">No matching tags</div>';
-      } else {
-         autocomplete.innerHTML = '<div class="tag-autocomplete-empty">Start typing to add tags</div>';
-      }
-      autocomplete.style.display = searchTerm ? "block" : "none"; // Hide if empty and no recent tags
-      if (!searchTerm && matches.length > 0) autocomplete.style.display = "block";
-      autocompleteIndex = -1;
-      return;
+    if (searchTerm) {
+      // Should have been handled by Create New, but double check
+      autocomplete.innerHTML =
+        '<div class="tag-autocomplete-empty">No matching tags</div>';
+    } else {
+      autocomplete.innerHTML =
+        '<div class="tag-autocomplete-empty">Start typing to add tags</div>';
+    }
+    autocomplete.style.display = searchTerm ? "block" : "none"; // Hide if empty and no recent tags
+    if (!searchTerm && matches.length > 0) autocomplete.style.display = "block";
+    autocompleteIndex = -1;
+    return;
   }
 
   autocomplete.innerHTML = html;
   autocomplete.style.display = "block";
-  autocompleteIndex = matches.length > 0 && searchTerm ? 0 : (html.includes("tag-autocomplete-create active") ? matches.length : -1);
+  autocompleteIndex =
+    matches.length > 0 && searchTerm
+      ? 0
+      : html.includes("tag-autocomplete-create active")
+        ? matches.length
+        : -1;
 
   // Add click listeners
   autocomplete.querySelectorAll(".tag-autocomplete-item").forEach((item) => {

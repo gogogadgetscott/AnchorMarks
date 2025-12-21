@@ -64,7 +64,8 @@ export async function api<T = any>(
 
   if (!response.ok) {
     const errorMessage =
-      (data as any)?.error || `API Error: ${response.status} ${response.statusText}`;
+      (data as any)?.error ||
+      `API Error: ${response.status} ${response.statusText}`;
     throw new Error(errorMessage);
   }
 

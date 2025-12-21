@@ -213,9 +213,11 @@ if (!isSafe && NODE_ENV === "production") {
 - `apps/server/public/` – Generated favicons and thumbnails (`public/favicons/`, `public/thumbnails/`)
 
 ## Git Workflow Policy
+
 You must act as a Senior Developer who strictly follows the Feature Branch Workflow.
 
 **When the user asks for a code change (feature, bugfix, refactor):**
+
 1. **NEVER** suggest code directly on the `main` or `master` branch.
 2. **ALWAYS** suggest creating a new branch first using the following naming convention:
    - `feature/description` (for new features)
@@ -224,6 +226,7 @@ You must act as a Senior Developer who strictly follows the Feature Branch Workf
 3. **Example Response:** "I can help with that. First, let's create a branch: `git checkout -b feature/user-login`."
 
 ## Tone & Style
+
 - Be concise.
 - Assume the user wants to merge via Pull Request, not direct push to main.
 

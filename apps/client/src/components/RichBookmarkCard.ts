@@ -5,21 +5,21 @@ import { escapeHtml, getHostname } from "@utils/index.ts";
 import * as state from "@features/state.ts";
 
 interface Bookmark {
-    id: string;
-    title: string;
-    url: string;
-    description?: string;
-    favicon?: string;
-    og_image?: string;
-    tags?: string;
-    tags_detailed?: Array<{
-        name: string;
-        color?: string;
-        color_override?: string;
-    }>;
-    folder_id?: string;
+  id: string;
+  title: string;
+  url: string;
+  description?: string;
+  favicon?: string;
+  og_image?: string;
+  tags?: string;
+  tags_detailed?: Array<{
+    name: string;
     color?: string;
-    [key: string]: any;
+    color_override?: string;
+  }>;
+  folder_id?: string;
+  color?: string;
+  [key: string]: any;
 }
 
 /**
@@ -29,59 +29,59 @@ interface Bookmark {
  * @returns {string} - HTML string of the rich bookmark card.
  */
 export function RichBookmarkCard(bookmark: Bookmark, index: number): string {
-    const tagsFromString = bookmark.tags
-        ? bookmark.tags
-            .split(",")
-            .map((t) => t.trim())
-            .filter((t) => t)
-        : [];
+  const tagsFromString = bookmark.tags
+    ? bookmark.tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => t)
+    : [];
 
-    const tagEntries = Array.isArray(bookmark.tags_detailed)
-        ? bookmark.tags_detailed.map((t) => ({
-            name: t.name,
-            color: t.color,
-            color_override: t.color_override,
-        }))
-        : tagsFromString.map((name) => ({
-            name,
-            color: undefined,
-            color_override: undefined,
-        }));
+  const tagEntries = Array.isArray(bookmark.tags_detailed)
+    ? bookmark.tags_detailed.map((t) => ({
+      name: t.name,
+      color: t.color,
+      color_override: t.color_override,
+    }))
+    : tagsFromString.map((name) => ({
+      name,
+      color: undefined,
+      color_override: undefined,
+    }));
 
-    const hostname = getHostname(bookmark.url);
-    const isSelected = state.selectedBookmarks.has(bookmark.id);
+  const hostname = getHostname(bookmark.url);
+  const isSelected = state.selectedBookmarks.has(bookmark.id);
 
-    const tagsHtml = tagEntries.length
-        ? `<div class="bookmark-tags">${tagEntries
-            .map((tag) => {
-                const tagName = tag.name;
-                const tagMeta = state.tagMetadata[tagName] || {};
-                const tagColor =
-                    tag.color_override || tag.color || tagMeta.color || "#f59e0b";
-                return Tag(tagName, {
-                    color: tagColor,
-                    data: { action: "toggle-filter-tag", tag: tagName },
-                });
-            })
-            .join("")}</div>`
-        : "";
+  const tagsHtml = tagEntries.length
+    ? `<div class="bookmark-tags">${tagEntries
+      .map((tag) => {
+        const tagName = tag.name;
+        const tagMeta = state.tagMetadata[tagName] || {};
+        const tagColor =
+          tag.color_override || tag.color || tagMeta.color || "#f59e0b";
+        return Tag(tagName, {
+          color: tagColor,
+          data: { action: "toggle-filter-tag", tag: tagName },
+        });
+      })
+      .join("")}</div>`
+    : "";
 
-    const faviconHtml =
-        !state.hideFavicons && bookmark.favicon
-            ? `<img src="${bookmark.favicon}" alt="" class="bookmark-favicon-img" data-fallback="true" loading="lazy">`
-            : Icon("link", { size: 16 });
+  const faviconHtml =
+    !state.hideFavicons && bookmark.favicon
+      ? `<img src="${bookmark.favicon}" alt="" class="bookmark-favicon-img" data-fallback="true" loading="lazy">`
+      : Icon("link", { size: 16 });
 
-    const delayClass = `delay-${index % 10}`;
+  const delayClass = `delay-${index % 10}`;
 
-    const imageHtml = bookmark.og_image
-        ? `<div class="rich-card-image">
+  const imageHtml = bookmark.og_image
+    ? `<div class="rich-card-image">
          <img src="${bookmark.og_image}" alt="" loading="lazy">
        </div>`
-        : `<div class="rich-card-image-placeholder">
+    : `<div class="rich-card-image-placeholder">
          ${Icon("image", { size: 48 })}
        </div>`;
 
-    return `
+  return `
     <div class="rich-bookmark-card ${isSelected ? "selected" : ""} entrance-animation ${delayClass}" data-id="${bookmark.id}" data-index="${index}">
       <label class="bookmark-select">
         <input type="checkbox" ${isSelected ? "checked" : ""}>
@@ -98,25 +98,57 @@ export function RichBookmarkCard(bookmark: Bookmark, index: number): string {
       </div>
       <div class="bookmark-actions">
         ${Button("", {
-        variant: "ghost",
-        className: "bookmark-action-btn",
-        icon: "external",
-        data: { action: "open-bookmark", url: bookmark.url },
-        title: "Open bookmark",
-    })}
+    variant: "ghost",
+    className: "bookmark-action-btn",
+    icon: "external",
+    data: { action: "open-bookmark", url: bookmark.url },
+    title: "Open bookmark",
+  })}
         ${Button("", {
-        variant: "ghost",
-        className: "bookmark-action-btn",
-        icon: "edit",
-        data: { action: "edit-bookmark", id: bookmark.id },
-        title: "Edit bookmark",
-    })}
+    variant: "ghost",
+    className: "bookmark-action-btn",
+    icon: "edit",
+    data: { action: "edit-bookmark", id: bookmark.id },
+    title: "Edit bookmark",
+  })}
         ${Button("", {
+    variant: bookmark.is_favorite ? "warning" : "ghost",
+    className: "bookmark-action-btn",
+    icon: bookmark.is_favorite ? "star-filled" : "star",
+    data: { action: "toggle-favorite", id: bookmark.id },
+    title: bookmark.is_favorite
+      ? "Remove from favorites"
+      : "Add to favorites",
+  })}
+        ${Button("", {
+    variant: "ghost",
+    className: "bookmark-action-btn",
+    icon: "copy",
+    data: { action: "copy-link", url: bookmark.url },
+    title: "Copy link",
+  })}
+        ${bookmark.is_archived
+      ? Button("", {
         variant: "ghost",
         className: "bookmark-action-btn",
-        icon: "trash",
-        data: { action: "delete-bookmark", id: bookmark.id },
-        title: "Delete bookmark",
+        icon: "unarchive",
+        data: { action: "unarchive-bookmark", id: bookmark.id },
+        title: "Unarchive bookmark",
+      })
+      : Button("", {
+        variant: "ghost",
+        className: "bookmark-action-btn",
+        icon: "archive",
+        data: { action: "archive-bookmark", id: bookmark.id },
+        title: "Archive bookmark",
+      })
+    }
+        ${Button("", {
+      variant: "ghost",
+      className: "bookmark-action-btn",
+      icon: "trash",
+      data: { action: "delete-bookmark", id: bookmark.id },
+      title: "Delete bookmark",
     })}
       </div>
     </div>

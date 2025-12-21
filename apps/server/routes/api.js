@@ -1,5 +1,6 @@
 const { setupAuthRoutes } = require("./auth");
-const setupBookmarksRoutes = require("./bookmarks");
+const setupBookmarksRoutesLegacy = require("./bookmarks");
+const { setupBookmarksRoutes } = require("../controllers/bookmarks");
 
 function setupApiRoutes(app, db, helpers) {
   const {
@@ -22,8 +23,14 @@ function setupApiRoutes(app, db, helpers) {
   // Auth routes (register/login/etc.)
   setupAuthRoutes(app, db, authenticateTokenMiddleware, fetchFaviconWrapper);
 
-  // Bookmarks routes (migrated into controller)
+  // Bookmarks routes from controllers (includes POST /api/bookmarks)
   setupBookmarksRoutes(app, db, {
+    authenticateTokenMiddleware,
+    fetchFaviconWrapper,
+  });
+
+  // Legacy bookmarks routes from routes/bookmarks.js (GET/PUT/DELETE, counts, archive)
+  setupBookmarksRoutesLegacy(app, db, {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     fetchFaviconWrapper,
@@ -65,6 +72,7 @@ function setupApiRoutes(app, db, helpers) {
           hide_favicons: settings.hide_favicons === 1,
           hide_sidebar: settings.hide_sidebar === 1,
           ai_suggestions_enabled: settings.ai_suggestions_enabled !== 0,
+          rich_link_previews_enabled: settings.rich_link_previews_enabled === 1,
           theme: settings.theme || "dark",
           dashboard_mode: settings.dashboard_mode || "folder",
           dashboard_tags: settings.dashboard_tags
@@ -111,6 +119,7 @@ function setupApiRoutes(app, db, helpers) {
           hide_favicons: false,
           hide_sidebar: false,
           ai_suggestions_enabled: true,
+          rich_link_previews_enabled: false,
           theme: "dark",
           dashboard_mode: "folder",
           dashboard_tags: [],
@@ -127,6 +136,7 @@ function setupApiRoutes(app, db, helpers) {
         hide_favicons: settings.hide_favicons === 1,
         hide_sidebar: settings.hide_sidebar === 1,
         ai_suggestions_enabled: settings.ai_suggestions_enabled !== 0,
+        rich_link_previews_enabled: settings.rich_link_previews_enabled === 1,
         theme: settings.theme || "dark",
         dashboard_mode: settings.dashboard_mode || "folder",
         dashboard_tags: settings.dashboard_tags

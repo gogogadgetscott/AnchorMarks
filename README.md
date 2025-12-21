@@ -216,4 +216,3 @@ To run the test suite inside a container (installs dev dependencies temporarily)
 ```bash
 docker compose -f tooling/docker/docker-compose.yml run --rm anchormarks sh -c "npm install && npm test"
 ```
-

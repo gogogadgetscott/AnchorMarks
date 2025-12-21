@@ -53,7 +53,11 @@ function upsertUserSettings(db, userId, body = {}) {
       v ? 1 : 0,
     );
     pushIf("theme", body.theme);
-    pushIf("rich_link_previews_enabled", body.rich_link_previews_enabled, (v) => (v ? 1 : 0));
+    pushIf(
+      "rich_link_previews_enabled",
+      body.rich_link_previews_enabled,
+      (v) => (v ? 1 : 0),
+    );
     pushIf("dashboard_mode", body.dashboard_mode);
     pushIf("dashboard_tags", body.dashboard_tags, (v) =>
       v ? JSON.stringify(v) : null,

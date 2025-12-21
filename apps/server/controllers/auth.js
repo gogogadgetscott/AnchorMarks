@@ -80,7 +80,13 @@ function createExampleBookmarks(db, userId, folderId = null, fetchFavicon) {
   return created;
 }
 
-function setupAuthRoutes(app, db, authenticateToken, fetchFavicon, securityAudit = null) {
+function setupAuthRoutes(
+  app,
+  db,
+  authenticateToken,
+  fetchFavicon,
+  securityAudit = null,
+) {
   // Helper to safely log security events (no-op if audit logger not provided)
   const audit = securityAudit || {
     register: () => {},
@@ -160,13 +166,19 @@ function setupAuthRoutes(app, db, authenticateToken, fetchFavicon, securityAudit
         .prepare("SELECT * FROM users WHERE email = ?")
         .get(normalizedEmail);
       if (!user) {
-        audit.loginFailure(null, req, { email: normalizedEmail, reason: 'user_not_found' });
+        audit.loginFailure(null, req, {
+          email: normalizedEmail,
+          reason: "user_not_found",
+        });
         return res.status(400).json({ error: "Invalid credentials" });
       }
 
       const validPassword = await bcrypt.compare(password, user.password);
       if (!validPassword) {
-        audit.loginFailure(user.id, req, { email: normalizedEmail, reason: 'invalid_password' });
+        audit.loginFailure(user.id, req, {
+          email: normalizedEmail,
+          reason: "invalid_password",
+        });
         return res.status(400).json({ error: "Invalid credentials" });
       }
 

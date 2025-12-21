@@ -239,7 +239,6 @@ function updateBookmark(db, userId, id, fields = {}) {
     userId,
   );
 
-
   if (tags !== undefined) {
     const tagHelpers = require("../helpers/tag-helpers");
     if (tags && tags.trim && tags.trim()) {

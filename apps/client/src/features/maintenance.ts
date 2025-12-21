@@ -19,21 +19,31 @@ const CONCURRENCY_DELAY = 200; // ms between requests - needed to prevent server
  */
 export function initMaintenance(): void {
   // Refresh Favicons
-  document.getElementById("refresh-favicons-btn")?.addEventListener("click", refreshFavicons);
+  document
+    .getElementById("refresh-favicons-btn")
+    ?.addEventListener("click", refreshFavicons);
 
   // Find Duplicates
-  document.getElementById("find-duplicates-btn")?.addEventListener("click", findDuplicates);
+  document
+    .getElementById("find-duplicates-btn")
+    ?.addEventListener("click", findDuplicates);
 
   // Check Broken Links
-  document.getElementById("check-links-btn")?.addEventListener("click", checkBrokenLinks);
-  document.getElementById("stop-check-links-btn")?.addEventListener("click", stopLinkCheck);
+  document
+    .getElementById("check-links-btn")
+    ?.addEventListener("click", checkBrokenLinks);
+  document
+    .getElementById("stop-check-links-btn")
+    ?.addEventListener("click", stopLinkCheck);
 }
 
 /**
  * Refresh all favicons
  */
 async function refreshFavicons(): Promise<void> {
-  const btn = document.getElementById("refresh-favicons-btn") as HTMLButtonElement;
+  const btn = document.getElementById(
+    "refresh-favicons-btn",
+  ) as HTMLButtonElement;
   const progress = document.getElementById("favicon-progress");
   const progressFill = document.getElementById("favicon-progress-fill");
   const progressText = document.getElementById("favicon-progress-text");
@@ -44,7 +54,9 @@ async function refreshFavicons(): Promise<void> {
   progress.classList.remove("hidden");
 
   try {
-    const bookmarks = state.bookmarks.filter((b) => b.url && !b.url.startsWith("view:"));
+    const bookmarks = state.bookmarks.filter(
+      (b) => b.url && !b.url.startsWith("view:"),
+    );
     const total = bookmarks.length;
     let completed = 0;
 
@@ -93,7 +105,9 @@ async function refreshFavicons(): Promise<void> {
  * Find duplicate bookmarks
  */
 async function findDuplicates(): Promise<void> {
-  const btn = document.getElementById("find-duplicates-btn") as HTMLButtonElement;
+  const btn = document.getElementById(
+    "find-duplicates-btn",
+  ) as HTMLButtonElement;
   const results = document.getElementById("duplicates-results");
   const list = document.getElementById("duplicates-list");
   const count = document.getElementById("duplicates-count");
@@ -137,26 +151,29 @@ async function findDuplicates(): Promise<void> {
       .join("");
 
     // Attach delete handlers
-    list.querySelectorAll('[data-action="delete-duplicates"]').forEach((btn) => {
-      btn.addEventListener("click", async (e: any) => {
-        const ids = e.target.dataset.ids.split(",");
-        if (!confirm(`Delete ${ids.length} duplicate bookmark(s)?`)) return;
+    list
+      .querySelectorAll('[data-action="delete-duplicates"]')
+      .forEach((btn) => {
+        btn.addEventListener("click", async (e: any) => {
+          const ids = e.target.dataset.ids.split(",");
+          if (!confirm(`Delete ${ids.length} duplicate bookmark(s)?`)) return;
 
-        try {
-          for (const id of ids) {
-            await api(`/bookmarks/${id}`, { method: "DELETE" });
+          try {
+            for (const id of ids) {
+              await api(`/bookmarks/${id}`, { method: "DELETE" });
+            }
+            showToast(`Deleted ${ids.length} duplicates`, "success");
+            e.target.closest(".maintenance-item")?.remove();
+
+            // Refresh data
+            const { loadBookmarks } =
+              await import("@features/bookmarks/bookmarks.ts");
+            await loadBookmarks();
+          } catch (err: any) {
+            showToast(err.message || "Failed to delete duplicates", "error");
           }
-          showToast(`Deleted ${ids.length} duplicates`, "success");
-          e.target.closest(".maintenance-item")?.remove();
-
-          // Refresh data
-          const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
-          await loadBookmarks();
-        } catch (err: any) {
-          showToast(err.message || "Failed to delete duplicates", "error");
-        }
+        });
       });
-    });
   } catch (err: any) {
     showToast(err.message || "Failed to find duplicates", "error");
   } finally {
@@ -169,7 +186,9 @@ async function findDuplicates(): Promise<void> {
  */
 async function checkBrokenLinks(): Promise<void> {
   const btn = document.getElementById("check-links-btn") as HTMLButtonElement;
-  const stopBtn = document.getElementById("stop-check-links-btn") as HTMLButtonElement;
+  const stopBtn = document.getElementById(
+    "stop-check-links-btn",
+  ) as HTMLButtonElement;
   const progress = document.getElementById("links-progress");
   const progressFill = document.getElementById("links-progress-fill");
   const progressText = document.getElementById("links-progress-text");
@@ -177,7 +196,17 @@ async function checkBrokenLinks(): Promise<void> {
   const list = document.getElementById("broken-links-list");
   const count = document.getElementById("broken-links-count");
 
-  if (!btn || !stopBtn || !progress || !progressFill || !progressText || !results || !list || !count) return;
+  if (
+    !btn ||
+    !stopBtn ||
+    !progress ||
+    !progressFill ||
+    !progressText ||
+    !results ||
+    !list ||
+    !count
+  )
+    return;
 
   btn.disabled = true;
   stopBtn.style.display = "inline-flex";
@@ -188,7 +217,8 @@ async function checkBrokenLinks(): Promise<void> {
   linkCheckAbortController = new AbortController();
 
   const bookmarks = state.bookmarks.filter(
-    (b) => b.url && !b.url.startsWith("view:") && !b.url.startsWith("javascript:")
+    (b) =>
+      b.url && !b.url.startsWith("view:") && !b.url.startsWith("javascript:"),
   );
   const total = bookmarks.length;
   let completed = 0;
@@ -207,7 +237,8 @@ async function checkBrokenLinks(): Promise<void> {
         if (!result.ok) {
           brokenCount++;
           const statusClass = result.status === 0 ? "error" : "warning";
-          const statusText = result.status === 0 ? "Unreachable" : `HTTP ${result.status}`;
+          const statusText =
+            result.status === 0 ? "Unreachable" : `HTTP ${result.status}`;
 
           list.innerHTML += `
             <div class="maintenance-item" data-bookmark-id="${bookmark.id}">
@@ -250,36 +281,44 @@ async function checkBrokenLinks(): Promise<void> {
     }
 
     // Attach event handlers
-    list.querySelectorAll('[data-action="edit-broken-link"]').forEach((editBtn) => {
-      editBtn.addEventListener("click", async (e: any) => {
-        const id = e.currentTarget.dataset.id;
-        const { editBookmark } = await import("@features/bookmarks/bookmarks.ts");
-        editBookmark(id);
+    list
+      .querySelectorAll('[data-action="edit-broken-link"]')
+      .forEach((editBtn) => {
+        editBtn.addEventListener("click", async (e: any) => {
+          const id = e.currentTarget.dataset.id;
+          const { editBookmark } =
+            await import("@features/bookmarks/bookmarks.ts");
+          editBookmark(id);
+        });
       });
-    });
 
-    list.querySelectorAll('[data-action="delete-broken-link"]').forEach((deleteBtn) => {
-      deleteBtn.addEventListener("click", async (e: any) => {
-        const id = e.currentTarget.dataset.id;
-        if (!confirm("Delete this bookmark?")) return;
+    list
+      .querySelectorAll('[data-action="delete-broken-link"]')
+      .forEach((deleteBtn) => {
+        deleteBtn.addEventListener("click", async (e: any) => {
+          const id = e.currentTarget.dataset.id;
+          if (!confirm("Delete this bookmark?")) return;
 
-        try {
-          await api(`/bookmarks/${id}`, { method: "DELETE" });
-          e.currentTarget.closest(".maintenance-item")?.remove();
-          showToast("Bookmark deleted", "success");
+          try {
+            await api(`/bookmarks/${id}`, { method: "DELETE" });
+            e.currentTarget.closest(".maintenance-item")?.remove();
+            showToast("Bookmark deleted", "success");
 
-          const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
-          await loadBookmarks();
-        } catch (err: any) {
-          showToast(err.message || "Failed to delete", "error");
-        }
+            const { loadBookmarks } =
+              await import("@features/bookmarks/bookmarks.ts");
+            await loadBookmarks();
+          } catch (err: any) {
+            showToast(err.message || "Failed to delete", "error");
+          }
+        });
       });
-    });
 
     if (!linkCheckAbortController.signal.aborted) {
       showToast(
-        brokenCount === 0 ? "All links are working!" : `Found ${brokenCount} broken links`,
-        brokenCount === 0 ? "success" : "warning"
+        brokenCount === 0
+          ? "All links are working!"
+          : `Found ${brokenCount} broken links`,
+        brokenCount === 0 ? "success" : "warning",
       );
     }
   } catch (err: any) {

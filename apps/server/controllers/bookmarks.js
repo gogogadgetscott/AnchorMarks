@@ -56,9 +56,26 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
 
   // List bookmarks
   app.get("/api/bookmarks", authenticateTokenMiddleware, (req, res) => {
-    const { folder_id, search, favorites, tags, sort, limit, offset, archived } =
-      req.query;
-    const opts = { folder_id, search, favorites, tags, sort, limit, offset, archived };
+    const {
+      folder_id,
+      search,
+      favorites,
+      tags,
+      sort,
+      limit,
+      offset,
+      archived,
+    } = req.query;
+    const opts = {
+      folder_id,
+      search,
+      favorites,
+      tags,
+      sort,
+      limit,
+      offset,
+      archived,
+    };
     try {
       const result = bookmarkModel.listBookmarks(db, req.user.id, opts);
       if (result.total !== undefined) {
@@ -129,7 +146,8 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
 
   // Create bookmark
   app.post("/api/bookmarks", authenticateTokenMiddleware, async (req, res) => {
-    let { title, url, description, folder_id, tags, color, og_image } = req.body;
+    let { title, url, description, folder_id, tags, color, og_image } =
+      req.body;
     const id = uuidv4();
     if (!url) return res.status(400).json({ error: "URL is required" });
     try {
@@ -143,7 +161,10 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
             if (!og_image) og_image = metadata.og_image;
           }
         } catch (metaErr) {
-          console.warn("Could not fetch metadata during bookmark creation:", metaErr.message);
+          console.warn(
+            "Could not fetch metadata during bookmark creation:",
+            metaErr.message,
+          );
         }
       }
 
@@ -209,6 +230,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
 }
 
 module.exports = {
+  setupBookmarksRoutes,
   fetchUrlMetadata,
   detectContentType,
   parseTagsDetailed,

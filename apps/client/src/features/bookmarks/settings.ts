@@ -14,7 +14,7 @@ export async function loadSettings(): Promise<void> {
     state.setHideFavicons(settings.hide_favicons || false);
     state.setHideSidebar(settings.hide_sidebar || false);
     state.setAiSuggestionsEnabled(settings.ai_suggestions_enabled !== false);
-    state.setRichLinkPreviewsEnabled(settings.rich_link_previews_enabled === 1);
+    state.setRichLinkPreviewsEnabled(!!settings.rich_link_previews_enabled);
     state.setIncludeChildBookmarks(settings.include_child_bookmarks === 1);
     state.setSnapToGrid(settings.snap_to_grid !== false);
     state.setDashboardConfig({

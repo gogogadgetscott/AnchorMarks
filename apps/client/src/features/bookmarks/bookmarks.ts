@@ -18,7 +18,11 @@ import {
 } from "@utils/ui-helpers.ts";
 import { Bookmark } from "@/types";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
-import { BookmarkCard as createBookmarkCard, SkeletonCard, RichBookmarkCard } from "@components/index.ts";
+import {
+  BookmarkCard as createBookmarkCard,
+  SkeletonCard,
+  RichBookmarkCard,
+} from "@components/index.ts";
 export { createBookmarkCard };
 
 /**
@@ -38,7 +42,10 @@ export function renderSkeletons(): void {
   container.className = classMap[state.viewMode] || "bookmarks-grid";
 
   // Render 8 skeleton cards
-  container.innerHTML = Array(8).fill(null).map(() => SkeletonCard()).join("");
+  container.innerHTML = Array(8)
+    .fill(null)
+    .map(() => SkeletonCard())
+    .join("");
 }
 
 // Load bookmarks from server
@@ -265,13 +272,12 @@ export function renderBookmarks(): void {
   const hasMore = filtered.length > state.displayedCount;
 
   // Use RichBookmarkCard if rich link previews are enabled
-  const cardRenderer = state.richLinkPreviewsEnabled && state.viewMode === "grid"
-    ? RichBookmarkCard
-    : createBookmarkCard;
+  const cardRenderer =
+    state.richLinkPreviewsEnabled && state.viewMode === "grid"
+      ? RichBookmarkCard
+      : createBookmarkCard;
 
-  container.innerHTML = toRender
-    .map((b, i) => cardRenderer(b, i))
-    .join("");
+  container.innerHTML = toRender.map((b, i) => cardRenderer(b, i)).join("");
 
   if (hasMore) {
     container.innerHTML += `
@@ -293,77 +299,87 @@ export function attachBookmarkCardListeners(): void {
   const container = document.getElementById("bookmarks-container");
   if (!container) return;
 
-  container.querySelectorAll(".bookmark-card, .rich-bookmark-card").forEach((card) => {
-    if ((card as HTMLElement).dataset.listenerAttached) return;
-    (card as HTMLElement).dataset.listenerAttached = "true";
+  container
+    .querySelectorAll(".bookmark-card, .rich-bookmark-card")
+    .forEach((card) => {
+      if ((card as HTMLElement).dataset.listenerAttached) return;
+      (card as HTMLElement).dataset.listenerAttached = "true";
 
-    card.addEventListener("click", (e) => {
-      const id = (card as HTMLElement).dataset.id || "";
-      const index = parseInt((card as HTMLElement).dataset.index || "0", 10);
-
-      // Ignore clicks on action buttons or select checkbox
-      if ((e.target as HTMLElement).closest(".bookmark-actions")) return;
-      if ((e.target as HTMLElement).closest(".bookmark-select")) return;
-      if ((e.target as HTMLElement).closest(".bookmark-tags")) return;
-
-      if (state.bulkMode) {
-        toggleBookmarkSelection(id, index, (e as MouseEvent).shiftKey, true);
-        return;
-      }
-
-      // Get the bookmark from state
-      const bookmark = state.bookmarks.find((b) => b.id === id);
-      if (!bookmark) return;
-
-      const url = bookmark.url;
-
-      // Handle special URL schemes
-      // Handle special URL schemes
-      if (url.startsWith("view:")) {
-        // Dashboard view shortcut
-        const viewId = url.substring(5);
-        if (state.currentView === "dashboard") {
-          import("@features/bookmarks/dashboard.ts").then(({ restoreView }) => {
-            restoreView(viewId);
-          });
-        }
-        return;
-      }
-
-      if (url.startsWith("bookmark-view:")) {
-        // Bookmark view shortcut
-        const viewId = url.substring(14);
-        restoreBookmarkView(viewId);
-        return;
-      }
-
-      // Regular bookmark - track and open
-      trackClick(bookmark.id);
-      window.open(url, "_blank", "noopener,noreferrer");
-    });
-
-    const checkbox = card.querySelector(".bookmark-select");
-    if (checkbox) {
-      checkbox.addEventListener("click", (e) => {
-        e.stopPropagation();
+      card.addEventListener("click", (e) => {
         const id = (card as HTMLElement).dataset.id || "";
         const index = parseInt((card as HTMLElement).dataset.index || "0", 10);
-        toggleBookmarkSelection(id, index, (e as MouseEvent).shiftKey, true);
-      });
-    }
 
-    // Handle favicon image errors with proper event listener
-    const faviconImg = card.querySelector(".bookmark-favicon-img");
-    if (faviconImg && (faviconImg as HTMLElement).dataset.fallback === "true") {
-      faviconImg.addEventListener("error", (e) => {
-        const parent = (e.target as HTMLElement).parentElement;
-        if (parent) {
-          parent.innerHTML =
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+        // Ignore clicks on action buttons or select checkbox
+        if ((e.target as HTMLElement).closest(".bookmark-actions")) return;
+        if ((e.target as HTMLElement).closest(".bookmark-select")) return;
+        if ((e.target as HTMLElement).closest(".bookmark-tags")) return;
+
+        if (state.bulkMode) {
+          toggleBookmarkSelection(id, index, (e as MouseEvent).shiftKey, true);
+          return;
         }
+
+        // Get the bookmark from state
+        const bookmark = state.bookmarks.find((b) => b.id === id);
+        if (!bookmark) return;
+
+        const url = bookmark.url;
+
+        // Handle special URL schemes
+        // Handle special URL schemes
+        if (url.startsWith("view:")) {
+          // Dashboard view shortcut
+          const viewId = url.substring(5);
+          if (state.currentView === "dashboard") {
+            import("@features/bookmarks/dashboard.ts").then(
+              ({ restoreView }) => {
+                restoreView(viewId);
+              },
+            );
+          }
+          return;
+        }
+
+        if (url.startsWith("bookmark-view:")) {
+          // Bookmark view shortcut
+          const viewId = url.substring(14);
+          restoreBookmarkView(viewId);
+          return;
+        }
+
+        // Regular bookmark - track and open
+        trackClick(bookmark.id);
+        window.open(url, "_blank", "noopener,noreferrer");
       });
-    }
-  });
+
+      const checkbox = card.querySelector(".bookmark-select");
+      if (checkbox) {
+        checkbox.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = (card as HTMLElement).dataset.id || "";
+          const index = parseInt(
+            (card as HTMLElement).dataset.index || "0",
+            10,
+          );
+          toggleBookmarkSelection(id, index, (e as MouseEvent).shiftKey, true);
+        });
+      }
+
+      // Handle favicon image errors with proper event listener
+      const faviconImg = card.querySelector(".bookmark-favicon-img");
+      if (
+        faviconImg &&
+        (faviconImg as HTMLElement).dataset.fallback === "true"
+      ) {
+        faviconImg.addEventListener("error", (e) => {
+          const parent = (e.target as HTMLElement).parentElement;
+          if (parent) {
+            parent.innerHTML =
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+          }
+        });
+      }
+    });
 }
 
 // Setup infinite scroll

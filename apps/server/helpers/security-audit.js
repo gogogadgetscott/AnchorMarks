@@ -1,9 +1,9 @@
 /**
  * Security Audit Logger
- * 
+ *
  * Logs security-relevant events for compliance, debugging, and incident response.
  * Events are stored in the database and can optionally be written to a file.
- * 
+ *
  * Event Types:
  * - AUTH_LOGIN_SUCCESS: Successful login
  * - AUTH_LOGIN_FAILURE: Failed login attempt
@@ -18,29 +18,29 @@
  * - SUSPICIOUS_ACTIVITY: Potentially malicious behavior detected
  */
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 // Event type constants
 const SecurityEventType = {
-  AUTH_LOGIN_SUCCESS: 'AUTH_LOGIN_SUCCESS',
-  AUTH_LOGIN_FAILURE: 'AUTH_LOGIN_FAILURE',
-  AUTH_LOGOUT: 'AUTH_LOGOUT',
-  AUTH_REGISTER: 'AUTH_REGISTER',
-  AUTH_PASSWORD_CHANGE: 'AUTH_PASSWORD_CHANGE',
-  AUTH_API_KEY_REGENERATE: 'AUTH_API_KEY_REGENERATE',
-  AUTH_SESSION_EXPIRED: 'AUTH_SESSION_EXPIRED',
-  ACCESS_DENIED: 'ACCESS_DENIED',
-  RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
-  CSRF_VALIDATION_FAILURE: 'CSRF_VALIDATION_FAILURE',
-  SUSPICIOUS_ACTIVITY: 'SUSPICIOUS_ACTIVITY',
+  AUTH_LOGIN_SUCCESS: "AUTH_LOGIN_SUCCESS",
+  AUTH_LOGIN_FAILURE: "AUTH_LOGIN_FAILURE",
+  AUTH_LOGOUT: "AUTH_LOGOUT",
+  AUTH_REGISTER: "AUTH_REGISTER",
+  AUTH_PASSWORD_CHANGE: "AUTH_PASSWORD_CHANGE",
+  AUTH_API_KEY_REGENERATE: "AUTH_API_KEY_REGENERATE",
+  AUTH_SESSION_EXPIRED: "AUTH_SESSION_EXPIRED",
+  ACCESS_DENIED: "ACCESS_DENIED",
+  RATE_LIMIT_EXCEEDED: "RATE_LIMIT_EXCEEDED",
+  CSRF_VALIDATION_FAILURE: "CSRF_VALIDATION_FAILURE",
+  SUSPICIOUS_ACTIVITY: "SUSPICIOUS_ACTIVITY",
 };
 
 // Severity levels
 const Severity = {
-  INFO: 'INFO',
-  WARNING: 'WARNING',
-  CRITICAL: 'CRITICAL',
+  INFO: "INFO",
+  WARNING: "WARNING",
+  CRITICAL: "CRITICAL",
 };
 
 // Map event types to severity
@@ -91,11 +91,13 @@ function initializeAuditLog(db) {
  * @returns {string} - Client IP address
  */
 function getClientIp(req) {
-  return req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-         req.headers['x-real-ip'] ||
-         req.connection?.remoteAddress ||
-         req.socket?.remoteAddress ||
-         'unknown';
+  return (
+    req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+    req.headers["x-real-ip"] ||
+    req.connection?.remoteAddress ||
+    req.socket?.remoteAddress ||
+    "unknown"
+  );
 }
 
 /**
@@ -106,8 +108,8 @@ function getClientIp(req) {
  */
 function createSecurityAuditLogger(db, options = {}) {
   const {
-    enableFileLogging = process.env.SECURITY_LOG_FILE === 'true',
-    logFilePath = path.join(__dirname, '../../logs/security-audit.log'),
+    enableFileLogging = process.env.SECURITY_LOG_FILE === "true",
+    logFilePath = path.join(__dirname, "../../logs/security-audit.log"),
     retentionDays = 90,
   } = options;
 
@@ -132,16 +134,11 @@ function createSecurityAuditLogger(db, options = {}) {
    * @param {object} context - Event context
    */
   function log(eventType, context = {}) {
-    const {
-      userId = null,
-      req = null,
-      details = {},
-      success = true,
-    } = context;
+    const { userId = null, req = null, details = {}, success = true } = context;
 
     const severity = eventSeverity[eventType] || Severity.INFO;
     const ipAddress = req ? getClientIp(req) : null;
-    const userAgent = req?.headers?.['user-agent'] || null;
+    const userAgent = req?.headers?.["user-agent"] || null;
     const endpoint = req?.originalUrl || req?.url || null;
     const method = req?.method || null;
 
@@ -163,7 +160,7 @@ function createSecurityAuditLogger(db, options = {}) {
         endpoint,
         method,
         JSON.stringify(sanitizedDetails),
-        success ? 1 : 0
+        success ? 1 : 0,
       );
 
       // Write to file if enabled
@@ -180,7 +177,7 @@ function createSecurityAuditLogger(db, options = {}) {
           details: sanitizedDetails,
           success,
         };
-        fs.appendFileSync(logFilePath, JSON.stringify(logEntry) + '\n');
+        fs.appendFileSync(logFilePath, JSON.stringify(logEntry) + "\n");
       }
 
       // Console log for critical events
@@ -193,7 +190,7 @@ function createSecurityAuditLogger(db, options = {}) {
         });
       }
     } catch (err) {
-      console.error('Failed to write security audit log:', err);
+      console.error("Failed to write security audit log:", err);
     }
   }
 
@@ -213,31 +210,31 @@ function createSecurityAuditLogger(db, options = {}) {
       offset = 0,
     } = filters;
 
-    let sql = 'SELECT * FROM security_audit_log WHERE 1=1';
+    let sql = "SELECT * FROM security_audit_log WHERE 1=1";
     const params = [];
 
     if (eventType) {
-      sql += ' AND event_type = ?';
+      sql += " AND event_type = ?";
       params.push(eventType);
     }
     if (userId) {
-      sql += ' AND user_id = ?';
+      sql += " AND user_id = ?";
       params.push(userId);
     }
     if (severity) {
-      sql += ' AND severity = ?';
+      sql += " AND severity = ?";
       params.push(severity);
     }
     if (startDate) {
-      sql += ' AND timestamp >= ?';
+      sql += " AND timestamp >= ?";
       params.push(startDate);
     }
     if (endDate) {
-      sql += ' AND timestamp <= ?';
+      sql += " AND timestamp <= ?";
       params.push(endDate);
     }
 
-    sql += ' ORDER BY timestamp DESC LIMIT ? OFFSET ?';
+    sql += " ORDER BY timestamp DESC LIMIT ? OFFSET ?";
     params.push(limit, offset);
 
     return db.prepare(sql).all(...params);
@@ -250,14 +247,23 @@ function createSecurityAuditLogger(db, options = {}) {
    * @returns {number} - Count of failed attempts
    */
   function getFailedLoginAttempts(identifier, windowMinutes = 15) {
-    const result = db.prepare(`
+    const result = db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM security_audit_log
       WHERE event_type = ?
       AND (user_id = ? OR ip_address = ?)
       AND success = 0
       AND timestamp > datetime('now', '-' || ? || ' minutes')
-    `).get(SecurityEventType.AUTH_LOGIN_FAILURE, identifier, identifier, windowMinutes);
-    
+    `,
+      )
+      .get(
+        SecurityEventType.AUTH_LOGIN_FAILURE,
+        identifier,
+        identifier,
+        windowMinutes,
+      );
+
     return result?.count || 0;
   }
 
@@ -266,11 +272,15 @@ function createSecurityAuditLogger(db, options = {}) {
    * @param {number} days - Delete logs older than this many days
    */
   function cleanup(days = retentionDays) {
-    const result = db.prepare(`
+    const result = db
+      .prepare(
+        `
       DELETE FROM security_audit_log
       WHERE timestamp < datetime('now', '-' || ? || ' days')
-    `).run(days);
-    
+    `,
+      )
+      .run(days);
+
     return result.changes;
   }
 
@@ -280,7 +290,9 @@ function createSecurityAuditLogger(db, options = {}) {
    * @returns {object} - Summary statistics
    */
   function getStats(hours = 24) {
-    const stats = db.prepare(`
+    const stats = db
+      .prepare(
+        `
       SELECT 
         event_type,
         severity,
@@ -291,7 +303,9 @@ function createSecurityAuditLogger(db, options = {}) {
       WHERE timestamp > datetime('now', '-' || ? || ' hours')
       GROUP BY event_type, severity
       ORDER BY count DESC
-    `).all(hours);
+    `,
+      )
+      .all(hours);
 
     return stats;
   }
@@ -303,37 +317,79 @@ function createSecurityAuditLogger(db, options = {}) {
     getFailedLoginAttempts,
     cleanup,
     getStats,
-    
+
     // Convenience logging methods
-    loginSuccess: (userId, req, details = {}) => 
-      log(SecurityEventType.AUTH_LOGIN_SUCCESS, { userId, req, details, success: true }),
-    
-    loginFailure: (userId, req, details = {}) => 
-      log(SecurityEventType.AUTH_LOGIN_FAILURE, { userId, req, details, success: false }),
-    
-    logout: (userId, req) => 
+    loginSuccess: (userId, req, details = {}) =>
+      log(SecurityEventType.AUTH_LOGIN_SUCCESS, {
+        userId,
+        req,
+        details,
+        success: true,
+      }),
+
+    loginFailure: (userId, req, details = {}) =>
+      log(SecurityEventType.AUTH_LOGIN_FAILURE, {
+        userId,
+        req,
+        details,
+        success: false,
+      }),
+
+    logout: (userId, req) =>
       log(SecurityEventType.AUTH_LOGOUT, { userId, req, success: true }),
-    
-    register: (userId, req, details = {}) => 
-      log(SecurityEventType.AUTH_REGISTER, { userId, req, details, success: true }),
-    
-    passwordChange: (userId, req) => 
-      log(SecurityEventType.AUTH_PASSWORD_CHANGE, { userId, req, success: true }),
-    
-    apiKeyRegenerate: (userId, req) => 
-      log(SecurityEventType.AUTH_API_KEY_REGENERATE, { userId, req, success: true }),
-    
-    accessDenied: (userId, req, details = {}) => 
-      log(SecurityEventType.ACCESS_DENIED, { userId, req, details, success: false }),
-    
-    rateLimitExceeded: (req, details = {}) => 
-      log(SecurityEventType.RATE_LIMIT_EXCEEDED, { req, details, success: false }),
-    
-    csrfFailure: (userId, req, details = {}) => 
-      log(SecurityEventType.CSRF_VALIDATION_FAILURE, { userId, req, details, success: false }),
-    
-    suspiciousActivity: (userId, req, details = {}) => 
-      log(SecurityEventType.SUSPICIOUS_ACTIVITY, { userId, req, details, success: false }),
+
+    register: (userId, req, details = {}) =>
+      log(SecurityEventType.AUTH_REGISTER, {
+        userId,
+        req,
+        details,
+        success: true,
+      }),
+
+    passwordChange: (userId, req) =>
+      log(SecurityEventType.AUTH_PASSWORD_CHANGE, {
+        userId,
+        req,
+        success: true,
+      }),
+
+    apiKeyRegenerate: (userId, req) =>
+      log(SecurityEventType.AUTH_API_KEY_REGENERATE, {
+        userId,
+        req,
+        success: true,
+      }),
+
+    accessDenied: (userId, req, details = {}) =>
+      log(SecurityEventType.ACCESS_DENIED, {
+        userId,
+        req,
+        details,
+        success: false,
+      }),
+
+    rateLimitExceeded: (req, details = {}) =>
+      log(SecurityEventType.RATE_LIMIT_EXCEEDED, {
+        req,
+        details,
+        success: false,
+      }),
+
+    csrfFailure: (userId, req, details = {}) =>
+      log(SecurityEventType.CSRF_VALIDATION_FAILURE, {
+        userId,
+        req,
+        details,
+        success: false,
+      }),
+
+    suspiciousActivity: (userId, req, details = {}) =>
+      log(SecurityEventType.SUSPICIOUS_ACTIVITY, {
+        userId,
+        req,
+        details,
+        success: false,
+      }),
 
     // Export constants
     EventType: SecurityEventType,

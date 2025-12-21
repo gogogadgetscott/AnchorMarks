@@ -234,17 +234,19 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
       label: "Toggle fullscreen",
       action: () => {
         if (state.currentView === "dashboard") {
-          import("@features/bookmarks/dashboard.ts").then(({ toggleFullscreen }) =>
-            toggleFullscreen(),
+          import("@features/bookmarks/dashboard.ts").then(
+            ({ toggleFullscreen }) => toggleFullscreen(),
           );
         } else {
           // Switch to dashboard first, then toggle fullscreen
           state.setCurrentView("dashboard");
           updateActiveNav();
-          import("@features/bookmarks/dashboard.ts").then(({ renderDashboard, toggleFullscreen }) => {
-            renderDashboard();
-            setTimeout(() => toggleFullscreen(), 100);
-          });
+          import("@features/bookmarks/dashboard.ts").then(
+            ({ renderDashboard, toggleFullscreen }) => {
+              renderDashboard();
+              setTimeout(() => toggleFullscreen(), 100);
+            },
+          );
         }
       },
       icon: "⛶",

@@ -112,7 +112,6 @@ function parseHtmlMetadata(html, url) {
   return metadata;
 }
 
-
 function generateBookmarkHtml(bookmarks, folders) {
   // Create logical tree structure
   const folderMap = {};
@@ -133,7 +132,8 @@ function generateBookmarkHtml(bookmarks, folders) {
       folderMap[f.parent_id].childrenFolders.push(folderMap[f.id]);
     } else {
       // Root level folder (or orphaned if parent missing, treating as root)
-      if (!f.parent_id) rootItems.push({ type: "folder", data: folderMap[f.id] });
+      if (!f.parent_id)
+        rootItems.push({ type: "folder", data: folderMap[f.id] });
     }
   });
 
@@ -164,17 +164,19 @@ function generateBookmarkHtml(bookmarks, folders) {
   function generateLevel(items, indent = "    ") {
     let output = "";
 
-    // Process items. If items is mixed (roots), we iterate. 
+    // Process items. If items is mixed (roots), we iterate.
     // If we are inside a folder, we need to process its childrenFolders and childrenBookmarks
 
-    // Sort logic: Folders first, then bookmarks, or by position if available. 
-    // Assuming 'items' passed here is a mixed list for root, 
+    // Sort logic: Folders first, then bookmarks, or by position if available.
+    // Assuming 'items' passed here is a mixed list for root,
     // but for folders we have separate arrays.
 
     // Helper to render a bookmark
     const renderBookmark = (bm) => {
       const tagsAttr = bm.tags ? ` TAGS="${bm.tags}"` : "";
-      const dateAttr = bm.created_at ? ` ADD_DATE="${Math.floor(new Date(bm.created_at).getTime() / 1000)}"` : "";
+      const dateAttr = bm.created_at
+        ? ` ADD_DATE="${Math.floor(new Date(bm.created_at).getTime() / 1000)}"`
+        : "";
 
       let extraAttrs = "";
       if (bm.updated_at) {
@@ -185,8 +187,10 @@ function generateBookmarkHtml(bookmarks, folders) {
       }
 
       // Debug logging for color
-      if (bm.id === '0aee44e1-9883-4046-bc47-a66e6f5912ec') {
-        console.log(`[Export] Processing target bookmark ${bm.id}. Color: ${bm.color}`);
+      if (bm.id === "0aee44e1-9883-4046-bc47-a66e6f5912ec") {
+        console.log(
+          `[Export] Processing target bookmark ${bm.id}. Color: ${bm.color}`,
+        );
       }
 
       if (bm.color) {
@@ -198,7 +202,9 @@ function generateBookmarkHtml(bookmarks, folders) {
 
     // Helper to render a folder
     const renderFolder = (folder) => {
-      const dateAttr = folder.created_at ? ` ADD_DATE="${Math.floor(new Date(folder.created_at).getTime() / 1000)}"` : "";
+      const dateAttr = folder.created_at
+        ? ` ADD_DATE="${Math.floor(new Date(folder.created_at).getTime() / 1000)}"`
+        : "";
       let headerAttrs = dateAttr;
       if (folder.updated_at) {
         headerAttrs += ` LAST_MODIFIED="${Math.floor(new Date(folder.updated_at).getTime() / 1000)}"`;
@@ -212,12 +218,12 @@ function generateBookmarkHtml(bookmarks, folders) {
 
       // Recursively render children
       if (folder.childrenFolders.length > 0) {
-        folder.childrenFolders.forEach(sub => {
+        folder.childrenFolders.forEach((sub) => {
           chunk += renderFolder(sub);
         });
       }
       if (folder.childrenBookmarks.length > 0) {
-        folder.childrenBookmarks.forEach(bm => {
+        folder.childrenBookmarks.forEach((bm) => {
           chunk += renderBookmark(bm);
         });
       }
@@ -226,8 +232,8 @@ function generateBookmarkHtml(bookmarks, folders) {
       return chunk;
     };
 
-    items.forEach(item => {
-      if (item.type === 'folder') {
+    items.forEach((item) => {
+      if (item.type === "folder") {
         output += renderFolder(item.data);
       } else {
         output += renderBookmark(item.data);
@@ -243,7 +249,7 @@ function generateBookmarkHtml(bookmarks, folders) {
   // Sort root items: folders first?
   rootItems.sort((a, b) => {
     if (a.type === b.type) return 0;
-    return a.type === 'folder' ? -1 : 1;
+    return a.type === "folder" ? -1 : 1;
   });
 
   html += generateLevel(rootItems);

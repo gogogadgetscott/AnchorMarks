@@ -154,71 +154,71 @@ function initializeDatabase(DB_PATH) {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN hide_sidebar INTEGER DEFAULT 0",
     ).run();
-  } catch (err) { }
+  } catch (err) {}
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN dashboard_widgets TEXT",
     ).run();
-  } catch (err) { }
+  } catch (err) {}
   try {
     db.prepare("ALTER TABLE bookmarks ADD COLUMN thumbnail_local TEXT").run();
-  } catch (err) { }
+  } catch (err) {}
   try {
     db.prepare(
       "ALTER TABLE bookmark_tags ADD COLUMN color_override TEXT",
     ).run();
-  } catch (err) { }
+  } catch (err) {}
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN include_child_bookmarks INTEGER DEFAULT 0",
     ).run();
-  } catch (err) { }
+  } catch (err) {}
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN dashboard_mode TEXT DEFAULT 'folder'",
     ).run();
-  } catch (err) { }
+  } catch (err) {}
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN dashboard_tags TEXT",
     ).run();
-  } catch (err) { }
+  } catch (err) {}
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN dashboard_sort TEXT DEFAULT 'recently_added'",
     ).run();
-  } catch (err) { }
+  } catch (err) {}
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN collapsed_sections TEXT",
     ).run();
-  } catch (err) { }
+  } catch (err) {}
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN current_view TEXT DEFAULT 'all'",
     ).run();
-  } catch (err) { }
+  } catch (err) {}
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN snap_to_grid INTEGER DEFAULT 1",
     ).run();
-  } catch (err) { }
+  } catch (err) {}
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN tour_completed INTEGER DEFAULT 0",
     ).run();
-  } catch (err) { }
+  } catch (err) {}
   try {
     db.prepare("ALTER TABLE bookmarks ADD COLUMN color TEXT").run();
-  } catch (err) { }
+  } catch (err) {}
   try {
     db.prepare("ALTER TABLE bookmarks ADD COLUMN og_image TEXT").run();
-  } catch (err) { }
+  } catch (err) {}
   try {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN rich_link_previews_enabled INTEGER DEFAULT 0",
     ).run();
-  } catch (err) { }
+  } catch (err) {}
   // Run formal migrations
   try {
     const migrationsDir = path.join(__dirname, "migrations");

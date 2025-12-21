@@ -3,7 +3,7 @@
  * @returns {string} - HTML string of the skeleton card.
  */
 export function SkeletonCard(): string {
-    return `
+  return `
     <div class="bookmark-card skeleton-card">
       <div class="bookmark-header">
         <div class="bookmark-favicon">

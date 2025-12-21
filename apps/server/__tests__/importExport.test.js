@@ -1,9 +1,9 @@
-const { importJson } = require('../models/importExport');
+const { importJson } = require("../models/importExport");
 
 // Mock specific database responses
 const mockDb = () => {
   const preparedStmts = {};
-  
+
   const db = {
     prepare: jest.fn((sql) => {
       // Return a mock statement
@@ -17,7 +17,7 @@ const mockDb = () => {
   return db;
 };
 
-describe('importJson', () => {
+describe("importJson", () => {
   let db;
   const userId = 1;
 
@@ -25,11 +25,11 @@ describe('importJson', () => {
     db = mockDb();
   });
 
-  test('should insert a new bookmark if it does not exist', () => {
+  test("should insert a new bookmark if it does not exist", () => {
     const bookmarks = [
       {
-        url: 'https://example.com',
-        title: 'Example',
+        url: "https://example.com",
+        title: "Example",
       },
     ];
 
@@ -41,7 +41,7 @@ describe('importJson', () => {
     // or just assume order.
     // The code calls prepare("SELECT id FROM bookmarks ...").get(...)
     // Then prepare("INSERT INTO ...").run(...)
-    
+
     // Simplest way is to define default behaviors for the statement object
     const stmt = {
       get: jest.fn(),
@@ -55,14 +55,16 @@ describe('importJson', () => {
     const result = importJson(db, userId, { bookmarks });
 
     expect(result.imported.length).toBe(1);
-    expect(db.prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO bookmarks'));
+    expect(db.prepare).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO bookmarks"),
+    );
   });
 
-  test('should NOT insert a bookmark if it already exists', () => {
+  test("should NOT insert a bookmark if it already exists", () => {
     const bookmarks = [
       {
-        url: 'https://existing.com',
-        title: 'Existing',
+        url: "https://existing.com",
+        title: "Existing",
       },
     ];
 
@@ -73,13 +75,15 @@ describe('importJson', () => {
     db.prepare.mockReturnValue(stmt);
 
     // Mock existing check returning an object (found)
-    stmt.get.mockReturnValue({ id: 'existing-id' });
+    stmt.get.mockReturnValue({ id: "existing-id" });
 
     const result = importJson(db, userId, { bookmarks });
 
-    expect(result.imported.length).toBe(0); 
+    expect(result.imported.length).toBe(0);
     // Should NOT insert
-    const insertCalls = db.prepare.mock.calls.filter(args => args[0].includes('INSERT INTO bookmarks'));
+    const insertCalls = db.prepare.mock.calls.filter((args) =>
+      args[0].includes("INSERT INTO bookmarks"),
+    );
     expect(insertCalls.length).toBe(0);
   });
 });

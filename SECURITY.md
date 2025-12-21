@@ -29,6 +29,7 @@ Developer reference: the authentication and CSRF protection flow is documented i
 AnchorMarks implements the following security measures:
 
 ### Authentication & Authorization
+
 - Password hashing using bcrypt with appropriate cost factor
 - JWT-based session authentication with HTTP-only cookies
 - CSRF token validation for state-changing operations
@@ -36,17 +37,20 @@ AnchorMarks implements the following security measures:
 - All database queries include user_id filtering for data isolation
 
 ### Input Validation & Sanitization
+
 - Request body size limits (10MB max)
 - URL validation before processing
 - SQL injection prevention via parameterized queries (better-sqlite3)
 
 ### Network Security
+
 - Helmet.js for security headers (CSP, X-Frame-Options, etc.)
 - CORS configuration with credentials support
 - SSRF protection: private/loopback IP blocking in production for favicon/metadata fetching
 - Rate limiting on API endpoints
 
 ### Data Isolation
+
 - Multi-tenant architecture with strict user data isolation
 - No bookmark sharing between users
 - No user-uploadable file storage
@@ -85,17 +89,22 @@ node apps/server/helpers/sri.js generate https://cdn.example.com/lib.js
 Then add the `integrity` and `crossorigin` attributes:
 
 ```html
-<script src="https://cdn.example.com/lib.js" 
-        integrity="sha384-abc123..." 
-        crossorigin="anonymous"></script>
+<script
+  src="https://cdn.example.com/lib.js"
+  integrity="sha384-abc123..."
+  crossorigin="anonymous"
+></script>
 ```
 
 For stylesheets:
+
 ```html
-<link rel="stylesheet" 
-      href="https://cdn.example.com/style.css" 
-      integrity="sha384-xyz789..." 
-      crossorigin="anonymous">
+<link
+  rel="stylesheet"
+  href="https://cdn.example.com/style.css"
+  integrity="sha384-xyz789..."
+  crossorigin="anonymous"
+/>
 ```
 
 ---
@@ -106,22 +115,23 @@ AnchorMarks includes a comprehensive security audit logging system that tracks s
 
 ### Logged Events
 
-| Event Type | Severity | Description |
-|------------|----------|-------------|
-| `AUTH_LOGIN_SUCCESS` | INFO | Successful user login |
-| `AUTH_LOGIN_FAILURE` | WARNING | Failed login attempt (wrong password or user not found) |
-| `AUTH_LOGOUT` | INFO | User logout |
-| `AUTH_REGISTER` | INFO | New user registration |
-| `AUTH_PASSWORD_CHANGE` | INFO | Password successfully changed |
-| `AUTH_API_KEY_REGENERATE` | WARNING | API key was regenerated |
-| `ACCESS_DENIED` | WARNING | Authorization failure |
-| `RATE_LIMIT_EXCEEDED` | WARNING | Rate limit triggered |
-| `CSRF_VALIDATION_FAILURE` | CRITICAL | CSRF token validation failed |
-| `SUSPICIOUS_ACTIVITY` | CRITICAL | Potentially malicious behavior detected |
+| Event Type                | Severity | Description                                             |
+| ------------------------- | -------- | ------------------------------------------------------- |
+| `AUTH_LOGIN_SUCCESS`      | INFO     | Successful user login                                   |
+| `AUTH_LOGIN_FAILURE`      | WARNING  | Failed login attempt (wrong password or user not found) |
+| `AUTH_LOGOUT`             | INFO     | User logout                                             |
+| `AUTH_REGISTER`           | INFO     | New user registration                                   |
+| `AUTH_PASSWORD_CHANGE`    | INFO     | Password successfully changed                           |
+| `AUTH_API_KEY_REGENERATE` | WARNING  | API key was regenerated                                 |
+| `ACCESS_DENIED`           | WARNING  | Authorization failure                                   |
+| `RATE_LIMIT_EXCEEDED`     | WARNING  | Rate limit triggered                                    |
+| `CSRF_VALIDATION_FAILURE` | CRITICAL | CSRF token validation failed                            |
+| `SUSPICIOUS_ACTIVITY`     | CRITICAL | Potentially malicious behavior detected                 |
 
 ### Stored Data
 
 Each log entry includes:
+
 - Timestamp
 - Event type and severity
 - User ID (if authenticated)
@@ -133,6 +143,7 @@ Each log entry includes:
 ### Configuration
 
 Environment variables:
+
 ```bash
 # Enable file logging (in addition to database)
 SECURITY_LOG_FILE=true
@@ -147,17 +158,17 @@ The audit logs are stored in the `security_audit_log` table. Example queries:
 
 ```sql
 -- Recent failed login attempts
-SELECT * FROM security_audit_log 
-WHERE event_type = 'AUTH_LOGIN_FAILURE' 
+SELECT * FROM security_audit_log
+WHERE event_type = 'AUTH_LOGIN_FAILURE'
 ORDER BY timestamp DESC LIMIT 50;
 
 -- Security events by user
-SELECT * FROM security_audit_log 
-WHERE user_id = 'user-uuid-here' 
+SELECT * FROM security_audit_log
+WHERE user_id = 'user-uuid-here'
 ORDER BY timestamp DESC;
 
 -- Critical events in last 24 hours
-SELECT * FROM security_audit_log 
-WHERE severity = 'CRITICAL' 
+SELECT * FROM security_audit_log
+WHERE severity = 'CRITICAL'
 AND timestamp > datetime('now', '-24 hours');
 ```

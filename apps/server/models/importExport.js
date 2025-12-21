@@ -104,16 +104,19 @@ function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
 
     let tagList = [];
     if (bm.tags) {
-        if (Array.isArray(bm.tags)) {
-            tagList = bm.tags;
-        } else {
-            tagList = bm.tags.split(",").map(t => t.trim()).filter(Boolean);
-        }
+      if (Array.isArray(bm.tags)) {
+        tagList = bm.tags;
+      } else {
+        tagList = bm.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean);
+      }
     }
     if (!tagList.includes(importTag)) {
-        tagList.push(importTag);
+      tagList.push(importTag);
     }
-    
+
     const normalizedTags = tagList.join(",");
     if (normalizedTags) {
       const tagHelpers = require("../helpers/tag-helpers");

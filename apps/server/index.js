@@ -93,9 +93,7 @@ server.listen(config.PORT, config.HOST, () => {
     `ENV file:                 ${envPath} ${envExists ? "✓" : "✗ (not found)"}`,
   );
 
-  lines.push(
-    `SSL Enabled:              ${config.SSL_ENABLED ? "✓" : "✗"}`,
-  );
+  lines.push(`SSL Enabled:              ${config.SSL_ENABLED ? "✓" : "✗"}`);
 
   // SSL configuration
   if (config.SSL_ENABLED) {

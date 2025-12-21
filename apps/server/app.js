@@ -36,10 +36,13 @@ const db = initializeDatabase(config.DB_PATH);
 const { FAVICONS_DIR, THUMBNAILS_DIR } = ensureDirectories();
 
 // Initialize security audit logging
-const { initializeAuditLog, createSecurityAuditLogger } = require('./helpers/security-audit');
+const {
+  initializeAuditLog,
+  createSecurityAuditLogger,
+} = require("./helpers/security-audit");
 initializeAuditLog(db);
 const securityAudit = createSecurityAuditLogger(db, {
-  enableFileLogging: process.env.SECURITY_LOG_FILE === 'true',
+  enableFileLogging: process.env.SECURITY_LOG_FILE === "true",
   retentionDays: parseInt(process.env.SECURITY_LOG_RETENTION_DAYS) || 90,
 });
 
@@ -98,15 +101,17 @@ if (config.NODE_ENV === "development") {
   // If external CDN scripts are added, use the SRI helper: helpers/sri.js
 }
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: cspDirectives,
-  },
-  hsts: config.SSL_ENABLED, // Enable HSTS only if SSL is enabled
-  crossOriginEmbedderPolicy: false,  // Required for favicon loading from external sources
-  xContentTypeOptions: true,  // Prevent MIME type sniffing
-  xXssProtection: true,  // Legacy XSS protection header
-}));
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: cspDirectives,
+    },
+    hsts: config.SSL_ENABLED, // Enable HSTS only if SSL is enabled
+    crossOriginEmbedderPolicy: false, // Required for favicon loading from external sources
+    xContentTypeOptions: true, // Prevent MIME type sniffing
+    xXssProtection: true, // Legacy XSS protection header
+  }),
+);
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -139,9 +144,14 @@ const setupTagsRoutes = require("./routes/tags");
 const controllerTags = require("./controllers/tags");
 const setupImportExportRoutes = require("./routes/importExport");
 
-
 // Register authentication routes (login/register/me/logout)
-setupAuthRoutes(app, db, authenticateTokenMiddleware, fetchFaviconWrapper, securityAudit);
+setupAuthRoutes(
+  app,
+  db,
+  authenticateTokenMiddleware,
+  fetchFaviconWrapper,
+  securityAudit,
+);
 const setupSyncRoutes = require("./routes/sync");
 const { setupApiRoutes } = require("./routes/api");
 
@@ -200,7 +210,7 @@ setupSmartOrganizationRoutes(app, db, {
 // In production: Express serves built Vite assets from dist/
 const staticDir =
   config.NODE_ENV === "production" &&
-    fs.existsSync(path.join(__dirname, "..", "client", "dist"))
+  fs.existsSync(path.join(__dirname, "..", "client", "dist"))
     ? path.join(__dirname, "..", "client", "dist")
     : path.join(__dirname, "..", "client");
 
@@ -208,20 +218,26 @@ console.log(`Serving frontend from: ${staticDir} (${config.NODE_ENV} mode)`);
 
 // Serve server-side static assets with explicit Content-Type enforcement
 // This prevents potential XSS via MIME type confusion
-app.use('/favicons', express.static(path.join(__dirname, 'public', 'favicons'), {
-  setHeaders: (res, filePath) => {
-    // Force image content types for favicon directory - no HTML/SVG execution
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-  }
-}));
-app.use('/thumbnails', express.static(path.join(__dirname, 'public', 'thumbnails'), {
-  setHeaders: (res, filePath) => {
-    // Force image content types for thumbnails directory
-    res.setHeader('Content-Type', 'image/webp');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-  }
-}));
+app.use(
+  "/favicons",
+  express.static(path.join(__dirname, "public", "favicons"), {
+    setHeaders: (res, filePath) => {
+      // Force image content types for favicon directory - no HTML/SVG execution
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("X-Content-Type-Options", "nosniff");
+    },
+  }),
+);
+app.use(
+  "/thumbnails",
+  express.static(path.join(__dirname, "public", "thumbnails"), {
+    setHeaders: (res, filePath) => {
+      // Force image content types for thumbnails directory
+      res.setHeader("Content-Type", "image/webp");
+      res.setHeader("X-Content-Type-Options", "nosniff");
+    },
+  }),
+);
 // Serve remaining public assets (if any)
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.static(staticDir));

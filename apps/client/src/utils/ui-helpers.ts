@@ -307,7 +307,8 @@ export async function updateCounts(): Promise<void> {
 
     // Calculate dashboard count from widgets (only when not in filtered views)
     // Dashboard count needs full bookmark data, so skip if in favorites/archived view
-    const inFilteredView = state.currentView === "favorites" || state.currentView === "archived";
+    const inFilteredView =
+      state.currentView === "favorites" || state.currentView === "archived";
     let dashboardVal = 0;
 
     if (!inFilteredView) {
