@@ -111,6 +111,13 @@ export function BookmarkCard(bookmark: Bookmark, index: number): string {
     title: "Edit bookmark",
   })}
         ${Button("", {
+    variant: bookmark.is_favorite ? "warning" : "ghost",
+    className: "bookmark-action-btn",
+    icon: bookmark.is_favorite ? "star-filled" : "star",
+    data: { action: "toggle-favorite", id: bookmark.id },
+    title: bookmark.is_favorite ? "Remove from favorites" : "Add to favorites",
+  })}
+        ${Button("", {
     variant: "ghost",
     className: "bookmark-action-btn",
     icon: "copy",
