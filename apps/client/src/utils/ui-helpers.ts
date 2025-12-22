@@ -7,6 +7,86 @@ import * as state from "@features/state.ts";
 import { escapeHtml, parseTagInput } from "@utils/index.ts";
 import { api } from "@services/api.ts";
 
+// Profile settings form HTML template (injected dynamically to avoid password manager detection)
+const PROFILE_FORM_HTML = `
+  <div style="margin-bottom: 1.5rem">
+    <div class="setting-info" style="margin-bottom: 0.5rem">
+      <h4>Update Profile</h4>
+      <p>Change your email address</p>
+    </div>
+    <form id="profile-email-form" style="display: flex; gap: 0.5rem">
+      <input
+        type="email"
+        id="profile-email"
+        required
+        autocomplete="email"
+        placeholder="New email address"
+        style="flex: 1"
+      />
+      <button type="submit" class="btn btn-primary">Update</button>
+    </form>
+  </div>
+
+  <div
+    style="
+      margin-bottom: 1.5rem;
+      border-top: 1px solid var(--border-color);
+      padding-top: 1.5rem;
+    "
+  >
+    <div class="setting-info" style="margin-bottom: 0.5rem">
+      <h4>Change Password</h4>
+      <p>Ensure your account stays secure</p>
+    </div>
+    <form id="profile-password-form">
+      <!-- Accessibility Fix: Hidden Username -->
+      <input
+        type="text"
+        name="username"
+        autocomplete="username"
+        style="display: none"
+      />
+      <div
+        style="
+          display: flex;
+          gap: 1rem;
+          flex-wrap: wrap;
+          margin-bottom: 1rem;
+        "
+      >
+        <div class="form-group" style="flex: 1; min-width: 200px">
+          <label for="profile-current-password" style="font-size: 0.85rem"
+            >Current Password</label
+          >
+          <input
+            type="password"
+            id="profile-current-password"
+            required
+            autocomplete="current-password"
+          />
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 200px">
+          <label for="profile-new-password" style="font-size: 0.85rem"
+            >New Password</label
+          >
+          <input
+            type="password"
+            id="profile-new-password"
+            required
+            minlength="6"
+            autocomplete="new-password"
+          />
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end">
+        <button type="submit" class="btn btn-primary">
+          Change Password
+        </button>
+      </div>
+    </form>
+  </div>
+`;
+
 // DOM Element references (initialized on DOMContentLoaded)
 export const dom: {
   authScreen: HTMLElement | null;
@@ -117,6 +197,81 @@ export function showToast(message: string, type: string = ""): void {
   setTimeout(() => toast.classList.add("hidden"), 3000);
 }
 
+// Inject profile forms dynamically to avoid password manager detection
+function injectProfileForms(): void {
+  const profilePanel = document.getElementById("settings-profile");
+  if (!profilePanel) return;
+
+  // Only inject if forms don't already exist
+  const emailForm = profilePanel.querySelector("#profile-email-form");
+  if (emailForm) return; // Already injected
+
+  // Inject the form HTML
+  profilePanel.innerHTML = PROFILE_FORM_HTML;
+
+  // Attach email update handler
+  const emailUpdateForm = document.getElementById(
+    "profile-email-form",
+  ) as HTMLFormElement;
+  if (emailUpdateForm) {
+    emailUpdateForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById(
+        "profile-email",
+      ) as HTMLInputElement;
+      const newEmail = emailInput.value.trim();
+
+      if (!newEmail) return;
+
+      try {
+        await api("/auth/update-email", {
+          method: "POST",
+          body: JSON.stringify({ email: newEmail }),
+        });
+        showToast("Email updated successfully", "success");
+        emailInput.value = "";
+      } catch (err) {
+        showToast((err as Error).message || "Failed to update email", "error");
+      }
+    });
+  }
+
+  // Attach password change handler
+  const passwordForm = document.getElementById(
+    "profile-password-form",
+  ) as HTMLFormElement;
+  if (passwordForm) {
+    passwordForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const currentPassword = (
+        document.getElementById("profile-current-password") as HTMLInputElement
+      ).value;
+      const newPassword = (
+        document.getElementById("profile-new-password") as HTMLInputElement
+      ).value;
+
+      if (!currentPassword || !newPassword) {
+        showToast("Please fill in all fields", "error");
+        return;
+      }
+
+      try {
+        await api("/auth/change-password", {
+          method: "POST",
+          body: JSON.stringify({ currentPassword, newPassword }),
+        });
+        showToast("Password changed successfully", "success");
+        passwordForm.reset();
+      } catch (err) {
+        showToast(
+          (err as Error).message || "Failed to change password",
+          "error",
+        );
+      }
+    });
+  }
+}
+
 // Open modal
 export function openModal(id: string): void {
   const modal = document.getElementById(id);
@@ -157,6 +312,7 @@ export function openModal(id: string): void {
 
     // Re-attach settings tab listeners if opening settings modal
     if (id === "settings-modal") {
+      injectProfileForms(); // Inject profile forms before attaching listeners
       attachSettingsTabListeners();
       attachSettingsModalLogout();
     }

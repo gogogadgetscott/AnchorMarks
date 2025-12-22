@@ -150,7 +150,7 @@ async function buildTagData(): Promise<{ name: string; count: number }[]> {
 
   allBookmarks.forEach((b) => {
     if (b.tags) {
-      b.tags.split(",").forEach((t) => {
+      b.tags.split(",").forEach((t: string) => {
         const tag = t.trim();
         if (tag) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
       });
