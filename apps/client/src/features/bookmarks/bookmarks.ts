@@ -119,7 +119,7 @@ export async function loadBookmarks(): Promise<void> {
     } else if (state.currentView === "tag-cloud") {
       const { renderTagCloud } =
         await import("@features/bookmarks/tag-cloud.ts");
-      renderTagCloud();
+      await renderTagCloud();
     } else {
       renderBookmarks();
     }
@@ -128,10 +128,13 @@ export async function loadBookmarks(): Promise<void> {
     // Update active nav to reflect current view
     updateActiveNav();
 
-    // Initialize bookmark views UI if in bookmark view
+    // Initialize bookmark views UI only for all/folder views
     if (
       state.currentView !== "dashboard" &&
-      state.currentView !== "tag-cloud"
+      state.currentView !== "tag-cloud" &&
+      state.currentView !== "favorites" &&
+      state.currentView !== "recent" &&
+      state.currentView !== "archived"
     ) {
       initBookmarkViews();
     }
@@ -857,27 +860,50 @@ export function initBookmarkViews() {
   const headerRight = document.querySelector(".content-header .header-right");
   if (!headerRight) return;
 
-  // Remove dashboard views button if it exists
-  document.getElementById("dashboard-views-btn")?.remove();
-
-  // Check if button already exists
-  if (document.getElementById("bookmark-views-btn")) return;
-
-  const btn = document.createElement("button");
-  btn.id = "bookmark-views-btn";
-  btn.className = "btn btn-secondary";
-  btn.innerHTML = `
+  let btn = document.getElementById("views-btn") as HTMLButtonElement;
+  
+  // Create or reposition Views button
+  if (!btn) {
+    btn = document.createElement("button");
+    btn.id = "views-btn";
+    btn.className = "btn btn-secondary";
+    btn.innerHTML = `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
         </svg>
         Views
     `;
-  btn.addEventListener("click", (e) => {
+  } else {
+    // Button exists, remove from current position to reposition
+    btn.remove();
+  }
+  
+  // Update click handler for bookmark view
+  btn.onclick = (e) => {
     e.stopPropagation();
     showBookmarkViewsMenu();
-  });
+  };
 
-  headerRight.insertBefore(btn, headerRight.firstChild);
+  // Insert Views button based on current view
+  const filterBtn = document.getElementById("filter-dropdown-btn");
+  const sortControls = document.querySelector(".sort-controls");
+  const timeRangeControls = document.querySelector(".time-range-controls");
+  const headerSearchBar = document.querySelector(".header-search-bar");
+  const viewToggle = document.querySelector(".view-toggle");
+  
+  if ((sortControls || timeRangeControls || headerSearchBar) && viewToggle) {
+    // On favorites/recent/archived page with controls and view toggle, insert before view toggle
+    headerRight.insertBefore(btn, viewToggle);
+  } else if (sortControls || timeRangeControls || headerSearchBar) {
+    // On favorites/recent/archived page without view toggle, append after controls
+    headerRight.appendChild(btn);
+  } else if (filterBtn && filterBtn.nextSibling) {
+    // On bookmarks page, insert after Filters button
+    headerRight.insertBefore(btn, filterBtn.nextSibling);
+  } else {
+    // Fallback: insert before first child
+    headerRight.insertBefore(btn, headerRight.firstChild);
+  }
 }
 
 // Show bookmark views dropdown menu
@@ -892,7 +918,7 @@ async function showBookmarkViewsMenu() {
   dropdown.className = "dropdown-menu";
   
   // Position dropdown below the Views button
-  const viewsBtn = document.getElementById("bookmark-views-btn");
+  const viewsBtn = document.getElementById("views-btn");
   if (viewsBtn) {
     const rect = viewsBtn.getBoundingClientRect();
     // Center the dropdown under the button
@@ -1003,7 +1029,7 @@ function closeBookmarkViewsDropdown(e: Event) {
   if (
     dropdown &&
     !dropdown.contains(e.target as Node) &&
-    (e.target as HTMLElement).id !== "bookmark-views-btn"
+    (e.target as HTMLElement).id !== "views-btn"
   ) {
     dropdown.remove();
     document.removeEventListener("click", closeBookmarkViewsDropdown);

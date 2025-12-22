@@ -4,7 +4,6 @@
  */
 
 import * as state from "@features/state.ts";
-import type { ApiResponse } from "@types/api.ts";
 
 // Request deduplication: cache pending requests to prevent duplicate API calls
 const pendingRequests = new Map<string, Promise<any>>();

@@ -117,7 +117,6 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.rightContent = `
         ${Button("Add Widget", { id: "dashboard-add-widget-btn", variant: "secondary", icon: "plus", data: { action: "toggle-widget-picker" } })}
         ${Button("", { id: "dashboard-layout-btn", variant: "icon", icon: "grid", title: "Layout Settings" })}
-        ${Button("", { id: "dashboard-fullscreen-btn", variant: "icon", icon: "external", title: "Toggle Fullscreen", className: "fullscreen-toggle" })}
       `;
       headerConfig.bulkActions = ["archive", "move", "tag", "delete"];
       break;

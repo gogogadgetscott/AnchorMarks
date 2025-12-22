@@ -18,96 +18,41 @@ export function showAuthScreen(): void {
   closeModals();
   const authScreen = document.getElementById("auth-screen");
   const mainApp = document.getElementById("main-app");
+  
   if (authScreen) {
     authScreen.classList.remove("hidden");
-    // Re-enable login forms for password managers when showing auth screen
+    
+    // Enable forms for password managers when showing auth screen
     const loginForm = document.getElementById("login-form");
     const registerForm = document.getElementById("register-form");
-    const loginEmail = document.getElementById(
-      "login-email",
-    ) as HTMLInputElement;
     const loginPassword = document.getElementById(
       "login-password",
-    ) as HTMLInputElement;
-    const registerEmail = document.getElementById(
-      "register-email",
     ) as HTMLInputElement;
     const registerPassword = document.getElementById(
       "register-password",
     ) as HTMLInputElement;
 
     if (loginForm) {
-      loginForm.removeAttribute("data-bitwarden-watching");
-      loginForm.removeAttribute("aria-hidden");
-      loginForm.removeAttribute("inert");
+      loginForm.removeAttribute("autocomplete");
+      loginForm.setAttribute("autocomplete", "on");
       loginForm.style.display = "";
     }
     if (registerForm) {
-      registerForm.removeAttribute("data-bitwarden-watching");
-      registerForm.removeAttribute("aria-hidden");
-      registerForm.removeAttribute("inert");
+      registerForm.removeAttribute("autocomplete");
+      registerForm.setAttribute("autocomplete", "on");
       registerForm.style.display = "";
     }
-    // Restore autocomplete attributes and enable inputs for password manager detection
-    if (loginForm) {
-      loginForm.removeAttribute("data-bitwarden-watching");
-      loginForm.removeAttribute("data-lpignore");
-      loginForm.removeAttribute("data-form-type");
-      loginForm.removeAttribute("aria-hidden");
-      loginForm.removeAttribute("inert");
-      loginForm.style.display = "";
-      loginForm.style.visibility = "";
-      loginForm.style.position = "";
-      loginForm.style.left = "";
-    }
-    if (registerForm) {
-      registerForm.removeAttribute("data-bitwarden-watching");
-      registerForm.removeAttribute("data-lpignore");
-      registerForm.removeAttribute("data-form-type");
-      registerForm.removeAttribute("aria-hidden");
-      registerForm.removeAttribute("inert");
-      registerForm.style.display = "";
-      registerForm.style.visibility = "";
-      registerForm.style.position = "";
-      registerForm.style.left = "";
-    }
-    if (loginEmail) {
-      loginEmail.setAttribute("autocomplete", "username");
-      loginEmail.removeAttribute("data-form-type");
-      loginEmail.removeAttribute("data-lpignore");
-      loginEmail.removeAttribute("tabindex");
-      loginEmail.disabled = false;
-      loginEmail.readOnly = false;
-      loginEmail.style.display = "";
-    }
+    
+    // Change password fields to type="password" so password managers can detect them
     if (loginPassword) {
+      loginPassword.type = "password";
+      loginPassword.removeAttribute("style");
       loginPassword.setAttribute("autocomplete", "current-password");
-      loginPassword.removeAttribute("data-form-type");
-      loginPassword.removeAttribute("data-lpignore");
-      loginPassword.removeAttribute("tabindex");
-      loginPassword.disabled = false;
-      loginPassword.readOnly = false;
-      loginPassword.style.display = "";
-      loginPassword.type = "password"; // Restore password type
-    }
-    if (registerEmail) {
-      registerEmail.setAttribute("autocomplete", "username");
-      registerEmail.removeAttribute("data-form-type");
-      registerEmail.removeAttribute("data-lpignore");
-      registerEmail.removeAttribute("tabindex");
-      registerEmail.disabled = false;
-      registerEmail.readOnly = false;
-      registerEmail.style.display = "";
     }
     if (registerPassword) {
+      registerPassword.type = "password";
+      registerPassword.removeAttribute("style");
       registerPassword.setAttribute("autocomplete", "new-password");
-      registerPassword.removeAttribute("data-form-type");
-      registerPassword.removeAttribute("data-lpignore");
-      registerPassword.removeAttribute("tabindex");
-      registerPassword.disabled = false;
-      registerPassword.readOnly = false;
-      registerPassword.style.display = "";
-      registerPassword.type = "password"; // Restore password type
     }
   }
   if (mainApp) mainApp.classList.add("hidden");
@@ -119,84 +64,34 @@ export function showMainApp(): void {
   const mainApp = document.getElementById("main-app");
   if (authScreen) {
     authScreen.classList.add("hidden");
-    // Aggressively disable login forms from password managers when logged in
-    // This prevents Bitwarden and other password managers from detecting the forms
+    
+    // Keep forms disabled with type="text" when not on login page to prevent password manager detection
     const loginForm = document.getElementById("login-form");
     const registerForm = document.getElementById("register-form");
-    const loginEmail = document.getElementById(
-      "login-email",
-    ) as HTMLInputElement;
     const loginPassword = document.getElementById(
       "login-password",
-    ) as HTMLInputElement;
-    const registerEmail = document.getElementById(
-      "register-email",
     ) as HTMLInputElement;
     const registerPassword = document.getElementById(
       "register-password",
     ) as HTMLInputElement;
 
-    // Hide and disable forms completely
     if (loginForm) {
-      loginForm.setAttribute("data-bitwarden-watching", "false");
-      loginForm.setAttribute("data-lpignore", "true");
-      loginForm.setAttribute("data-form-type", "other");
-      loginForm.setAttribute("aria-hidden", "true");
-      loginForm.setAttribute("inert", "true");
       loginForm.style.display = "none";
-      loginForm.style.visibility = "hidden";
-      loginForm.style.position = "absolute";
-      loginForm.style.left = "-9999px";
     }
     if (registerForm) {
-      registerForm.setAttribute("data-bitwarden-watching", "false");
-      registerForm.setAttribute("data-lpignore", "true");
-      registerForm.setAttribute("data-form-type", "other");
-      registerForm.setAttribute("aria-hidden", "true");
-      registerForm.setAttribute("inert", "true");
       registerForm.style.display = "none";
-      registerForm.style.visibility = "hidden";
-      registerForm.style.position = "absolute";
-      registerForm.style.left = "-9999px";
     }
-    // Remove autocomplete attributes and disable inputs to prevent password manager detection
-    if (loginEmail) {
-      loginEmail.removeAttribute("autocomplete");
-      loginEmail.setAttribute("data-form-type", "other");
-      loginEmail.setAttribute("data-lpignore", "true");
-      loginEmail.setAttribute("tabindex", "-1");
-      loginEmail.disabled = true;
-      loginEmail.readOnly = true;
-      loginEmail.style.display = "none";
-    }
+    
+    // Change password fields back to type="text" with visual masking to prevent password manager detection
     if (loginPassword) {
+      loginPassword.type = "text";
+      loginPassword.style.cssText = "-webkit-text-security: disc; text-security: disc;";
       loginPassword.removeAttribute("autocomplete");
-      loginPassword.setAttribute("data-form-type", "other");
-      loginPassword.setAttribute("data-lpignore", "true");
-      loginPassword.setAttribute("tabindex", "-1");
-      loginPassword.disabled = true;
-      loginPassword.readOnly = true;
-      loginPassword.style.display = "none";
-      loginPassword.type = "text"; // Change type to prevent detection
-    }
-    if (registerEmail) {
-      registerEmail.removeAttribute("autocomplete");
-      registerEmail.setAttribute("data-form-type", "other");
-      registerEmail.setAttribute("data-lpignore", "true");
-      registerEmail.setAttribute("tabindex", "-1");
-      registerEmail.disabled = true;
-      registerEmail.readOnly = true;
-      registerEmail.style.display = "none";
     }
     if (registerPassword) {
+      registerPassword.type = "text";
+      registerPassword.style.cssText = "-webkit-text-security: disc; text-security: disc;";
       registerPassword.removeAttribute("autocomplete");
-      registerPassword.setAttribute("data-form-type", "other");
-      registerPassword.setAttribute("data-lpignore", "true");
-      registerPassword.setAttribute("tabindex", "-1");
-      registerPassword.disabled = true;
-      registerPassword.readOnly = true;
-      registerPassword.style.display = "none";
-      registerPassword.type = "text"; // Change type to prevent detection
     }
   }
   if (mainApp) mainApp.classList.remove("hidden");

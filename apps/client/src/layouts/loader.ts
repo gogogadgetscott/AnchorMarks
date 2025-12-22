@@ -118,3 +118,22 @@ export function loadComponents(): void {
     app.appendChild(modalsContainer.firstChild);
   }
 }
+
+/**
+ * Re-loads the auth form elements into the DOM if they were removed
+ */
+export function loadAuthScreenForms(): void {
+  const authScreen = document.getElementById("auth-screen");
+  if (!authScreen) return;
+  
+  // If forms are missing, re-add them to the auth screen
+  if (!document.getElementById("login-form") || !document.getElementById("register-form")) {
+    const formContainer = document.createElement("div");
+    formContainer.innerHTML = authScreen;
+    const authScreenContent = authScreen.querySelector(".auth-screen-content");
+    if (authScreenContent && formContainer.firstElementChild) {
+      authScreenContent.innerHTML = formContainer.firstElementChild.innerHTML;
+    }
+  }
+}
+

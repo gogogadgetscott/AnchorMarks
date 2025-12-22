@@ -4,6 +4,8 @@
  */
 
 import * as state from "@features/state.ts";
+import { api } from "@services/api.ts";
+import { logger } from "@utils/logger.ts";
 import { escapeHtml } from "@utils/index.ts";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
 
@@ -81,10 +83,20 @@ function calculateOpacity(
 }
 
 // Build tag data from bookmarks
-function buildTagData(): { name: string; count: number; color: string }[] {
+async function buildTagData(): Promise<{ name: string; count: number; color: string }[]> {
   const tagCounts: Record<string, number> = {};
+  
+  // Fetch ALL bookmarks from server for tag cloud (ignore current filters)
+  let allBookmarks: any[] = [];
+  try {
+    allBookmarks = await api("/bookmarks?sort=recently_added");
+  } catch (err) {
+    logger.error("Failed to fetch all bookmarks for tag cloud", err);
+    // Fallback to state.bookmarks if API call fails
+    allBookmarks = state.bookmarks;
+  }
 
-  state.bookmarks.forEach((b) => {
+  allBookmarks.forEach((b) => {
     if (b.tags) {
       b.tags.split(",").forEach((t) => {
         const tag = t.trim();
@@ -115,7 +127,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 // Render the tag cloud
-export function renderTagCloud(): void {
+export async function renderTagCloud(): Promise<void> {
   updateFilterButtonVisibility();
 
   const container = document.getElementById("bookmarks-container");
@@ -128,7 +140,7 @@ export function renderTagCloud(): void {
   document.querySelector(".view-toggle")?.classList.add("hidden");
   bulkBar?.classList.add("hidden");
 
-  const tags = buildTagData();
+  const tags = await buildTagData();
 
   if (tags.length === 0) {
     container.className = "tag-cloud-container";
@@ -279,13 +291,13 @@ export function renderTagCloud(): void {
   let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
   const handleResize = () => {
     if (resizeTimeout) clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
+    resizeTimeout = setTimeout(async () => {
       // Only redraw if we're still in tag cloud view
       if (
         state.currentView === "tag-cloud" &&
         container.querySelector(".tag-cloud-view")
       ) {
-        renderTagCloud();
+        await renderTagCloud();
       }
     }, 300); // Debounce resize events
   };

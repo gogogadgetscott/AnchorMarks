@@ -123,13 +123,12 @@ export async function initDashboardViews(): Promise<void> {
   const headerActions = document.querySelector(".header-right");
   if (!headerActions) return;
 
-  // Remove bookmark views button if it exists
-  document.getElementById("bookmark-views-btn")?.remove();
-
-  // Check if Views button already exists
-  if (!document.getElementById("dashboard-views-btn")) {
-    const btn = document.createElement("button");
-    btn.id = "dashboard-views-btn";
+  let btn = document.getElementById("views-btn") as HTMLButtonElement;
+  
+  // Create or update Views button
+  if (!btn) {
+    btn = document.createElement("button");
+    btn.id = "views-btn";
     btn.className = "btn btn-secondary";
     btn.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
@@ -137,13 +136,22 @@ export async function initDashboardViews(): Promise<void> {
             </svg>
             Views
         `;
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      showViewsMenu();
-    });
-
-    headerActions.insertBefore(btn, headerActions.firstChild);
+    
+    // Insert Views button right after the Add Widget button
+    const addWidgetBtn = document.getElementById("dashboard-add-widget-btn");
+    if (addWidgetBtn && addWidgetBtn.nextSibling) {
+      headerActions.insertBefore(btn, addWidgetBtn.nextSibling);
+    } else {
+      // Fallback: insert before first child if no add widget button
+      headerActions.insertBefore(btn, headerActions.firstChild);
+    }
   }
+  
+  // Update click handler for dashboard view
+  btn.onclick = (e) => {
+    e.stopPropagation();
+    showViewsMenu();
+  };
 
   // Initial load
   await loadViews();
@@ -161,7 +169,7 @@ async function showViewsMenu(): Promise<void> {
   dropdown.className = "dropdown-menu";
   
   // Position dropdown below the Views button
-  const viewsBtn = document.getElementById("dashboard-views-btn");
+  const viewsBtn = document.getElementById("views-btn");
   if (viewsBtn) {
     const rect = viewsBtn.getBoundingClientRect();
     // Center the dropdown under the button
@@ -273,7 +281,7 @@ function closeViewsDropdown(e: MouseEvent): void {
   if (
     dropdown &&
     !dropdown.contains(e.target as Node) &&
-    (e.target as HTMLElement).id !== "dashboard-views-btn"
+    (e.target as HTMLElement).id !== "views-btn"
   ) {
     dropdown.remove();
     document.removeEventListener("click", closeViewsDropdown);
@@ -483,7 +491,7 @@ export function renderDashboard(): void {
 
   // Initialize dashboard views UI
   initDashboardViews();
-  const btn = document.getElementById("dashboard-views-btn");
+  const btn = document.getElementById("views-btn");
   if (btn) btn.classList.remove("hidden");
 
   // Restore view name badge from state (survives page refresh)
