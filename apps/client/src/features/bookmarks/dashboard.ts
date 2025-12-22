@@ -124,7 +124,7 @@ export async function initDashboardViews(): Promise<void> {
   if (!headerActions) return;
 
   let btn = document.getElementById("views-btn") as HTMLButtonElement;
-  
+
   // Create or update Views button
   if (!btn) {
     btn = document.createElement("button");
@@ -136,7 +136,7 @@ export async function initDashboardViews(): Promise<void> {
             </svg>
             Views
         `;
-    
+
     // Insert Views button right after the Add Widget button
     const addWidgetBtn = document.getElementById("dashboard-add-widget-btn");
     if (addWidgetBtn && addWidgetBtn.nextSibling) {
@@ -146,7 +146,7 @@ export async function initDashboardViews(): Promise<void> {
       headerActions.insertBefore(btn, headerActions.firstChild);
     }
   }
-  
+
   // Update click handler for dashboard view
   btn.onclick = (e) => {
     e.stopPropagation();
@@ -167,7 +167,7 @@ async function showViewsMenu(): Promise<void> {
   const dropdown = document.createElement("div");
   dropdown.id = "views-dropdown";
   dropdown.className = "dropdown-menu";
-  
+
   // Position dropdown below the Views button
   const viewsBtn = document.getElementById("views-btn");
   if (viewsBtn) {

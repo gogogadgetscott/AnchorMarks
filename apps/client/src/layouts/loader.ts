@@ -125,15 +125,19 @@ export function loadComponents(): void {
 export function loadAuthScreenForms(): void {
   const authScreenEl = document.getElementById("auth-screen");
   if (!authScreenEl) return;
-  
+
   // If forms are missing, re-add them to the auth screen
-  if (!document.getElementById("login-form") || !document.getElementById("register-form")) {
+  if (
+    !document.getElementById("login-form") ||
+    !document.getElementById("register-form")
+  ) {
     const formContainer = document.createElement("div");
     formContainer.innerHTML = authScreen;
-    const authScreenContent = authScreenEl.querySelector(".auth-screen-content");
+    const authScreenContent = authScreenEl.querySelector(
+      ".auth-screen-content",
+    );
     if (authScreenContent && formContainer.firstElementChild) {
       authScreenContent.innerHTML = formContainer.firstElementChild.innerHTML;
     }
   }
 }
-

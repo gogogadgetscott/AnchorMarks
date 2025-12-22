@@ -83,9 +83,11 @@ function calculateOpacity(
 }
 
 // Build tag data from bookmarks
-async function buildTagData(): Promise<{ name: string; count: number; color: string }[]> {
+async function buildTagData(): Promise<
+  { name: string; count: number; color: string }[]
+> {
   const tagCounts: Record<string, number> = {};
-  
+
   // Fetch ALL bookmarks from server for tag cloud (ignore current filters)
   let allBookmarks: any[] = [];
   try {

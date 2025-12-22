@@ -13,46 +13,97 @@ import {
 import { logger } from "@utils/logger.ts";
 import type { User } from "@types";
 
+// Auth form HTML templates
+const LOGIN_FORM_HTML = `
+  <form id="login-form" class="auth-form" autocomplete="on">
+    <div class="form-group">
+      <label for="login-email">Email</label>
+      <input
+        type="email"
+        id="login-email"
+        name="email"
+        required
+        placeholder="you@example.com"
+        autocomplete="email"
+      />
+    </div>
+    <div class="form-group">
+      <label for="login-password">Password</label>
+      <input
+        type="password"
+        id="login-password"
+        name="password"
+        required
+        placeholder="••••••••"
+        autocomplete="current-password"
+      />
+    </div>
+    <button type="submit" class="btn btn-primary btn-full">
+      <span>Sign In</span>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M5 12h14M12 5l7 7-7 7" />
+      </svg>
+    </button>
+  </form>
+`;
+
+const REGISTER_FORM_HTML = `
+  <form id="register-form" class="auth-form hidden" autocomplete="on">
+    <div class="form-group">
+      <label for="register-email">Email</label>
+      <input
+        type="email"
+        id="register-email"
+        name="email"
+        required
+        placeholder="you@example.com"
+        autocomplete="email"
+      />
+    </div>
+    <div class="form-group">
+      <label for="register-password">Password</label>
+      <input
+        type="password"
+        id="register-password"
+        name="password"
+        required
+        placeholder="••••••••"
+        minlength="6"
+        autocomplete="new-password"
+      />
+    </div>
+    <button type="submit" class="btn btn-primary btn-full">
+      <span>Create Account</span>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M5 12h14M12 5l7 7-7 7" />
+      </svg>
+    </button>
+  </form>
+`;
+
 // Show auth screen
 export function showAuthScreen(): void {
   closeModals();
   const authScreen = document.getElementById("auth-screen");
   const mainApp = document.getElementById("main-app");
-  
+
   if (authScreen) {
     authScreen.classList.remove("hidden");
-    
-    // Enable forms for password managers when showing auth screen
-    const loginForm = document.getElementById("login-form");
-    const registerForm = document.getElementById("register-form");
-    const loginPassword = document.getElementById(
-      "login-password",
-    ) as HTMLInputElement;
-    const registerPassword = document.getElementById(
-      "register-password",
-    ) as HTMLInputElement;
 
-    if (loginForm) {
-      loginForm.removeAttribute("autocomplete");
-      loginForm.setAttribute("autocomplete", "on");
-      loginForm.style.display = "";
-    }
-    if (registerForm) {
-      registerForm.removeAttribute("autocomplete");
-      registerForm.setAttribute("autocomplete", "on");
-      registerForm.style.display = "";
-    }
-    
-    // Change password fields to type="password" so password managers can detect them
-    if (loginPassword) {
-      loginPassword.type = "password";
-      loginPassword.removeAttribute("style");
-      loginPassword.setAttribute("autocomplete", "current-password");
-    }
-    if (registerPassword) {
-      registerPassword.type = "password";
-      registerPassword.removeAttribute("style");
-      registerPassword.setAttribute("autocomplete", "new-password");
+    // Inject forms dynamically only when showing auth screen
+    const formsContainer = document.getElementById("auth-forms-container");
+    if (formsContainer && !document.getElementById("login-form")) {
+      formsContainer.innerHTML = LOGIN_FORM_HTML + REGISTER_FORM_HTML;
     }
   }
   if (mainApp) mainApp.classList.add("hidden");
@@ -64,34 +115,11 @@ export function showMainApp(): void {
   const mainApp = document.getElementById("main-app");
   if (authScreen) {
     authScreen.classList.add("hidden");
-    
-    // Keep forms disabled with type="text" when not on login page to prevent password manager detection
-    const loginForm = document.getElementById("login-form");
-    const registerForm = document.getElementById("register-form");
-    const loginPassword = document.getElementById(
-      "login-password",
-    ) as HTMLInputElement;
-    const registerPassword = document.getElementById(
-      "register-password",
-    ) as HTMLInputElement;
 
-    if (loginForm) {
-      loginForm.style.display = "none";
-    }
-    if (registerForm) {
-      registerForm.style.display = "none";
-    }
-    
-    // Change password fields back to type="text" with visual masking to prevent password manager detection
-    if (loginPassword) {
-      loginPassword.type = "text";
-      loginPassword.style.cssText = "-webkit-text-security: disc; text-security: disc;";
-      loginPassword.removeAttribute("autocomplete");
-    }
-    if (registerPassword) {
-      registerPassword.type = "text";
-      registerPassword.style.cssText = "-webkit-text-security: disc; text-security: disc;";
-      registerPassword.removeAttribute("autocomplete");
+    // Remove forms completely when hiding auth screen to prevent password manager detection
+    const formsContainer = document.getElementById("auth-forms-container");
+    if (formsContainer) {
+      formsContainer.innerHTML = "";
     }
   }
   if (mainApp) mainApp.classList.remove("hidden");

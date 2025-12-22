@@ -156,8 +156,8 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
         updateActiveNav();
         const viewTitle = document.getElementById("view-title");
         if (viewTitle) viewTitle.textContent = "Tag Cloud";
-        import("@features/bookmarks/tag-cloud.ts").then(async ({ renderTagCloud }) =>
-          await renderTagCloud(),
+        import("@features/bookmarks/tag-cloud.ts").then(
+          async ({ renderTagCloud }) => await renderTagCloud(),
         );
       },
       icon: "☁️",

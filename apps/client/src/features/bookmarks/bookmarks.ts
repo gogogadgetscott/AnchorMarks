@@ -861,7 +861,7 @@ export function initBookmarkViews() {
   if (!headerRight) return;
 
   let btn = document.getElementById("views-btn") as HTMLButtonElement;
-  
+
   // Create or reposition Views button
   if (!btn) {
     btn = document.createElement("button");
@@ -877,7 +877,7 @@ export function initBookmarkViews() {
     // Button exists, remove from current position to reposition
     btn.remove();
   }
-  
+
   // Update click handler for bookmark view
   btn.onclick = (e) => {
     e.stopPropagation();
@@ -890,7 +890,7 @@ export function initBookmarkViews() {
   const timeRangeControls = document.querySelector(".time-range-controls");
   const headerSearchBar = document.querySelector(".header-search-bar");
   const viewToggle = document.querySelector(".view-toggle");
-  
+
   if ((sortControls || timeRangeControls || headerSearchBar) && viewToggle) {
     // On favorites/recent/archived page with controls and view toggle, insert before view toggle
     headerRight.insertBefore(btn, viewToggle);
@@ -916,7 +916,7 @@ async function showBookmarkViewsMenu() {
   const dropdown = document.createElement("div");
   dropdown.id = "bookmark-views-dropdown";
   dropdown.className = "dropdown-menu";
-  
+
   // Position dropdown below the Views button
   const viewsBtn = document.getElementById("views-btn");
   if (viewsBtn) {
