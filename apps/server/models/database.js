@@ -88,6 +88,7 @@ function initializeDatabase(DB_PATH) {
         dashboard_sort TEXT DEFAULT 'updated_desc',
         widget_order TEXT,
         collapsed_sections TEXT,
+        settings_json TEXT,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       );
@@ -153,6 +154,9 @@ function initializeDatabase(DB_PATH) {
     db.prepare(
       "ALTER TABLE user_settings ADD COLUMN hide_sidebar INTEGER DEFAULT 0",
     ).run();
+  } catch {}
+  try {
+    db.prepare("ALTER TABLE user_settings ADD COLUMN settings_json TEXT").run();
   } catch {}
   try {
     db.prepare(

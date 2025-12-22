@@ -68,6 +68,16 @@ function setupApiRoutes(app, db, helpers) {
 
         if (!settings) return res.json({});
 
+        // Merge flexible JSON settings
+        let extra = {};
+        try {
+          extra = settings.settings_json
+            ? JSON.parse(settings.settings_json)
+            : {};
+        } catch {
+          extra = {};
+        }
+
         res.json({
           view_mode: settings.view_mode || "grid",
           hide_favicons: settings.hide_favicons === 1,
@@ -93,6 +103,7 @@ function setupApiRoutes(app, db, helpers) {
           current_view: settings.current_view || "all",
           snap_to_grid: settings.snap_to_grid === 1,
           tour_completed: settings.tour_completed === 1,
+          ...extra,
         });
       } catch (err) {
         console.error("Error saving settings:", err);
@@ -132,6 +143,15 @@ function setupApiRoutes(app, db, helpers) {
         return;
       }
 
+      let extra = {};
+      try {
+        extra = settings.settings_json
+          ? JSON.parse(settings.settings_json)
+          : {};
+      } catch {
+        extra = {};
+      }
+
       res.json({
         view_mode: settings.view_mode || "grid",
         hide_favicons: settings.hide_favicons === 1,
@@ -157,6 +177,7 @@ function setupApiRoutes(app, db, helpers) {
         current_view: settings.current_view || "all",
         snap_to_grid: settings.snap_to_grid === 1,
         tour_completed: settings.tour_completed === 1,
+        ...extra,
       });
     } catch (err) {
       console.error("Error fetching settings:", err);

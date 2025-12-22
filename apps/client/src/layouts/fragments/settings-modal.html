@@ -497,6 +497,50 @@
               <option value="name_desc">Z → A</option>
             </select>
           </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <h4>Tag Cloud</h4>
+              <p>Control how many tags are shown in the Tag Cloud.</p>
+            </div>
+            <div
+              style="
+                display: flex;
+                gap: 0.75rem;
+                align-items: center;
+                flex-wrap: wrap;
+              "
+            >
+              <label
+                for="tag-cloud-max-tags"
+                class="text-tertiary"
+                style="font-size: 0.9rem"
+                >Max tags (desktop)</label
+              >
+              <input
+                type="number"
+                id="tag-cloud-max-tags"
+                class="form-input"
+                min="20"
+                max="500"
+                step="10"
+                style="width: 110px"
+              />
+              <label class="toggle" style="margin-left: 0.5rem">
+                <input type="checkbox" id="tag-cloud-default-show-all" />
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="text-tertiary" style="font-size: 0.9rem"
+                >Show all tags by default</span
+              >
+            </div>
+            <p
+              class="text-tertiary"
+              style="margin-top: 0.5rem; font-size: 0.85rem"
+            >
+              On smaller screens, this limit scales down automatically.
+            </p>
+          </div>
         </div>
 
         <!-- Tags Section (Hidden - moved to filter dropdown) -->

@@ -9,30 +9,82 @@ import { logger } from "@utils/logger.ts";
 import { escapeHtml } from "@utils/index.ts";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
 
-// Color palette for tags (vibrant, modern colors)
-const TAG_COLORS = [
-  "#6366f1", // indigo
-  "#8b5cf6", // violet
-  "#ec4899", // pink
-  "#f43f5e", // rose
-  "#f97316", // orange
-  "#eab308", // yellow
-  "#22c55e", // green
-  "#14b8a6", // teal
+// Gradient stops used for count → color mapping (low → high)
+// Designed to resemble the rainbow look in the mock
+const COUNT_GRADIENT_STOPS = [
+  "#6366f1", // indigo (least)
   "#06b6d4", // cyan
-  "#3b82f6", // blue
-  "#a855f7", // purple
-  "#10b981", // emerald
+  "#22c55e", // green
+  "#eab308", // yellow
+  "#f97316", // orange
+  "#ec4899", // pink (most)
 ];
 
-// Get a consistent color for a tag name
-function getTagColor(tagName: string, index: number): string {
-  // Use tag metadata color if available
-  if (state.tagMetadata[tagName]?.color) {
-    return state.tagMetadata[tagName].color;
-  }
-  // Fall back to cycling through colors
-  return TAG_COLORS[index % TAG_COLORS.length];
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const h = hex.replace("#", "");
+  const bigint = parseInt(
+    h.length === 3
+      ? h
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : h,
+    16,
+  );
+  return {
+    r: (bigint >> 16) & 255,
+    g: (bigint >> 8) & 255,
+    b: bigint & 255,
+  };
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  const toHex = (v: number) => v.toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function interpolate(a: number, b: number, t: number): number {
+  return Math.round(a + (b - a) * t);
+}
+
+// Linear interpolation between multiple color stops
+function interpolateGradient(stops: string[], t: number): string {
+  if (t <= 0) return stops[0];
+  if (t >= 1) return stops[stops.length - 1];
+  const segment = 1 / (stops.length - 1);
+  const i = Math.floor(t / segment);
+  const localT = (t - i * segment) / segment;
+
+  const c1 = hexToRgb(stops[i]);
+  const c2 = hexToRgb(stops[i + 1]);
+  const r = interpolate(c1.r, c2.r, localT);
+  const g = interpolate(c1.g, c2.g, localT);
+  const b = interpolate(c1.b, c2.b, localT);
+  return rgbToHex(r, g, b);
+}
+
+// Map count in [min,max] to a hex color from gradient
+function getColorForCount(
+  count: number,
+  minCount: number,
+  maxCount: number,
+): string {
+  if (maxCount === minCount)
+    return COUNT_GRADIENT_STOPS[Math.floor(COUNT_GRADIENT_STOPS.length / 2)];
+  const t = (count - minCount) / (maxCount - minCount);
+  return interpolateGradient(COUNT_GRADIENT_STOPS, t);
+}
+
+// Choose black/white text for contrast vs background color
+function getContrastText(bgHex: string): string {
+  const { r, g, b } = hexToRgb(bgHex);
+  // Relative luminance (WCAG)
+  const srgb = [r, g, b].map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  const L = 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
+  return L > 0.6 ? "#0f172a" /* slate-900 for light colors */ : "#ffffff";
 }
 
 // Predefined font sizes like react-tagcloud approach
@@ -83,9 +135,7 @@ function calculateOpacity(
 }
 
 // Build tag data from bookmarks
-async function buildTagData(): Promise<
-  { name: string; count: number; color: string }[]
-> {
+async function buildTagData(): Promise<{ name: string; count: number }[]> {
   const tagCounts: Record<string, number> = {};
 
   // Fetch ALL bookmarks from server for tag cloud (ignore current filters)
@@ -108,10 +158,9 @@ async function buildTagData(): Promise<
   });
 
   const tags = Object.keys(tagCounts)
-    .map((name, index) => ({
+    .map((name) => ({
       name,
       count: tagCounts[name],
-      color: getTagColor(name, index),
     }))
     .sort((a, b) => b.count - a.count);
 
@@ -143,6 +192,11 @@ export async function renderTagCloud(): Promise<void> {
   bulkBar?.classList.add("hidden");
 
   const tags = await buildTagData();
+  const storedPref = localStorage.getItem("anchormarks_tag_cloud_show_all");
+  const showAllPref =
+    storedPref !== null
+      ? storedPref === "true"
+      : !!state.tagCloudDefaultShowAll;
 
   if (tags.length === 0) {
     container.className = "tag-cloud-container";
@@ -164,11 +218,21 @@ export async function renderTagCloud(): Promise<void> {
 
   if (emptyState) emptyState.classList.add("hidden");
 
-  const minCount = Math.min(...tags.map((t) => t.count));
-  const maxCount = Math.max(...tags.map((t) => t.count));
+  // Determine how many tags we can reasonably show; drop low-count tags
+  const vw = window.innerWidth;
+  let MAX_TAGS = state.tagCloudMaxTags || 120;
+  if (vw < 480) MAX_TAGS = 40;
+  else if (vw < 768) MAX_TAGS = Math.max(30, Math.round(MAX_TAGS * 0.5));
+  else if (vw < 1280) MAX_TAGS = Math.max(60, Math.round(MAX_TAGS * 0.75));
+  else MAX_TAGS = Math.max(40, Math.round(MAX_TAGS));
+  const topTags = showAllPref
+    ? tags
+    : tags.slice(0, Math.min(tags.length, MAX_TAGS));
+  const minCount = Math.min(...topTags.map((t) => t.count));
+  const maxCount = Math.max(...topTags.map((t) => t.count));
 
-  // Shuffle tags for organic cloud appearance
-  const shuffledTags = shuffleArray(tags);
+  // Shuffle top tags for organic cloud appearance
+  const shuffledTags = shuffleArray(topTags);
 
   // Get container dimensions
   const canvasHeight = window.innerHeight - 300; // Account for header, legend, etc.
@@ -185,16 +249,21 @@ export async function renderTagCloud(): Promise<void> {
             <line x1="7" y1="7" x2="7.01" y2="7"/>
           </svg>
           <h2>Tag Cloud</h2>
-          <span class="tag-cloud-count">${tags.length} tags</span>
+          <span class="tag-cloud-count">${showAllPref ? `${topTags.length}` : `${topTags.length} of ${tags.length}`} tags</span>
         </div>
         <div class="tag-cloud-stats">
           <div class="tag-cloud-stat">
-            <span class="stat-number">${tags.reduce((sum, t) => sum + t.count, 0)}</span>
+            <span class="stat-number">${topTags.reduce((sum, t) => sum + t.count, 0)}</span>
             <span class="stat-label">total usages</span>
           </div>
           <div class="tag-cloud-stat">
             <span class="stat-number">${maxCount}</span>
             <span class="stat-label">most used</span>
+          </div>
+          <div class="tag-cloud-stat">
+            <button id="tag-cloud-toggle" class="tag-cloud-toggle" aria-pressed="${showAllPref}">
+              ${showAllPref ? "Show Top" : "Show All"}
+            </button>
           </div>
         </div>
       </div>
@@ -216,13 +285,16 @@ export async function renderTagCloud(): Promise<void> {
                   ? "rotate(-3deg)"
                   : "rotate(3deg)"
                 : "rotate(0deg)";
+            const bgColor = getColorForCount(tag.count, minCount, maxCount);
+            const textColor = getContrastText(bgColor);
 
             return `
               <button class="tag-cloud-tag" 
                       data-tag="${escapeHtml(tag.name)}"
                       data-count="${tag.count}"
                       style="
-                        --tag-color: ${tag.color};
+                        --tag-color: ${bgColor};
+                        --tag-text: ${textColor};
                         --tag-size: ${fontSize}px;
                         --tag-opacity: ${opacity};
                         --tag-delay: ${delay}s;
@@ -253,6 +325,16 @@ export async function renderTagCloud(): Promise<void> {
 
   container.className = "tag-cloud-container";
   container.innerHTML = tagCloudHtml;
+
+  // Toggle button handler
+  const toggleBtn = document.getElementById("tag-cloud-toggle");
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", async () => {
+      const next = !showAllPref;
+      localStorage.setItem("anchormarks_tag_cloud_show_all", String(next));
+      await renderTagCloud();
+    });
+  }
 
   // Attach click handlers
   container.querySelectorAll(".tag-cloud-tag").forEach((btn) => {

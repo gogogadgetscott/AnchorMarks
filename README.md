@@ -216,3 +216,9 @@ To run the test suite inside a container (installs dev dependencies temporarily)
 ```bash
 docker compose -f tooling/docker/docker-compose.yml run --rm anchormarks sh -c "npm install && npm test"
 ```
+
+### Database settings_json (auto-migrated)
+
+- AnchorMarks now stores flexible user preferences in a JSON column `settings_json` within the `user_settings` table. This avoids schema changes for each new setting.
+- On startup, the server auto-migrates existing databases by adding the `settings_json` column if it does not exist. No manual action is required.
+- Known settings continue using dedicated columns for backward compatibility. New settings are saved under `settings_json` and merged into `/api/settings` responses transparently.

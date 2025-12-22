@@ -80,6 +80,42 @@ function upsertUserSettings(db, userId, body = {}) {
     if (body.tour_completed !== undefined)
       pushIf("tour_completed", body.tour_completed ? 1 : 0);
 
+    // Collect unknown keys into settings_json for flexible storage
+    const knownKeys = new Set([
+      "view_mode",
+      "hide_favicons",
+      "hide_sidebar",
+      "ai_suggestions_enabled",
+      "theme",
+      "rich_link_previews_enabled",
+      "dashboard_mode",
+      "dashboard_tags",
+      "dashboard_sort",
+      "widget_order",
+      "dashboard_widgets",
+      "collapsed_sections",
+      "include_child_bookmarks",
+      "snap_to_grid",
+      "current_view",
+      "tour_completed",
+    ]);
+    const extras = {};
+    for (const [k, v] of Object.entries(body)) {
+      if (!knownKeys.has(k)) extras[k] = v;
+    }
+    if (Object.keys(extras).length > 0) {
+      let currentJson = {};
+      try {
+        currentJson = existing.settings_json
+          ? JSON.parse(existing.settings_json)
+          : {};
+      } catch {
+        currentJson = {};
+      }
+      const merged = { ...currentJson, ...extras };
+      pushIf("settings_json", JSON.stringify(merged));
+    }
+
     if (updates.length > 0) {
       updates.push("updated_at = CURRENT_TIMESTAMP");
       values.push(userId);
@@ -98,8 +134,9 @@ function upsertUserSettings(db, userId, body = {}) {
       `
     INSERT INTO user_settings (
       user_id, view_mode, hide_favicons, hide_sidebar, ai_suggestions_enabled, theme, rich_link_previews_enabled, dashboard_mode,
-      dashboard_tags, dashboard_sort, widget_order, dashboard_widgets, collapsed_sections, include_child_bookmarks, tour_completed
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      dashboard_tags, dashboard_sort, widget_order, dashboard_widgets, collapsed_sections, include_child_bookmarks, tour_completed,
+      settings_json
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     )
     .run(
@@ -123,6 +160,30 @@ function upsertUserSettings(db, userId, body = {}) {
       body.collapsed_sections ? JSON.stringify(body.collapsed_sections) : null,
       body.include_child_bookmarks || 0,
       body.tour_completed ? 1 : 0,
+      (() => {
+        const known = [
+          "view_mode",
+          "hide_favicons",
+          "hide_sidebar",
+          "ai_suggestions_enabled",
+          "theme",
+          "rich_link_previews_enabled",
+          "dashboard_mode",
+          "dashboard_tags",
+          "dashboard_sort",
+          "widget_order",
+          "dashboard_widgets",
+          "collapsed_sections",
+          "include_child_bookmarks",
+          "snap_to_grid",
+          "current_view",
+          "tour_completed",
+        ];
+        const out = {};
+        for (const [k, v] of Object.entries(body))
+          if (!known.includes(k)) out[k] = v;
+        return Object.keys(out).length ? JSON.stringify(out) : null;
+      })(),
     );
 }
 

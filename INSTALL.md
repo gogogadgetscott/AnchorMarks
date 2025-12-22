@@ -715,3 +715,9 @@ For more information, see:
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Development guidelines
 - [SECURITY.md](SECURITY.md) - Security best practices
 - [ROADMAP.md](ROADMAP.md) - Planned features
+
+### Note: Flexible user settings (settings_json)
+
+- The server will automatically add a `settings_json` column to the `user_settings` table at startup if it’s missing.
+- New preferences are stored in this JSON blob to avoid schema changes; existing named columns remain for compatibility.
+- No manual migration steps are required for this change.

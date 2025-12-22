@@ -201,6 +201,48 @@ function attachSettingsTabListeners(): void {
     });
   }
 
+  // Populate Tag Cloud controls with current state
+  const maxTagsInput = document.getElementById(
+    "tag-cloud-max-tags",
+  ) as HTMLInputElement | null;
+  if (maxTagsInput) {
+    maxTagsInput.value = String(state.tagCloudMaxTags || 120);
+    maxTagsInput.addEventListener("change", async () => {
+      const { saveSettings } = await import("@features/bookmarks/settings.ts");
+      const val = Math.max(
+        20,
+        Math.min(500, parseInt(maxTagsInput.value, 10) || 120),
+      );
+      state.setTagCloudMaxTags(val);
+      await saveSettings({ tag_cloud_max_tags: val });
+      if (state.currentView === "tag-cloud") {
+        const { renderTagCloud } =
+          await import("@features/bookmarks/tag-cloud.ts");
+        renderTagCloud();
+      }
+    });
+  }
+
+  const showAllToggle = document.getElementById(
+    "tag-cloud-default-show-all",
+  ) as HTMLInputElement | null;
+  if (showAllToggle) {
+    showAllToggle.checked = !!state.tagCloudDefaultShowAll;
+    showAllToggle.addEventListener("change", async () => {
+      const { saveSettings } = await import("@features/bookmarks/settings.ts");
+      const val = !!showAllToggle.checked;
+      state.setTagCloudDefaultShowAll(val);
+      await saveSettings({ tag_cloud_default_show_all: val ? 1 : 0 });
+      // Also set local preference to match default immediately
+      localStorage.setItem("anchormarks_tag_cloud_show_all", String(val));
+      if (state.currentView === "tag-cloud") {
+        const { renderTagCloud } =
+          await import("@features/bookmarks/tag-cloud.ts");
+        renderTagCloud();
+      }
+    });
+  }
+
   // Favicons toggle
   const faviconToggle = document.getElementById(
     "hide-favicons-toggle",

@@ -27,6 +27,14 @@ export async function loadSettings(): Promise<void> {
     state.setCollapsedSections(settings.collapsed_sections || []);
     state.setTourCompleted(settings.tour_completed || false);
 
+    // Tag Cloud settings
+    if (typeof settings.tag_cloud_max_tags === "number") {
+      state.setTagCloudMaxTags(settings.tag_cloud_max_tags);
+    }
+    if (typeof settings.tag_cloud_default_show_all !== "undefined") {
+      state.setTagCloudDefaultShowAll(!!settings.tag_cloud_default_show_all);
+    }
+
     // Load tag sort preference
     if (settings.tag_sort) {
       state.setFilterConfig({
