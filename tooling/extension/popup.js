@@ -91,11 +91,14 @@ function showConnectedView(status) {
   bookmarkCount.textContent = status.bookmarks || 0;
   folderCount.textContent = status.folders || 0;
 
-  // Get current tab info
+  // Get current tab info with error handling
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0]) {
       currentPage.textContent = tabs[0].title || tabs[0].url;
     }
+  }).catch((err) => {
+    // Silently handle errors when tabs are closed or unavailable
+    console.debug("Failed to query active tab:", err);
   });
 }
 
@@ -189,24 +192,28 @@ async function pushBrowserBookmarks() {
 // Add current page as bookmark
 async function addCurrentPage() {
   try {
-    const [tab] = await chrome.tabs.query({
+    const tabs = await chrome.tabs.query({
       active: true,
       currentWindow: true,
     });
-    if (!tab) return;
+    
+    if (!tabs || !tabs[0]) {
+      statusText.textContent = "No active tab found";
+      return;
+    }
 
     await api("/bookmarks", {
       method: "POST",
       body: JSON.stringify({
-        title: tab.title,
-        url: tab.url,
+        title: tabs[0].title,
+        url: tabs[0].url,
       }),
     });
 
     statusText.textContent = "Bookmark added!";
     await syncBookmarks();
-  } catch {
-    statusText.textContent = "Failed to add bookmark";
+  } catch (err) {
+    statusText.textContent = "Failed to add bookmark: " + err.message;
   }
 }
 

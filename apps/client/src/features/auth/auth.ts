@@ -15,7 +15,7 @@ import type { User } from "@types";
 
 // Auth form HTML templates
 const LOGIN_FORM_HTML = `
-  <form id="login-form" class="auth-form" autocomplete="on">
+  <form id="login-form" class="auth-form" method="post" autocomplete="on">
     <div class="form-group">
       <label for="login-email">Email</label>
       <input
@@ -53,7 +53,7 @@ const LOGIN_FORM_HTML = `
 `;
 
 const REGISTER_FORM_HTML = `
-  <form id="register-form" class="auth-form hidden" autocomplete="on">
+  <form id="register-form" class="auth-form hidden" method="post" autocomplete="on">
     <div class="form-group">
       <label for="register-email">Email</label>
       <input
@@ -104,6 +104,11 @@ export function showAuthScreen(): void {
     const formsContainer = document.getElementById("auth-forms-container");
     if (formsContainer && !document.getElementById("login-form")) {
       formsContainer.innerHTML = LOGIN_FORM_HTML + REGISTER_FORM_HTML;
+      
+      // Re-attach form listeners after injecting new forms
+      import("@features/ui/forms.ts").then(({ initFormListeners }) => {
+        initFormListeners();
+      });
     }
   }
   if (mainApp) mainApp.classList.add("hidden");
