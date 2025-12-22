@@ -11,7 +11,7 @@ import {
   hideServerStatusBanner,
 } from "@utils/error-handler.ts";
 import { logger } from "@utils/logger.ts";
-import type { User } from "@types.ts";
+import type { User } from "@types";
 
 // Show auth screen
 export function showAuthScreen(): void {

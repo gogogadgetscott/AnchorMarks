@@ -20,7 +20,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@types.ts": ["src/types.ts"],
+      "@types": ["src/types"],
+      "@types/*": ["src/types/*"],
       "@features/*": ["src/features/*"],
       "@services/*": ["src/services/*"],
       "@utils/*": ["src/utils/*"],

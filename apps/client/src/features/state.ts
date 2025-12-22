@@ -12,7 +12,7 @@ import {
   Tag,
   TourStep,
   Command,
-} from "../types";
+} from "@types";
 
 // API Configuration
 export const API_BASE = "/api";
