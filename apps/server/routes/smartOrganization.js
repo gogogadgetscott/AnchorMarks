@@ -20,8 +20,9 @@ function setupSmartOrganizationRoutes(
 
       if (!url)
         return res.status(400).json({ error: "URL parameter required" });
+      let urlObj;
       try {
-        new URL(url);
+        urlObj = new URL(url);
       } catch {
         return res.status(400).json({ error: "Invalid URL" });
       }
