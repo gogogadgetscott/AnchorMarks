@@ -228,9 +228,12 @@ export function updateUserInfo(): void {
     );
     const apiKeyValue = document.getElementById("api-key-value");
 
-    const initials = (state.currentUser.email || "U").charAt(0).toUpperCase();
+    // Use username if available, otherwise fall back to email
+    const displayName =
+      state.currentUser.username || state.currentUser.email || "User";
+    const initials = displayName.charAt(0).toUpperCase();
 
-    userNames.forEach((el) => (el.textContent = state.currentUser!.email));
+    userNames.forEach((el) => (el.textContent = displayName));
     userAvatars.forEach((el) => (el.textContent = initials));
     userAvatarsLarge.forEach((el) => (el.textContent = initials));
     if (apiKeyValue) apiKeyValue.textContent = state.currentUser.api_key || "";

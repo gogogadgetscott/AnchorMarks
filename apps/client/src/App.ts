@@ -116,7 +116,7 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.countId = "dashboard-view-name";
       headerConfig.rightContent = `
         ${Button("Add Widget", { id: "dashboard-add-widget-btn", variant: "secondary", icon: "plus", data: { action: "toggle-widget-picker" } })}
-        ${Button("", { id: "dashboard-layout-btn", variant: "icon", icon: "grid", title: "Layout Settings" })}
+        ${Button("", { id: "dashboard-layout-btn", variant: "icon", icon: "grid", title: "Layout Settings", data: { action: "toggle-layout-settings" } })}
       `;
       headerConfig.bulkActions = ["archive", "move", "tag", "delete"];
       break;
@@ -280,6 +280,9 @@ export async function initializeApp(): Promise<void> {
 
   updateUserInfo();
   await Promise.all([loadFolders(), loadBookmarks()]);
+
+  // Update header based on current view before rendering
+  await updateHeaderContent();
 
   if (state.currentView === "dashboard") {
     const { renderDashboard } =

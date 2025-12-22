@@ -218,7 +218,9 @@ function setupAuthRoutes(
     res.json({
       user: {
         id: req.user.id,
+        username: req.user.email, // Use email as username (no separate username field in DB)
         email: req.user.email,
+        role: req.user.role || "user",
         api_key: req.user.api_key,
       },
       csrfToken: req.cookies.csrfToken,

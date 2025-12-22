@@ -1853,11 +1853,20 @@ export function showLayoutSettings(): void {
     </div>
   `;
 
-  const dashboardHeader = document.getElementById("dashboard-header");
+  const headersContainer = document.getElementById("headers-container");
+  const mainHeader = document.getElementById("main-header");
 
-  if (dashboardHeader && dashboardHeader.style.display !== "none") {
-    dashboardHeader.style.position = "relative";
-    dashboardHeader.insertAdjacentElement("afterend", dropdown);
+  if (headersContainer) {
+    // Insert into headers container as a sibling
+    if (mainHeader && mainHeader.parentElement === headersContainer) {
+      mainHeader.insertAdjacentElement("afterend", dropdown);
+    } else {
+      headersContainer.appendChild(dropdown);
+    }
+  } else if (mainHeader && mainHeader.style.display !== "none") {
+    // Fallback: insert after main header
+    mainHeader.style.position = "relative";
+    mainHeader.insertAdjacentElement("afterend", dropdown);
   } else {
     document.body.appendChild(dropdown);
   }

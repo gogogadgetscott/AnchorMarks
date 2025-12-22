@@ -241,12 +241,14 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
           // Switch to dashboard first, then toggle fullscreen
           state.setCurrentView("dashboard");
           updateActiveNav();
-          import("@features/bookmarks/dashboard.ts").then(
-            ({ renderDashboard, toggleFullscreen }) => {
-              renderDashboard();
-              setTimeout(() => toggleFullscreen(), 100);
-            },
-          );
+          Promise.all([
+            import("@/App.ts"),
+            import("@features/bookmarks/dashboard.ts"),
+          ]).then(([appModule, dashboardModule]) => {
+            appModule.updateHeaderContent();
+            dashboardModule.renderDashboard();
+            setTimeout(() => dashboardModule.toggleFullscreen(), 100);
+          });
         }
       },
       icon: "⛶",

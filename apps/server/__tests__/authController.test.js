@@ -51,6 +51,8 @@ describe("Auth Controller", () => {
     const me = await agent.get("/api/auth/me").set("X-CSRF-Token", csrfToken);
     expect(me.status).toBe(200);
     expect(me.body.user.email).toBe(email);
+    expect(me.body.user.username).toBe(email); // username should equal email
+    expect(me.body.user.role).toBe("user"); // default role
   });
 
   it("logs out and invalidates session", async () => {

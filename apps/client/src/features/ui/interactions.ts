@@ -304,6 +304,12 @@ function initGlobalDelegation(): void {
           ({ toggleWidgetPicker }) => toggleWidgetPicker(),
         );
         break;
+      case "toggle-layout-settings":
+        e.stopPropagation();
+        import("@features/bookmarks/dashboard.ts").then(
+          ({ toggleLayoutSettings }) => toggleLayoutSettings(),
+        );
+        break;
       case "clear-folder-filter":
         state.setCurrentFolder(null);
         state.setCurrentCollection(null);

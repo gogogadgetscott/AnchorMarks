@@ -213,6 +213,10 @@ async function switchView(view: string): Promise<void> {
   state.setCurrentView(view);
   updateActiveNav();
 
+  // Update header content for the new view
+  const { updateHeaderContent } = await import("@/App.ts");
+  await updateHeaderContent();
+
   // Save current view to persist across refreshes
   const { saveSettings } = await import("@features/bookmarks/settings.ts");
   saveSettings({ current_view: view });
