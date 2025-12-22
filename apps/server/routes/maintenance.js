@@ -43,7 +43,7 @@ module.exports = function (db, authenticateToken) {
       });
 
       reqUrl.end();
-    } catch (err) {
+    } catch {
       if (responded) return;
       responded = true;
       res.json({ status: 0, ok: false, error: "Invalid URL" });

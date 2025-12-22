@@ -50,7 +50,6 @@ afterAll(() => {
 describe("Smart Organization API", () => {
   let agent;
   let csrfToken;
-  let userId;
 
   beforeAll(async () => {
     agent = request.agent(app);
@@ -64,7 +63,6 @@ describe("Smart Organization API", () => {
 
     expect(registerRes.status).toBe(200);
     csrfToken = registerRes.body.csrfToken;
-    userId = registerRes.body.user.id;
   });
 
   describe("POST /api/bookmarks - Setup test data", () => {

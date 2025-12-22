@@ -73,7 +73,7 @@ async function checkConnection() {
   try {
     const status = await api("/sync/status");
     showConnectedView(status);
-  } catch (err) {
+  } catch {
     showLoginView();
   }
 }
@@ -131,7 +131,7 @@ async function syncBookmarks() {
     bookmarkCount.textContent = status.bookmarks || 0;
     folderCount.textContent = status.folders || 0;
     statusText.textContent = "Synced successfully!";
-  } catch (err) {
+  } catch {
     statusText.textContent = "Sync failed";
   } finally {
     statusDot.classList.remove("syncing");
@@ -205,7 +205,7 @@ async function addCurrentPage() {
 
     statusText.textContent = "Bookmark added!";
     await syncBookmarks();
-  } catch (err) {
+  } catch {
     statusText.textContent = "Failed to add bookmark";
   }
 }

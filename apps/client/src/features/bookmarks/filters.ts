@@ -225,7 +225,10 @@ export async function showFilterDropdown(): Promise<void> {
 
     if (headersContainer) {
       // Insert into headers container as a sibling
-      if (bookmarksHeader && bookmarksHeader.parentElement === headersContainer) {
+      if (
+        bookmarksHeader &&
+        bookmarksHeader.parentElement === headersContainer
+      ) {
         bookmarksHeader.insertAdjacentElement("afterend", dropdown);
       } else {
         headersContainer.appendChild(dropdown);

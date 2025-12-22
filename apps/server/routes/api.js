@@ -363,7 +363,6 @@ function setupApiRoutes(app, db, helpers) {
 
   // AI tag suggestions
   const aiTags = require("../helpers/ai-tags");
-  const { isPrivateAddress } = require("../helpers/utils");
 
   app.get(
     "/api/tags/suggest-ai",
@@ -373,10 +372,9 @@ function setupApiRoutes(app, db, helpers) {
       if (!url)
         return res.status(400).json({ error: "URL parameter required" });
 
-      let urlObj;
       try {
-        urlObj = new URL(url);
-      } catch (e) {
+        new URL(url);
+      } catch {
         return res.status(400).json({ error: "Invalid URL" });
       }
 

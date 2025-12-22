@@ -35,7 +35,7 @@ async function isPrivateAddress(url) {
 
     const records = await dns.lookup(hostname, { all: true });
     return records.some((r) => isPrivateIp(r.address));
-  } catch (err) {
+  } catch {
     // If resolution fails, be conservative in production
     return process.env.NODE_ENV === "production";
   }
@@ -98,7 +98,7 @@ async function fetchFavicon(url, bookmarkId, db, FAVICONS_DIR, NODE_ENV) {
 
     faviconFetchQueue.set(domain, fetchPromise);
     return fetchPromise;
-  } catch (err) {
+  } catch {
     return null;
   }
 }

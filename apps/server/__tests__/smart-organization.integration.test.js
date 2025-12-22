@@ -97,7 +97,12 @@ describe("smart-organization.js - Integration Tests (DB-backed)", () => {
     });
 
     it("should return 0 when no bookmarks from domain exist", () => {
-      const score = smartOrg.getDomainScore(db, userId, "github.com", "javascript");
+      const score = smartOrg.getDomainScore(
+        db,
+        userId,
+        "github.com",
+        "javascript",
+      );
       expect(score).toBe(0);
     });
 
@@ -108,7 +113,12 @@ describe("smart-organization.js - Integration Tests (DB-backed)", () => {
         "INSERT INTO bookmarks (id, user_id, url, title) VALUES (?, ?, ?, ?)",
       ).run(bm1, userId, "https://github.com/test/repo1", "Test Repo 1");
 
-      const score = smartOrg.getDomainScore(db, userId, "github.com", "javascript");
+      const score = smartOrg.getDomainScore(
+        db,
+        userId,
+        "github.com",
+        "javascript",
+      );
       expect(score).toBe(0);
     });
 
@@ -131,7 +141,12 @@ describe("smart-organization.js - Integration Tests (DB-backed)", () => {
         "INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)",
       ).run(bm1, tag1);
 
-      const score = smartOrg.getDomainScore(db, userId, "github.com", "javascript");
+      const score = smartOrg.getDomainScore(
+        db,
+        userId,
+        "github.com",
+        "javascript",
+      );
       // frequency = 1/1 = 1.0, scale = min(1/100, 1.0) = 0.01
       expect(score).toBeCloseTo(0.01, 3);
     });
@@ -166,7 +181,12 @@ describe("smart-organization.js - Integration Tests (DB-backed)", () => {
         "INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)",
       ).run(bm2, tag1);
 
-      const score = smartOrg.getDomainScore(db, userId, "github.com", "javascript");
+      const score = smartOrg.getDomainScore(
+        db,
+        userId,
+        "github.com",
+        "javascript",
+      );
       // frequency = 2/3 ≈ 0.667, scale = min(3/100, 1.0) = 0.03
       expect(score).toBeCloseTo(0.02, 2);
     });
@@ -190,7 +210,12 @@ describe("smart-organization.js - Integration Tests (DB-backed)", () => {
         ).run(bmId, tag1);
       }
 
-      const score = smartOrg.getDomainScore(db, userId, "github.com", "javascript");
+      const score = smartOrg.getDomainScore(
+        db,
+        userId,
+        "github.com",
+        "javascript",
+      );
       // frequency = 100/100 = 1.0, scale = min(100/100, 1.0) = 1.0
       expect(score).toBeCloseTo(1.0, 2);
     });
@@ -220,8 +245,17 @@ describe("smart-organization.js - Integration Tests (DB-backed)", () => {
     });
 
     it("should handle errors gracefully", () => {
-      const badDb = { prepare: () => { throw new Error("DB error"); } };
-      const score = smartOrg.getDomainScore(badDb, userId, "github.com", "test");
+      const badDb = {
+        prepare: () => {
+          throw new Error("DB error");
+        },
+      };
+      const score = smartOrg.getDomainScore(
+        badDb,
+        userId,
+        "github.com",
+        "test",
+      );
       expect(score).toBe(0);
     });
   });
@@ -365,7 +399,11 @@ describe("smart-organization.js - Integration Tests (DB-backed)", () => {
     });
 
     it("should handle errors gracefully", () => {
-      const badDb = { prepare: () => { throw new Error("DB error"); } };
+      const badDb = {
+        prepare: () => {
+          throw new Error("DB error");
+        },
+      };
       const score = smartOrg.getActivityScore(badDb, userId, "test", 7);
       expect(score).toBe(0);
     });
@@ -389,7 +427,12 @@ describe("smart-organization.js - Integration Tests (DB-backed)", () => {
     });
 
     it("should return 0 when URL has no valid tokens", () => {
-      const score = smartOrg.getSimilarityScore(db, userId, "https://x.y/a/b", "test");
+      const score = smartOrg.getSimilarityScore(
+        db,
+        userId,
+        "https://x.y/a/b",
+        "test",
+      );
       expect(score).toBe(0);
     });
 
@@ -560,7 +603,11 @@ describe("smart-organization.js - Integration Tests (DB-backed)", () => {
     });
 
     it("should handle errors gracefully", () => {
-      const badDb = { prepare: () => { throw new Error("DB error"); } };
+      const badDb = {
+        prepare: () => {
+          throw new Error("DB error");
+        },
+      };
       const score = smartOrg.getSimilarityScore(
         badDb,
         userId,
@@ -591,12 +638,7 @@ describe("smart-organization.js - Integration Tests (DB-backed)", () => {
         const bmId = uuidv4();
         db.prepare(
           "INSERT INTO bookmarks (id, user_id, url, title, created_at) VALUES (?, ?, ?, ?, datetime('now'))",
-        ).run(
-          bmId,
-          userId,
-          `https://github.com/js/repo${i}`,
-          `JS Repo ${i}`,
-        );
+        ).run(bmId, userId, `https://github.com/js/repo${i}`, `JS Repo ${i}`);
         db.prepare(
           "INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)",
         ).run(bmId, tag1);
@@ -664,12 +706,7 @@ describe("smart-organization.js - Integration Tests (DB-backed)", () => {
         const bmId = uuidv4();
         db.prepare(
           "INSERT INTO bookmarks (id, user_id, url, title, created_at) VALUES (?, ?, ?, ?, datetime('now'))",
-        ).run(
-          bmId,
-          userId,
-          `https://python.org/doc${i}`,
-          `Python Doc ${i}`,
-        );
+        ).run(bmId, userId, `https://python.org/doc${i}`, `Python Doc ${i}`);
         db.prepare(
           "INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)",
         ).run(bmId, tag1);

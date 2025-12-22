@@ -22,7 +22,7 @@ function parseTagsDetailed(raw) {
   if (Array.isArray(raw)) return raw;
   try {
     return JSON.parse(raw);
-  } catch (err) {
+  } catch {
     return [];
   }
 }

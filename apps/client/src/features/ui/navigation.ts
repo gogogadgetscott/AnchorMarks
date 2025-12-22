@@ -7,6 +7,23 @@ import * as state from "@features/state.ts";
 import { updateActiveNav, closeModals } from "@utils/ui-helpers.ts";
 
 /**
+ * Attach sidebar toggle listener to dynamically rendered headers
+ * Should be called after header re-renders
+ */
+export function attachSidebarToggle(): void {
+  // Find any toggle-sidebar-btn-* button
+  const toggleBtn = document.querySelector('[id^="toggle-sidebar-btn-"]');
+  if (toggleBtn && !(toggleBtn as any)._sidebarListenerAttached) {
+    toggleBtn.addEventListener("click", async () => {
+      const { toggleSidebar } = await import("@features/bookmarks/settings.ts");
+      toggleSidebar();
+    });
+    // Mark as attached to prevent duplicate listeners
+    (toggleBtn as any)._sidebarListenerAttached = true;
+  }
+}
+
+/**
  * Initialize navigation-related event listeners
  */
 export function initNavigationListeners(): void {
@@ -15,11 +32,11 @@ export function initNavigationListeners(): void {
     item.addEventListener("click", async () => {
       const view = (item as HTMLElement).dataset.view || "all";
       state.setCurrentView(view);
-      
+
       // Update header content for the new view
       const { updateHeaderContent } = await import("@/App.ts");
       updateHeaderContent();
-      
+
       updateActiveNav();
 
       // Save view preference
@@ -57,6 +74,9 @@ export function initNavigationListeners(): void {
       toggleSidebar();
     });
   });
+
+  // Attach sidebar toggle for dynamically rendered headers
+  attachSidebarToggle();
 
   // Mobile sidebar backdrop
   document.getElementById("sidebar-backdrop")?.addEventListener("click", () => {

@@ -10,7 +10,7 @@ try {
   // Resolve relative to this file to match previous behavior
   const pkg = require(path.join(__dirname, "..", "..", "package.json"));
   version = (pkg && pkg.version) || "unknown";
-} catch (err) {
+} catch {
   // Fallback: leave version as 'unknown' and continue
   console.warn("package.json not found, version unknown");
 }
@@ -79,7 +79,7 @@ server.listen(config.PORT, config.HOST, () => {
   // Gather config info
   try {
     lines.push(`AnchorMarks v${version || "unknown"}`);
-  } catch (e) {
+  } catch {
     lines.push("AnchorMarks v(unknown)");
   }
   lines.push(`Server:                   ${serverUrl}`);
@@ -126,7 +126,7 @@ server.listen(config.PORT, config.HOST, () => {
     lines.push(
       `AI:                       ${aiProvider}${aiProvider !== "none" ? ` (${aiModel})` : ""}`,
     );
-  } catch (e) {
+  } catch {
     lines.push(`AI:                       (error reading config)`);
   }
 
@@ -136,7 +136,7 @@ server.listen(config.PORT, config.HOST, () => {
     if (Array.isArray(cors))
       lines.push(`CORS allowed origins:     ${cors.join(", ")}`);
     else lines.push(`CORS allowed origins:     ${String(cors)}`);
-  } catch (e) {
+  } catch {
     lines.push(`CORS allowed origins:     (invalid in production)`);
   }
 

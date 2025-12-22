@@ -1,6 +1,4 @@
 const { v4: uuidv4 } = require("uuid");
-const http = require("http");
-const https = require("https");
 const {
   ensureTagsExist,
   updateBookmarkTags,
@@ -14,7 +12,7 @@ function parseTagsDetailed(raw) {
   if (Array.isArray(raw)) return raw;
   try {
     return JSON.parse(raw);
-  } catch (err) {
+  } catch {
     return [];
   }
 }
@@ -179,10 +177,10 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
             .json({ error: "Cannot fetch metadata from private addresses" });
         const metadata = await fetchUrlMetadata(url);
         res.json(metadata);
-      } catch (err) {
+      } catch {
         try {
           res.json({ title: new URL(url).hostname, description: "", url });
-        } catch (e) {
+        } catch {
           res.status(500).json({ error: "Failed to fetch metadata" });
         }
       }

@@ -74,7 +74,7 @@ describe("smart-organization.js - Unit Tests", () => {
       );
       // URL tokenization keeps some slashes, resulting in tokens like "//github"
       expect(tokens).toContain("https");
-      expect(tokens.some(t => t.includes("github"))).toBe(true);
+      expect(tokens.some((t) => t.includes("github"))).toBe(true);
       // The tokenizer may not always split perfectly on all delimiters
       expect(tokens.length).toBeGreaterThan(0);
     });
@@ -88,7 +88,6 @@ describe("smart-organization.js - Unit Tests", () => {
 
     it("should deduplicate tokens", () => {
       const tokens = smartOrg.tokenizeText("test test test");
-      const uniqueTokens = [...new Set(tokens)];
       // tokenizeText doesn't deduplicate, so multiple "test" will appear
       expect(tokens.filter((t) => t === "test").length).toBe(3);
     });
@@ -152,9 +151,7 @@ describe("smart-organization.js - Unit Tests", () => {
 
     it("should match subdomain patterns (mdn.mozilla.org)", () => {
       // Test with the actual domain key in DOMAIN_CATEGORIES
-      const info = smartOrg.getDomainCategory(
-        "https://mdn.mozilla.org/docs",
-      );
+      const info = smartOrg.getDomainCategory("https://mdn.mozilla.org/docs");
       expect(info.category).toBe("documentation");
       expect(info.tags).toContain("mdn");
     });
@@ -177,7 +174,9 @@ describe("smart-organization.js - Unit Tests", () => {
     });
 
     it("should extract base domain name for unknown domains", () => {
-      const info = smartOrg.getDomainCategory("https://mysite.example.com/test");
+      const info = smartOrg.getDomainCategory(
+        "https://mysite.example.com/test",
+      );
       expect(info.tags.length).toBeGreaterThan(0);
       expect(info.tags[0]).toBe("mysite");
     });
@@ -209,9 +208,7 @@ describe("smart-organization.js - Unit Tests", () => {
       expect(azure.tags).toContain("azure");
 
       // The DOMAIN_CATEGORIES uses "gcp.google.com" not "cloud.google.com"
-      const gcp = smartOrg.getDomainCategory(
-        "https://gcp.google.com/compute",
-      );
+      const gcp = smartOrg.getDomainCategory("https://gcp.google.com/compute");
       expect(gcp.category).toBe("cloud");
       expect(gcp.tags).toContain("gcp");
     });

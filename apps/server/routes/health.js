@@ -1,11 +1,7 @@
 const statsModel = require("../models/stats");
 const bookmarkModel = require("../models/bookmark");
 
-function setupHealthRoutes(
-  app,
-  db,
-  { authenticateTokenMiddleware, fetchFaviconWrapper },
-) {
+function setupHealthRoutes(app, db, { authenticateTokenMiddleware }) {
   // Find duplicate bookmarks (same URL)
   app.get("/api/health/duplicates", authenticateTokenMiddleware, (req, res) => {
     try {
@@ -76,7 +72,7 @@ function setupHealthRoutes(
           try {
             const domain = new URL(u).hostname.replace("www.", "");
             domainCounts[domain] = (domainCounts[domain] || 0) + 1;
-          } catch (e) {}
+          } catch {}
         });
         const sorted = Object.entries(domainCounts)
           .sort((a, b) => b[1] - a[1])

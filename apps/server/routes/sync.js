@@ -30,7 +30,7 @@ function setupSyncRoutes(
               bm.url,
             );
             if (id) fetchFaviconWrapper(bm.url, id).catch(console.error);
-          } catch (e) {
+          } catch {
             // ignore
           }
         }

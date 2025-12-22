@@ -100,9 +100,7 @@ describe("utils.js - Unit Tests", () => {
       }));
 
       const { isPrivateAddress } = require("../helpers/utils");
-      await expect(isPrivateAddress("http://example.com")).resolves.toBe(
-        false,
-      );
+      await expect(isPrivateAddress("http://example.com")).resolves.toBe(false);
       jest.dontMock("dns");
     });
   });
@@ -184,9 +182,9 @@ describe("utils.js - Unit Tests", () => {
       }));
 
       const { isPrivateAddress } = require("../helpers/utils");
-      await expect(isPrivateAddress("https://internal.example.com")).resolves.toBe(
-        true,
-      );
+      await expect(
+        isPrivateAddress("https://internal.example.com"),
+      ).resolves.toBe(true);
 
       jest.dontMock("dns");
     });

@@ -14,7 +14,6 @@ const app = require("../app");
 
 let agent;
 let csrfToken;
-let apiKey;
 let bookmarkId;
 
 beforeAll(async () => {
@@ -27,7 +26,6 @@ beforeAll(async () => {
   const register = await agent.post("/api/auth/register").send(user);
   expect(register.status).toBe(200);
   csrfToken = register.body.csrfToken;
-  apiKey = register.body.user.api_key;
 });
 
 afterAll(() => {

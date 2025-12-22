@@ -1,10 +1,5 @@
 module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
-  const {
-    authenticateTokenMiddleware,
-    validateCsrfTokenMiddleware,
-    fetchFaviconWrapper,
-    config,
-  } = helpers;
+  const { authenticateTokenMiddleware, fetchFaviconWrapper, config } = helpers;
   const bookmarkModel = require("../models/bookmark");
   const tagHelpers = require("../helpers/tag-helpers");
   const { parseTagsDetailed } = require("../helpers/tags");
@@ -146,7 +141,7 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
         console.error("Metadata fetch error:", err.message);
         try {
           res.json({ title: new URL(url).hostname, description: "", url });
-        } catch (e) {
+        } catch {
           res
             .status(500)
             .json({ error: "Failed to fetch metadata", message: err.message });
@@ -158,12 +153,7 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
   app.put("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
     try {
       const fields = req.body;
-      const updated = bookmarkModel.updateBookmark(
-        db,
-        req.user.id,
-        req.params.id,
-        fields,
-      );
+      bookmarkModel.updateBookmark(db, req.user.id, req.params.id, fields);
 
       if (fields.tags !== undefined) {
         if (fields.tags && fields.tags.trim && fields.tags.trim()) {

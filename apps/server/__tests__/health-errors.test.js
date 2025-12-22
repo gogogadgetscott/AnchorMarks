@@ -1,7 +1,5 @@
 // tests for health route errors
 const request = require("supertest");
-const path = require("path");
-const fs = require("fs");
 
 process.env.NODE_ENV = "test";
 process.env.JWT_SECRET = "test-secret-key-health-errors";

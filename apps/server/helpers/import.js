@@ -1,7 +1,7 @@
 const { v4: uuidv4 } = require("uuid");
 const { parseTags, stringifyTags } = require("./tags");
 
-async function parseBookmarkHtml(db, html, userId, fetchFaviconWrapper) {
+async function parseBookmarkHtml(html) {
   const bookmarks = [];
   const folders = [];
 

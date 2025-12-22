@@ -1,4 +1,4 @@
-import { Header, Omnibar, Icon, Button } from "../components/index.ts";
+import { Header, Omnibar, Icon } from "../components/index.ts";
 import authScreen from "./fragments/auth-screen.html?raw";
 import sidebar from "./fragments/sidebar.html?raw";
 import mainContent from "./fragments/main-content.html?raw";

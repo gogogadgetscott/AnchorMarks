@@ -210,6 +210,10 @@ export async function updateHeaderContent(): Promise<void> {
   attachViewToggleListeners();
   initFilterDropdown();
   updateFilterButtonVisibility();
+
+  // Re-attach sidebar toggle listener
+  const { attachSidebarToggle } = await import("@features/ui/navigation.ts");
+  attachSidebarToggle();
 }
 
 /**
@@ -218,7 +222,9 @@ export async function updateHeaderContent(): Promise<void> {
 export async function regenerateApiKey(): Promise<void> {
   if (!confirm("Regenerate API key? Old keys will stop working.")) return;
   try {
-    const data = await api("/auth/regenerate-key", { method: "POST" });
+    const data = await api<{ api_key: string }>("/auth/regenerate-key", {
+      method: "POST",
+    });
     if (state.currentUser) state.currentUser.api_key = data.api_key;
     const apiKeyEl = document.getElementById("api-key-value");
     if (apiKeyEl) apiKeyEl.textContent = data.api_key;
@@ -239,7 +245,10 @@ export function copyApiKey(): void {
 export async function resetBookmarks(): Promise<void> {
   if (!confirm("Reset all bookmarks? This cannot be undone!")) return;
   try {
-    const data = await api("/settings/reset-bookmarks", { method: "POST" });
+    const data = await api<{ bookmarks_created: number }>(
+      "/settings/reset-bookmarks",
+      { method: "POST" },
+    );
     state.setCurrentFolder(null);
     state.setCurrentView("all");
     const viewTitle = document.getElementById("view-title");

@@ -11,7 +11,6 @@ process.env.CORS_ORIGIN = "http://localhost";
 
 const app = require("../app");
 
-let token;
 let csrfToken;
 let apiKey;
 let apiKeyBookmarkId;

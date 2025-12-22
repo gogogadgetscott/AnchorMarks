@@ -16,11 +16,11 @@ chrome.bookmarks.onCreated.addListener(async (id, bookmark) => {
   }
 });
 
-chrome.bookmarks.onRemoved.addListener(async (id, removeInfo) => {
+chrome.bookmarks.onRemoved.addListener(async (_id, _removeInfo) => {
   // Could implement delete sync here
 });
 
-chrome.bookmarks.onChanged.addListener(async (id, changeInfo) => {
+chrome.bookmarks.onChanged.addListener(async (id, _changeInfo) => {
   const config = await getConfig();
   if (!config.apiKey || !config.autoSync) return;
 

@@ -2,10 +2,8 @@ const { importJson } = require("../models/importExport");
 
 // Mock specific database responses
 const mockDb = () => {
-  const preparedStmts = {};
-
   const db = {
-    prepare: jest.fn((sql) => {
+    prepare: jest.fn(() => {
       // Return a mock statement
       return {
         run: jest.fn(),

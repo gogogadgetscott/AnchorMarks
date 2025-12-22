@@ -95,7 +95,6 @@ async function fetchUrlMetadata(url, redirectCount = 0) {
 
 function detectContentType(url) {
   try {
-    const urlLower = url.toLowerCase();
     const urlObj = new URL(url);
     const hostname = urlObj.hostname;
     const pathname = urlObj.pathname;
@@ -139,7 +138,7 @@ function detectContentType(url) {
     }
 
     return "link";
-  } catch (e) {
+  } catch {
     return "link";
   }
 }

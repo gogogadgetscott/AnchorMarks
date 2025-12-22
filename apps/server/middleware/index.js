@@ -174,7 +174,7 @@ function authenticateToken(db) {
       }
       req.authType = "jwt";
       next();
-    } catch (err) {
+    } catch {
       res.clearCookie("token");
       return res.status(403).json({ error: "Invalid token" });
     }

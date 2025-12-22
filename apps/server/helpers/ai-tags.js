@@ -1,5 +1,3 @@
-const smartOrg = require("./smart-organization");
-
 /**
  * AI Tag Suggestion Provider
  */

@@ -3,13 +3,7 @@ const tagHelpers = require("../helpers/tag-helpers");
 const tagParseHelpers = require("../helpers/tags");
 
 function setupTagsRoutes(app, db, { authenticateTokenMiddleware }) {
-  const {
-    parseTags,
-    mergeTags,
-    stringifyTags,
-    parseTagsDetailed,
-    normalizeTagColorOverrides,
-  } = tagParseHelpers;
+  const { parseTags, mergeTags, stringifyTags } = tagParseHelpers;
 
   app.get("/api/tags/suggest", authenticateTokenMiddleware, (req, res) => {
     const { url } = req.query;
@@ -106,7 +100,7 @@ function setupTagsRoutes(app, db, { authenticateTokenMiddleware }) {
         .slice(0, 15);
 
       res.json(suggestions);
-    } catch (err) {
+    } catch {
       res.json([]);
     }
   });

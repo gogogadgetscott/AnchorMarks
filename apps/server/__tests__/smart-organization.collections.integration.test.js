@@ -229,7 +229,9 @@ describe("smart-organization.js - Collections Integration Tests", () => {
       expect(devopsCluster).toBeDefined();
       expect(devopsCluster.name).toContain("Devops");
       expect(devopsCluster.tags).toContain("docker");
-      expect(devopsCluster.tags.some(t => t === "k8s" || t === "devops")).toBe(true);
+      expect(
+        devopsCluster.tags.some((t) => t === "k8s" || t === "devops"),
+      ).toBe(true);
     });
 
     it("should cluster language-related tags", () => {
@@ -439,7 +441,11 @@ describe("smart-organization.js - Collections Integration Tests", () => {
     });
 
     it("should handle errors gracefully", () => {
-      const badDb = { prepare: () => { throw new Error("DB error"); } };
+      const badDb = {
+        prepare: () => {
+          throw new Error("DB error");
+        },
+      };
       const clusters = smartOrg.getTagClusters(badDb, userId);
       expect(Array.isArray(clusters)).toBe(true);
       expect(clusters.length).toBe(0);
@@ -584,18 +590,14 @@ describe("smart-organization.js - Collections Integration Tests", () => {
         const bmId = uuidv4();
         db.prepare(
           "INSERT INTO bookmarks (id, user_id, url, title, click_count, created_at) VALUES (?, ?, ?, ?, ?, datetime('now', '-10 days'))",
-        ).run(
-          bmId,
-          userId,
-          `https://example.com/unread${i}`,
-          `Unread ${i}`,
-          0,
-        );
+        ).run(bmId, userId, `https://example.com/unread${i}`, `Unread ${i}`, 0);
       }
 
       const collections = smartOrg.getActivityCollections(db, userId);
 
-      const unreadCollection = collections.find((c) => c.name.includes("Unread"));
+      const unreadCollection = collections.find((c) =>
+        c.name.includes("Unread"),
+      );
       expect(unreadCollection).toBeDefined();
       expect(unreadCollection.type).toBe("activity");
       expect(unreadCollection.icon).toBe("eye-off");
@@ -615,7 +617,9 @@ describe("smart-organization.js - Collections Integration Tests", () => {
 
       const collections = smartOrg.getActivityCollections(db, userId);
 
-      const unreadCollection = collections.find((c) => c.name.includes("Unread"));
+      const unreadCollection = collections.find((c) =>
+        c.name.includes("Unread"),
+      );
       expect(unreadCollection).toBeUndefined();
     });
 
@@ -647,13 +651,7 @@ describe("smart-organization.js - Collections Integration Tests", () => {
         const bmId = uuidv4();
         db.prepare(
           "INSERT INTO bookmarks (id, user_id, url, title, click_count, created_at) VALUES (?, ?, ?, ?, ?, datetime('now', '-15 days'))",
-        ).run(
-          bmId,
-          userId,
-          `https://example.com/unread${i}`,
-          `Unread ${i}`,
-          0,
-        );
+        ).run(bmId, userId, `https://example.com/unread${i}`, `Unread ${i}`, 0);
       }
 
       const collections = smartOrg.getActivityCollections(db, userId);
@@ -702,7 +700,11 @@ describe("smart-organization.js - Collections Integration Tests", () => {
     });
 
     it("should handle errors gracefully", () => {
-      const badDb = { prepare: () => { throw new Error("DB error"); } };
+      const badDb = {
+        prepare: () => {
+          throw new Error("DB error");
+        },
+      };
       const collections = smartOrg.getActivityCollections(badDb, userId);
       expect(Array.isArray(collections)).toBe(true);
       expect(collections.length).toBe(0);
@@ -735,11 +737,15 @@ describe("smart-organization.js - Collections Integration Tests", () => {
 
       const collections = smartOrg.getActivityCollections(db, userId);
 
-      const recentCollection = collections.find((c) => c.name.includes("Recent"));
+      const recentCollection = collections.find((c) =>
+        c.name.includes("Recent"),
+      );
       const frequentCollection = collections.find((c) =>
         c.name.includes("Frequently"),
       );
-      const unreadCollection = collections.find((c) => c.name.includes("Unread"));
+      const unreadCollection = collections.find((c) =>
+        c.name.includes("Unread"),
+      );
 
       expect(recentCollection.bookmark_count).toBe(10);
       expect(frequentCollection.bookmark_count).toBe(7);

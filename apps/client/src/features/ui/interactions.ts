@@ -21,7 +21,7 @@ export function initInteractions(): void {
   initFaviconErrorHandling();
   initAuthTabListeners();
   initImportExportListeners();
-  
+
   // Directly attach user dropdown listeners as fallback
   attachUserDropdownDirectly();
 }
@@ -446,7 +446,7 @@ function toggleUserDropdown(): void {
   ) as HTMLElement | null;
   if (dropdown) {
     dropdown.classList.toggle("hidden");
-    
+
     if (!dropdown.classList.contains("hidden")) {
       // Dropdown is now open - add click-outside listener
       setTimeout(() => {
@@ -478,7 +478,7 @@ function closeUserDropdown(): void {
 function handleUserDropdownClickOutside(e: Event): void {
   const dropdown = document.querySelector(".user-dropdown-menu");
   const userAvatar = document.querySelector(".header-user-avatar-btn");
-  
+
   if (
     dropdown &&
     !dropdown.contains(e.target as Node) &&
@@ -504,9 +504,12 @@ function initFaviconErrorHandling(): void {
       const item = faviconRefreshQueue.shift();
       if (!item) continue;
       try {
-        const res = await api(`/bookmarks/${item.id}/refresh-favicon`, {
-          method: "POST",
-        });
+        const res = await api<{ favicon?: string }>(
+          `/bookmarks/${item.id}/refresh-favicon`,
+          {
+            method: "POST",
+          },
+        );
         if (res && res.favicon && item.target.parentElement) {
           const parent = item.target.parentElement;
           if (parent && parent.classList.contains("bookmark-favicon")) {

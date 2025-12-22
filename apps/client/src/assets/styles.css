@@ -647,12 +647,18 @@ body.sidebar-collapsed .sidebar-actions {
 
 body.sidebar-collapsed #sidebar-add-bookmark-btn {
   width: 56px;
+  height: 56px;
   padding: 0;
   justify-content: center;
+  align-items: center;
+  font-size: 0;
+  gap: 0;
 }
 
-body.sidebar-collapsed #sidebar-add-bookmark-btn span {
-  display: none;
+body.sidebar-collapsed #sidebar-add-bookmark-btn svg {
+  font-size: initial;
+  width: 24px;
+  height: 24px;
 }
 
 /* Nav items - center icons with tooltip support */
@@ -727,9 +733,71 @@ body.sidebar-collapsed .user-menu .user-avatar {
   font-size: 0.9rem;
 }
 
-/* Hide help link in collapsed state to save space */
-body.sidebar-collapsed .user-menu a[href="/help.html"] {
+body.sidebar-collapsed .sidebar-footer {
+  align-items: center;
+  border-top: 1px solid var(--border-color);
+  justify-content: center;
+  padding: 0.5rem;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Help link in collapsed state - show only icon with tooltip */
+body.sidebar-collapsed .sidebar-footer a[href="/help.html"] {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0 !important;
+  position: relative;
+  border: 1px solid var(--border-color) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.sidebar-collapsed .sidebar-footer a[href="/help.html"] span {
   display: none;
+}
+
+body.sidebar-collapsed .sidebar-footer a[href="/help.html"] svg {
+  width: 18px;
+  height: 18px;
+  margin: 0 !important;
+}
+
+body.sidebar-collapsed .sidebar-footer a[href="/help.html"]::after {
+  content: "Help & Docs";
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-color);
+  z-index: 1100;
+}
+
+body.sidebar-collapsed .sidebar-footer a[href="/help.html"]:hover::after {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* Settings button in collapsed state */
@@ -836,7 +904,7 @@ body.sidebar-collapsed .nav-section-header {
 
 .sidebar-header {
   padding: 0 1.5rem;
-  height: 80px;
+  height: 64px;
   display: flex;
   align-items: center;
   border-bottom: 1px solid var(--border-color);

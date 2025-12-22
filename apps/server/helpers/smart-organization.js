@@ -318,7 +318,7 @@ function getDomainStats(db, userId, domain) {
       )
       .all(userId, `%${domain}%`);
     return { domain, bookmarkCount, tagDistribution: distribution };
-  } catch (err) {
+  } catch {
     return { domain, bookmarkCount: 0, tagDistribution: {} };
   }
 }

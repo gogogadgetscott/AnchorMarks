@@ -8,32 +8,21 @@ require("dotenv").config({ path: _envPath, quiet: true });
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const http = require("http");
-const https = require("https");
 const fs = require("fs");
 const helmet = require("helmet");
-const smartOrg = require("./helpers/smart-organization");
-const aiTags = require("./helpers/ai-tags");
-const { v4: uuidv4 } = require("uuid");
 
 const config = require("./config");
 const { initializeDatabase, ensureDirectories } = require("./models/database");
 const { authenticateToken, validateCsrfToken } = require("./middleware/index");
 const { setupAuthRoutes } = require("./routes/auth");
 const { isPrivateAddress, fetchFavicon } = require("./helpers/utils.js");
-const {
-  ensureTagsExist,
-  updateBookmarkTags,
-  getUserTags,
-  getBookmarkTagsString,
-} = require("./helpers/tag-helpers");
 
 const app = express();
 config.validateSecurityConfig();
 
 // Initialize database
 const db = initializeDatabase(config.DB_PATH);
-const { FAVICONS_DIR, THUMBNAILS_DIR } = ensureDirectories();
+const { FAVICONS_DIR } = ensureDirectories();
 
 // Initialize security audit logging
 const {
@@ -63,7 +52,8 @@ const fetchFaviconWrapper = makeFetchFaviconWrapper(
   config.NODE_ENV,
 );
 
-const bg = createBackgroundJobs({
+// Background jobs initialization (runs automatically, returns job instance)
+createBackgroundJobs({
   db,
   ensureDirectories,
   fetchFavicon: fetchFaviconWrapper,
@@ -118,23 +108,18 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(rateLimiter);
 
-const dashboardModel = require("./models/dashboard");
-const bookmarkViewModel = require("./models/bookmarkView");
-const userSettingsModel = require("./models/userSettings");
-const smartCollectionsModel = require("./models/smartCollections");
-const syncModel = require("./models/sync");
-const importExportModel = require("./models/importExport");
-const quickSearchModel = require("./models/quickSearch");
-const statsModel = require("./models/stats");
-const bookmarkModel = require("./models/bookmark");
-const tagHelpersLocal = require("./helpers/tags");
-const {
-  parseTags,
-  mergeTags,
-  stringifyTags,
-  parseTagsDetailed,
-  normalizeTagColorOverrides,
-} = tagHelpersLocal;
+// Models are imported in individual route modules as needed
+// Keeping these commented out for reference:
+// const dashboardModel = require("./models/dashboard");
+// const bookmarkViewModel = require("./models/bookmarkView");
+// const userSettingsModel = require("./models/userSettings");
+// const smartCollectionsModel = require("./models/smartCollections");
+// const syncModel = require("./models/sync");
+// const importExportModel = require("./models/importExport");
+// const quickSearchModel = require("./models/quickSearch");
+// const statsModel = require("./models/stats");
+// const bookmarkModel = require("./models/bookmark");
+// const tagHelpersLocal = require("./helpers/tags");
 
 // Route groups are delegated to route modules under apps/server/routes/
 const setupDashboardRoutes = require("./routes/dashboard");
@@ -183,13 +168,8 @@ setupApiRoutes(app, db, {
   config,
 });
 
-const { fetchUrlMetadata, detectContentType } = require("./helpers/metadata");
-const {
-  parseHtmlMetadata,
-  decodeHtmlEntities,
-  generateBookmarkHtml,
-} = require("./helpers/html");
-const { parseBookmarkHtml } = require("./helpers/import");
+// Helper functions are imported in route modules as needed
+const { fetchUrlMetadata } = require("./helpers/metadata");
 
 // Route groups moved to dedicated modules
 const setupQuickSearchRoutes = require("./routes/quickSearch");
@@ -221,7 +201,7 @@ console.log(`Serving frontend from: ${staticDir} (${config.NODE_ENV} mode)`);
 app.use(
   "/favicons",
   express.static(path.join(__dirname, "public", "favicons"), {
-    setHeaders: (res, filePath) => {
+    setHeaders: (res, _filePath) => {
       // Force image content types for favicon directory - no HTML/SVG execution
       res.setHeader("Content-Type", "image/png");
       res.setHeader("X-Content-Type-Options", "nosniff");
@@ -231,7 +211,7 @@ app.use(
 app.use(
   "/thumbnails",
   express.static(path.join(__dirname, "public", "thumbnails"), {
-    setHeaders: (res, filePath) => {
+    setHeaders: (res, _filePath) => {
       // Force image content types for thumbnails directory
       res.setHeader("Content-Type", "image/webp");
       res.setHeader("X-Content-Type-Options", "nosniff");
