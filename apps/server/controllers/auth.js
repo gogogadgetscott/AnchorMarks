@@ -149,7 +149,16 @@ function setupAuthRoutes(
       // Log successful registration
       audit.register(userId, req, { email: normalizedEmail });
 
-      res.json({ user: { id: userId, email, api_key: apiKey }, csrfToken });
+      res.json({
+        user: {
+          id: userId,
+          username: email, // use email as username
+          email,
+          role: "user",
+          api_key: apiKey,
+        },
+        csrfToken,
+      });
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: "Server error" });
@@ -204,7 +213,13 @@ function setupAuthRoutes(
       audit.loginSuccess(user.id, req, { email: user.email });
 
       res.json({
-        user: { id: user.id, email: user.email, api_key: user.api_key },
+        user: {
+          id: user.id,
+          username: user.email, // use email as username
+          email: user.email,
+          role: user.role || "user",
+          api_key: user.api_key,
+        },
         csrfToken,
       });
     } catch (err) {

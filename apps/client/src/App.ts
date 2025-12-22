@@ -19,7 +19,6 @@ import { api } from "@services/api.ts";
 
 // Import utilities
 import { escapeHtml, getHostname, parseTagInput } from "@utils/index.ts";
-import { logger } from "@utils/logger.ts";
 
 // Import UI helpers
 import {
@@ -204,6 +203,12 @@ export async function updateHeaderContent(): Promise<void> {
 
   // Render the updated header
   headersContainer.innerHTML = Header(headerConfig);
+
+  // Ensure user profile reflects the logged-in user after re-render
+  if (state.currentUser) {
+    const { updateUserInfo } = await import("@features/auth/auth.ts");
+    updateUserInfo();
+  }
 
   // Re-attach listeners after header update
   attachViewToggleListeners();

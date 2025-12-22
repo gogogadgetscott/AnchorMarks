@@ -138,6 +138,8 @@ export async function login(email: string, password: string): Promise<boolean> {
     state.setCsrfToken(data.csrfToken);
     state.setCurrentUser(data.user);
     state.setIsAuthenticated(true);
+    // Refresh header/profile display immediately after login
+    updateUserInfo();
     showMainApp();
     showToast("Welcome back!", "success");
     return true;
