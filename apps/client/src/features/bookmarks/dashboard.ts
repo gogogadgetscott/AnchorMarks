@@ -159,18 +159,31 @@ async function showViewsMenu(): Promise<void> {
   const dropdown = document.createElement("div");
   dropdown.id = "views-dropdown";
   dropdown.className = "dropdown-menu";
-  dropdown.style.cssText = `
-        position: absolute;
-        top: 3rem;
-        right: 1rem;
-        background: var(--bg-secondary);
-        border: 1px solid var(--border-color);
-        border-radius: 6px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        z-index: 50;
-        min-width: 200px;
-        padding: 0.5rem;
+  
+  // Position dropdown below the Views button
+  const viewsBtn = document.getElementById("dashboard-views-btn");
+  if (viewsBtn) {
+    const rect = viewsBtn.getBoundingClientRect();
+    // Center the dropdown under the button
+    const dropdownWidth = 240;
+    const left = Math.max(10, rect.left + rect.width / 2 - dropdownWidth / 2);
+    dropdown.style.cssText = `
+      position: fixed;
+      top: ${rect.bottom + 8}px;
+      left: ${left}px;
+      z-index: 1000;
+      min-width: 240px;
     `;
+  } else {
+    // Fallback positioning
+    dropdown.style.cssText = `
+      position: fixed;
+      top: 5rem;
+      right: 1rem;
+      z-index: 1000;
+      min-width: 240px;
+    `;
+  }
 
   let html = `
         <div style="font-weight:600;padding:0.5rem;border-bottom:1px solid var(--border-color);margin-bottom:0.5rem">
