@@ -9,7 +9,7 @@ import { api } from "@services/api.ts";
 // Load settings from server
 export async function loadSettings(): Promise<void> {
   try {
-    const settings = await api("/settings");
+    const settings = await api<any>("/settings");
     state.setViewMode(settings.view_mode || "grid");
     state.setHideFavicons(settings.hide_favicons || false);
     state.setHideSidebar(settings.hide_sidebar || false);
@@ -61,13 +61,17 @@ export async function loadSettings(): Promise<void> {
       settings.theme || localStorage.getItem("anchormarks_theme") || "dark";
     setTheme(theme, false); // false = don't save to server again since we just loaded it
 
-    // Apply sidebar collapsed state from localStorage
-    const sidebarCollapsed =
-      localStorage.getItem("anchormarks_sidebar_collapsed") === "true";
+    // Apply sidebar collapsed state - use server setting with localStorage fallback
+    let sidebarCollapsed = settings.hide_sidebar
+      ? true
+      : localStorage.getItem("anchormarks_sidebar_collapsed") === "true";
     // Persist desktop collapsed state only; ignore on mobile
     if (sidebarCollapsed && window.innerWidth > 768) {
       document.body.classList.add("sidebar-collapsed");
+    } else if (!sidebarCollapsed && window.innerWidth > 768) {
+      document.body.classList.remove("sidebar-collapsed");
     }
+    localStorage.setItem("anchormarks_sidebar_collapsed", String(sidebarCollapsed));
 
     // Apply collapsed sections
     state.collapsedSections.forEach((sectionId) => {
@@ -204,6 +208,9 @@ export function toggleSidebar(): void {
     // On desktop, toggle the collapsed state
     const isCollapsed = document.body.classList.toggle("sidebar-collapsed");
     localStorage.setItem("anchormarks_sidebar_collapsed", String(isCollapsed));
+    state.setHideSidebar(isCollapsed);
+    // Also save to server settings for cross-device sync
+    saveSettings({ hide_sidebar: isCollapsed ? 1 : 0 });
   }
 }
 
