@@ -55,9 +55,27 @@
                   >
                 </li>
                 <li>
-                  <a href="#archiving"
+                  <a href="#favorites"
+                    ><span class="nav-icon" aria-hidden="true">⭐</span
+                    ><span class="nav-text">Favorites</span></a
+                  >
+                </li>
+                <li>
+                  <a href="#recent"
+                    ><span class="nav-icon" aria-hidden="true">⏱️</span
+                    ><span class="nav-text">Recent</span></a
+                  >
+                </li>
+                <li>
+                  <a href="#archived"
                     ><span class="nav-icon" aria-hidden="true">📦</span
-                    ><span class="nav-text">Archiving</span></a
+                    ><span class="nav-text">Archived</span></a
+                  >
+                </li>
+                <li>
+                  <a href="#tag-cloud"
+                    ><span class="nav-icon" aria-hidden="true">☁️</span
+                    ><span class="nav-text">Tag Cloud</span></a
                   >
                 </li>
                 <li>
@@ -82,12 +100,6 @@
                   <a href="#tags"
                     ><span class="nav-icon" aria-hidden="true">🏷️</span
                     ><span class="nav-text">Tags</span></a
-                  >
-                </li>
-                <li>
-                  <a href="#tag-cloud"
-                    ><span class="nav-icon" aria-hidden="true">☁️</span
-                    ><span class="nav-text">Tag Cloud</span></a
                   >
                 </li>
                 <li>
@@ -439,6 +451,121 @@
               Recent, and Archived).
             </div>
 
+            <h3 class="help-anchor" id="dashboard">
+              <span class="section-icon" aria-hidden="true">📊</span>Dashboard
+            </h3>
+            <p class="help-at-a-glance">
+              <span class="callout-icon" aria-hidden="true">👁️</span
+              ><strong>At a glance:</strong> The dashboard is a configurable
+              home screen that can group bookmarks by folders or tags using
+              draggable widgets.
+            </p>
+
+            <h4>Adding Widgets</h4>
+            <ul>
+              <li>
+                <strong>Add Widget Button:</strong> Click "Add Widget" in the
+                dashboard header to open the widget picker dropdown.
+              </li>
+              <li>
+                <strong>Widget Picker:</strong> Shows folders on the left and
+                tags on the right. Only folders/tags with bookmarks are shown.
+              </li>
+              <li>
+                <strong>Click to Add:</strong> Click any folder or tag to add it
+                as a widget in the center of the dashboard.
+              </li>
+              <li>
+                <strong>Drag & Drop:</strong> Drag folders or tags from the
+                widget picker to place them exactly where you want on the
+                dashboard.
+              </li>
+              <li>
+                <strong>Pin Feature:</strong> Pin the widget picker open to add
+                multiple widgets without it closing each time.
+              </li>
+              <li>
+                <strong>Already Added:</strong> Widgets already on the dashboard
+                show a checkmark (✓) and cannot be added again.
+              </li>
+            </ul>
+
+            <h4>Managing Widgets</h4>
+            <ul>
+              <li>
+                <strong>Drag:</strong> Click and drag the widget header to move
+                it anywhere on the dashboard.
+              </li>
+              <li>
+                <strong>Resize:</strong> Drag the resize handle in the
+                bottom-right corner to adjust widget size.
+              </li>
+              <li>
+                <strong>Remove:</strong> Click the × button in the widget header
+                to remove it from the dashboard.
+              </li>
+              <li>
+                <strong>Filter:</strong> Use the search box in each widget to
+                filter bookmarks within that widget.
+              </li>
+            </ul>
+
+            <h4 id="widget-options">Widget Options Menu</h4>
+            <p>
+              Each folder and tag widget has an
+              <strong>options menu</strong> (⋮) in the header that provides
+              quick actions for that widget's bookmarks.
+            </p>
+            <div class="help-screenshot">
+              <img
+                class="doc-image"
+                src="images/widget_options_menu.png"
+                alt="Widget options menu showing sort, add, open all, and color options"
+                loading="lazy"
+              />
+            </div>
+            <ul>
+              <li>
+                <strong>Sort A-Z:</strong> Alphabetically sort bookmarks in this
+                widget by title (ascending).
+              </li>
+              <li>
+                <strong>Sort Z-A:</strong> Reverse alphabetical sort
+                (descending).
+              </li>
+              <li>
+                <strong>Add Bookmark:</strong> Opens the Add Bookmark modal with
+                the widget's folder or tag pre-filled, making it easy to add new
+                bookmarks to this specific location.
+              </li>
+              <li>
+                <strong>Open All:</strong> Opens all bookmarks in the widget in
+                new browser tabs. A confirmation dialog appears if there are
+                more than 5 bookmarks.
+                <em
+                  >Note: you may need to allow popups for your browser if only
+                  one tab opens.</em
+                >
+              </li>
+              <li>
+                <strong>Show in Bookmarks:</strong> Navigates to the Bookmarks
+                view filtered to show only this folder's or tag's bookmarks.
+                Great for editing multiple bookmarks or seeing them in a
+                different view.
+              </li>
+              <li>
+                <strong>Change Color:</strong> Opens a color picker to customize
+                the widget's header color. Pick from 12 vibrant colors to
+                visually organize your dashboard.
+              </li>
+            </ul>
+            <div class="tip-box">
+              <span class="callout-icon" aria-hidden="true">💡</span
+              ><strong>Tip:</strong> Sort settings are saved per-widget, so you
+              can have one widget sorted A-Z and another sorted by most
+              recent—each widget remembers its own sort preference.
+            </div>
+
             <h3 class="help-anchor" id="bookmarks">
               <span class="section-icon" aria-hidden="true">🔖</span>Getting
               Started → Advanced Features (Bookmarks)
@@ -502,8 +629,55 @@
               </li>
             </ul>
 
-            <h3 class="help-anchor" id="archiving">
-              <span class="section-icon" aria-hidden="true">📦</span>Archiving
+            
+            <h3 class="help-anchor" id="favorites">
+              <span class="section-icon" aria-hidden="true">⭐</span>Favorites
+            </h3>
+            <p>
+              Toggle the star (⭐) on any bookmark card to add or remove it from
+              Favorites. Favorite bookmarks appear in the sidebar's Favorites
+              view and update the count badge instantly.
+            </p>
+            <ul>
+              <li>
+                <strong>One-click access:</strong> Use the sidebar Favorites view
+                for a focused list of your starred items.
+              </li>
+              <li>
+                <strong>Badge updates:</strong> The sidebar count refreshes as
+                soon as you star or unstar a bookmark.
+              </li>
+              <li>
+                <strong>Bulk star/unstar:</strong> Enter Selection Mode to star
+                or unstar multiple bookmarks at once.
+              </li>
+            </ul>
+
+            <h3 class="help-anchor" id="recent">
+              <span class="section-icon" aria-hidden="true">⏱️</span>Recent
+            </h3>
+            <p>
+              The Recent view lists your newest or recently updated bookmarks
+              first. Use it to review fresh imports, continue reading, or pick
+              up where you left off after edits.
+            </p>
+            <ul>
+              <li>
+                <strong>Auto-sorted:</strong> New additions and edits bubble to
+                the top so you can quickly revisit them.
+              </li>
+              <li>
+                <strong>Great for reviews:</strong> Scan what you just saved or
+                modified without adjusting filters.
+              </li>
+              <li>
+                <strong>Works with filters:</strong> Combine with search or tag
+                filters for a tighter recent list.
+              </li>
+            </ul>
+
+            <h3 class="help-anchor" id="archived">
+              <span class="section-icon" aria-hidden="true">📦</span>Archived
             </h3>
             <p>
               Archive bookmarks you don't need immediately but want to keep.
@@ -526,7 +700,66 @@
               </li>
             </ul>
 
-            <h4 id="bookmark-colors">Bookmark Colors</h4>
+            <h3 class="help-anchor" id="tag-cloud">
+              <span class="section-icon" aria-hidden="true">☁️</span>Tag Cloud
+            </h3>
+            <p class="help-at-a-glance">
+              <span class="callout-icon" aria-hidden="true">👁️</span
+              ><strong>At a glance:</strong> The Tag Cloud is an interactive
+              visualization that displays all your tags sized by their usage
+              frequency, making it easy to see your most-used tags at a glance
+              and quickly filter bookmarks.
+            </p>
+            <div class="help-screenshot">
+              <img
+                class="doc-image"
+                src="images/tag_cloud.png"
+                alt="Tag Cloud view showing colorful tags sized by usage frequency"
+                loading="lazy"
+              />
+            </div>
+            <h4>Accessing the Tag Cloud</h4>
+            <ul>
+              <li>
+                <strong>Sidebar:</strong> Click "Tag Cloud" in the sidebar
+                navigation (below Recent).
+              </li>
+              <li>
+                <strong>Keyboard shortcut:</strong> Press
+                <kbd>Ctrl+Shift+T</kbd> / <kbd>Cmd+Shift+T</kbd> to open the Tag
+                Cloud instantly.
+              </li>
+              <li>
+                <strong>Quick Launch:</strong> Open Quick Launch
+                (<kbd>Ctrl+Shift+P</kbd>) and search for "tag cloud".
+              </li>
+            </ul>
+            <h4>Features</h4>
+            <ul>
+              <li>
+                <strong>Size by frequency:</strong> More frequently used tags
+                appear larger, while less-used tags appear smaller. This uses a
+                logarithmic scale for better visual distribution.
+              </li>
+              <li>
+                <strong>Vibrant colors:</strong> Each tag gets a unique color
+                from a curated palette of modern colors (or uses the tag's
+                custom color if set in Settings → Tags).
+              </li>
+              <li>
+                <strong>Animated entrance:</strong> Tags animate in with gentle
+                scaling and fading so the cloud feels lively yet smooth.
+              </li>
+              <li>
+                <strong>Clickable tags:</strong> Click any tag to instantly
+                filter your bookmark view by that tag.
+              </li>
+              <li>
+                <strong>Responsive layout:</strong> Cloud reflows fluidly for
+                both desktop and mobile.
+              </li>
+            </ul>
+<h4 id="bookmark-colors">Bookmark Colors</h4>
             <p>
               Assign a custom color to any bookmark for visual organization.
               Colors appear as a vibrant left border accent and subtle
@@ -768,84 +1001,7 @@
               <code>🟣 personal</code>.
             </div>
 
-            <h3 class="help-anchor" id="tag-cloud">
-              <span class="section-icon" aria-hidden="true">☁️</span>Tag Cloud
-            </h3>
-            <p class="help-at-a-glance">
-              <span class="callout-icon" aria-hidden="true">👁️</span
-              ><strong>At a glance:</strong> The Tag Cloud is an interactive
-              visualization that displays all your tags sized by their usage
-              frequency, making it easy to see your most-used tags at a glance
-              and quickly filter bookmarks.
-            </p>
-            <div class="help-screenshot">
-              <img
-                class="doc-image"
-                src="images/tag_cloud.png"
-                alt="Tag Cloud view showing colorful tags sized by usage frequency"
-                loading="lazy"
-              />
-            </div>
-            <h4>Accessing the Tag Cloud</h4>
-            <ul>
-              <li>
-                <strong>Sidebar:</strong> Click "Tag Cloud" in the sidebar
-                navigation (below Recent).
-              </li>
-              <li>
-                <strong>Keyboard shortcut:</strong> Press
-                <kbd>Ctrl+Shift+T</kbd> / <kbd>Cmd+Shift+T</kbd> to open the Tag
-                Cloud instantly.
-              </li>
-              <li>
-                <strong>Quick Launch:</strong> Open Quick Launch
-                (<kbd>Ctrl+Shift+P</kbd>) and search for "tag cloud".
-              </li>
-            </ul>
-            <h4>Features</h4>
-            <ul>
-              <li>
-                <strong>Size by frequency:</strong> More frequently used tags
-                appear larger, while less-used tags appear smaller. This uses a
-                logarithmic scale for better visual distribution.
-              </li>
-              <li>
-                <strong>Vibrant colors:</strong> Each tag gets a unique color
-                from a curated palette of modern colors (or uses the tag's
-                custom color if set in Settings → Tags).
-              </li>
-              <li>
-                <strong>Animated entrance:</strong> Tags animate in with
-                staggered timing for a delightful visual effect.
-              </li>
-              <li>
-                <strong>Stats header:</strong> See the total number of tags and
-                combined usage count at the top.
-              </li>
-              <li>
-                <strong>Legend:</strong> A visual guide at the bottom shows how
-                size relates to usage frequency.
-              </li>
-            </ul>
-            <h4>Interacting with Tags</h4>
-            <ul>
-              <li>
-                <strong>Click to filter:</strong> Click any tag to navigate to
-                the Bookmarks view filtered by that tag.
-              </li>
-              <li>
-                <strong>Hover for details:</strong> Hover over a tag to see the
-                exact bookmark count in a tooltip.
-              </li>
-            </ul>
-            <div class="tip-box">
-              <strong>Pro tip:</strong> Use the Tag Cloud to discover less-used
-              tags that might need cleanup, or to quickly jump to your most
-              frequently tagged content. It's also a great visual way to
-              understand your bookmark organization at a glance.
-            </div>
-
-            <h3 class="help-anchor" id="search">
+            <h3 class="help-anchor" <h3 class="help-anchor" id="search">
               <span class="section-icon" aria-hidden="true">🔎</span>Search
               &amp; Filter
             </h3>
@@ -1043,121 +1199,6 @@
             </ul>
             <div class="code-block">
               Score = (Domain × 35%) + (Activity × 40%) + (Similarity × 25%)
-            </div>
-
-            <h3 class="help-anchor" id="dashboard">
-              <span class="section-icon" aria-hidden="true">📊</span>Dashboard
-            </h3>
-            <p class="help-at-a-glance">
-              <span class="callout-icon" aria-hidden="true">👁️</span
-              ><strong>At a glance:</strong> The dashboard is a configurable
-              home screen that can group bookmarks by folders or tags using
-              draggable widgets.
-            </p>
-
-            <h4>Adding Widgets</h4>
-            <ul>
-              <li>
-                <strong>Add Widget Button:</strong> Click "Add Widget" in the
-                dashboard header to open the widget picker dropdown.
-              </li>
-              <li>
-                <strong>Widget Picker:</strong> Shows folders on the left and
-                tags on the right. Only folders/tags with bookmarks are shown.
-              </li>
-              <li>
-                <strong>Click to Add:</strong> Click any folder or tag to add it
-                as a widget in the center of the dashboard.
-              </li>
-              <li>
-                <strong>Drag & Drop:</strong> Drag folders or tags from the
-                widget picker to place them exactly where you want on the
-                dashboard.
-              </li>
-              <li>
-                <strong>Pin Feature:</strong> Pin the widget picker open to add
-                multiple widgets without it closing each time.
-              </li>
-              <li>
-                <strong>Already Added:</strong> Widgets already on the dashboard
-                show a checkmark (✓) and cannot be added again.
-              </li>
-            </ul>
-
-            <h4>Managing Widgets</h4>
-            <ul>
-              <li>
-                <strong>Drag:</strong> Click and drag the widget header to move
-                it anywhere on the dashboard.
-              </li>
-              <li>
-                <strong>Resize:</strong> Drag the resize handle in the
-                bottom-right corner to adjust widget size.
-              </li>
-              <li>
-                <strong>Remove:</strong> Click the × button in the widget header
-                to remove it from the dashboard.
-              </li>
-              <li>
-                <strong>Filter:</strong> Use the search box in each widget to
-                filter bookmarks within that widget.
-              </li>
-            </ul>
-
-            <h4 id="widget-options">Widget Options Menu</h4>
-            <p>
-              Each folder and tag widget has an
-              <strong>options menu</strong> (⋮) in the header that provides
-              quick actions for that widget's bookmarks.
-            </p>
-            <div class="help-screenshot">
-              <img
-                class="doc-image"
-                src="images/widget_options_menu.png"
-                alt="Widget options menu showing sort, add, open all, and color options"
-                loading="lazy"
-              />
-            </div>
-            <ul>
-              <li>
-                <strong>Sort A-Z:</strong> Alphabetically sort bookmarks in this
-                widget by title (ascending).
-              </li>
-              <li>
-                <strong>Sort Z-A:</strong> Reverse alphabetical sort
-                (descending).
-              </li>
-              <li>
-                <strong>Add Bookmark:</strong> Opens the Add Bookmark modal with
-                the widget's folder or tag pre-filled, making it easy to add new
-                bookmarks to this specific location.
-              </li>
-              <li>
-                <strong>Open All:</strong> Opens all bookmarks in the widget in
-                new browser tabs. A confirmation dialog appears if there are
-                more than 5 bookmarks.
-                <em
-                  >Note: you may need to allow popups for your browser if only
-                  one tab opens.</em
-                >
-              </li>
-              <li>
-                <strong>Show in Bookmarks:</strong> Navigates to the Bookmarks
-                view filtered to show only this folder's or tag's bookmarks.
-                Great for editing multiple bookmarks or seeing them in a
-                different view.
-              </li>
-              <li>
-                <strong>Change Color:</strong> Opens a color picker to customize
-                the widget's header color. Pick from 12 vibrant colors to
-                visually organize your dashboard.
-              </li>
-            </ul>
-            <div class="tip-box">
-              <span class="callout-icon" aria-hidden="true">💡</span
-              ><strong>Tip:</strong> Sort settings are saved per-widget, so you
-              can have one widget sorted A-Z and another sorted by most
-              recent—each widget remembers its own sort preference.
             </div>
 
             <h3 class="help-anchor" id="tag-analytics">
@@ -2112,7 +2153,7 @@
             <p>
               <img
                 class="doc-image"
-                src="diagrams/auth-csrf-sequence.svg"
+                src="images/auth-csrf-sequence.svg"
                 alt="Auth and CSRF flow sequence diagram"
               />
             </p>
@@ -2496,4 +2537,5 @@
       });
     })();
   </script>
+  </body>
 </html>
