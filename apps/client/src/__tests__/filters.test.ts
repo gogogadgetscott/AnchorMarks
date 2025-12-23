@@ -234,6 +234,15 @@ describe("Filter Dropdown Module", () => {
 
     it("should count search term in active filters", () => {
 
+      // Explicitly reset all filter state for this test
+      state.setFilterConfig({
+        tags: [],
+        sort: "recently_added",
+        tagMode: "OR",
+        tagSort: "count_desc",
+      });
+      state.setCurrentFolder(null);
+      state.setCurrentCollection(null);
       state.setCurrentView("folder");
       const searchInput = document.getElementById("search-input") as HTMLInputElement;
       searchInput.value = "search term";
