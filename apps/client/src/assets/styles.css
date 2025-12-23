@@ -2233,6 +2233,7 @@ body.sidebar-collapsed .nav-section-header {
   display: flex;
   flex-direction: column;
   height: 100%;
+  contain: layout style paint;
 }
 
 .bookmark-card.selected {

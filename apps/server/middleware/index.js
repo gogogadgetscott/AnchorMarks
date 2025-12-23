@@ -202,28 +202,22 @@ function validateCsrfToken(db) {
     const sessionCsrf = req.cookies.csrfToken;
 
     if (!csrfToken) {
-      return res
-        .status(403)
-        .json({
-          error:
-            "Missing X-CSRF-Token header. Please include the CSRF token in your request headers.",
-        });
+      return res.status(403).json({
+        error:
+          "Missing X-CSRF-Token header. Please include the CSRF token in your request headers.",
+      });
     }
     if (!sessionCsrf) {
-      return res
-        .status(403)
-        .json({
-          error:
-            "Missing CSRF cookie. Please log in again to obtain a new CSRF token.",
-        });
+      return res.status(403).json({
+        error:
+          "Missing CSRF cookie. Please log in again to obtain a new CSRF token.",
+      });
     }
     if (csrfToken !== sessionCsrf) {
-      return res
-        .status(403)
-        .json({
-          error:
-            "CSRF token mismatch. Please refresh the page or re-authenticate.",
-        });
+      return res.status(403).json({
+        error:
+          "CSRF token mismatch. Please refresh the page or re-authenticate.",
+      });
     }
     next();
   };
