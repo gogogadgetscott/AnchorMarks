@@ -1,5 +1,7 @@
 // Save settings to server
-export async function saveSettings(updates: Record<string, any>): Promise<void> {
+export async function saveSettings(
+  updates: Record<string, any>,
+): Promise<void> {
   try {
     await api("/settings", {
       method: "PUT",

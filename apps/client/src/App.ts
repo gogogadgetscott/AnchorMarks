@@ -97,8 +97,7 @@ export function attachViewToggleListeners(): void {
  * This dynamically renders the header without fully re-rendering
  */
 export async function updateHeaderContent(): Promise<void> {
-  const { Header, Omnibar, Icon, Button } =
-    await import("@components/index.ts");
+  const { Omnibar, Icon, Button } = await import("@components/index.ts");
   const headersContainer = document.getElementById("headers-container");
   if (!headersContainer) return;
 
@@ -112,21 +111,19 @@ export async function updateHeaderContent(): Promise<void> {
   switch (state.currentView) {
     case "dashboard":
       headerConfig.title = "Dashboard";
-      case "dashboard":
-        headerConfig.title = "Dashboard";
-        headerConfig.countId = "dashboard-view-name";
-        headerConfig.rightContent = `
-          ${Button("Add Widget", { id: "dashboard-add-widget-btn", variant: "secondary", icon: "plus", data: { action: "toggle-widget-picker" } })}
-          ${Button("", { id: "dashboard-layout-btn", variant: "icon", icon: "grid", title: "Layout Settings", data: { action: "toggle-layout-settings" } })}
-        `;
-        headerConfig.bulkActions = ["archive", "move", "tag", "delete"];
-        break;
+      headerConfig.countId = "dashboard-view-name";
+      headerConfig.rightContent = `
+        ${Button("Add Widget", { id: "dashboard-add-widget-btn", variant: "secondary", icon: "plus", data: { action: "toggle-widget-picker" } })}
+        ${Button("", { id: "dashboard-layout-btn", variant: "icon", icon: "grid", title: "Layout Settings", data: { action: "toggle-layout-settings" } })}
+      `;
+      headerConfig.bulkActions = ["archive", "move", "tag", "delete"];
+      break;
 
-      case "favorites":
-        headerConfig.title = "Favorites";
-        headerConfig.countId = "favorites-view-count";
-        headerConfig.countSuffix = "favorites";
-        headerConfig.rightContent = `
+    case "favorites":
+      headerConfig.title = "Favorites";
+      headerConfig.countId = "favorites-view-count";
+      headerConfig.countSuffix = "favorites";
+      headerConfig.rightContent = `
           <div class="sort-controls">
             <label for="favorites-sort">Sort by</label>
             <select id="favorites-sort" class="form-select">
@@ -137,14 +134,14 @@ export async function updateHeaderContent(): Promise<void> {
             </select>
           </div>
         `;
-        headerConfig.bulkActions = ["archive", "move", "tag", "delete"];
-        break;
+      headerConfig.bulkActions = ["archive", "move", "tag", "delete"];
+      break;
 
-      case "recent":
-        headerConfig.title = "Recent";
-        headerConfig.countId = "recents-view-count";
-        headerConfig.countSuffix = "recent";
-        headerConfig.rightContent = `
+    case "recent":
+      headerConfig.title = "Recent";
+      headerConfig.countId = "recents-view-count";
+      headerConfig.countSuffix = "recent";
+      headerConfig.rightContent = `
           <div class="time-range-controls">
             <label for="recents-range">Time Range</label>
             <select id="recents-range" class="form-select">
@@ -155,55 +152,57 @@ export async function updateHeaderContent(): Promise<void> {
             </select>
           </div>
         `;
-        break;
+      break;
 
-      case "archived":
-        headerConfig.title = "Archived";
-        headerConfig.countId = "archived-view-count";
-        headerConfig.countSuffix = "bookmarks";
-        headerConfig.rightContent = `
+    case "archived":
+      headerConfig.title = "Archived";
+      headerConfig.countId = "archived-view-count";
+      headerConfig.countSuffix = "bookmarks";
+      headerConfig.rightContent = `
           <div class="header-search-bar">
             ${Icon("search", { size: 18 })}
             <input type="text" id="archived-search-input" placeholder="Search archived bookmarks..." />
             <kbd>Ctrl+K</kbd>
           </div>
         `;
-        headerConfig.bulkActions = ["unarchive", "delete"];
-        break;
+      headerConfig.bulkActions = ["unarchive", "delete"];
+      break;
 
-      case "collection":
-        headerConfig.title = `Collection: ${state.currentCollection}`;
-        headerConfig.countId = "collection-view-count";
-        headerConfig.countSuffix = "bookmarks";
-        headerConfig.rightContent = `
+    case "collection":
+      headerConfig.title = `Collection: ${state.currentCollection}`;
+      headerConfig.countId = "collection-view-count";
+      headerConfig.countSuffix = "bookmarks";
+      headerConfig.rightContent = `
           ${Omnibar({ id: "search-input" })}
           <button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
             ${Icon("filter", { size: 16 })}
             <span class="filter-btn-text">Filters</span>
           </button>
         `;
-        headerConfig.showFilterButton = true;
-        break;
+      headerConfig.showFilterButton = true;
+      break;
 
-      case "tag-cloud":
-        headerConfig.title = "Tag Cloud";
-        break;
+    case "tag-cloud":
+      headerConfig.title = "Tag Cloud";
+      break;
 
-      case "all":
-      case "folder":
-      default:
-        headerConfig.title = "Bookmarks";
-        headerConfig.countId = "bookmarks-view-count";
-        headerConfig.countSuffix = "bookmarks";
-        headerConfig.rightContent = `
+    case "all":
+    case "folder":
+    default:
+      headerConfig.title = "Bookmarks";
+      headerConfig.countId = "bookmarks-view-count";
+      headerConfig.countSuffix = "bookmarks";
+      headerConfig.rightContent = `
           ${Omnibar({ id: "search-input" })}
           <button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
             ${Icon("filter", { size: 16 })}
             <span class="filter-btn-text">Filters</span>
           </button>
         `;
-        headerConfig.showFilterButton = true;
-        break;
+      headerConfig.showFilterButton = true;
+      break;
+  }
+
   // Ensure user profile reflects the logged-in user after re-render
   if (state.currentUser) {
     const { updateUserInfo } = await import("@features/auth/auth.ts");
@@ -461,18 +460,4 @@ window.AnchorMarks = {
     const { loadSettings } = await import("@features/bookmarks/settings.ts");
     loadSettings();
   },
-};
-
-// palette integration utilities
-(window as any).launchBookmarkFromPalette = (id: string) => {
-  const bookmark = state.bookmarks.find((b) => b.id === id);
-  if (bookmark) window.open(bookmark.url, "_blank");
-};
-
-(window as any).searchBookmarks = (query: string) => {
-  return state.bookmarks.filter(
-    (b) =>
-      b.title.toLowerCase().includes(query.toLowerCase()) ||
-      b.url.toLowerCase().includes(query.toLowerCase()),
-  );
 };

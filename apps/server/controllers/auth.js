@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
-const { JWT_SECRET, NODE_ENV } = require("../config");
+const { JWT_SECRET } = require("../config");
 const {
   ensureTagsExist,
   updateBookmarkTags,

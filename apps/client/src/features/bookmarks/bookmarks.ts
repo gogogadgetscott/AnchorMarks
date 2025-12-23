@@ -226,9 +226,9 @@ export function renderBookmarks(): void {
         if (!b.tags) return false;
         const bTags = b.tags.split(",").map((t) => t.trim());
         if (state.filterConfig.tagMode === "AND") {
-          return state.filterConfig.tags.every((t) => bTags.includes(t));
+            return state.filterConfig.tags.every((t: string) => bTags.includes(t));
         } else {
-          return state.filterConfig.tags.some((t) => bTags.includes(t));
+            return state.filterConfig.tags.some((t: string) => bTags.includes(t));
         }
       });
     }
@@ -711,11 +711,11 @@ export function selectAllBookmarks(): void {
 // Create bookmark
 export async function createBookmark(data: Partial<Bookmark>): Promise<void> {
   try {
-    const bookmark = await api("/bookmarks", {
+    const bookmark = await api<Bookmark>("/bookmarks", {
       method: "POST",
       body: JSON.stringify(data),
     });
-    state.bookmarks.unshift(bookmark);
+    state.bookmarks.unshift(bookmark as Bookmark);
     renderBookmarks();
     await updateCounts();
     closeModals();
@@ -731,7 +731,7 @@ export async function updateBookmark(
   data: Partial<Bookmark>,
 ): Promise<void> {
   try {
-    const bookmark = await api(`/bookmarks/${id}`, {
+    const bookmark = await api<Bookmark>(`/bookmarks/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     });
@@ -985,7 +985,8 @@ async function showBookmarkViewsMenu() {
   // Remove existing dropdown if any
   document.getElementById("bookmark-views-dropdown")?.remove();
 
-  const views = await loadBookmarkViews();
+  const viewsUnknown = await loadBookmarkViews();
+  const views: any[] = Array.isArray(viewsUnknown) ? viewsUnknown : [];
 
   const dropdown = document.createElement("div");
   dropdown.id = "bookmark-views-dropdown";
