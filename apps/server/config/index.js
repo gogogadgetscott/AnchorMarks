@@ -61,10 +61,20 @@ const AI_API_KEY = process.env.AI_API_KEY || null;
 
 // API key scope whitelist (method + path regex)
 const API_KEY_WHITELIST = [
+  // Bookmarks sync endpoints
+  { method: "GET", path: /^\/api\/bookmarks(\/.*)?$/ },
+  { method: "POST", path: /^\/api\/bookmarks(\/.*)?$/ },
+  { method: "PUT", path: /^\/api\/bookmarks(\/.*)?$/ },
+  { method: "DELETE", path: /^\/api\/bookmarks(\/.*)?$/ },
+  // Folders sync endpoints
+  { method: "GET", path: /^\/api\/folders(\/.*)?$/ },
+  { method: "POST", path: /^\/api\/folders(\/.*)?$/ },
+  { method: "PUT", path: /^\/api\/folders(\/.*)?$/ },
+  { method: "DELETE", path: /^\/api\/folders(\/.*)?$/ },
+  // Sync endpoints
+  { method: "GET", path: /^\/api\/sync(\/.*)?$/ },
+  // Quick search
   { method: "GET", path: /^\/api\/quick-search/ },
-  { method: "GET", path: /^\/api\/bookmarks\/?$/ },
-  { method: "POST", path: /^\/api\/bookmarks\/?$/ },
-  { method: "GET", path: /^\/api\/folders\/?$/ },
 ];
 
 function isApiKeyAllowed(req) {

@@ -91,17 +91,29 @@ if (config.NODE_ENV === "development") {
   // If external CDN scripts are added, use the SRI helper: helpers/sri.js
 }
 
+
+// Enhanced security headers
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: cspDirectives,
     },
-    hsts: config.SSL_ENABLED, // Enable HSTS only if SSL is enabled
+    hsts: config.SSL_ENABLED ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
     crossOriginEmbedderPolicy: false, // Required for favicon loading from external sources
     xContentTypeOptions: true, // Prevent MIME type sniffing
     xXssProtection: true, // Legacy XSS protection header
-  }),
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    frameguard: { action: "deny" },
+  })
 );
+// Additional manual headers for redundancy
+app.use((req, res, next) => {
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  next();
+});
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
