@@ -197,11 +197,18 @@ function validateCsrfToken(db) {
       }
     }
 
-    const csrfToken = req.headers["x-csrf-token"] || req.body?.csrfToken;
+    // Enforce double-submit: require X-CSRF-Token header and match cookie
+    const csrfToken = req.headers["x-csrf-token"];
     const sessionCsrf = req.cookies.csrfToken;
 
-    if (!csrfToken || !sessionCsrf || csrfToken !== sessionCsrf) {
-      return res.status(403).json({ error: "Invalid CSRF token" });
+    if (!csrfToken) {
+      return res.status(403).json({ error: "Missing X-CSRF-Token header. Please include the CSRF token in your request headers." });
+    }
+    if (!sessionCsrf) {
+      return res.status(403).json({ error: "Missing CSRF cookie. Please log in again to obtain a new CSRF token." });
+    }
+    if (csrfToken !== sessionCsrf) {
+      return res.status(403).json({ error: "CSRF token mismatch. Please refresh the page or re-authenticate." });
     }
     next();
   };

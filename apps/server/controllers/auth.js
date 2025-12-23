@@ -247,7 +247,15 @@ function setupAuthRoutes(
     audit.logout(req.user.id, req);
     res.clearCookie("token");
     res.clearCookie("csrfToken");
-    res.json({ success: true });
+    // Rotate CSRF token after logout for extra safety
+    const csrfToken = generateCsrfToken();
+    res.cookie("csrfToken", csrfToken, {
+      httpOnly: false,
+      secure: NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+    res.json({ success: true, csrfToken });
   });
 
   // Delete account
@@ -340,7 +348,15 @@ function setupAuthRoutes(
         "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
       ).run(hashedPassword, req.user.id);
       audit.passwordChange(req.user.id, req);
-      res.json({ success: true });
+      // Rotate CSRF token after password change
+      const csrfToken = generateCsrfToken();
+      res.cookie("csrfToken", csrfToken, {
+        httpOnly: false,
+        secure: NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+      res.json({ success: true, csrfToken });
     } catch (err) {
       console.error("Change password error:", err);
       res.status(500).json({ error: "Failed to change password" });

@@ -234,6 +234,8 @@ describe("Filter Dropdown Module", () => {
     });
 
     it("should display count when folder is selected", () => {
+
+      state.setCurrentView("folder");
       state.setCurrentFolder("folder-id");
 
       updateFilterButtonText();
@@ -243,9 +245,9 @@ describe("Filter Dropdown Module", () => {
     });
 
     it("should count search term in active filters", () => {
-      const searchInput = document.getElementById(
-        "search-input",
-      ) as HTMLInputElement;
+
+      state.setCurrentView("folder");
+      const searchInput = document.getElementById("search-input") as HTMLInputElement;
       searchInput.value = "search term";
       state.setCurrentFolder("folder-id");
 

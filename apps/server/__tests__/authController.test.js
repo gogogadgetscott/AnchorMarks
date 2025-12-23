@@ -45,6 +45,8 @@ describe("Auth Controller", () => {
       .send({ email, password });
     expect(login.status).toBe(200);
     expect(login.body.user.api_key).toBeTruthy();
+    // Update CSRF token after login
+    csrfToken = login.body.csrfToken || csrfToken;
   });
 
   it("retrieves current user profile", async () => {
@@ -60,6 +62,8 @@ describe("Auth Controller", () => {
       .post("/api/auth/logout")
       .set("X-CSRF-Token", csrfToken);
     expect(logout.status).toBe(200);
+    // Update CSRF token after logout (if provided)
+    csrfToken = logout.body.csrfToken || csrfToken;
     const me = await agent.get("/api/auth/me").set("X-CSRF-Token", csrfToken);
     expect(me.status).toBe(401);
   });

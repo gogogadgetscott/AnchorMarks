@@ -27,12 +27,12 @@ function getActiveFilterCount(): number {
     count += 1;
   }
 
-  // Count folder filter (if not "all" view)
-  if (state.currentFolder) {
+  // Count folder filter (only if in 'folder' view and a folder is selected)
+  if (state.currentView === "folder" && state.currentFolder) {
     count += 1;
   }
 
-  // Count collection filter
+  // Count collection filter (only if in 'collection' view and a collection is selected)
   if (state.currentView === "collection" && state.currentCollection) {
     count += 1;
   }
@@ -80,8 +80,10 @@ export function updateFilterButtonVisibility(): void {
 export function initFilterDropdown(): void {
   const btn = document.getElementById("filter-dropdown-btn");
   if (!btn) {
-    // Button doesn't exist in this view - silently return without warning
+    // Button doesn't exist in this view - log a warning for test visibility
     // This is expected for views like dashboard, favorites, recent, etc.
+    // eslint-disable-next-line no-console
+    console.warn("Filter button not found in DOM");
     return;
   }
 
