@@ -70,7 +70,7 @@ function createExampleBookmarks(db, userId, folderId = null, fetchFavicon) {
       updateBookmarkTags(db, id, tagIds);
     }
 
-    if (fetchFavicon && process.env.NODE_ENV !== "test") {
+    if (fetchFavicon && process.env.NODE_ENV === "production") {
       fetchFavicon(bm.url, id).catch(console.error);
     }
 
@@ -135,15 +135,15 @@ function setupAuthRoutes(
 
       res.cookie("token", token, {
         httpOnly: true,
-        secure: true, // Always set Secure in modern browsers (behind HTTPS)
-        sameSite: "Strict",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
         maxAge: 30 * 24 * 60 * 60 * 1000,
         path: "/",
       });
       res.cookie("csrfToken", csrfToken, {
         httpOnly: false,
-        secure: true,
-        sameSite: "Strict",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
         maxAge: 30 * 24 * 60 * 60 * 1000,
         path: "/",
       });
@@ -200,15 +200,15 @@ function setupAuthRoutes(
 
       res.cookie("token", token, {
         httpOnly: true,
-        secure: true,
-        sameSite: "Strict",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
         maxAge: 30 * 24 * 60 * 60 * 1000,
         path: "/",
       });
       res.cookie("csrfToken", csrfToken, {
         httpOnly: false,
-        secure: true,
-        sameSite: "Strict",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
         maxAge: 30 * 24 * 60 * 60 * 1000,
         path: "/",
       });
@@ -255,8 +255,8 @@ function setupAuthRoutes(
     const csrfToken = generateCsrfToken();
     res.cookie("csrfToken", csrfToken, {
       httpOnly: false,
-      secure: NODE_ENV === "production",
-      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
     res.json({ success: true, csrfToken });
@@ -356,8 +356,8 @@ function setupAuthRoutes(
       const csrfToken = generateCsrfToken();
       res.cookie("csrfToken", csrfToken, {
         httpOnly: false,
-        secure: NODE_ENV === "production",
-        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
         maxAge: 30 * 24 * 60 * 60 * 1000,
       });
       res.json({ success: true, csrfToken });

@@ -1,5 +1,5 @@
 // Save settings to server
-async function saveSettings(updates: Record<string, any>): Promise<void> {
+export async function saveSettings(updates: Record<string, any>): Promise<void> {
   try {
     await api("/settings", {
       method: "PUT",
@@ -131,18 +131,7 @@ export async function loadSettings(): Promise<void> {
   }
 
   // Save settings to server
-  export async function saveSettings(
-    updates: Record<string, any>,
-  ): Promise<void> {
-    try {
-      await api("/settings", {
-        method: "PUT",
-        body: JSON.stringify(updates),
-      });
-    } catch (err) {
-      console.error("Failed to save settings:", err);
-    }
-  }
+  // ...existing code...
 
   // Apply theme
   // removed erroneous call
