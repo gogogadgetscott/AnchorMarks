@@ -286,25 +286,76 @@ export function renderBookmarks(): void {
       ? RichBookmarkCard
       : createBookmarkCard;
 
-  container.innerHTML = toRender.map((b, i) => cardRenderer(b, i)).join("");
+  // Keyed row update: use bookmark id as key
+  const existing = new Map();
+  Array.from(container.children).forEach((el) => {
+    const id = el.getAttribute && el.getAttribute("data-bookmark-id");
+    if (id) existing.set(id, el);
+  });
 
+  // Track which bookmarks are still present
+  const seen = new Set();
+  const frag = document.createDocumentFragment();
+
+  toRender.forEach((b, i) => {
+    const key = b.id;
+    let el = existing.get(key);
+    if (!el) {
+      // Create new card
+      el = document.createElement("div");
+      el.setAttribute("data-bookmark-id", key);
+      el.innerHTML = cardRenderer(b, i);
+    } else {
+      // Update card if needed (could diff props for smarter update)
+      el.innerHTML = cardRenderer(b, i);
+      existing.delete(key);
+    }
+    frag.appendChild(el);
+    seen.add(key);
+  });
+
+  // Remove any cards not in toRender
+  existing.forEach((el, key) => {
+    if (!seen.has(key)) el.remove();
+  });
+
+  // Clear and append fragment
+  container.innerHTML = "";
+  container.appendChild(frag);
+
+  // Add load more sentinel if needed
   if (hasMore) {
-    container.innerHTML += `
-            <div id="load-more-sentinel" class="load-more-sentinel">
-                <div class="loading-spinner"></div>
-                <span>Loading more bookmarks...</span>
-            </div>
-        `;
+    const sentinel = document.createElement("div");
+    sentinel.id = "load-more-sentinel";
+    sentinel.className = "load-more-sentinel";
+    sentinel.innerHTML = `
+      <div class="loading-spinner"></div>
+      <span>Loading more bookmarks...</span>
+    `;
+    container.appendChild(sentinel);
     setupInfiniteScroll(filtered);
   }
 
-  attachBookmarkCardListeners();
-  updateBulkUI();
+  // Defer non-urgent UI work
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(() => {
+      attachBookmarkCardListeners();
+      updateBulkUI();
+    });
+  } else {
+    setTimeout(() => {
+      attachBookmarkCardListeners();
+      updateBulkUI();
+    }, 0);
+  }
 
-  // Lazy load OG images for rich cards that don't have them
+  // Lazy load OG images for rich cards that don't have them (deferred)
   if (state.richLinkPreviewsEnabled && state.viewMode === "grid") {
-    // todo Disable for now
-    // lazyLoadOGImages();
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(() => {
+        // lazyLoadOGImages();
+      });
+    }
   }
 
   // Note: updateCounts() is now called explicitly by callers to avoid race conditions

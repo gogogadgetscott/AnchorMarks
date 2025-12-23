@@ -220,7 +220,6 @@ describe("Filter Dropdown Module", () => {
     });
 
     it("should display count when tags are active", () => {
-
       state.setFilterConfig({
         tags: ["tag1", "tag2"],
         sort: "recently_added",
@@ -233,7 +232,6 @@ describe("Filter Dropdown Module", () => {
     });
 
     it("should count search term in active filters", () => {
-
       // Explicitly reset all filter state for this test
       state.setFilterConfig({
         tags: [],
@@ -244,7 +242,9 @@ describe("Filter Dropdown Module", () => {
       state.setCurrentFolder(null);
       state.setCurrentCollection(null);
       state.setCurrentView("folder");
-      const searchInput = document.getElementById("search-input") as HTMLInputElement;
+      const searchInput = document.getElementById(
+        "search-input",
+      ) as HTMLInputElement;
       searchInput.value = "search term";
       state.setCurrentFolder("folder-id");
 

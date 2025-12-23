@@ -104,7 +104,7 @@ export function showAuthScreen(): void {
     const formsContainer = document.getElementById("auth-forms-container");
     if (formsContainer && !document.getElementById("login-form")) {
       formsContainer.innerHTML = LOGIN_FORM_HTML + REGISTER_FORM_HTML;
-      
+
       // Re-attach form listeners after injecting new forms
       import("@features/ui/forms.ts").then(({ initFormListeners }) => {
         initFormListeners();

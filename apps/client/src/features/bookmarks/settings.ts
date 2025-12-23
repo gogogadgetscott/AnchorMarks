@@ -71,7 +71,10 @@ export async function loadSettings(): Promise<void> {
     } else if (!sidebarCollapsed && window.innerWidth > 768) {
       document.body.classList.remove("sidebar-collapsed");
     }
-    localStorage.setItem("anchormarks_sidebar_collapsed", String(sidebarCollapsed));
+    localStorage.setItem(
+      "anchormarks_sidebar_collapsed",
+      String(sidebarCollapsed),
+    );
 
     // Apply collapsed sections
     state.collapsedSections.forEach((sectionId) => {

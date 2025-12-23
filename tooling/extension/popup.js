@@ -92,14 +92,16 @@ function showConnectedView(status) {
   folderCount.textContent = status.folders || 0;
 
   // Get current tab info with error handling
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs[0]) {
-      currentPage.textContent = tabs[0].title || tabs[0].url;
-    }
-  }).catch((err) => {
-    // Silently handle errors when tabs are closed or unavailable
-    console.debug("Failed to query active tab:", err);
-  });
+  chrome.tabs
+    .query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        currentPage.textContent = tabs[0].title || tabs[0].url;
+      }
+    })
+    .catch((err) => {
+      // Silently handle errors when tabs are closed or unavailable
+      console.debug("Failed to query active tab:", err);
+    });
 }
 
 // Connect to server
@@ -196,7 +198,7 @@ async function addCurrentPage() {
       active: true,
       currentWindow: true,
     });
-    
+
     if (!tabs || !tabs[0]) {
       statusText.textContent = "No active tab found";
       return;
