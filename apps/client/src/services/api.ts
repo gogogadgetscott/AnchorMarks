@@ -47,6 +47,8 @@ export async function api<T = unknown>(
     "Content-Type": "application/json",
   };
   if (state.csrfToken) headers["X-CSRF-Token"] = state.csrfToken;
+  // Add API key if present in state (for Flow Launcher, etc.)
+  if (state.apiKey) headers["x-api-key"] = state.apiKey;
 
   // Create AbortController if signal provided or for cancellable requests
   const abortController = options.signal ? undefined : new AbortController();

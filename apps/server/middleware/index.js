@@ -37,7 +37,7 @@ function setupMiddleware(app, { config, validateCsrfTokenMiddleware }) {
   const corsOptions = {
     origin: config.resolveCorsOrigin(),
     credentials: true,
-    allowedHeaders: ["Content-Type", "X-CSRF-Token"],
+    allowedHeaders: ["Content-Type", "X-CSRF-Token", "x-api-key"],
   };
   app.use(cors(corsOptions));
   app.use(cookieParser());
@@ -148,13 +148,23 @@ function authenticateToken(db) {
         .get(apiKey);
       if (user) {
         if (!isApiKeyAllowed(req)) {
-          return res
-            .status(403)
-            .json({ error: "API key not permitted for this endpoint" });
+          console.warn(`[API-KEY 403] User ${user.id} attempted ${req.method} ${req.path} (not whitelisted)`);
+          return res.status(403).json({
+            error: "API key not permitted for this endpoint.",
+            suggestion: "Check allowed endpoints and methods in server config. Only GET /api/bookmarks, POST /api/bookmarks, GET /api/folders, and GET /api/quick-search are permitted by API key.",
+            tip: "Use 'x-api-key' (all lowercase) as the header name."
+          });
         }
         req.user = user;
         req.authType = "api-key";
         return next();
+      } else {
+        console.warn(`[API-KEY 403] Invalid API key received: ${apiKey} for ${req.method} ${req.path}`);
+        return res.status(403).json({
+          error: "Invalid API key.",
+          suggestion: "Verify your API key is correct and active. Use the value from your user profile.",
+          tip: "Use 'x-api-key' (all lowercase) as the header name."
+        });
       }
     }
 

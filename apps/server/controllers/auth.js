@@ -135,15 +135,17 @@ function setupAuthRoutes(
 
       res.cookie("token", token, {
         httpOnly: true,
-        secure: NODE_ENV === "production",
-        sameSite: "strict",
+        secure: true, // Always set Secure in modern browsers (behind HTTPS)
+        sameSite: "Strict",
         maxAge: 30 * 24 * 60 * 60 * 1000,
+        path: "/",
       });
       res.cookie("csrfToken", csrfToken, {
         httpOnly: false,
-        secure: NODE_ENV === "production",
-        sameSite: "strict",
+        secure: true,
+        sameSite: "Strict",
         maxAge: 30 * 24 * 60 * 60 * 1000,
+        path: "/",
       });
 
       // Log successful registration
@@ -198,15 +200,17 @@ function setupAuthRoutes(
 
       res.cookie("token", token, {
         httpOnly: true,
-        secure: NODE_ENV === "production",
-        sameSite: "strict",
+        secure: true,
+        sameSite: "Strict",
         maxAge: 30 * 24 * 60 * 60 * 1000,
+        path: "/",
       });
       res.cookie("csrfToken", csrfToken, {
         httpOnly: false,
-        secure: NODE_ENV === "production",
-        sameSite: "strict",
+        secure: true,
+        sameSite: "Strict",
         maxAge: 30 * 24 * 60 * 60 * 1000,
+        path: "/",
       });
 
       // Log successful login
