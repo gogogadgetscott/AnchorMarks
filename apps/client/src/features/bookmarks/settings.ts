@@ -15,8 +15,12 @@ import type { UserSettings } from "@/types";
 // (function is defined below)
 // Initialize theme and high contrast controls
 export function initThemeControls(settings: UserSettings) {
-  const themeSelect = document.getElementById("theme-select") as HTMLSelectElement;
-  const highContrastToggle = document.getElementById("high-contrast-toggle") as HTMLInputElement;
+  const themeSelect = document.getElementById(
+    "theme-select",
+  ) as HTMLSelectElement;
+  const highContrastToggle = document.getElementById(
+    "high-contrast-toggle",
+  ) as HTMLInputElement;
   if (themeSelect) {
     themeSelect.value = settings.theme || "system";
     themeSelect.addEventListener("change", () => {
@@ -105,7 +109,7 @@ export async function loadSettings(): Promise<void> {
       ? true
       : localStorage.getItem("anchormarks_sidebar_collapsed") === "true";
     // Persist desktop collapsed state only; ignore on mobile
-      // removed stray import
+    // removed stray import
     if (sidebarCollapsed && window.innerWidth > 768) {
       document.body.classList.add("sidebar-collapsed");
     } else if (!sidebarCollapsed && window.innerWidth > 768) {
@@ -115,7 +119,7 @@ export async function loadSettings(): Promise<void> {
       "anchormarks_sidebar_collapsed",
       String(sidebarCollapsed),
     );
-          // removed erroneous call
+    // removed erroneous call
     // Apply collapsed sections
     state.collapsedSections.forEach((sectionId) => {
       const section = document.getElementById(sectionId);
@@ -123,25 +127,25 @@ export async function loadSettings(): Promise<void> {
     });
   } catch (err) {
     console.error("Failed to load settings:", err);
-          // removed erroneous call
-}
-
-// Save settings to server
-export async function saveSettings(
-  updates: Record<string, any>,
-): Promise<void> {
-  try {
-    await api("/settings", {
-      method: "PUT",
-      body: JSON.stringify(updates),
-    });
-  } catch (err) {
-    console.error("Failed to save settings:", err);
+    // removed erroneous call
   }
-}
 
-// Apply theme
-        // removed erroneous call
+  // Save settings to server
+  export async function saveSettings(
+    updates: Record<string, any>,
+  ): Promise<void> {
+    try {
+      await api("/settings", {
+        method: "PUT",
+        body: JSON.stringify(updates),
+      });
+    } catch (err) {
+      console.error("Failed to save settings:", err);
+    }
+  }
+
+  // Apply theme
+  // removed erroneous call
   // Theme is applied when settings are loaded
 }
 
@@ -231,7 +235,7 @@ export function toggleIncludeChildBookmarks(): void {
 
   // Reload if necessary
   if (state.currentView === "folder" || state.currentView === "dashboard") {
-    import("@features/bookmarks/bookmarks.ts")
+    import("@features/bookmarks/bookmarks.ts");
   }
 }
 

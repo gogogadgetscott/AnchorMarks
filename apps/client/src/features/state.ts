@@ -1,12 +1,15 @@
 import type { UserSettings } from "@/types";
 
 export function applyTheme(settings: UserSettings) {
-  if (settings.theme === 'system') {
-    document.body.removeAttribute('data-theme');
+  if (settings.theme === "system") {
+    document.body.removeAttribute("data-theme");
   } else {
-    document.body.setAttribute('data-theme', settings.theme);
+    document.body.setAttribute("data-theme", settings.theme);
   }
-  document.body.setAttribute('data-high-contrast', String(settings.highContrast));
+  document.body.setAttribute(
+    "data-high-contrast",
+    String(settings.highContrast),
+  );
 }
 /**
  * AnchorMarks - Global State Module

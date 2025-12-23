@@ -1,6 +1,5 @@
-
 export interface UserSettings {
-  theme: 'system' | 'light' | 'dark';
+  theme: "system" | "light" | "dark";
   highContrast: boolean;
   // ...add other settings as needed
 }
