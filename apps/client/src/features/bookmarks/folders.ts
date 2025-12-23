@@ -61,12 +61,17 @@ export function renderFolders(): void {
         const indentation = level * 12;
 
         return `
-            <div class="nav-item folder-item ${state.currentFolder === f.id ? "active" : ""} ${isEmpty ? "empty" : ""}" 
-                 data-folder="${f.id}" 
+            <div class="nav-item folder-item ${state.currentFolder === f.id ? "active" : ""} ${isEmpty ? "empty" : ""}"
+                 data-folder="${f.id}"
                  data-folder-name="${escapeHtml(f.name)}"
                  data-folder-color="${f.color || ""}"
                  draggable="true"
-                 style="padding-left: ${12 + indentation}px; cursor: grab;">
+                 style="padding-left: ${12 + indentation}px; cursor: grab;"
+                 role="treeitem"
+                 tabindex="0"
+                 aria-label="${escapeHtml(f.name)}"
+                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}"
+            >
                 <span class="folder-color" style="background: ${f.color || "var(--primary-500)"}"></span>
                 <span class="folder-name">${escapeHtml(f.name)}</span>
                 ${count > 0 ? Badge(count) : ""}

@@ -1,3 +1,39 @@
+// Save settings to server
+async function saveSettings(updates: Record<string, any>): Promise<void> {
+  try {
+    await api("/settings", {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    });
+  } catch (err) {
+    console.error("Failed to save settings:", err);
+  }
+}
+import { applyTheme } from "@features/state.ts";
+import type { UserSettings } from "@/types";
+// Import saveSettings at the top for use in all functions
+// (function is defined below)
+// Initialize theme and high contrast controls
+export function initThemeControls(settings: UserSettings) {
+  const themeSelect = document.getElementById("theme-select") as HTMLSelectElement;
+  const highContrastToggle = document.getElementById("high-contrast-toggle") as HTMLInputElement;
+  if (themeSelect) {
+    themeSelect.value = settings.theme || "system";
+    themeSelect.addEventListener("change", () => {
+      settings.theme = themeSelect.value as UserSettings["theme"];
+      applyTheme(settings);
+      saveSettings(settings);
+    });
+  }
+  if (highContrastToggle) {
+    highContrastToggle.checked = !!settings.highContrast;
+    highContrastToggle.addEventListener("change", () => {
+      settings.highContrast = highContrastToggle.checked;
+      applyTheme(settings);
+      saveSettings(settings);
+    });
+  }
+}
 /**
  * AnchorMarks - Settings Module
  * Handles user settings loading, saving, and applying
@@ -11,6 +47,9 @@ export async function loadSettings(): Promise<void> {
   try {
     const settings = await api<any>("/settings");
     state.setViewMode(settings.view_mode || "grid");
+    // Theme and high contrast controls
+    initThemeControls(settings);
+    applyTheme(settings);
     state.setHideFavicons(settings.hide_favicons || false);
     state.setHideSidebar(settings.hide_sidebar || false);
     state.setAiSuggestionsEnabled(settings.ai_suggestions_enabled !== false);
@@ -66,6 +105,7 @@ export async function loadSettings(): Promise<void> {
       ? true
       : localStorage.getItem("anchormarks_sidebar_collapsed") === "true";
     // Persist desktop collapsed state only; ignore on mobile
+      // removed stray import
     if (sidebarCollapsed && window.innerWidth > 768) {
       document.body.classList.add("sidebar-collapsed");
     } else if (!sidebarCollapsed && window.innerWidth > 768) {
@@ -75,7 +115,7 @@ export async function loadSettings(): Promise<void> {
       "anchormarks_sidebar_collapsed",
       String(sidebarCollapsed),
     );
-
+          // removed erroneous call
     // Apply collapsed sections
     state.collapsedSections.forEach((sectionId) => {
       const section = document.getElementById(sectionId);
@@ -83,7 +123,7 @@ export async function loadSettings(): Promise<void> {
     });
   } catch (err) {
     console.error("Failed to load settings:", err);
-  }
+          // removed erroneous call
 }
 
 // Save settings to server
@@ -101,7 +141,7 @@ export async function saveSettings(
 }
 
 // Apply theme
-export function applyTheme(): void {
+        // removed erroneous call
   // Theme is applied when settings are loaded
 }
 
@@ -192,10 +232,6 @@ export function toggleIncludeChildBookmarks(): void {
   // Reload if necessary
   if (state.currentView === "folder" || state.currentView === "dashboard") {
     import("@features/bookmarks/bookmarks.ts")
-      .then(({ loadBookmarks }) => {
-        loadBookmarks();
-      })
-      .catch(console.error);
   }
 }
 
@@ -260,7 +296,6 @@ export function toggleSection(sectionId: string): void {
 
 export default {
   loadSettings,
-  saveSettings,
   applyTheme,
   setTheme,
   applyFaviconSetting,
