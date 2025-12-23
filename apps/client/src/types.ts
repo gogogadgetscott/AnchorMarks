@@ -1,4 +1,9 @@
-// Patch: Add og_image to Bookmark type for rich card support
+
+export interface UserSettings {
+  theme: 'system' | 'light' | 'dark';
+  highContrast: boolean;
+  // ...add other settings as needed
+}
 
 export interface Bookmark {
   id: string;
