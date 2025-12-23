@@ -27,8 +27,6 @@ export function Header(options: HeaderOptions): string {
   const {
     id,
     title,
-    countId = "",
-    countSuffix = "bookmarks",
     className = "",
     rightContent = "",
     showViewToggle = true,
@@ -39,9 +37,6 @@ export function Header(options: HeaderOptions): string {
     clearBtnId = "btn-clear-selection",
   } = options;
 
-  const countHtml = countId
-    ? `<span class="bookmark-count" id="${countId}">0 ${countSuffix}</span>`
-    : "";
   const toggleHtml = showViewToggle ? ViewToggle({ modes: viewModes }) : "";
   const profileHtml = showUserProfile ? UserProfile() : "";
 
@@ -53,7 +48,6 @@ export function Header(options: HeaderOptions): string {
             ${Icon("menu")}
           </button>
           <h1>${title}</h1>
-          ${countHtml}
         </div>
         <div class="header-right">
           ${rightContent}
