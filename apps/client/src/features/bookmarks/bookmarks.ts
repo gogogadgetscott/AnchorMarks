@@ -89,12 +89,12 @@ export async function loadBookmarks(): Promise<void> {
     const query = params.toString();
     if (query) endpoint += `?${query}`;
 
-    const bookmarks = await api(endpoint);
+    const bookmarks = await api<Bookmark[]>(endpoint);
     state.setBookmarks(bookmarks);
 
     // Load tags metadata for color/icon rendering
     try {
-      const tags = await api("/tags");
+      const tags = await api<any[]>("/tags");
       // Create a lookup map for quick access
       const tagMap: Record<string, any> = {};
       tags.forEach((tag: any) => {
@@ -276,9 +276,24 @@ export function renderBookmarks(): void {
 
   if (emptyState) emptyState.classList.add("hidden");
 
-  // Lazy loading
-  const toRender = filtered.slice(0, state.displayedCount);
-  const hasMore = filtered.length > state.displayedCount;
+  // --- Virtualization parameters ---
+  const ROW_HEIGHT = state.viewMode === "compact" ? 40 : 120; // px, estimate
+  const BUFFER = 8; // extra rows above/below
+  const total = filtered.length;
+  let viewportHeight = container.clientHeight || 600;
+  let scrollTop = container.scrollTop || 0;
+  // Fallback for SSR or hidden containers
+  if (!viewportHeight) viewportHeight = 600;
+
+  const visibleCount = Math.ceil(viewportHeight / ROW_HEIGHT) + BUFFER;
+  let start = Math.max(
+    0,
+    Math.floor(scrollTop / ROW_HEIGHT) - Math.floor(BUFFER / 2),
+  );
+  let end = Math.min(total, start + visibleCount);
+
+  // If user is at the bottom, ensure last items are visible
+  if (end === total) start = Math.max(0, end - visibleCount);
 
   // Use RichBookmarkCard if rich link previews are enabled
   const cardRenderer =
@@ -297,17 +312,25 @@ export function renderBookmarks(): void {
   const seen = new Set();
   const frag = document.createDocumentFragment();
 
-  toRender.forEach((b, i) => {
+  // Spacer above
+  if (start > 0) {
+    const spacer = document.createElement("div");
+    spacer.style.height = `${start * ROW_HEIGHT}px`;
+    spacer.setAttribute("data-virtual-spacer", "top");
+    frag.appendChild(spacer);
+  }
+
+  // Render only visible bookmarks
+  for (let i = start; i < end; i++) {
+    const b = filtered[i];
     const key = b.id;
     let el = existing.get(key);
     const newHTML = cardRenderer(b, i);
     if (!el) {
-      // Create new card
       el = document.createElement("div");
       el.setAttribute("data-bookmark-id", key);
       el.innerHTML = newHTML;
     } else {
-      // Only update if content changed
       if (el.innerHTML !== newHTML) {
         el.innerHTML = newHTML;
       }
@@ -315,9 +338,17 @@ export function renderBookmarks(): void {
     }
     frag.appendChild(el);
     seen.add(key);
-  });
+  }
 
-  // Remove any cards not in toRender
+  // Spacer below
+  if (end < total) {
+    const spacer = document.createElement("div");
+    spacer.style.height = `${(total - end) * ROW_HEIGHT}px`;
+    spacer.setAttribute("data-virtual-spacer", "bottom");
+    frag.appendChild(spacer);
+  }
+
+  // Remove any cards not in visible window
   existing.forEach((el, key) => {
     if (!seen.has(key)) el.remove();
   });
@@ -326,17 +357,21 @@ export function renderBookmarks(): void {
   while (container.firstChild) container.removeChild(container.firstChild);
   container.appendChild(frag);
 
-  // Add load more sentinel if needed
-  if (hasMore) {
-    const sentinel = document.createElement("div");
-    sentinel.id = "load-more-sentinel";
-    sentinel.className = "load-more-sentinel";
-    sentinel.innerHTML = `
-      <div class="loading-spinner"></div>
-      <span>Loading more bookmarks...</span>
-    `;
-    container.appendChild(sentinel);
-    setupInfiniteScroll(filtered);
+  // Add load more sentinel if needed (optional: only if not virtualized)
+  // ...existing code...
+
+  // --- Virtualization scroll handler (type-safe) ---
+  // Use a WeakMap to store scroll handlers per container
+  const scrollHandlerMap: WeakMap<HTMLElement, () => void> =
+    (window as any)._bookmarkScrollHandlerMap || new WeakMap();
+  (window as any)._bookmarkScrollHandlerMap = scrollHandlerMap;
+
+  if (!scrollHandlerMap.has(container)) {
+    const handler = () => {
+      renderBookmarks();
+    };
+    scrollHandlerMap.set(container, handler);
+    container.addEventListener("scroll", handler);
   }
 
   // Defer non-urgent UI work
@@ -396,7 +431,7 @@ async function lazyLoadOGImages(): Promise<void> {
 
     // Check if bookmark already has og_image (might have been updated)
     const bookmark = state.bookmarks.find((b) => b.id === bookmarkId);
-    if (bookmark?.og_image) {
+    if (bookmark && bookmark.og_image) {
       // Update the card if og_image was found
       updateRichCardImage(bookmarkId, bookmark.og_image);
       continue;

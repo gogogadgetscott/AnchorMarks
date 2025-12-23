@@ -476,9 +476,8 @@ async function renderFoldersInDropdown(): Promise<void> {
 
   const renderFolderTree = (parentId: string | null = null, depth = 0) => {
     const folderList = state.folders.filter((f) => f.parent_id === parentId);
-    folderList.sort(
-      (a, b) => 1 /* folder.position is missing in the interface */ - 1,
-    );
+    // TODO: Implement folder.position sort if/when available in interface
+    // Currently, folders are not sorted by position due to missing property.
 
     folderList.forEach((folder) => {
       const count = getFolderBookmarkCount(folder.id);
