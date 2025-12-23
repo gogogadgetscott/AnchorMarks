@@ -10,6 +10,7 @@ interface HeaderOptions {
   countSuffix?: string;
   className?: string;
   rightContent?: string;
+  showFilterButton?: boolean;
   showViewToggle?: boolean;
   viewModes?: ViewMode[];
   showUserProfile?: boolean;
@@ -35,10 +36,14 @@ export function Header(options: HeaderOptions): string {
     bulkActions = ["archive", "move", "tag", "delete"],
     selectionCountId = "header-selection-count",
     clearBtnId = "btn-clear-selection",
+    showFilterButton = false,
   } = options;
 
   const toggleHtml = showViewToggle ? ViewToggle({ modes: viewModes }) : "";
   const profileHtml = showUserProfile ? UserProfile() : "";
+  const filterBtnHtml = showFilterButton
+    ? `<button class="btn-icon" id="filter-btn" title="Filter">${Icon("filter")}</button>`
+    : "";
 
   return `
     <header class="content-header ${className}" id="${id}">
@@ -50,6 +55,7 @@ export function Header(options: HeaderOptions): string {
           <h1>${title}</h1>
         </div>
         <div class="header-right">
+          ${filterBtnHtml}
           ${rightContent}
           ${toggleHtml}
           ${profileHtml}
