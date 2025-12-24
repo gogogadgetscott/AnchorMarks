@@ -10,6 +10,7 @@ import { showToast, dom, updateCounts } from "@utils/ui-helpers.ts";
 import { api } from "@services/api.ts";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
 import { logger } from "@utils/logger.ts";
+import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
 // Grid size for snap-to-grid feature
 const GRID_SIZE = 20;
@@ -109,10 +110,15 @@ export function updateViewNameBadge(viewName: string | null): void {
 /**
  * Confirm before switching views if there are unsaved changes
  */
-export function confirmViewSwitch(): boolean {
+export async function confirmViewSwitch(): Promise<boolean> {
   if (state.dashboardHasUnsavedChanges) {
-    return confirm(
+    return await confirmDialog(
       "You have unsaved changes to the dashboard layout. These changes will be lost if you switch views. Continue?",
+      {
+        title: "Unsaved Changes",
+        confirmText: "Continue",
+        destructive: true,
+      },
     );
   }
   return true;
@@ -303,7 +309,7 @@ export async function saveCurrentView(): Promise<void> {
       include_child_bookmarks: state.includeChildBookmarks ? 1 : 0,
     };
 
-    const view = await api("/dashboard/views", {
+    const view = await api<{ id: string }>("/dashboard/views", {
       method: "POST",
       body: JSON.stringify({ name, config }),
     });
@@ -325,7 +331,7 @@ export async function saveCurrentView(): Promise<void> {
     });
 
     // Prompt to create bookmark shortcut
-    if (confirm("Create a bookmark shortcut for this view?")) {
+    if (await confirmDialog("Create a bookmark shortcut for this view?", { title: "Create Shortcut" })) {
       const { createBookmark } =
         await import("@features/bookmarks/bookmarks.ts");
       await createBookmark({
@@ -351,7 +357,13 @@ async function loadViews(): Promise<any[]> {
 
 // Delete View
 export async function deleteView(id: string): Promise<void> {
-  if (!confirm("Delete this view?")) return;
+  if (
+    !(await confirmDialog("Delete this view?", {
+      title: "Delete View",
+      destructive: true,
+    }))
+  )
+    return;
   try {
     await api(`/dashboard/views/${id}`, { method: "DELETE" });
     showToast("View deleted", "success");
@@ -368,7 +380,7 @@ export async function restoreView(
   viewName?: string,
 ): Promise<void> {
   // Warn about unsaved changes
-  if (!confirmViewSwitch()) return;
+  if (!(await confirmViewSwitch())) return;
 
   try {
     await api(`/dashboard/views/${id}/restore`, { method: "POST" });
@@ -417,11 +429,10 @@ function renderCompactBookmarkItem(b: any): string {
     <div class="compact-item${b.color ? " has-color" : ""}" style="${colorStyle}">
         <a href="${b.url}" target="_blank" class="compact-item-link" data-action="track-click" data-id="${b.id}">
             <div class="compact-favicon">
-                ${
-                  !state.hideFavicons && b.favicon
-                    ? `<img src="${b.favicon}" alt="" loading="lazy">`
-                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/></svg>`
-                }
+                ${!state.hideFavicons && b.favicon
+      ? `<img src="${b.favicon}" alt="" loading="lazy">`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/></svg>`
+    }
             </div>
             <span class="compact-text">${escapeHtml(b.title)}</span>
         </a>
@@ -500,11 +511,10 @@ export function renderDashboard(): void {
   const dashboardHtml = `
         <div class="dashboard-freeform-container" id="dashboard-drop-zone">
             <div class="dashboard-help-text">
-                ${
-                  state.dashboardWidgets.length === 0
-                    ? "<p>Drag folders or tags from the sidebar to create widgets</p>"
-                    : ""
-                }
+                ${state.dashboardWidgets.length === 0
+      ? "<p>Drag folders or tags from the sidebar to create widgets</p>"
+      : ""
+    }
             </div>
             <div class="dashboard-widgets-container" id="dashboard-widgets-freeform">
                 ${renderFreeformWidgets()}
@@ -585,7 +595,7 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
     );
     if (!widgets || widgets.length === 0) return;
 
-    const res = await api("/tags/analytics");
+    const res = await api<any>("/tags/analytics");
 
     // Handle various response formats
     let tags: any[] = [];
@@ -873,16 +883,16 @@ function renderFreeformWidgets(): string {
             <div class="widget-body">
                 <div class="compact-list">
                     ${Array(5)
-                      .fill(null)
-                      .map(
-                        () => `
+          .fill(null)
+          .map(
+            () => `
                         <div class="compact-item">
                             <div class="skeleton skeleton-favicon"></div>
                             <div class="skeleton" style="width: 80%; height: 14px;"></div>
                         </div>
                     `,
-                      )
-                      .join("")}
+          )
+          .join("")}
                 </div>
             </div>
         </div>
@@ -911,16 +921,15 @@ function renderFreeformWidgets(): string {
                         <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
                     </svg>
                 </div>
-                ${
-                  widget.type === "folder"
-                    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px">
+                ${widget.type === "folder"
+        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px">
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
                     </svg>`
-                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px">
+        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px">
                         <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
                         <line x1="7" y1="7" x2="7.01" y2="7"/>
                     </svg>`
-                }
+      }
                 <div class="widget-title">${escapeHtml(name)}</div>
                 <div class="widget-count">${count}</div>
                 <div class="widget-actions">
@@ -931,9 +940,8 @@ function renderFreeformWidgets(): string {
                             </svg>
                         </button>
                         <div class="widget-options-menu hidden" data-widget-index="${index}">
-                            ${
-                              widget.type !== "tag-analytics"
-                                ? `
+                            ${widget.type !== "tag-analytics"
+        ? `
                             <button class="widget-option" data-action="widget-sort-az" data-widget-index="${index}" data-widget-type="${widget.type}" data-widget-id="${widget.id}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 6h18M3 12h12M3 18h6"/></svg>
                                 Sort A-Z
@@ -957,8 +965,8 @@ function renderFreeformWidgets(): string {
                             </button>
                             <div class="widget-option-divider"></div>
                             `
-                                : ""
-                            }
+        : ""
+      }
                             <button class="widget-option" data-action="change-widget-color" data-index="${index}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20"/></svg>
                                 Change Color
@@ -973,9 +981,8 @@ function renderFreeformWidgets(): string {
                 </div>
             </div>
             <div class="widget-body">
-              ${
-                widget.type === "tag-analytics"
-                  ? `
+              ${widget.type === "tag-analytics"
+        ? `
                 <div class="tag-analytics" data-analytics-widget="${index}">
                    <!-- Tag analytics content -->
                    <div class="tag-analytics-controls" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;">
@@ -1047,23 +1054,22 @@ function renderFreeformWidgets(): string {
                    </div>
                 </div>
                 `
-                  : `
+        : `
                 <div class="compact-list">
                     ${sortedBookmarks
-                      .slice(0, 20)
-                      .map((b) => renderCompactBookmarkItem(b))
-                      .join("")}
-                    ${
-                      sortedBookmarks.length > 20
-                        ? `
+          .slice(0, 20)
+          .map((b) => renderCompactBookmarkItem(b))
+          .join("")}
+                    ${sortedBookmarks.length > 20
+          ? `
                     <div class="widget-load-more" data-widget-index="${index}" style="padding:0.5rem;text-align:center;color:var(--text-tertiary);">
                         <div class="loading-spinner small"></div>
                     </div>`
-                        : ""
-                    }
+          : ""
+        }
                 </div>
                 `
-              }
+      }
             </div>
             <div class="widget-resize-handle" title="Drag to resize"></div>
         </div>
@@ -1401,8 +1407,14 @@ export function initDashboardDragDrop(): void {
         }
 
         // Confirm for large batches
+        // Confirm for large batches
         if (bookmarks.length > 5) {
-          if (!confirm(`Open ${bookmarks.length} bookmarks in new tabs?`)) {
+          if (
+            !(await confirmDialog(
+              `Open ${bookmarks.length} bookmarks in new tabs?`,
+              { title: "Open All" },
+            ))
+          ) {
             return;
           }
         }
@@ -1471,14 +1483,13 @@ export function initDashboardDragDrop(): void {
         </p>
         <div class="blocked-links-list" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
           ${bookmarks
-            .map(
-              (b) => `
+        .map(
+          (b) => `
             <a href="${b.url}" target="_blank" class="blocked-link-item" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-bottom: 1px solid var(--border-color); text-decoration: none; color: var(--text-primary); transition: background 0.2s;">
-              ${
-                b.favicon
-                  ? `<img src="${b.favicon}" style="width:16px;height:16px;border-radius:2px" onerror="this.style.display='none'">`
-                  : `<span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;background:var(--bg-tertiary);border-radius:2px;font-size:10px">🔗</span>`
-              }
+              ${b.favicon
+              ? `<img src="${b.favicon}" style="width:16px;height:16px;border-radius:2px" onerror="this.style.display='none'">`
+              : `<span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;background:var(--bg-tertiary);border-radius:2px;font-size:10px">🔗</span>`
+            }
               <div style="flex:1;min-width:0">
                 <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.title || b.url}</div>
                 <div style="font-size:0.75rem;color:var(--text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.url}</div>
@@ -1486,8 +1497,8 @@ export function initDashboardDragDrop(): void {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;color:var(--primary-500)"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </a>
           `,
-            )
-            .join("")}
+        )
+        .join("")}
         </div>
       </div>
       <div class="modal-footer">
@@ -1698,8 +1709,8 @@ function showWidgetColorPicker(index: number, button: HTMLElement): void {
   picker.innerHTML = `
         <div class="color-picker-grid">
             ${colors
-              .map(
-                (c) => `
+      .map(
+        (c) => `
                 <button class="color-picker-option" 
                         data-color="${c.value}" 
                         title="${c.name}"
@@ -1707,8 +1718,8 @@ function showWidgetColorPicker(index: number, button: HTMLElement): void {
                     ${(widget as any).color === c.value ? '<span class="color-check">✓</span>' : ""}
                 </button>
             `,
-              )
-              .join("")}
+      )
+      .join("")}
         </div>
     `;
 
@@ -1947,9 +1958,9 @@ function attachLayoutSettingsListeners(): void {
 
   const clearBtn = document.getElementById("clear-dashboard-btn");
   if (clearBtn) {
-    clearBtn.addEventListener("click", (e) => {
+    clearBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      confirmClearDashboard();
+      await confirmClearDashboard();
     });
   }
 }
@@ -1984,7 +1995,7 @@ export function autoPositionWidgets(): void {
   closeLayoutSettings();
 }
 
-function confirmClearDashboard(): void {
+async function confirmClearDashboard(): Promise<void> {
   const count = state.dashboardWidgets.length;
 
   if (count === 0) {
@@ -1993,8 +2004,13 @@ function confirmClearDashboard(): void {
   }
 
   if (
-    confirm(
+    await confirmDialog(
       `Are you sure you want to remove all ${count} widget${count !== 1 ? "s" : ""} from the dashboard? This cannot be undone.`,
+      {
+        title: "Clear Dashboard",
+        destructive: true,
+        confirmText: "Clear All",
+      },
     )
   ) {
     clearDashboard();

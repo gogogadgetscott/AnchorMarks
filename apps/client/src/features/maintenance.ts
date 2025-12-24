@@ -7,6 +7,7 @@ import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { showToast } from "@utils/ui-helpers.ts";
 import { escapeHtml } from "@utils/index.ts";
+import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
 let linkCheckAbortController: AbortController | null = null;
 
@@ -156,7 +157,16 @@ async function findDuplicates(): Promise<void> {
       .forEach((btn) => {
         btn.addEventListener("click", async (e: any) => {
           const ids = e.target.dataset.ids.split(",");
-          if (!confirm(`Delete ${ids.length} duplicate bookmark(s)?`)) return;
+          if (
+            !(await confirmDialog(
+              `Delete ${ids.length} duplicate bookmark(s)?`,
+              {
+                title: "Delete Duplicates",
+                destructive: true,
+              },
+            ))
+          )
+            return;
 
           try {
             for (const id of ids) {
@@ -297,7 +307,13 @@ async function checkBrokenLinks(): Promise<void> {
       .forEach((deleteBtn) => {
         deleteBtn.addEventListener("click", async (e: any) => {
           const id = e.currentTarget.dataset.id;
-          if (!confirm("Delete this bookmark?")) return;
+          if (
+            !(await confirmDialog("Delete this bookmark?", {
+              title: "Delete Broken Link",
+              destructive: true,
+            }))
+          )
+            return;
 
           try {
             await api(`/bookmarks/${id}`, { method: "DELETE" });

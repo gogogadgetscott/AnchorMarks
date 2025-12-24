@@ -564,23 +564,7 @@ function initFaviconErrorHandling(): void {
  * Initialize API Settings listeners (Regenerate/Copy Key)
  */
 function initApiSettingsListeners(): void {
-  // Regenerate API Key
-  const regenerateBtn = document.getElementById("regenerate-api-key");
-  if (regenerateBtn) {
-    regenerateBtn.addEventListener("click", () => {
-      import("@features/auth/auth.ts").then(({ regenerateApiKey }) =>
-        regenerateApiKey(),
-      );
-    });
-  }
 
-  // Copy API Key
-  const copyBtn = document.getElementById("copy-api-key");
-  if (copyBtn) {
-    copyBtn.addEventListener("click", () => {
-      import("@features/auth/auth.ts").then(({ copyApiKey }) => copyApiKey());
-    });
-  }
 
   // Since these buttons might be inside a modal that is created/destroyed or hidden,
   // we might need delegation if they are not in the DOM at init time.

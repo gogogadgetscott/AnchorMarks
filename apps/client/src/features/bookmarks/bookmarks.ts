@@ -26,6 +26,8 @@ import {
 } from "@components/index.ts";
 export { createBookmarkCard };
 
+import { confirmDialog } from "@features/ui/confirm-dialog.ts";
+
 /**
  * Render skeletons while loading
  */
@@ -226,9 +228,9 @@ export function renderBookmarks(): void {
         if (!b.tags) return false;
         const bTags = b.tags.split(",").map((t) => t.trim());
         if (state.filterConfig.tagMode === "AND") {
-            return state.filterConfig.tags.every((t: string) => bTags.includes(t));
+          return state.filterConfig.tags.every((t: string) => bTags.includes(t));
         } else {
-            return state.filterConfig.tags.some((t: string) => bTags.includes(t));
+          return state.filterConfig.tags.some((t: string) => bTags.includes(t));
         }
       });
     }
@@ -791,7 +793,13 @@ export async function unarchiveBookmark(id: string): Promise<void> {
 
 // Delete bookmark
 export async function deleteBookmark(id: string): Promise<void> {
-  if (!confirm("Delete this bookmark?")) return;
+  if (
+    !(await confirmDialog("Delete this bookmark?", {
+      title: "Delete Bookmark",
+      destructive: true,
+    }))
+  )
+    return;
 
   try {
     await api(`/bookmarks/${id}`, { method: "DELETE" });
@@ -1143,7 +1151,7 @@ async function saveCurrentBookmarkView() {
     document.getElementById("bookmark-views-dropdown")?.remove();
 
     // Prompt to create bookmark shortcut
-    if (confirm("Create a bookmark shortcut for this view?")) {
+    if (await confirmDialog("Create a bookmark shortcut for this view?", { title: "Create Shortcut" })) {
       await createBookmark({
         title: name,
         url: `bookmark-view:${view.id}`,
@@ -1167,7 +1175,13 @@ async function loadBookmarkViews() {
 
 // Delete bookmark view
 async function deleteBookmarkView(id: string) {
-  if (!confirm("Delete this view?")) return;
+  if (
+    !(await confirmDialog("Delete this view?", {
+      title: "Delete View",
+      destructive: true,
+    }))
+  )
+    return;
   try {
     await api(`/bookmark/views/${id}`, { method: "DELETE" });
     showToast("View deleted", "success");

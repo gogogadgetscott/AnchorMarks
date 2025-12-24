@@ -51,6 +51,7 @@ import { initFormListeners } from "@features/ui/forms.ts";
 import { initOmnibarListeners } from "@features/ui/omnibar.ts";
 import { initInteractions } from "@features/ui/interactions.ts";
 import { initTagListeners } from "@features/ui/tags.ts";
+import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
 /**
  * Set view mode (grid / list / compact)
@@ -223,7 +224,14 @@ export async function updateHeaderContent(): Promise<void> {
  * API Key functions
  */
 export async function regenerateApiKey(): Promise<void> {
-  if (!confirm("Regenerate API key? Old keys will stop working.")) return;
+  if (
+    !(await confirmDialog("Regenerate API key? Old keys will stop working.", {
+      title: "Regenerate API Key",
+      confirmText: "Regenerate",
+      destructive: true,
+    }))
+  )
+    return;
   try {
     const data = await api<{ api_key: string }>("/auth/regenerate-key", {
       method: "POST",
@@ -237,6 +245,7 @@ export async function regenerateApiKey(): Promise<void> {
   }
 }
 
+
 export function copyApiKey(): void {
   navigator.clipboard.writeText(state.currentUser?.api_key || "");
   showToast("API key copied!", "success");
@@ -246,7 +255,14 @@ export function copyApiKey(): void {
  * Reset all bookmarks to default
  */
 export async function resetBookmarks(): Promise<void> {
-  if (!confirm("Reset all bookmarks? This cannot be undone!")) return;
+  if (
+    !(await confirmDialog("Reset all bookmarks? This cannot be undone!", {
+      title: "Reset Bookmarks",
+      confirmText: "Reset All",
+      destructive: true,
+    }))
+  )
+    return;
   try {
     const data = await api<{ bookmarks_created: number }>(
       "/settings/reset-bookmarks",

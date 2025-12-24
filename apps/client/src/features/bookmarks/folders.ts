@@ -13,6 +13,7 @@ import {
   updateActiveNav,
 } from "@utils/ui-helpers.ts";
 import { Badge } from "@components/index.ts";
+import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
 // Load folders from server
 export async function loadFolders(): Promise<void> {
@@ -277,7 +278,15 @@ export async function updateFolder(id: string, data: any): Promise<void> {
 
 // Delete folder
 export async function deleteFolder(id: string): Promise<void> {
-  if (!confirm("Delete this folder? Bookmarks will be moved to uncategorized."))
+  if (
+    !(await confirmDialog(
+      "Delete this folder? Bookmarks will be moved to uncategorized.",
+      {
+        title: "Delete Folder",
+        destructive: true,
+      },
+    ))
+  )
     return;
 
   try {
