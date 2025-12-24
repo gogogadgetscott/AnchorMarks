@@ -113,42 +113,6 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
     }
   });
 
-  app.post(
-    "/api/bookmarks/fetch-metadata",
-    authenticateTokenMiddleware,
-    async (req, res) => {
-      const { url } = req.body;
-
-      if (!url) return res.status(400).json({ error: "URL is required" });
-
-      try {
-        const urlObj = new URL(url);
-        if (!["http:", "https:"].includes(urlObj.protocol))
-          return res.status(400).json({ error: "Invalid URL protocol" });
-        if (config.NODE_ENV === "production" && (await isPrivateAddress(url))) {
-          return res
-            .status(403)
-            .json({ error: "Cannot fetch metadata from private addresses" });
-        }
-
-        const metadata = (await require("../app").fetchUrlMetadata)
-          ? await require("../app").fetchUrlMetadata(url)
-          : await (async () => {
-              return { title: new URL(url).hostname, description: "", url };
-            })();
-        res.json(metadata);
-      } catch (err) {
-        console.error("Metadata fetch error:", err.message);
-        try {
-          res.json({ title: new URL(url).hostname, description: "", url });
-        } catch {
-          res
-            .status(500)
-            .json({ error: "Failed to fetch metadata", message: err.message });
-        }
-      }
-    },
-  );
 
   app.put("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
     try {
