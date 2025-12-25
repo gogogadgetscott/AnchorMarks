@@ -100,7 +100,7 @@ If you need to run only the server or client, use the `package.json` in `apps/se
 ### Testing
 
 ```bash
-npm test                   # Run Jest suite (server/__tests__)
+npm test                   # Run test suite (server/__tests__)
 npm run test:watch         # Watch mode
 npm run test:coverage      # Coverage report
 ```
@@ -228,7 +228,7 @@ if (!isSafe && NODE_ENV === "production") {
 - `apps/server/helpers/` – Helpers (favicon.js, import.js, metadata.js, smart-organization.js, etc.)
 - `apps/server/models/` – Data access models and DB helpers
 - `apps/server/routes/` – Express route wiring
-- `apps/server/__tests__/` – Jest test files
+- `apps/server/__tests__/` – Test files
 - `apps/client/` – Frontend source (Vite + TypeScript), `public/` assets
 - `apps/server/public/` – Generated favicons and thumbnails (`public/favicons/`, `public/thumbnails/`)
 

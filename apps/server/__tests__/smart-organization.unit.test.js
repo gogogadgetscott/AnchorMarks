@@ -338,15 +338,15 @@ describe("smart-organization.js - Unit Tests", () => {
     beforeEach(() => {
       // Create a minimal mock DB that satisfies the calculateTagScore function
       mockDb = {
-        prepare: jest.fn(() => ({
-          get: jest.fn(() => ({ count: 0 })),
-          all: jest.fn(() => []),
+        prepare: vi.fn(() => ({
+          get: vi.fn(() => ({ count: 0 })),
+          all: vi.fn(() => []),
         })),
       };
     });
 
     afterEach(() => {
-      jest.restoreAllMocks();
+      vi.restoreAllMocks();
     });
 
     it("should calculate score with default weights", () => {
@@ -418,7 +418,7 @@ describe("smart-organization.js - Unit Tests", () => {
 
     it("should handle database errors gracefully", () => {
       const errorDb = {
-        prepare: jest.fn(() => {
+        prepare: vi.fn(() => {
           throw new Error("Database error");
         }),
       };
