@@ -21,7 +21,8 @@ const INSECURE_SECRETS = [
 ];
 
 function validateSecurityConfig() {
-  if (NODE_ENV !== "production") return;
+  const env = process.env.NODE_ENV || "development";
+  if (env !== "production") return;
 
   if (
     !process.env.JWT_SECRET ||
@@ -36,7 +37,8 @@ function validateSecurityConfig() {
 }
 
 function resolveCorsOrigin() {
-  if (NODE_ENV !== "production") return true;
+  const env = process.env.NODE_ENV || "development";
+  if (env !== "production") return true;
 
   const origin = process.env.CORS_ORIGIN;
   if (origin.trim() === "*") {
@@ -49,7 +51,8 @@ function resolveCorsOrigin() {
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || DEFAULT_JWT_SECRET;
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, "anchormarks.db");
+const DB_PATH =
+  process.env.DB_PATH || path.join(__dirname, "../../database/anchormarks.db");
 const ENABLE_BACKGROUND_JOBS = NODE_ENV !== "test";
 const ENABLE_FAVICON_BACKGROUND_JOBS = false; // Only fetch favicons on import/save
 

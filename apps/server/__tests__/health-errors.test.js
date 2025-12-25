@@ -5,32 +5,21 @@ process.env.NODE_ENV = "test";
 process.env.JWT_SECRET = "test-secret-key-health-errors";
 process.env.CORS_ORIGIN = "http://localhost";
 
-// Mock models to throw errors
-jest.mock("../models/stats", () => ({
-  findDuplicates: jest.fn(() => {
-    throw new Error("DB Error");
-  }),
-  cleanupDuplicates: jest.fn(() => {
-    throw new Error("DB Error");
-  }),
-  getDeadlinksInfo: jest.fn(() => {
-    throw new Error("DB Error");
-  }),
-  runDeadlinkChecks: jest.fn(() => {
-    throw new Error("DB Error");
-  }),
-}));
+const statsModel = require("../models/stats");
+const bookmarkModel = require("../models/bookmark");
 
-jest.mock("../models/bookmark", () => ({
-  listUrls: jest.fn(() => {
-    throw new Error("DB Error");
-  }),
-}));
+// Spies
+const findDuplicatesSpy = vi.spyOn(statsModel, "findDuplicates");
+const cleanupDuplicatesSpy = vi.spyOn(statsModel, "cleanupDuplicates");
+const getDeadlinksInfoSpy = vi.spyOn(statsModel, "getDeadlinksInfo");
+const runDeadlinkChecksSpy = vi.spyOn(statsModel, "runDeadlinkChecks");
+const listUrlsSpy = vi.spyOn(bookmarkModel, "listUrls");
 
-// Mock metadata to avoid unrelated errors
-jest.mock("../helpers/metadata", () => ({
-  fetchUrlMetadata: jest.fn(),
-  detectContentType: jest.fn(),
+// Mock metadata to avoid unrelated errors (keep using vi.mock for this if it's less critical or spy if easy)
+// Since helper mocks are simple, we can keep them or spy. Let's use mock for metadata as it is a helper.
+vi.mock("../helpers/metadata", () => ({
+  fetchUrlMetadata: vi.fn(),
+  detectContentType: vi.fn(),
 }));
 
 const app = require("../app");
@@ -39,31 +28,48 @@ let agent;
 let csrfToken;
 
 beforeAll(async () => {
-  // We need a separate agent/setup because app is already loaded with mocks
+  // Be defensive: ensure the object methods are actually spies
+  findDuplicatesSpy.mockImplementation(() => {
+    throw new Error("DB Error");
+  });
+  cleanupDuplicatesSpy.mockImplementation(() => {
+    throw new Error("DB Error");
+  });
+  getDeadlinksInfoSpy.mockImplementation(() => {
+    throw new Error("DB Error");
+  });
+  runDeadlinkChecksSpy.mockImplementation(() => {
+    throw new Error("DB Error");
+  });
+  listUrlsSpy.mockImplementation(() => {
+    throw new Error("DB Error");
+  });
+
   agent = request.agent(app);
-  // We still need valid auth to hit the endpoints
-  // But since we mocked models, we need to ensure auth still works.
-  // Auth uses userSettings / db directly via app.db usually?
-  // No, auth uses `models/database` and raw SQL queries in controller?
-  // Let's check auth controller. It uses app.db.prepare...
+});
+
+afterAll(() => {
+  vi.restoreAllMocks();
 });
 
 describe("Health API Errors", () => {
-  // We can't easily login if we mocked too much?
-  // Actually, we mocked `models/stats` and `models/bookmark`, but not `app.db` directly
-  // so Auth should still work if it uses `app.db`.
-  // BUT `app.js` requires `models/database` which we didn't mock.
-
   beforeAll(async () => {
-    // Register a user to get token
-    // We use a unique email
+    // For authentication, we might need successful DB calls.
+    // But we mocked ALL methods above to throw error!
+    // This is a problem. The authentication/registration calls MIGHT use `statsModel` or `bookmarkModel`?
+    // Auth uses `auth` controller and `database` model usually, or directly `db`.
+    // Step 166 shows registration logic.
+    // If registration uses `bookmarkModel.something`, it will fail.
+    // But typically auth is separate.
+
+    // Let's proceed assuming registration doesn't use stats/bookmark listUrls.
+
     const unique = Date.now();
     const user = {
       email: `healtherr${unique}@example.com`,
       password: "password123",
     };
     const register = await agent.post("/api/auth/register").send(user);
-    // If registration fails, our tests will fail. Registration uses `db.prepare`.
     if (register.status !== 200) {
       console.error("Registration failed:", register.body);
     }
