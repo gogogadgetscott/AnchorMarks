@@ -4,36 +4,36 @@
  */
 
 export interface ConfirmOptions {
-    title?: string;
-    confirmText?: string;
-    cancelText?: string;
-    destructive?: boolean; // If true, confirm button is red
+  title?: string;
+  confirmText?: string;
+  cancelText?: string;
+  destructive?: boolean; // If true, confirm button is red
 }
 
 export class ConfirmDialog {
-    private static instance: ConfirmDialog;
-    private modalElement: HTMLElement | null = null;
-    private handleKeydown: ((e: KeyboardEvent) => void) | null = null;
+  private static instance: ConfirmDialog;
+  private modalElement: HTMLElement | null = null;
+  private handleKeydown: ((e: KeyboardEvent) => void) | null = null;
 
-    private constructor() {
-        // Singleton
+  private constructor() {
+    // Singleton
+  }
+
+  public static getInstance(): ConfirmDialog {
+    if (!ConfirmDialog.instance) {
+      ConfirmDialog.instance = new ConfirmDialog();
     }
+    return ConfirmDialog.instance;
+  }
 
-    public static getInstance(): ConfirmDialog {
-        if (!ConfirmDialog.instance) {
-            ConfirmDialog.instance = new ConfirmDialog();
-        }
-        return ConfirmDialog.instance;
-    }
+  private createModalElement(): HTMLElement {
+    // Construct the modal HTML
+    const modal = document.createElement("div");
+    modal.id = "generic-confirm-modal";
+    modal.className = "modal hidden modal-sm"; // Reusing .modal-sm for small dialog
+    modal.style.zIndex = "1001"; // Ensure it is above other modals if necessary
 
-    private createModalElement(): HTMLElement {
-        // Construct the modal HTML
-        const modal = document.createElement("div");
-        modal.id = "generic-confirm-modal";
-        modal.className = "modal hidden modal-sm"; // Reusing .modal-sm for small dialog
-        modal.style.zIndex = "1001"; // Ensure it is above other modals if necessary
-
-        modal.innerHTML = `
+    modal.innerHTML = `
             <div class="modal-backdrop"></div>
             <div class="modal-content">
                 <div class="modal-header" style="padding: 1rem 1.5rem; min-height: auto;">
@@ -49,97 +49,97 @@ export class ConfirmDialog {
             </div>
         `;
 
-        document.body.appendChild(modal);
-        return modal;
-    }
+    document.body.appendChild(modal);
+    return modal;
+  }
 
-    public show(message: string, options: ConfirmOptions = {}): Promise<boolean> {
-        return new Promise((resolve) => {
-            // 1. Setup DOM
-            if (!this.modalElement) {
-                this.modalElement = document.getElementById("generic-confirm-modal");
-                if (!this.modalElement) {
-                    this.modalElement = this.createModalElement();
-                }
-            }
+  public show(message: string, options: ConfirmOptions = {}): Promise<boolean> {
+    return new Promise((resolve) => {
+      // 1. Setup DOM
+      if (!this.modalElement) {
+        this.modalElement = document.getElementById("generic-confirm-modal");
+        if (!this.modalElement) {
+          this.modalElement = this.createModalElement();
+        }
+      }
 
-            // 2. Update Content
-            const titleEl = this.modalElement.querySelector(".confirm-title");
-            const msgEl = this.modalElement.querySelector(".confirm-message");
-            const okBtn = this.modalElement.querySelector(
-                ".confirm-ok",
-            ) as HTMLElement;
-            const cancelBtn = this.modalElement.querySelector(
-                ".confirm-cancel",
-            ) as HTMLElement;
+      // 2. Update Content
+      const titleEl = this.modalElement.querySelector(".confirm-title");
+      const msgEl = this.modalElement.querySelector(".confirm-message");
+      const okBtn = this.modalElement.querySelector(
+        ".confirm-ok",
+      ) as HTMLElement;
+      const cancelBtn = this.modalElement.querySelector(
+        ".confirm-cancel",
+      ) as HTMLElement;
 
-            if (titleEl) titleEl.textContent = options.title || "Confirm";
-            if (msgEl) msgEl.textContent = message;
+      if (titleEl) titleEl.textContent = options.title || "Confirm";
+      if (msgEl) msgEl.textContent = message;
 
-            if (okBtn) {
-                okBtn.textContent = options.confirmText || "Confirm";
-                // Handle destructive style
-                if (options.destructive) {
-                    okBtn.className = "btn btn-danger confirm-ok";
-                } else {
-                    okBtn.className = "btn btn-primary confirm-ok";
-                }
-            }
-            if (cancelBtn) cancelBtn.textContent = options.cancelText || "Cancel";
+      if (okBtn) {
+        okBtn.textContent = options.confirmText || "Confirm";
+        // Handle destructive style
+        if (options.destructive) {
+          okBtn.className = "btn btn-danger confirm-ok";
+        } else {
+          okBtn.className = "btn btn-primary confirm-ok";
+        }
+      }
+      if (cancelBtn) cancelBtn.textContent = options.cancelText || "Cancel";
 
-            // 3. Setup Listeners
+      // 3. Setup Listeners
 
-            // Define handlers
-            const cleanup = () => {
-                this.modalElement?.classList.add("hidden");
-                // Remove listeners to avoid leaks/double fires
-                okBtn?.removeEventListener("click", onConfirm);
-                cancelBtn?.removeEventListener("click", onCancel);
-                backdrop?.removeEventListener("click", onCancel);
-                if (this.handleKeydown) {
-                    window.removeEventListener("keydown", this.handleKeydown);
-                    this.handleKeydown = null;
-                }
-            };
+      // Define handlers
+      const cleanup = () => {
+        this.modalElement?.classList.add("hidden");
+        // Remove listeners to avoid leaks/double fires
+        okBtn?.removeEventListener("click", onConfirm);
+        cancelBtn?.removeEventListener("click", onCancel);
+        backdrop?.removeEventListener("click", onCancel);
+        if (this.handleKeydown) {
+          window.removeEventListener("keydown", this.handleKeydown);
+          this.handleKeydown = null;
+        }
+      };
 
-            const onConfirm = () => {
-                cleanup();
-                resolve(true);
-            };
+      const onConfirm = () => {
+        cleanup();
+        resolve(true);
+      };
 
-            const onCancel = () => {
-                cleanup();
-                resolve(false);
-            };
+      const onCancel = () => {
+        cleanup();
+        resolve(false);
+      };
 
-            // Attach listeners
-            okBtn?.addEventListener("click", onConfirm);
-            cancelBtn?.addEventListener("click", onCancel);
+      // Attach listeners
+      okBtn?.addEventListener("click", onConfirm);
+      cancelBtn?.addEventListener("click", onCancel);
 
-            const backdrop = this.modalElement.querySelector(".modal-backdrop");
-            backdrop?.addEventListener("click", onCancel);
+      const backdrop = this.modalElement.querySelector(".modal-backdrop");
+      backdrop?.addEventListener("click", onCancel);
 
-            // Escape key support
-            this.handleKeydown = (e: KeyboardEvent) => {
-                if (e.key === "Escape") {
-                    e.stopPropagation(); // Prevent closing other parents if any
-                    onCancel();
-                }
-            };
-            window.addEventListener("keydown", this.handleKeydown);
+      // Escape key support
+      this.handleKeydown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          e.stopPropagation(); // Prevent closing other parents if any
+          onCancel();
+        }
+      };
+      window.addEventListener("keydown", this.handleKeydown);
 
-            // 4. Show Modal
-            this.modalElement.classList.remove("hidden");
-            // Focus the cancel button by default to avoid accidental confirms, OR focus confirm if it's not destructive?
-            // Standard UX often focuses the primary action, but for destructive it should be cancel.
-            if (options.destructive) {
-                cancelBtn?.focus();
-            } else {
-                okBtn?.focus();
-            }
-        });
-    }
+      // 4. Show Modal
+      this.modalElement.classList.remove("hidden");
+      // Focus the cancel button by default to avoid accidental confirms, OR focus confirm if it's not destructive?
+      // Standard UX often focuses the primary action, but for destructive it should be cancel.
+      if (options.destructive) {
+        cancelBtn?.focus();
+      } else {
+        okBtn?.focus();
+      }
+    });
+  }
 }
 
 export const confirmDialog = (message: string, options?: ConfirmOptions) =>
-    ConfirmDialog.getInstance().show(message, options);
+  ConfirmDialog.getInstance().show(message, options);

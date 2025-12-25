@@ -564,8 +564,6 @@ function initFaviconErrorHandling(): void {
  * Initialize API Settings listeners (Regenerate/Copy Key)
  */
 function initApiSettingsListeners(): void {
-
-
   // Since these buttons might be inside a modal that is created/destroyed or hidden,
   // we might need delegation if they are not in the DOM at init time.
   // However, settings-modal.html seems to be statically in the DOM (hidden).

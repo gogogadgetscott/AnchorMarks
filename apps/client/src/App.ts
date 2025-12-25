@@ -245,7 +245,6 @@ export async function regenerateApiKey(): Promise<void> {
   }
 }
 
-
 export function copyApiKey(): void {
   navigator.clipboard.writeText(state.currentUser?.api_key || "");
   showToast("API key copied!", "success");

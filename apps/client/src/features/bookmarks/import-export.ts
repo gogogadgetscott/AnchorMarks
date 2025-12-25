@@ -37,14 +37,16 @@ export async function importHtml(file: File): Promise<void> {
     const hasLog = result.import_log && result.import_log.length > 0;
 
     showToast(
-      `Imported ${result.imported} bookmarks!${result.skipped ? ` (${result.skipped} skipped)` : ""
+      `Imported ${result.imported} bookmarks!${
+        result.skipped ? ` (${result.skipped} skipped)` : ""
       }${hasLog ? ". Log file downloaded." : ""}`,
       "success",
     );
 
     setImportProgress(
       "success",
-      `${result.imported} imported${result.skipped ? `, ${result.skipped} skipped` : ""
+      `${result.imported} imported${
+        result.skipped ? `, ${result.skipped} skipped` : ""
       }.`,
     );
 
@@ -52,7 +54,8 @@ export async function importHtml(file: File): Promise<void> {
       const logContent = result.import_log
         .map(
           (entry: any) =>
-            `[${entry.status.toUpperCase()}] ${entry.url}${entry.reason ? ` (${entry.reason})` : ""
+            `[${entry.status.toUpperCase()}] ${entry.url}${
+              entry.reason ? ` (${entry.reason})` : ""
             }`,
         )
         .join("\n");

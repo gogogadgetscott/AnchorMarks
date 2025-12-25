@@ -228,7 +228,9 @@ export function renderBookmarks(): void {
         if (!b.tags) return false;
         const bTags = b.tags.split(",").map((t) => t.trim());
         if (state.filterConfig.tagMode === "AND") {
-          return state.filterConfig.tags.every((t: string) => bTags.includes(t));
+          return state.filterConfig.tags.every((t: string) =>
+            bTags.includes(t),
+          );
         } else {
           return state.filterConfig.tags.some((t: string) => bTags.includes(t));
         }
@@ -1151,7 +1153,11 @@ async function saveCurrentBookmarkView() {
     document.getElementById("bookmark-views-dropdown")?.remove();
 
     // Prompt to create bookmark shortcut
-    if (await confirmDialog("Create a bookmark shortcut for this view?", { title: "Create Shortcut" })) {
+    if (
+      await confirmDialog("Create a bookmark shortcut for this view?", {
+        title: "Create Shortcut",
+      })
+    ) {
       await createBookmark({
         title: name,
         url: `bookmark-view:${view.id}`,

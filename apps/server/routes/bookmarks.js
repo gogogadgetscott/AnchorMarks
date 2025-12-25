@@ -113,7 +113,6 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
     }
   });
 
-
   app.put("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
     try {
       const fields = req.body;

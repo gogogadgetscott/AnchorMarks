@@ -248,7 +248,6 @@ export function updateUserInfo(): void {
   }
 }
 
-
 // Regenerate API key
 export async function regenerateApiKey(): Promise<void> {
   if (
