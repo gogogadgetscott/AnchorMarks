@@ -5,6 +5,7 @@
 
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
+import { Folder } from "../../types/index";
 import { escapeHtml } from "@utils/index.ts";
 import {
   showToast,
@@ -18,7 +19,7 @@ import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 // Load folders from server
 export async function loadFolders(): Promise<void> {
   try {
-    const folders = await api("/folders");
+    const folders = await api<Folder[]>("/folders");
     state.setFolders(folders);
     renderFolders();
     updateFolderSelect();
