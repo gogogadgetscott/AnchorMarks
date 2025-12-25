@@ -395,7 +395,7 @@ export function renderBookmarks(): void {
   if (state.richLinkPreviewsEnabled && state.viewMode === "grid") {
     if (window.requestIdleCallback) {
       window.requestIdleCallback(() => {
-        // lazyLoadOGImages();
+        lazyLoadOGImages();
       });
     }
   }
@@ -433,16 +433,16 @@ async function lazyLoadOGImages(): Promise<void> {
 
     if (!bookmarkId || !bookmarkUrl) continue;
 
-    // Check if bookmark already has og_image (might have been updated)
+    // Check if bookmark already has og_image or thumbnail_local (might have been updated)
     const bookmark = state.bookmarks.find((b) => b.id === bookmarkId);
-    if (bookmark && bookmark.og_image) {
-      // Update the card if og_image was found
-      updateRichCardImage(bookmarkId, bookmark.og_image);
+    if (bookmark && (bookmark.og_image || bookmark.thumbnail_local)) {
+      // Update the card with existing image
+      updateRichCardImage(bookmarkId, bookmark.og_image || bookmark.thumbnail_local!);
       continue;
     }
 
     try {
-      // Fetch metadata with retry logic
+      // Step 1: Try to fetch OG image from metadata
       let metadata: { og_image?: string } | null = null;
       let retries = 0;
       const maxRetries = 3;
@@ -478,7 +478,7 @@ async function lazyLoadOGImages(): Promise<void> {
       }
 
       if (metadata?.og_image) {
-        // Update bookmark in state
+        // Update bookmark in state with og_image
         const bookmarkIndex = state.bookmarks.findIndex(
           (b) => b.id === bookmarkId,
         );
@@ -494,13 +494,41 @@ async function lazyLoadOGImages(): Promise<void> {
           } catch (err: any) {
             if (err.message?.includes("429")) {
               rateLimitHit = true;
-              // If update fails due to rate limit, we'll retry on next render
               logger.debug("Rate limited on bookmark update, will retry later");
             }
           }
 
           // Update the card visually
           updateRichCardImage(bookmarkId, metadata.og_image);
+        }
+      } else {
+        // Step 2: No og_image found, try to generate a screenshot thumbnail
+        logger.debug("No og_image found, requesting thumbnail generation", { bookmarkId });
+
+        try {
+          const thumbnailResult = await api<{ success: boolean; thumbnail_local?: string }>(
+            `/bookmarks/${bookmarkId}/thumbnail`,
+            { method: "POST" },
+          );
+
+          if (thumbnailResult.success && thumbnailResult.thumbnail_local) {
+            // Update bookmark in state with thumbnail_local
+            const bookmarkIndex = state.bookmarks.findIndex(
+              (b) => b.id === bookmarkId,
+            );
+            if (bookmarkIndex !== -1) {
+              state.bookmarks[bookmarkIndex].thumbnail_local = thumbnailResult.thumbnail_local;
+            }
+
+            // Update the card visually
+            updateRichCardImage(bookmarkId, thumbnailResult.thumbnail_local);
+          }
+        } catch (thumbnailErr: any) {
+          // Thumbnail generation failed (e.g., page couldn't be loaded)
+          logger.debug("Thumbnail generation failed", {
+            bookmarkId,
+            error: thumbnailErr.message,
+          });
         }
       }
     } catch (err) {

@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js >=18](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](INSTALL.md#system-requirements)
 [![Docker Compose](https://img.shields.io/badge/docker-compose-blue.svg)](tooling/docker/docker-compose.yml)
-[![Tests: Jest](https://img.shields.io/badge/tests-jest-%23C21325.svg)](tooling/jest.config.js)
+[![Tests: Vitest](https://img.shields.io/badge/tests-Vitest-%2344a833.svg)](apps/server/vitest.config.ts)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![CI](https://github.com/gogogadgetscott/AnchorMarks/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gogogadgetscott/AnchorMarks/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/gogogadgetscott/AnchorMarks/branch/main/graph/badge.svg)](https://codecov.io/gh/gogogadgetscott/AnchorMarks)
@@ -119,7 +119,7 @@ CORS_ORIGIN=https://yourdomain.tld
 
 # Optional
 PORT=3000
-DB_PATH=anchormarks.db
+DB_PATH=apps/database/anchormarks.db
 ENABLE_RATE_LIMIT=true
 VITE_PORT=5173
 ```
@@ -141,12 +141,17 @@ See [INSTALL.md](INSTALL.md) for advanced deployment options.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development guidelines
 - **Auth & CSRF Flow** - Developer reference: [help.html#developer-auth-csrf](help.html#developer-auth-csrf)
 
-## 🧪 Testing
+### Testing
+
+The project uses [Vitest](https://vitest.dev/) for testing across both client and server workspaces.
 
 ```bash
-npm test              # Run all tests
-npm run test:watch    # Watch mode
-npm run test:coverage # Coverage report
+# Run all tests
+npm test
+
+# Run tests for a specific workspace
+npm run test:server
+npm run test:client
 ```
 
 ## 🔐 Security

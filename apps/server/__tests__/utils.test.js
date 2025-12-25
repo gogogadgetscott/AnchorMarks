@@ -46,17 +46,16 @@ describe("server/utils.js", () => {
     });
 
     it("treats DNS-resolved private IPs as private", async () => {
-      jest.resetModules();
-      jest.doMock("dns", () => ({
-        promises: {
-          lookup: jest.fn(async () => [{ address: "10.0.0.1" }]),
-        },
-      }));
+      vi.resetModules();
+      const dns = require("dns");
+      const lookupSpy = vi
+        .spyOn(dns.promises, "lookup")
+        .mockResolvedValue([{ address: "10.0.0.1" }]);
 
       const { isPrivateAddress } = require("../helpers/utils");
       await expect(isPrivateAddress("https://example.com")).resolves.toBe(true);
 
-      jest.dontMock("dns");
+      lookupSpy.mockRestore();
     });
   });
 
@@ -80,14 +79,13 @@ describe("server/utils.js", () => {
     it("returns cached favicon path when file already exists", async () => {
       const originalNodeEnv = process.env.NODE_ENV;
 
-      jest.resetModules();
-      jest.doMock("fs", () => ({
-        existsSync: jest.fn(() => true),
-      }));
+      vi.resetModules();
+      const fs = require("fs");
+      const existsSpy = vi.spyOn(fs, "existsSync").mockReturnValue(true);
 
-      const updateRun = jest.fn();
+      const updateRun = vi.fn();
       const db = {
-        prepare: jest.fn(() => ({ run: updateRun })),
+        prepare: vi.fn(() => ({ run: updateRun })),
       };
 
       const { fetchFavicon } = require("../helpers/utils");
@@ -108,7 +106,7 @@ describe("server/utils.js", () => {
         "bookmark-id",
       );
 
-      jest.dontMock("fs");
+      existsSpy.mockRestore();
       process.env.NODE_ENV = originalNodeEnv;
     });
 
@@ -121,24 +119,30 @@ describe("server/utils.js", () => {
     });
 
     it("falls back between sources and updates DB on success (mocked network)", async () => {
-      jest.resetModules();
+      vi.resetModules();
 
       const { EventEmitter } = require("events");
-      const existsSync = jest.fn(() => false);
-      const createWriteStream = jest.fn(() => {
-        const stream = new EventEmitter();
-        stream.close = jest.fn();
-        return stream;
-      });
+      const fs = require("fs");
+      const https = require("https");
+      const http = require("http");
+
+      const existsSpy = vi.spyOn(fs, "existsSync").mockReturnValue(false);
+      const createStreamSpy = vi
+        .spyOn(fs, "createWriteStream")
+        .mockImplementation(() => {
+          const stream = new EventEmitter();
+          stream.close = vi.fn();
+          return stream;
+        });
 
       let callCount = 0;
       const makeReq = () => {
         const req = new EventEmitter();
-        req.destroy = jest.fn();
+        req.destroy = vi.fn();
         return req;
       };
 
-      const httpsGet = jest.fn((source, opts, cb) => {
+      const httpsGet = (source, opts, cb) => {
         callCount += 1;
         const req = makeReq();
 
@@ -154,15 +158,14 @@ describe("server/utils.js", () => {
         });
 
         return req;
-      });
+      };
 
-      jest.doMock("fs", () => ({ existsSync, createWriteStream }));
-      jest.doMock("https", () => ({ get: httpsGet }));
-      jest.doMock("http", () => ({ get: httpsGet }));
+      const httpsSpy = vi.spyOn(https, "get").mockImplementation(httpsGet);
+      const httpSpy = vi.spyOn(http, "get").mockImplementation(httpsGet);
 
-      const updateRun = jest.fn();
+      const updateRun = vi.fn();
       const db = {
-        prepare: jest.fn(() => ({ run: updateRun })),
+        prepare: vi.fn(() => ({ run: updateRun })),
       };
 
       const { fetchFavicon } = require("../helpers/utils");
@@ -182,27 +185,34 @@ describe("server/utils.js", () => {
       );
       expect(callCount).toBeGreaterThanOrEqual(2);
 
-      jest.dontMock("fs");
-      jest.dontMock("https");
-      jest.dontMock("http");
+      existsSpy.mockRestore();
+      createStreamSpy.mockRestore();
+      httpsSpy.mockRestore();
+      httpSpy.mockRestore();
     });
 
     it("returns the same in-flight promise for concurrent requests (queue)", async () => {
-      jest.resetModules();
+      vi.resetModules();
 
       const { EventEmitter } = require("events");
-      const existsSync = jest.fn(() => false);
-      const createWriteStream = jest.fn(() => {
-        const stream = new EventEmitter();
-        stream.close = jest.fn();
-        return stream;
-      });
+      const fs = require("fs");
+      const https = require("https");
+      const http = require("http");
+
+      const existsSpy = vi.spyOn(fs, "existsSync").mockReturnValue(false);
+      const createStreamSpy = vi
+        .spyOn(fs, "createWriteStream")
+        .mockImplementation(() => {
+          const stream = new EventEmitter();
+          stream.close = vi.fn();
+          return stream;
+        });
 
       let pendingCallback = null;
       const req = new EventEmitter();
-      req.destroy = jest.fn();
+      req.destroy = vi.fn();
 
-      const get = jest.fn((source, opts, cb) => {
+      const getMock = vi.fn((source, opts, cb) => {
         if (!pendingCallback) {
           pendingCallback = cb;
           return req;
@@ -216,13 +226,12 @@ describe("server/utils.js", () => {
         return req;
       });
 
-      jest.doMock("fs", () => ({ existsSync, createWriteStream }));
-      jest.doMock("https", () => ({ get }));
-      jest.doMock("http", () => ({ get }));
+      const httpsSpy = vi.spyOn(https, "get").mockImplementation(getMock);
+      const httpSpy = vi.spyOn(http, "get").mockImplementation(getMock);
 
-      const updateRun = jest.fn();
+      const updateRun = vi.fn();
       const db = {
-        prepare: jest.fn(() => ({ run: updateRun })),
+        prepare: vi.fn(() => ({ run: updateRun })),
       };
 
       const { fetchFavicon } = require("../helpers/utils");
@@ -243,7 +252,7 @@ describe("server/utils.js", () => {
       );
 
       // Second request should reuse the in-flight fetch (no additional network call).
-      expect(get).toHaveBeenCalledTimes(1);
+      expect(getMock).toHaveBeenCalledTimes(1);
 
       // Resolve the pending request by letting the first source succeed.
       pendingCallback({
@@ -258,27 +267,34 @@ describe("server/utils.js", () => {
       ]);
       expect(updateRun).toHaveBeenCalledTimes(1);
 
-      jest.dontMock("fs");
-      jest.dontMock("https");
-      jest.dontMock("http");
+      existsSpy.mockRestore();
+      createStreamSpy.mockRestore();
+      httpsSpy.mockRestore();
+      httpSpy.mockRestore();
     });
 
     it("handles request timeout by trying the next source (mocked)", async () => {
-      jest.resetModules();
+      vi.resetModules();
 
       const { EventEmitter } = require("events");
-      const existsSync = jest.fn(() => false);
-      const createWriteStream = jest.fn(() => {
-        const stream = new EventEmitter();
-        stream.close = jest.fn();
-        return stream;
-      });
+      const fs = require("fs");
+      const https = require("https");
+      const http = require("http");
+
+      const existsSpy = vi.spyOn(fs, "existsSync").mockReturnValue(false);
+      const createStreamSpy = vi
+        .spyOn(fs, "createWriteStream")
+        .mockImplementation(() => {
+          const stream = new EventEmitter();
+          stream.close = vi.fn();
+          return stream;
+        });
 
       let callCount = 0;
-      const get = jest.fn((source, opts, cb) => {
+      const getMock = vi.fn((source, opts, cb) => {
         callCount += 1;
         const req = new EventEmitter();
-        req.destroy = jest.fn();
+        req.destroy = vi.fn();
 
         if (callCount === 1) {
           // Simulate a timeout on the first attempt.
@@ -294,13 +310,12 @@ describe("server/utils.js", () => {
         return req;
       });
 
-      jest.doMock("fs", () => ({ existsSync, createWriteStream }));
-      jest.doMock("https", () => ({ get }));
-      jest.doMock("http", () => ({ get }));
+      const httpsSpy = vi.spyOn(https, "get").mockImplementation(getMock);
+      const httpSpy = vi.spyOn(http, "get").mockImplementation(getMock);
 
-      const updateRun = jest.fn();
+      const updateRun = vi.fn();
       const db = {
-        prepare: jest.fn(() => ({ run: updateRun })),
+        prepare: vi.fn(() => ({ run: updateRun })),
       };
 
       const { fetchFavicon } = require("../helpers/utils");
@@ -315,9 +330,10 @@ describe("server/utils.js", () => {
       expect(result).toBe("/favicons/example_com.png");
       expect(callCount).toBeGreaterThanOrEqual(2);
 
-      jest.dontMock("fs");
-      jest.dontMock("https");
-      jest.dontMock("http");
+      existsSpy.mockRestore();
+      createStreamSpy.mockRestore();
+      httpsSpy.mockRestore();
+      httpSpy.mockRestore();
     });
   });
 });
