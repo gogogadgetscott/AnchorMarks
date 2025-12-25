@@ -395,7 +395,7 @@ export function renderBookmarks(): void {
   if (state.richLinkPreviewsEnabled && state.viewMode === "grid") {
     if (window.requestIdleCallback) {
       window.requestIdleCallback(() => {
-        // lazyLoadOGImages();
+        lazyLoadOGImages();
       });
     }
   }

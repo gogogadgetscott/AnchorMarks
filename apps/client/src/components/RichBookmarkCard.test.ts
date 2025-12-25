@@ -33,7 +33,17 @@ describe("RichBookmarkCard", () => {
   it("renders placeholder when no og_image", () => {
     const noImage = { ...mockBookmark, og_image: undefined };
     const html = RichBookmarkCard(noImage, 0);
+
+    // Check for the placeholder class
     expect(html).toContain("rich-card-image-placeholder");
+
+    // Check for correct data attributes
+    expect(html).toContain(`data-bookmark-id="${noImage.id}"`);
+    expect(html).toContain(`data-bookmark-url="${noImage.url}"`);
+
+    // Check for the image icon (svg)
+    expect(html).toContain("<svg");
+    expect(html).toContain('class="icon icon-image');
   });
 
   it("includes description when present", () => {

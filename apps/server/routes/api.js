@@ -131,7 +131,7 @@ function setupApiRoutes(app, db, helpers) {
           hide_favicons: false,
           hide_sidebar: false,
           ai_suggestions_enabled: true,
-          rich_link_previews_enabled: false,
+          rich_link_previews_enabled: true, // Enable by default
           theme: "dark",
           dashboard_mode: "folder",
           dashboard_tags: [],
