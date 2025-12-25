@@ -26,6 +26,8 @@ import {
 } from "@components/index.ts";
 export { createBookmarkCard };
 
+import { confirmDialog } from "@features/ui/confirm-dialog.ts";
+
 /**
  * Render skeletons while loading
  */
@@ -89,12 +91,12 @@ export async function loadBookmarks(): Promise<void> {
     const query = params.toString();
     if (query) endpoint += `?${query}`;
 
-    const bookmarks = await api(endpoint);
+    const bookmarks = await api<Bookmark[]>(endpoint);
     state.setBookmarks(bookmarks);
 
     // Load tags metadata for color/icon rendering
     try {
-      const tags = await api("/tags");
+      const tags = await api<any[]>("/tags");
       // Create a lookup map for quick access
       const tagMap: Record<string, any> = {};
       tags.forEach((tag: any) => {
@@ -226,9 +228,11 @@ export function renderBookmarks(): void {
         if (!b.tags) return false;
         const bTags = b.tags.split(",").map((t) => t.trim());
         if (state.filterConfig.tagMode === "AND") {
-          return state.filterConfig.tags.every((t) => bTags.includes(t));
+          return state.filterConfig.tags.every((t: string) =>
+            bTags.includes(t),
+          );
         } else {
-          return state.filterConfig.tags.some((t) => bTags.includes(t));
+          return state.filterConfig.tags.some((t: string) => bTags.includes(t));
         }
       });
     }
@@ -276,9 +280,24 @@ export function renderBookmarks(): void {
 
   if (emptyState) emptyState.classList.add("hidden");
 
-  // Lazy loading
-  const toRender = filtered.slice(0, state.displayedCount);
-  const hasMore = filtered.length > state.displayedCount;
+  // --- Virtualization parameters ---
+  const ROW_HEIGHT = state.viewMode === "compact" ? 40 : 120; // px, estimate
+  const BUFFER = 8; // extra rows above/below
+  const total = filtered.length;
+  let viewportHeight = container.clientHeight || 600;
+  let scrollTop = container.scrollTop || 0;
+  // Fallback for SSR or hidden containers
+  if (!viewportHeight) viewportHeight = 600;
+
+  const visibleCount = Math.ceil(viewportHeight / ROW_HEIGHT) + BUFFER;
+  let start = Math.max(
+    0,
+    Math.floor(scrollTop / ROW_HEIGHT) - Math.floor(BUFFER / 2),
+  );
+  let end = Math.min(total, start + visibleCount);
+
+  // If user is at the bottom, ensure last items are visible
+  if (end === total) start = Math.max(0, end - visibleCount);
 
   // Use RichBookmarkCard if rich link previews are enabled
   const cardRenderer =
@@ -286,25 +305,99 @@ export function renderBookmarks(): void {
       ? RichBookmarkCard
       : createBookmarkCard;
 
-  container.innerHTML = toRender.map((b, i) => cardRenderer(b, i)).join("");
+  // Keyed row update: use bookmark id as key
+  const existing = new Map();
+  Array.from(container.children).forEach((el) => {
+    const id = el.getAttribute && el.getAttribute("data-bookmark-id");
+    if (id) existing.set(id, el);
+  });
 
-  if (hasMore) {
-    container.innerHTML += `
-            <div id="load-more-sentinel" class="load-more-sentinel">
-                <div class="loading-spinner"></div>
-                <span>Loading more bookmarks...</span>
-            </div>
-        `;
-    setupInfiniteScroll(filtered);
+  // Track which bookmarks are still present
+  const seen = new Set();
+  const frag = document.createDocumentFragment();
+
+  // Spacer above
+  if (start > 0) {
+    const spacer = document.createElement("div");
+    spacer.style.height = `${start * ROW_HEIGHT}px`;
+    spacer.setAttribute("data-virtual-spacer", "top");
+    frag.appendChild(spacer);
   }
 
-  attachBookmarkCardListeners();
-  updateBulkUI();
+  // Render only visible bookmarks
+  for (let i = start; i < end; i++) {
+    const b = filtered[i];
+    const key = b.id;
+    let el = existing.get(key);
+    const newHTML = cardRenderer(b, i);
+    if (!el) {
+      el = document.createElement("div");
+      el.setAttribute("data-bookmark-id", key);
+      el.innerHTML = newHTML;
+    } else {
+      if (el.innerHTML !== newHTML) {
+        el.innerHTML = newHTML;
+      }
+      existing.delete(key);
+    }
+    frag.appendChild(el);
+    seen.add(key);
+  }
 
-  // Lazy load OG images for rich cards that don't have them
+  // Spacer below
+  if (end < total) {
+    const spacer = document.createElement("div");
+    spacer.style.height = `${(total - end) * ROW_HEIGHT}px`;
+    spacer.setAttribute("data-virtual-spacer", "bottom");
+    frag.appendChild(spacer);
+  }
+
+  // Remove any cards not in visible window
+  existing.forEach((el, key) => {
+    if (!seen.has(key)) el.remove();
+  });
+
+  // Batch DOM write: clear and append fragment
+  while (container.firstChild) container.removeChild(container.firstChild);
+  container.appendChild(frag);
+
+  // Add load more sentinel if needed (optional: only if not virtualized)
+  // ...existing code...
+
+  // --- Virtualization scroll handler (type-safe) ---
+  // Use a WeakMap to store scroll handlers per container
+  const scrollHandlerMap: WeakMap<HTMLElement, () => void> =
+    (window as any)._bookmarkScrollHandlerMap || new WeakMap();
+  (window as any)._bookmarkScrollHandlerMap = scrollHandlerMap;
+
+  if (!scrollHandlerMap.has(container)) {
+    const handler = () => {
+      renderBookmarks();
+    };
+    scrollHandlerMap.set(container, handler);
+    container.addEventListener("scroll", handler);
+  }
+
+  // Defer non-urgent UI work
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(() => {
+      attachBookmarkCardListeners();
+      updateBulkUI();
+    });
+  } else {
+    setTimeout(() => {
+      attachBookmarkCardListeners();
+      updateBulkUI();
+    }, 0);
+  }
+
+  // Lazy load OG images for rich cards that don't have them (deferred)
   if (state.richLinkPreviewsEnabled && state.viewMode === "grid") {
-    // todo Disable for now
-    // lazyLoadOGImages();
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(() => {
+        // lazyLoadOGImages();
+      });
+    }
   }
 
   // Note: updateCounts() is now called explicitly by callers to avoid race conditions
@@ -342,7 +435,7 @@ async function lazyLoadOGImages(): Promise<void> {
 
     // Check if bookmark already has og_image (might have been updated)
     const bookmark = state.bookmarks.find((b) => b.id === bookmarkId);
-    if (bookmark?.og_image) {
+    if (bookmark && bookmark.og_image) {
       // Update the card if og_image was found
       updateRichCardImage(bookmarkId, bookmark.og_image);
       continue;
@@ -447,87 +540,72 @@ export function attachBookmarkCardListeners(): void {
   const container = document.getElementById("bookmarks-container");
   if (!container) return;
 
-  container
-    .querySelectorAll(".bookmark-card, .rich-bookmark-card")
-    .forEach((card) => {
-      if ((card as HTMLElement).dataset.listenerAttached) return;
-      (card as HTMLElement).dataset.listenerAttached = "true";
+  // Event delegation for card click and checkbox
+  container.addEventListener("click", (e) => {
+    const card = (e.target as HTMLElement).closest(
+      ".bookmark-card, .rich-bookmark-card",
+    ) as HTMLElement | null;
+    if (!card) return;
 
-      card.addEventListener("click", (e) => {
-        const id = (card as HTMLElement).dataset.id || "";
-        const index = parseInt((card as HTMLElement).dataset.index || "0", 10);
+    // Checkbox click
+    if ((e.target as HTMLElement).classList.contains("bookmark-select")) {
+      e.stopPropagation();
+      const id = card.dataset.id || "";
+      const index = parseInt(card.dataset.index || "0", 10);
+      toggleBookmarkSelection(id, index, (e as MouseEvent).shiftKey, true);
+      return;
+    }
 
-        // Ignore clicks on action buttons or select checkbox
-        if ((e.target as HTMLElement).closest(".bookmark-actions")) return;
-        if ((e.target as HTMLElement).closest(".bookmark-select")) return;
-        if ((e.target as HTMLElement).closest(".bookmark-tags")) return;
+    // Ignore clicks on action buttons or tags
+    if ((e.target as HTMLElement).closest(".bookmark-actions")) return;
+    if ((e.target as HTMLElement).closest(".bookmark-tags")) return;
 
-        if (state.bulkMode) {
-          toggleBookmarkSelection(id, index, (e as MouseEvent).shiftKey, true);
-          return;
+    const id = card.dataset.id || "";
+    const index = parseInt(card.dataset.index || "0", 10);
+
+    if (state.bulkMode) {
+      toggleBookmarkSelection(id, index, (e as MouseEvent).shiftKey, true);
+      return;
+    }
+
+    // Get the bookmark from state
+    const bookmark = state.bookmarks.find((b) => b.id === id);
+    if (!bookmark) return;
+
+    const url = bookmark.url;
+
+    // Handle special URL schemes
+    if (url.startsWith("view:")) {
+      const viewId = url.substring(5);
+      if (state.currentView === "dashboard") {
+        import("@features/bookmarks/dashboard.ts").then(({ restoreView }) => {
+          restoreView(viewId);
+        });
+      }
+      return;
+    }
+    if (url.startsWith("bookmark-view:")) {
+      const viewId = url.substring(14);
+      restoreBookmarkView(viewId);
+      return;
+    }
+    // Regular bookmark - track and open
+    trackClick(bookmark.id);
+    window.open(url, "_blank", "noopener,noreferrer");
+  });
+
+  // Favicon error handler (still per-card, as event delegation for 'error' is not supported)
+  container.querySelectorAll(".bookmark-favicon-img").forEach((faviconImg) => {
+    if ((faviconImg as HTMLElement).dataset.fallback === "true") {
+      faviconImg.addEventListener("error", (e) => {
+        const parent = (e.target as HTMLElement).parentElement;
+        if (parent) {
+          parent.innerHTML =
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
         }
-
-        // Get the bookmark from state
-        const bookmark = state.bookmarks.find((b) => b.id === id);
-        if (!bookmark) return;
-
-        const url = bookmark.url;
-
-        // Handle special URL schemes
-        // Handle special URL schemes
-        if (url.startsWith("view:")) {
-          // Dashboard view shortcut
-          const viewId = url.substring(5);
-          if (state.currentView === "dashboard") {
-            import("@features/bookmarks/dashboard.ts").then(
-              ({ restoreView }) => {
-                restoreView(viewId);
-              },
-            );
-          }
-          return;
-        }
-
-        if (url.startsWith("bookmark-view:")) {
-          // Bookmark view shortcut
-          const viewId = url.substring(14);
-          restoreBookmarkView(viewId);
-          return;
-        }
-
-        // Regular bookmark - track and open
-        trackClick(bookmark.id);
-        window.open(url, "_blank", "noopener,noreferrer");
       });
-
-      const checkbox = card.querySelector(".bookmark-select");
-      if (checkbox) {
-        checkbox.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const id = (card as HTMLElement).dataset.id || "";
-          const index = parseInt(
-            (card as HTMLElement).dataset.index || "0",
-            10,
-          );
-          toggleBookmarkSelection(id, index, (e as MouseEvent).shiftKey, true);
-        });
-      }
-
-      // Handle favicon image errors with proper event listener
-      const faviconImg = card.querySelector(".bookmark-favicon-img");
-      if (
-        faviconImg &&
-        (faviconImg as HTMLElement).dataset.fallback === "true"
-      ) {
-        faviconImg.addEventListener("error", (e) => {
-          const parent = (e.target as HTMLElement).parentElement;
-          if (parent) {
-            parent.innerHTML =
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-          }
-        });
-      }
-    });
+    }
+  });
 }
 
 // Setup infinite scroll
@@ -637,11 +715,11 @@ export function selectAllBookmarks(): void {
 // Create bookmark
 export async function createBookmark(data: Partial<Bookmark>): Promise<void> {
   try {
-    const bookmark = await api("/bookmarks", {
+    const bookmark = await api<Bookmark>("/bookmarks", {
       method: "POST",
       body: JSON.stringify(data),
     });
-    state.bookmarks.unshift(bookmark);
+    state.bookmarks.unshift(bookmark as Bookmark);
     renderBookmarks();
     await updateCounts();
     closeModals();
@@ -657,7 +735,7 @@ export async function updateBookmark(
   data: Partial<Bookmark>,
 ): Promise<void> {
   try {
-    const bookmark = await api(`/bookmarks/${id}`, {
+    const bookmark = await api<Bookmark>(`/bookmarks/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     });
@@ -717,7 +795,13 @@ export async function unarchiveBookmark(id: string): Promise<void> {
 
 // Delete bookmark
 export async function deleteBookmark(id: string): Promise<void> {
-  if (!confirm("Delete this bookmark?")) return;
+  if (
+    !(await confirmDialog("Delete this bookmark?", {
+      title: "Delete Bookmark",
+      destructive: true,
+    }))
+  )
+    return;
 
   try {
     await api(`/bookmarks/${id}`, { method: "DELETE" });
@@ -911,7 +995,8 @@ async function showBookmarkViewsMenu() {
   // Remove existing dropdown if any
   document.getElementById("bookmark-views-dropdown")?.remove();
 
-  const views = await loadBookmarkViews();
+  const viewsUnknown = await loadBookmarkViews();
+  const views: any[] = Array.isArray(viewsUnknown) ? viewsUnknown : [];
 
   const dropdown = document.createElement("div");
   dropdown.id = "bookmark-views-dropdown";
@@ -1068,7 +1153,11 @@ async function saveCurrentBookmarkView() {
     document.getElementById("bookmark-views-dropdown")?.remove();
 
     // Prompt to create bookmark shortcut
-    if (confirm("Create a bookmark shortcut for this view?")) {
+    if (
+      await confirmDialog("Create a bookmark shortcut for this view?", {
+        title: "Create Shortcut",
+      })
+    ) {
       await createBookmark({
         title: name,
         url: `bookmark-view:${view.id}`,
@@ -1092,7 +1181,13 @@ async function loadBookmarkViews() {
 
 // Delete bookmark view
 async function deleteBookmarkView(id: string) {
-  if (!confirm("Delete this view?")) return;
+  if (
+    !(await confirmDialog("Delete this view?", {
+      title: "Delete View",
+      destructive: true,
+    }))
+  )
+    return;
   try {
     await api(`/bookmark/views/${id}`, { method: "DELETE" });
     showToast("View deleted", "success");

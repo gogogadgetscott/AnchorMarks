@@ -7,11 +7,22 @@ import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { parseTagInput } from "@utils/index.ts";
 import { showToast, updateCounts } from "@utils/ui-helpers.ts";
+import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
 // Bulk delete
 export async function bulkDelete(): Promise<void> {
   if (state.selectedBookmarks.size === 0) return;
-  if (!confirm(`Delete ${state.selectedBookmarks.size} bookmark(s)?`)) return;
+  if (state.selectedBookmarks.size === 0) return;
+  if (
+    !(await confirmDialog(
+      `Delete ${state.selectedBookmarks.size} bookmark(s)?`,
+      {
+        title: "Bulk Delete",
+        destructive: true,
+      },
+    ))
+  )
+    return;
 
   const ids = Array.from(state.selectedBookmarks);
   for (const id of ids) {

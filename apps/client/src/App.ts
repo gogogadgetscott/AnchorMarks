@@ -51,6 +51,7 @@ import { initFormListeners } from "@features/ui/forms.ts";
 import { initOmnibarListeners } from "@features/ui/omnibar.ts";
 import { initInteractions } from "@features/ui/interactions.ts";
 import { initTagListeners } from "@features/ui/tags.ts";
+import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
 /**
  * Set view mode (grid / list / compact)
@@ -97,8 +98,7 @@ export function attachViewToggleListeners(): void {
  * This dynamically renders the header without fully re-rendering
  */
 export async function updateHeaderContent(): Promise<void> {
-  const { Header, Omnibar, Icon, Button } =
-    await import("@components/index.ts");
+  const { Omnibar, Icon, Button } = await import("@components/index.ts");
   const headersContainer = document.getElementById("headers-container");
   if (!headersContainer) return;
 
@@ -125,16 +125,17 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.countId = "favorites-view-count";
       headerConfig.countSuffix = "favorites";
       headerConfig.rightContent = `
-        <div class="sort-controls">
-          <label for="favorites-sort">Sort by</label>
-          <select id="favorites-sort" class="form-select">
-            <option value="recently_added">Recently Added</option>
-            <option value="most_visited">Most Visited</option>
-            <option value="a_z">A – Z</option>
-            <option value="z_a">Z – A</option>
-          </select>
-        </div>
-      `;
+          <div class="sort-controls">
+            <label for="favorites-sort">Sort by</label>
+            <select id="favorites-sort" class="form-select">
+              <option value="recently_added">Recently Added</option>
+              <option value="most_visited">Most Visited</option>
+              <option value="a_z">A – Z</option>
+              <option value="z_a">Z – A</option>
+            </select>
+          </div>
+        `;
+      headerConfig.bulkActions = ["archive", "move", "tag", "delete"];
       break;
 
     case "recent":
@@ -142,16 +143,16 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.countId = "recents-view-count";
       headerConfig.countSuffix = "recent";
       headerConfig.rightContent = `
-        <div class="time-range-controls">
-          <label for="recents-range">Time Range</label>
-          <select id="recents-range" class="form-select">
-            <option value="today">Today</option>
-            <option value="week">Last Week</option>
-            <option value="month">Last Month</option>
-            <option value="all">All Time</option>
-          </select>
-        </div>
-      `;
+          <div class="time-range-controls">
+            <label for="recents-range">Time Range</label>
+            <select id="recents-range" class="form-select">
+              <option value="today">Today</option>
+              <option value="week">Last Week</option>
+              <option value="month">Last Month</option>
+              <option value="all">All Time</option>
+            </select>
+          </div>
+        `;
       break;
 
     case "archived":
@@ -159,12 +160,12 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.countId = "archived-view-count";
       headerConfig.countSuffix = "bookmarks";
       headerConfig.rightContent = `
-        <div class="header-search-bar">
-          ${Icon("search", { size: 18 })}
-          <input type="text" id="archived-search-input" placeholder="Search archived bookmarks..." />
-          <kbd>Ctrl+K</kbd>
-        </div>
-      `;
+          <div class="header-search-bar">
+            ${Icon("search", { size: 18 })}
+            <input type="text" id="archived-search-input" placeholder="Search archived bookmarks..." />
+            <kbd>Ctrl+K</kbd>
+          </div>
+        `;
       headerConfig.bulkActions = ["unarchive", "delete"];
       break;
 
@@ -173,12 +174,13 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.countId = "collection-view-count";
       headerConfig.countSuffix = "bookmarks";
       headerConfig.rightContent = `
-        ${Omnibar({ id: "search-input" })}
-        <button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
-          ${Icon("filter", { size: 16 })}
-          <span class="filter-btn-text">Filters</span>
-        </button>
-      `;
+          ${Omnibar({ id: "search-input" })}
+          <button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
+            ${Icon("filter", { size: 16 })}
+            <span class="filter-btn-text">Filters</span>
+          </button>
+        `;
+      headerConfig.showFilterButton = true;
       break;
 
     case "tag-cloud":
@@ -192,17 +194,15 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.countId = "bookmarks-view-count";
       headerConfig.countSuffix = "bookmarks";
       headerConfig.rightContent = `
-        ${Omnibar({ id: "search-input" })}
-        <button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
-          ${Icon("filter", { size: 16 })}
-          <span class="filter-btn-text">Filters</span>
-        </button>
-      `;
+          ${Omnibar({ id: "search-input" })}
+          <button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
+            ${Icon("filter", { size: 16 })}
+            <span class="filter-btn-text">Filters</span>
+          </button>
+        `;
+      headerConfig.showFilterButton = true;
       break;
   }
-
-  // Render the updated header
-  headersContainer.innerHTML = Header(headerConfig);
 
   // Ensure user profile reflects the logged-in user after re-render
   if (state.currentUser) {
@@ -224,7 +224,14 @@ export async function updateHeaderContent(): Promise<void> {
  * API Key functions
  */
 export async function regenerateApiKey(): Promise<void> {
-  if (!confirm("Regenerate API key? Old keys will stop working.")) return;
+  if (
+    !(await confirmDialog("Regenerate API key? Old keys will stop working.", {
+      title: "Regenerate API Key",
+      confirmText: "Regenerate",
+      destructive: true,
+    }))
+  )
+    return;
   try {
     const data = await api<{ api_key: string }>("/auth/regenerate-key", {
       method: "POST",
@@ -247,7 +254,14 @@ export function copyApiKey(): void {
  * Reset all bookmarks to default
  */
 export async function resetBookmarks(): Promise<void> {
-  if (!confirm("Reset all bookmarks? This cannot be undone!")) return;
+  if (
+    !(await confirmDialog("Reset all bookmarks? This cannot be undone!", {
+      title: "Reset Bookmarks",
+      confirmText: "Reset All",
+      destructive: true,
+    }))
+  )
+    return;
   try {
     const data = await api<{ bookmarks_created: number }>(
       "/settings/reset-bookmarks",
@@ -461,18 +475,4 @@ window.AnchorMarks = {
     const { loadSettings } = await import("@features/bookmarks/settings.ts");
     loadSettings();
   },
-};
-
-// palette integration utilities
-(window as any).launchBookmarkFromPalette = (id: string) => {
-  const bookmark = state.bookmarks.find((b) => b.id === id);
-  if (bookmark) window.open(bookmark.url, "_blank");
-};
-
-(window as any).searchBookmarks = (query: string) => {
-  return state.bookmarks.filter(
-    (b) =>
-      b.title.toLowerCase().includes(query.toLowerCase()) ||
-      b.url.toLowerCase().includes(query.toLowerCase()),
-  );
 };

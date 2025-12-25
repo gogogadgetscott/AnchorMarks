@@ -10,6 +10,7 @@ import { showToast, dom, updateCounts } from "@utils/ui-helpers.ts";
 import { api } from "@services/api.ts";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
 import { logger } from "@utils/logger.ts";
+import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
 // Grid size for snap-to-grid feature
 const GRID_SIZE = 20;
@@ -109,10 +110,15 @@ export function updateViewNameBadge(viewName: string | null): void {
 /**
  * Confirm before switching views if there are unsaved changes
  */
-export function confirmViewSwitch(): boolean {
+export async function confirmViewSwitch(): Promise<boolean> {
   if (state.dashboardHasUnsavedChanges) {
-    return confirm(
+    return await confirmDialog(
       "You have unsaved changes to the dashboard layout. These changes will be lost if you switch views. Continue?",
+      {
+        title: "Unsaved Changes",
+        confirmText: "Continue",
+        destructive: true,
+      },
     );
   }
   return true;
@@ -303,7 +309,7 @@ export async function saveCurrentView(): Promise<void> {
       include_child_bookmarks: state.includeChildBookmarks ? 1 : 0,
     };
 
-    const view = await api("/dashboard/views", {
+    const view = await api<{ id: string }>("/dashboard/views", {
       method: "POST",
       body: JSON.stringify({ name, config }),
     });
@@ -325,7 +331,11 @@ export async function saveCurrentView(): Promise<void> {
     });
 
     // Prompt to create bookmark shortcut
-    if (confirm("Create a bookmark shortcut for this view?")) {
+    if (
+      await confirmDialog("Create a bookmark shortcut for this view?", {
+        title: "Create Shortcut",
+      })
+    ) {
       const { createBookmark } =
         await import("@features/bookmarks/bookmarks.ts");
       await createBookmark({
@@ -351,7 +361,13 @@ async function loadViews(): Promise<any[]> {
 
 // Delete View
 export async function deleteView(id: string): Promise<void> {
-  if (!confirm("Delete this view?")) return;
+  if (
+    !(await confirmDialog("Delete this view?", {
+      title: "Delete View",
+      destructive: true,
+    }))
+  )
+    return;
   try {
     await api(`/dashboard/views/${id}`, { method: "DELETE" });
     showToast("View deleted", "success");
@@ -368,7 +384,7 @@ export async function restoreView(
   viewName?: string,
 ): Promise<void> {
   // Warn about unsaved changes
-  if (!confirmViewSwitch()) return;
+  if (!(await confirmViewSwitch())) return;
 
   try {
     await api(`/dashboard/views/${id}/restore`, { method: "POST" });
@@ -585,7 +601,7 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
     );
     if (!widgets || widgets.length === 0) return;
 
-    const res = await api("/tags/analytics");
+    const res = await api<any>("/tags/analytics");
 
     // Handle various response formats
     let tags: any[] = [];
@@ -1401,8 +1417,14 @@ export function initDashboardDragDrop(): void {
         }
 
         // Confirm for large batches
+        // Confirm for large batches
         if (bookmarks.length > 5) {
-          if (!confirm(`Open ${bookmarks.length} bookmarks in new tabs?`)) {
+          if (
+            !(await confirmDialog(
+              `Open ${bookmarks.length} bookmarks in new tabs?`,
+              { title: "Open All" },
+            ))
+          ) {
             return;
           }
         }
@@ -1947,9 +1969,9 @@ function attachLayoutSettingsListeners(): void {
 
   const clearBtn = document.getElementById("clear-dashboard-btn");
   if (clearBtn) {
-    clearBtn.addEventListener("click", (e) => {
+    clearBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      confirmClearDashboard();
+      await confirmClearDashboard();
     });
   }
 }
@@ -1984,7 +2006,7 @@ export function autoPositionWidgets(): void {
   closeLayoutSettings();
 }
 
-function confirmClearDashboard(): void {
+async function confirmClearDashboard(): Promise<void> {
   const count = state.dashboardWidgets.length;
 
   if (count === 0) {
@@ -1993,8 +2015,13 @@ function confirmClearDashboard(): void {
   }
 
   if (
-    confirm(
+    await confirmDialog(
       `Are you sure you want to remove all ${count} widget${count !== 1 ? "s" : ""} from the dashboard? This cannot be undone.`,
+      {
+        title: "Clear Dashboard",
+        destructive: true,
+        confirmText: "Clear All",
+      },
     )
   ) {
     clearDashboard();

@@ -7,6 +7,7 @@ import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { downloadBlob } from "@utils/index.ts";
 import { showToast, closeModals } from "@utils/ui-helpers.ts";
+import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
 // Import HTML bookmarks file
 export async function importHtml(file: File): Promise<void> {
@@ -111,9 +112,14 @@ export async function exportHtml(): Promise<void> {
 // Reset bookmarks to default
 export async function resetBookmarks(): Promise<void> {
   if (
-    !confirm(
+    !(await confirmDialog(
       "Reset all bookmarks? This will delete all your bookmarks and folders, and restore the example bookmarks. This cannot be undone!",
-    )
+      {
+        title: "Reset Bookmarks",
+        confirmText: "Reset All",
+        destructive: true,
+      },
+    ))
   )
     return;
 

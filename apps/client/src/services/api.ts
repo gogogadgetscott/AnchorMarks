@@ -46,7 +46,11 @@ export async function api<T = unknown>(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  if (state.csrfToken) headers["X-CSRF-Token"] = state.csrfToken;
+  // Always send CSRF token for state-changing requests
+  const method = (options.method || "GET").toUpperCase();
+  if (["POST", "PUT", "DELETE", "PATCH"].includes(method) && state.csrfToken) {
+    headers["X-CSRF-Token"] = state.csrfToken;
+  }
 
   // Create AbortController if signal provided or for cancellable requests
   const abortController = options.signal ? undefined : new AbortController();
@@ -102,6 +106,14 @@ export async function api<T = unknown>(
         const errorMessage =
           (data as any)?.error ||
           `API Error: ${response.status} ${response.statusText}`;
+        // Special handling for CSRF errors
+        if (
+          errorMessage.toLowerCase().includes("csrf") ||
+          errorMessage.toLowerCase().includes("x-csrf-token")
+        ) {
+          state.setCsrfToken(null);
+          // Optionally trigger re-auth or reload UI
+        }
         throw new Error(errorMessage);
       }
 

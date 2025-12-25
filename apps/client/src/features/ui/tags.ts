@@ -5,6 +5,7 @@
 
 import * as state from "@features/state.ts";
 import { showToast } from "@utils/ui-helpers.ts";
+import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
 /**
  * Initialize tag-related listeners
@@ -81,7 +82,12 @@ export function initTagListeners(): void {
         showToast("Enter both tags to rename", "error");
         return;
       }
-      if (!confirm(`Rename tag "${from}" to "${to}"?`)) return;
+      if (
+        !(await confirmDialog(`Rename tag "${from}" to "${to}"?`, {
+          title: "Rename Tag",
+        }))
+      )
+        return;
 
       try {
         const { renameTagAcross } =
@@ -98,7 +104,12 @@ export function initTagListeners(): void {
     ?.addEventListener("click", async () => {
       if (!state.lastTagRenameAction) return;
       const { from, to } = state.lastTagRenameAction;
-      if (!confirm(`Undo rename ${from} → ${to}?`)) return;
+      if (
+        !(await confirmDialog(`Undo rename ${from} → ${to}?`, {
+          title: "Undo Rename",
+        }))
+      )
+        return;
 
       try {
         const searchModule = await import("@features/bookmarks/search.ts");

@@ -1,3 +1,22 @@
+/* High Contrast Mode */
+[data-high-contrast="true"] {
+  --bg-primary: #fff !important;
+  --bg-secondary: #fff !important;
+  --bg-tertiary: #fff !important;
+  --text-primary: #000 !important;
+  --text-secondary: #222 !important;
+  --text-tertiary: #444 !important;
+  --border-color: #000 !important;
+  --card-bg: #fff !important;
+  --sidebar-bg: #fff !important;
+  --modal-bg: #fff !important;
+  --primary-500: #000 !important;
+  --primary-600: #000 !important;
+  --primary-700: #000 !important;
+  --primary-800: #000 !important;
+  --shadow-color: rgba(0, 0, 0, 0.7) !important;
+  outline: 2px solid #000 !important;
+}
 /* AnchorMarks - Modern Bookmark Manager Styles */
 
 :root {
@@ -2233,6 +2252,7 @@ body.sidebar-collapsed .nav-section-header {
   display: flex;
   flex-direction: column;
   height: 100%;
+  contain: layout style paint;
 }
 
 .bookmark-card.selected {

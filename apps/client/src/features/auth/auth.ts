@@ -12,6 +12,7 @@ import {
 } from "@utils/error-handler.ts";
 import { logger } from "@utils/logger.ts";
 import type { User } from "@types";
+import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
 // Auth form HTML templates
 const LOGIN_FORM_HTML = `
@@ -104,7 +105,7 @@ export function showAuthScreen(): void {
     const formsContainer = document.getElementById("auth-forms-container");
     if (formsContainer && !document.getElementById("login-form")) {
       formsContainer.innerHTML = LOGIN_FORM_HTML + REGISTER_FORM_HTML;
-      
+
       // Re-attach form listeners after injecting new forms
       import("@features/ui/forms.ts").then(({ initFormListeners }) => {
         initFormListeners();
@@ -249,7 +250,14 @@ export function updateUserInfo(): void {
 
 // Regenerate API key
 export async function regenerateApiKey(): Promise<void> {
-  if (!confirm("Regenerate API key? Old keys will stop working.")) return;
+  if (
+    !(await confirmDialog("Regenerate API key? Old keys will stop working.", {
+      title: "Regenerate API Key",
+      confirmText: "Regenerate",
+      destructive: true,
+    }))
+  )
+    return;
 
   try {
     const data = await api<{ api_key: string }>("/auth/regenerate-key", {

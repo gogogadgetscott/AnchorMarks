@@ -24,6 +24,9 @@ export function initInteractions(): void {
 
   // Directly attach user dropdown listeners as fallback
   attachUserDropdownDirectly();
+
+  // API Key Listeners
+  initApiSettingsListeners();
 }
 
 /**
@@ -555,4 +558,26 @@ function initFaviconErrorHandling(): void {
     },
     true,
   );
+}
+
+/**
+ * Initialize API Settings listeners (Regenerate/Copy Key)
+ */
+function initApiSettingsListeners(): void {
+  // Since these buttons might be inside a modal that is created/destroyed or hidden,
+  // we might need delegation if they are not in the DOM at init time.
+  // However, settings-modal.html seems to be statically in the DOM (hidden).
+  // If they are dynamic, we should use delegation.
+  // Given settings-modal.html content, they seem static.
+  // But to be safe against re-renders or if the modal content is re-injected:
+  document.body.addEventListener("click", (e) => {
+    const target = e.target as HTMLElement;
+    if (target.id === "regenerate-api-key") {
+      import("@features/auth/auth.ts").then(({ regenerateApiKey }) =>
+        regenerateApiKey(),
+      );
+    } else if (target.id === "copy-api-key") {
+      import("@features/auth/auth.ts").then(({ copyApiKey }) => copyApiKey());
+    }
+  });
 }

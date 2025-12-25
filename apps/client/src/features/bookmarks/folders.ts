@@ -5,6 +5,7 @@
 
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
+import { Folder } from "../../types/index";
 import { escapeHtml } from "@utils/index.ts";
 import {
   showToast,
@@ -13,11 +14,12 @@ import {
   updateActiveNav,
 } from "@utils/ui-helpers.ts";
 import { Badge } from "@components/index.ts";
+import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
 // Load folders from server
 export async function loadFolders(): Promise<void> {
   try {
-    const folders = await api("/folders");
+    const folders = await api<Folder[]>("/folders");
     state.setFolders(folders);
     renderFolders();
     updateFolderSelect();
@@ -61,12 +63,17 @@ export function renderFolders(): void {
         const indentation = level * 12;
 
         return `
-            <div class="nav-item folder-item ${state.currentFolder === f.id ? "active" : ""} ${isEmpty ? "empty" : ""}" 
-                 data-folder="${f.id}" 
+            <div class="nav-item folder-item ${state.currentFolder === f.id ? "active" : ""} ${isEmpty ? "empty" : ""}"
+                 data-folder="${f.id}"
                  data-folder-name="${escapeHtml(f.name)}"
                  data-folder-color="${f.color || ""}"
                  draggable="true"
-                 style="padding-left: ${12 + indentation}px; cursor: grab;">
+                 style="padding-left: ${12 + indentation}px; cursor: grab;"
+                 role="treeitem"
+                 tabindex="0"
+                 aria-label="${escapeHtml(f.name)}"
+                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}"
+            >
                 <span class="folder-color" style="background: ${f.color || "var(--primary-500)"}"></span>
                 <span class="folder-name">${escapeHtml(f.name)}</span>
                 ${count > 0 ? Badge(count) : ""}
@@ -272,7 +279,15 @@ export async function updateFolder(id: string, data: any): Promise<void> {
 
 // Delete folder
 export async function deleteFolder(id: string): Promise<void> {
-  if (!confirm("Delete this folder? Bookmarks will be moved to uncategorized."))
+  if (
+    !(await confirmDialog(
+      "Delete this folder? Bookmarks will be moved to uncategorized.",
+      {
+        title: "Delete Folder",
+        destructive: true,
+      },
+    ))
+  )
     return;
 
   try {

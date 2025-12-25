@@ -27,12 +27,12 @@ function getActiveFilterCount(): number {
     count += 1;
   }
 
-  // Count folder filter (if not "all" view)
-  if (state.currentFolder) {
+  // Count folder filter (only if in 'folder' view and a folder is selected)
+  if (state.currentView === "folder" && state.currentFolder) {
     count += 1;
   }
 
-  // Count collection filter
+  // Count collection filter (only if in 'collection' view and a collection is selected)
   if (state.currentView === "collection" && state.currentCollection) {
     count += 1;
   }
@@ -80,8 +80,10 @@ export function updateFilterButtonVisibility(): void {
 export function initFilterDropdown(): void {
   const btn = document.getElementById("filter-dropdown-btn");
   if (!btn) {
-    // Button doesn't exist in this view - silently return without warning
+    // Button doesn't exist in this view - log a warning for test visibility
     // This is expected for views like dashboard, favorites, recent, etc.
+    // eslint-disable-next-line no-console
+    console.warn("Filter button not found in DOM");
     return;
   }
 
@@ -474,9 +476,8 @@ async function renderFoldersInDropdown(): Promise<void> {
 
   const renderFolderTree = (parentId: string | null = null, depth = 0) => {
     const folderList = state.folders.filter((f) => f.parent_id === parentId);
-    folderList.sort(
-      (a, b) => 1 /* folder.position is missing in the interface */ - 1,
-    );
+    // TODO: Implement folder.position sort if/when available in interface
+    // Currently, folders are not sorted by position due to missing property.
 
     folderList.forEach((folder) => {
       const count = getFolderBookmarkCount(folder.id);

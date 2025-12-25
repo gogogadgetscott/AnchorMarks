@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
-const { JWT_SECRET, NODE_ENV } = require("../config");
+const { JWT_SECRET } = require("../config");
 const {
   ensureTagsExist,
   updateBookmarkTags,
@@ -70,7 +70,7 @@ function createExampleBookmarks(db, userId, folderId = null, fetchFavicon) {
       updateBookmarkTags(db, id, tagIds);
     }
 
-    if (fetchFavicon && process.env.NODE_ENV !== "test") {
+    if (fetchFavicon && process.env.NODE_ENV === "production") {
       fetchFavicon(bm.url, id).catch(console.error);
     }
 
@@ -135,15 +135,17 @@ function setupAuthRoutes(
 
       res.cookie("token", token, {
         httpOnly: true,
-        secure: NODE_ENV === "production",
-        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
         maxAge: 30 * 24 * 60 * 60 * 1000,
+        path: "/",
       });
       res.cookie("csrfToken", csrfToken, {
         httpOnly: false,
-        secure: NODE_ENV === "production",
-        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
         maxAge: 30 * 24 * 60 * 60 * 1000,
+        path: "/",
       });
 
       // Log successful registration
@@ -198,15 +200,17 @@ function setupAuthRoutes(
 
       res.cookie("token", token, {
         httpOnly: true,
-        secure: NODE_ENV === "production",
-        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
         maxAge: 30 * 24 * 60 * 60 * 1000,
+        path: "/",
       });
       res.cookie("csrfToken", csrfToken, {
         httpOnly: false,
-        secure: NODE_ENV === "production",
-        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
         maxAge: 30 * 24 * 60 * 60 * 1000,
+        path: "/",
       });
 
       // Log successful login
@@ -247,7 +251,15 @@ function setupAuthRoutes(
     audit.logout(req.user.id, req);
     res.clearCookie("token");
     res.clearCookie("csrfToken");
-    res.json({ success: true });
+    // Rotate CSRF token after logout for extra safety
+    const csrfToken = generateCsrfToken();
+    res.cookie("csrfToken", csrfToken, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+    res.json({ success: true, csrfToken });
   });
 
   // Delete account
@@ -340,7 +352,15 @@ function setupAuthRoutes(
         "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
       ).run(hashedPassword, req.user.id);
       audit.passwordChange(req.user.id, req);
-      res.json({ success: true });
+      // Rotate CSRF token after password change
+      const csrfToken = generateCsrfToken();
+      res.cookie("csrfToken", csrfToken, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+      res.json({ success: true, csrfToken });
     } catch (err) {
       console.error("Change password error:", err);
       res.status(500).json({ error: "Failed to change password" });

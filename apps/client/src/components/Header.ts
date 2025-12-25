@@ -10,6 +10,7 @@ interface HeaderOptions {
   countSuffix?: string;
   className?: string;
   rightContent?: string;
+  showFilterButton?: boolean;
   showViewToggle?: boolean;
   viewModes?: ViewMode[];
   showUserProfile?: boolean;
@@ -27,8 +28,6 @@ export function Header(options: HeaderOptions): string {
   const {
     id,
     title,
-    countId = "",
-    countSuffix = "bookmarks",
     className = "",
     rightContent = "",
     showViewToggle = true,
@@ -37,13 +36,14 @@ export function Header(options: HeaderOptions): string {
     bulkActions = ["archive", "move", "tag", "delete"],
     selectionCountId = "header-selection-count",
     clearBtnId = "btn-clear-selection",
+    showFilterButton = false,
   } = options;
 
-  const countHtml = countId
-    ? `<span class="bookmark-count" id="${countId}">0 ${countSuffix}</span>`
-    : "";
   const toggleHtml = showViewToggle ? ViewToggle({ modes: viewModes }) : "";
   const profileHtml = showUserProfile ? UserProfile() : "";
+  const filterBtnHtml = showFilterButton
+    ? `<button class="btn-icon" id="filter-btn" title="Filter">${Icon("filter")}</button>`
+    : "";
 
   return `
     <header class="content-header ${className}" id="${id}">
@@ -53,9 +53,9 @@ export function Header(options: HeaderOptions): string {
             ${Icon("menu")}
           </button>
           <h1>${title}</h1>
-          ${countHtml}
         </div>
         <div class="header-right">
+          ${filterBtnHtml}
           ${rightContent}
           ${toggleHtml}
           ${profileHtml}

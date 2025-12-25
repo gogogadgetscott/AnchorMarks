@@ -82,7 +82,15 @@ export function BookmarkCard(bookmark: Bookmark, index: number): string {
   const delayClass = `delay-${index % 10}`;
 
   return `
-    <div class="bookmark-card ${isSelected ? "selected" : ""} ${hasColorClass} entrance-animation ${delayClass}" data-id="${bookmark.id}" data-index="${index}" style="${colorStyle}">
+    <div class="bookmark-card ${isSelected ? "selected" : ""} ${hasColorClass} entrance-animation ${delayClass}"
+      data-id="${bookmark.id}"
+      data-index="${index}"
+      style="${colorStyle}"
+      role="listitem"
+      tabindex="0"
+      aria-label="${escapeHtml(bookmark.title)}"
+      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.querySelector('[data-action=\'open-bookmark\']')?.click();}"
+    >
       <label class="bookmark-select">
         <input type="checkbox" ${isSelected ? "checked" : ""}>
       </label>

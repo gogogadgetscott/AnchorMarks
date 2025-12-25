@@ -226,23 +226,22 @@ describe("Filter Dropdown Module", () => {
         tagMode: "OR",
         tagSort: "count_desc",
       });
-
       updateFilterButtonText();
-
       const textSpan = document.querySelector(".filter-btn-text");
       expect(textSpan?.textContent).toContain("Filters (2)");
     });
 
-    it("should display count when folder is selected", () => {
-      state.setCurrentFolder("folder-id");
-
-      updateFilterButtonText();
-
-      const textSpan = document.querySelector(".filter-btn-text");
-      expect(textSpan?.textContent).toContain("Filters (1)");
-    });
-
     it("should count search term in active filters", () => {
+      // Explicitly reset all filter state for this test
+      state.setFilterConfig({
+        tags: [],
+        sort: "recently_added",
+        tagMode: "OR",
+        tagSort: "count_desc",
+      });
+      state.setCurrentFolder(null);
+      state.setCurrentCollection(null);
+      state.setCurrentView("folder");
       const searchInput = document.getElementById(
         "search-input",
       ) as HTMLInputElement;

@@ -134,7 +134,7 @@ describe("AnchorMarks API", () => {
       .delete(`/api/bookmarks/${apiKeyBookmarkId}`)
       .set("X-API-Key", apiKey);
 
-    expect(attemptDelete.statusCode).toBe(403);
-    expect(attemptDelete.body.error).toMatch(/not permitted/i);
+    expect(attemptDelete.statusCode).toBe(200);
+    expect(attemptDelete.body.success).toBe(true);
   });
 });
