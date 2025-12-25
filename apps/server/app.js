@@ -40,6 +40,7 @@ const authenticateTokenMiddleware = authenticateToken(db);
 const validateCsrfTokenMiddleware = validateCsrfToken(db);
 
 const { makeFetchFaviconWrapper } = require("./helpers/favicon");
+const metadataQueue = require("./helpers/metadata-queue");
 
 // Background jobs and thumbnail cache are handled in background.js
 const { createBackgroundJobs } = require("./background");
@@ -60,6 +61,12 @@ createBackgroundJobs({
   isPrivateAddress,
   config,
 });
+
+// Initialize metadata queue for deferred favicon fetching during import
+metadataQueue.initialize(db, fetchFaviconWrapper);
+if (config.NODE_ENV !== "test") {
+  metadataQueue.startProcessor();
+}
 
 // Rate limiter
 const rateLimiter = require("./middleware/rateLimiter");
@@ -167,7 +174,6 @@ setupTagsRoutes(app, db, { authenticateTokenMiddleware });
 controllerTags.setupTagsRoutes(app, db, { authenticateTokenMiddleware });
 setupImportExportRoutes(app, db, {
   authenticateTokenMiddleware,
-  fetchFaviconWrapper,
 });
 setupSyncRoutes(app, db, { authenticateTokenMiddleware, fetchFaviconWrapper });
 setupHealthRoutes(app, db, {
@@ -203,7 +209,7 @@ setupSmartOrganizationRoutes(app, db, {
 // In production: Express serves built Vite assets from dist/
 const staticDir =
   config.NODE_ENV === "production" &&
-  fs.existsSync(path.join(__dirname, "..", "client", "dist"))
+    fs.existsSync(path.join(__dirname, "..", "client", "dist"))
     ? path.join(__dirname, "..", "client", "dist")
     : path.join(__dirname, "..", "client");
 
