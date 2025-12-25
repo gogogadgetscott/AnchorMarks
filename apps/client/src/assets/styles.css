@@ -3986,8 +3986,8 @@ body.sidebar-collapsed .nav-section-header {
   font-size: 0.75rem;
 }
 
-/* Mobile Responsive */
-@media (max-width: 768px) {
+/* Mobile/Tablet Responsive - Sidebar Overlay Mode */
+@media (max-width: 1024px) {
   /* Ensure the main app uses full viewport width on mobile */
   .main-app,
   .main-content,

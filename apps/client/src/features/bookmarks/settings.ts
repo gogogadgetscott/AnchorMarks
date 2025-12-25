@@ -112,9 +112,9 @@ export async function loadSettings(): Promise<void> {
       : localStorage.getItem("anchormarks_sidebar_collapsed") === "true";
     // Persist desktop collapsed state only; ignore on mobile
     // removed stray import
-    if (sidebarCollapsed && window.innerWidth > 768) {
+    if (sidebarCollapsed && window.innerWidth > 1024) {
       document.body.classList.add("sidebar-collapsed");
-    } else if (!sidebarCollapsed && window.innerWidth > 768) {
+    } else if (!sidebarCollapsed && window.innerWidth > 1024) {
       document.body.classList.remove("sidebar-collapsed");
     }
     localStorage.setItem(
@@ -232,11 +232,11 @@ export function toggleIncludeChildBookmarks(): void {
 
 // Toggle sidebar
 export function toggleSidebar(): void {
-  // Check if we're on mobile (window width <= 768px)
-  const isMobile = window.innerWidth <= 768;
+  // Check if we're on mobile/tablet (window width <= 1024px)
+  const isMobile = window.innerWidth <= 1024;
 
   if (isMobile) {
-    // On mobile, toggle the mobile sidebar open state (overlay)
+    // On mobile/tablet, toggle the sidebar open state (overlay)
     document.body.classList.toggle("mobile-sidebar-open");
   } else {
     // On desktop, toggle the collapsed state
@@ -247,6 +247,7 @@ export function toggleSidebar(): void {
     saveSettings({ hide_sidebar: isCollapsed ? 1 : 0 });
   }
 }
+
 
 // Set view mode
 export function setViewMode(mode: "grid" | "list" | "compact"): void {
