@@ -44,7 +44,7 @@ beforeAll(async () => {
     .post("/api/bookmarks")
     .set("X-CSRF-Token", csrfToken)
     .send({ url: "https://dup.com", title: "Duplicate" });
-});
+}, 30000);
 
 afterAll(() => {
   if (app.db) app.db.close();

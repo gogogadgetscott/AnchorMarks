@@ -63,7 +63,7 @@ const AI_API_URL = process.env.AI_API_URL || null; // e.g., https://api.openai.c
 const AI_API_KEY = process.env.AI_API_KEY || null;
 
 // Thumbnail screenshot configuration
-const THUMBNAIL_ENABLED = process.env.THUMBNAIL_ENABLED !== "false";
+const THUMBNAIL_ENABLED = process.env.THUMBNAIL_ENABLED === "true";
 const THUMBNAIL_WIDTH = parseInt(process.env.THUMBNAIL_WIDTH) || 1280;
 const THUMBNAIL_HEIGHT = parseInt(process.env.THUMBNAIL_HEIGHT) || 800;
 const THUMBNAIL_QUALITY = parseInt(process.env.THUMBNAIL_QUALITY) || 80;

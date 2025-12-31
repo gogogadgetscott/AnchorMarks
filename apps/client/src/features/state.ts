@@ -40,6 +40,7 @@ export let bookmarks: Bookmark[] = [];
 export let folders: Folder[] = [];
 export let renderedBookmarks: Bookmark[] = [];
 export let collections: any[] = [];
+export let totalCount: number = 0;
 
 // UI State
 export let currentDashboardTab: string | null = null;
@@ -241,6 +242,13 @@ export function setCollections(val: any[]) {
 }
 export function setRenderedBookmarks(val: Bookmark[]) {
   renderedBookmarks = val;
+}
+export function setTotalCount(val: number) {
+  totalCount = val;
+}
+export function resetPagination() {
+  displayedCount = BOOKMARKS_PER_PAGE;
+  totalCount = 0;
 }
 export function setCurrentDashboardTab(val: string | null) {
   currentDashboardTab = val;
