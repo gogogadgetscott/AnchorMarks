@@ -20,21 +20,25 @@ async function parseBookmarkHtml(html) {
   function findClosingTag(str, start, tagName) {
     let depth = 1;
     let pos = start + tagName.length + 2;
-    const openTag = `<${tagName}`;
-    const closeTag = `</${tagName}>`;
+    const openTagRegex = new RegExp(`<${tagName}`, 'i');
+    const closeTagRegex = new RegExp(`<\/${tagName}>`, 'i');
 
     while (depth > 0 && pos < str.length) {
-      const nextOpen = str.indexOf(openTag, pos);
-      const nextClose = str.indexOf(closeTag, pos);
+      const remaining = str.substring(pos);
+      const nextOpenMatch = remaining.match(openTagRegex);
+      const nextCloseMatch = remaining.match(closeTagRegex);
+      
+      const nextOpen = nextOpenMatch ? pos + nextOpenMatch.index : -1;
+      const nextClose = nextCloseMatch ? pos + nextCloseMatch.index : -1;
 
       if (nextClose === -1) return -1;
 
       if (nextOpen !== -1 && nextOpen < nextClose) {
         depth++;
-        pos = nextOpen + openTag.length;
+        pos = nextOpen + tagName.length + 1; // <TAG
       } else {
         depth--;
-        pos = nextClose + closeTag.length;
+        pos = nextClose + tagName.length + 3; // </TAG>
       }
       if (depth === 0) return nextClose;
     }
@@ -46,29 +50,49 @@ async function parseBookmarkHtml(html) {
     const len = blockHtml.length;
 
     while (i < len) {
-      const dtIndex = blockHtml.indexOf("<DT>", i);
-      if (dtIndex === -1) break;
-
+      const nextTag = blockHtml.substring(i);
+      
+      const dtMatch = nextTag.match(/<DT>/i);
+      if (!dtMatch) break;
+      
+      const dtIndex = i + dtMatch.index;
       i = dtIndex + 4;
 
-      if (blockHtml.startsWith("<H3", i)) {
-        const h3End = blockHtml.indexOf("</H3>", i);
+      if (/^<H3/i.test(blockHtml.substring(i))) {
+        const h3EndMatch = blockHtml.substring(i).match(/<\/H3>/i);
+        if (!h3EndMatch) {
+            i++; 
+            continue;
+        }
+        const h3EndInfo = { index: h3EndMatch.index, length: h3EndMatch[0].length };
+        
+        const h3End = i + h3EndInfo.index;
         const h3Start = blockHtml.indexOf(">", i) + 1;
         const folderName = blockHtml.substring(h3Start, h3End);
 
-        const dlStart = blockHtml.indexOf("<DL>", h3End);
-        const dlEnd = findClosingTag(blockHtml, dlStart, "DL");
+        const dlMatch = blockHtml.substring(h3End).match(/<DL>/i);
+        
+        if (dlMatch) {
+            const dlStart = h3End + dlMatch.index;
+            const dlEnd = findClosingTag(blockHtml, dlStart, "DL");
 
-        if (dlStart !== -1 && dlEnd !== -1) {
-          const folderId = createFolder(folderName, currentParentId);
-          const innerHtml = blockHtml.substring(dlStart + 4, dlEnd);
-          parseBlock(innerHtml, folderId);
-          i = dlEnd + 5;
+            if (dlStart !== -1 && dlEnd !== -1) {
+              const folderId = createFolder(folderName, currentParentId);
+              const innerHtml = blockHtml.substring(dlStart + 4, dlEnd);
+              parseBlock(innerHtml, folderId);
+              i = dlEnd + 5;
+            } else {
+              i = h3End + h3EndInfo.length;
+            }
         } else {
-          i = h3End + 5;
+             i = h3End + h3EndInfo.length;
         }
-      } else if (blockHtml.startsWith("<A", i)) {
-        const aEnd = blockHtml.indexOf("</A>", i);
+
+      } else if (/^<A/i.test(blockHtml.substring(i))) {
+        const aEndMatch = blockHtml.substring(i).match(/<\/A>/i);
+        if (!aEndMatch) { i++; continue; }
+        
+        const aEnd = i + aEndMatch.index;
         const aTagEnd = blockHtml.indexOf(">", i);
         const title = blockHtml.substring(aTagEnd + 1, aEnd);
         const attributes = blockHtml.substring(i, aTagEnd);
