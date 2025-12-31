@@ -238,7 +238,8 @@ export async function renderTagCloud(): Promise<void> {
   const shuffledTags = shuffleArray(topTags);
 
   // Get container dimensions
-  const canvasHeight = window.innerHeight - 300; // Account for header, legend, etc.
+  // Get container dimensions - Use window height as base for consistent scaling
+  const canvasHeight = Math.max(400, window.innerHeight - 250); // Increased minimum height
 
   // Get scaled font sizes based on container
   const fontSizes = getBaseFontSizes(canvasHeight);

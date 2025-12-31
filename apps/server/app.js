@@ -71,7 +71,7 @@ metadataQueue.initialize(
   config.THUMBNAIL_ENABLED ? captureScreenshot : null
 );
 if (config.NODE_ENV !== "test") {
-  // metadataQueue.startProcessor();
+  metadataQueue.startProcessor();
 }
 
 // Rate limiter
