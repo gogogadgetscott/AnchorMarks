@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require("uuid");
+const cheerio = require("cheerio");
 const { parseTags, stringifyTags } = require("./tags");
 
 async function parseBookmarkHtml(html) {
@@ -17,144 +18,116 @@ async function parseBookmarkHtml(html) {
     return id;
   }
 
-  // Helper to strip tags
-  const stripTags = (str) => str.replace(/<[^>]*>/g, "");
+  const $ = cheerio.load(html);
 
-  function parseFragment(fragment, parentId) {
-    // Current position in the fragment
-    let pos = 0;
+  function processList(dlElement, parentId) {
+    // Netscape format: <DL> contains <DT> items which contain either <H3> (folder) or <A> (link)
+    // <H3> is followed by another <DL> for the folder contents
     
-    // Regex for finding relevant tags
-    // We look for <DT> (optional), then either <H3> (folder) or <A> (bookmark)
-    // This regex matches the *start* of interesting blocks
-    const tagRegex = /<(H3|A|DL)(?:\s+[^>]*)?>/gi;
+    // We iterate over all children to handle malformed HTML where DT might be missing
+    const children = $(dlElement).children();
     
-    let match;
-    while ((match = tagRegex.exec(fragment)) !== null) {
-      if (match.index < pos) continue; // Skip if we've already parsed past this match
-      
-      const tagName = match[1].toUpperCase();
-      const tagStart = match.index;
-      const tagContentStart = match.index + match[0].length;
-      
-      if (tagName === 'H3') {
-         // FOLDER FOUND
-         const endTagRegex = /<\/H3>/gi;
-         endTagRegex.lastIndex = tagContentStart;
-         const endMatch = endTagRegex.exec(fragment);
-         
-         if (endMatch) {
-           const folderName = stripTags(fragment.substring(tagContentStart, endMatch.index)).trim();
-           const folderId = createFolder(folderName, parentId);
-           
-           // Look for the associated DL (list of items)
-           // It usually follows the H3 immediately or after some whitespace/DTs
-           const remaining = fragment.substring(endMatch.index + endMatch[0].length);
-           const nextDlMatch = remaining.match(/<DL[^>]*>/i);
-           
-           if (nextDlMatch) {
-             // Find matching </DL>
-             const dlStartAbs = endMatch.index + endMatch[0].length + nextDlMatch.index;
-             const dlContentStart = dlStartAbs + nextDlMatch[0].length;
-             
-             // Simple recursive balancer for DL
-             let depth = 1;
-             let currentRegex = /<\/?DL[^>]*>/gi;
-             currentRegex.lastIndex = dlContentStart;
-             let subMatch;
-             let dlEndAbs = -1;
-             
-             while ((subMatch = currentRegex.exec(fragment)) !== null) {
-               if (subMatch[0].toUpperCase().startsWith("</DL")) {
-                 depth--;
-               } else {
-                 depth++;
-               }
-               if (depth === 0) {
-                 dlEndAbs = subMatch.index;
-                 break;
-               }
-             }
-             
-             if (dlEndAbs !== -1) {
-               // Recursively parse the content of the DL
-               parseFragment(fragment.substring(dlContentStart, dlEndAbs), folderId);
-               
-               // Advance main loop past this folder block
-               // We set lastIndex to continue AFTER the </DL>
-               tagRegex.lastIndex = dlEndAbs + 5; // length of </DL>
-               pos = dlEndAbs + 5;
-             }
-           }
-           // If no DL follows, it is an empty folder or malformed, just continue
-         }
-         
-      } else if (tagName === 'A') {
-        // BOOKMARK FOUND
-        const endTagRegex = /<\/A>/gi;
-        endTagRegex.lastIndex = tagContentStart;
-        const endMatch = endTagRegex.exec(fragment);
-        
-        if (endMatch) {
-           const title = stripTags(fragment.substring(tagContentStart, endMatch.index)).trim();
-           const fullTag = fragment.substring(tagStart, endMatch.index + 4); // <A ... > ... </A>
-           
-           // Extract Attributes
-           const hrefMatch = fullTag.match(/HREF=["']([^"']+)["']/i);
-           if (hrefMatch) {
-             const url = hrefMatch[1];
-             
-             // Extract other props
-             const tagsMatch = fullTag.match(/TAGS=["']([^"']+)["']/i);
-             const tags = tagsMatch ? tagsMatch[1] : null;
-             const colorMatch = fullTag.match(/COLOR=["']([^"']+)["']/i);
-             const color = colorMatch ? colorMatch[1] : null;
-             
-             if (!url.startsWith("javascript:") && !url.startsWith("place:")) {
-               const tagsString = tags ? stringifyTags(parseTags(tags)) : null;
-               
-               bookmarks.push({
-                 title: title || url,
-                 url,
-                 folder_id: parentId,
-                 tags: tagsString,
-                 color
-               });
-             }
-           }
-           
-           // Advance pos
-           pos = endMatch.index + 4;
-        }
+    children.each((_, el) => {
+      const element = $(el);
+      const tagName = element.prop("tagName");
+
+      // Handle <DT> wrapper (standard format)
+      if (tagName === "DT") {
+        processItem(element, parentId);
+      } 
+      // Handle direct <A> or <H3> (loose format)
+      else if (tagName === "A" || tagName === "H3") {
+         // If it's a direct child, we process it directly. 
+         // Note: processItem expects the container (DT) or the item itself if checking children.
+         // Let's make a specific handler for the node type.
+         if (tagName === "A") processBookmark(element, parentId);
+         if (tagName === "H3") processFolder(element, parentId);
       }
-      // Note: We ignore DL tags encountered at the top level of this fragment loop 
-      // because they are handled recursively after H3s. 
-      // If a DL appears on its own without H3, it's just a container we should technically enter, 
-      // but standard export format associates DLs with H3s.
-      // However, the ROOT DL (if any) is stripped by calling parseFragment on the whole string.
-      
-      // Safety: ensure we always advance the regex if we manually moved pos 
-      if (tagRegex.lastIndex < pos) {
-          tagRegex.lastIndex = pos;
-      }
+    });
+  }
+
+  function processItem(dtElement, parentId) {
+    // Check for Folder Header <H3>
+    const h3 = dtElement.children("h3").first();
+    if (h3.length > 0) {
+      processFolder(h3, parentId);
+      return;
+    }
+
+    // Check for Bookmark Link <A>
+    const a = dtElement.children("a").first();
+    if (a.length > 0) {
+      processBookmark(a, parentId);
     }
   }
 
-  // Pre-process: sometimes the file starts with <!DOCTYPE> or <META>, remove them to be clean
-  // Also, find the first DL to start parsing, as that contains the root items
-  const rootDlMatch = html.match(/<DL[^>]*>/i);
-  if (rootDlMatch) {
-    const rootStart = rootDlMatch.index + rootDlMatch[0].length;
-    const lastDlEnd = html.lastIndexOf("</DL>"); // Rough approximation for root end
-    // Ideally we parse validly, but for root we can just assume everything inside the first DL is content
-    if (lastDlEnd > rootStart) {
-        parseFragment(html.substring(rootStart, lastDlEnd), null);
-    } else {
-        // Fallback: just parse the whole thing if structure is weird
-        parseFragment(html, null);
+  function processFolder(h3Element, parentId) {
+    const folderName = h3Element.text().trim();
+    const folderId = createFolder(folderName, parentId);
+
+    // The folder contents <DL> usually follows the <H3>
+    // In standard structure: <DT><H3>...</H3><DL>...</DL></DT>
+    // So we look for a sibling DL of the H3, or a child DL of the parent DT
+    
+    let dl = h3Element.next("dl");
+    
+    // Sometimes it's nested differently or H3 matches the DT parent's next sibling
+    if (dl.length === 0) {
+        // Try next sibling of parent DT
+        dl = h3Element.parent("dt").next("dd").children("dl");
     }
-  } else {
-    parseFragment(html, null);
+    // Try standard netscape: DT -> H3, DL (DL is sibling of H3 inside DT? No, usually DT contains H3, and DL follows DT... or DL is inside DD?)
+    // Actually standard is: <DT><H3>...</H3><DL>...</DL></DT> (some browsers)
+    // Or: <DT><H3>...</H3></DT><DD><DL>...</DL></DD> (IE style)
+    
+    if (dl.length === 0) {
+        // Look for DL as sibling of H3
+         dl = h3Element.siblings("dl");
+    }
+    
+    if (dl.length === 0) {
+        // Look for DL as immediate sibling of parent DT (some formats)
+        dl = h3Element.parent().next("dl");
+    }
+    
+    if (dl.length === 0) {
+        // Look for DL in the next DD (definition description)
+        dl = h3Element.parent().next("dd").children("dl");
+    }
+
+    if (dl.length > 0) {
+      processList(dl, folderId);
+    }
+  }
+
+  function processBookmark(aElement, parentId) {
+    const url = aElement.attr("href");
+    const title = aElement.text().trim() || url;
+    
+    if (!url || url.startsWith("javascript:") || url.startsWith("place:")) {
+      return;
+    }
+
+    // Extract attributes
+    const tagsAttr = aElement.attr("tags");
+    const colorAttr = aElement.attr("color");
+    
+    const tagsString = tagsAttr ? stringifyTags(parseTags(tagsAttr)) : null;
+
+    bookmarks.push({
+      title,
+      url,
+      folder_id: parentId,
+      tags: tagsString,
+      color: colorAttr
+    });
+  }
+
+  // Start parsing from the root DL
+  // Many exports capture data in the first DL found
+  const rootDl = $("dl").first();
+  if (rootDl.length > 0) {
+    processList(rootDl, null);
   }
 
   return { bookmarks, folders };
