@@ -178,6 +178,41 @@ function initBookmarkForms(): void {
       }
     });
 
+  // New Folder button inside bookmark modal
+  document
+    .getElementById("bookmark-new-folder-btn")
+    ?.addEventListener("click", async () => {
+      const { promptDialog } = await import("@features/ui/confirm-dialog.ts");
+      const folderName = await promptDialog("Enter folder name:", {
+        title: "New Folder",
+        confirmText: "Create",
+        placeholder: "Folder Name",
+      });
+      
+      if (!folderName || !folderName.trim()) return;
+
+      try {
+        const { createFolder } = await import("@features/bookmarks/folders.ts");
+        
+        // Create the folder - this already updates the state and UI (sidebar + dropdowns)
+        const newFolder = await createFolder(
+          { name: folderName.trim(), color: "#6366f1" },
+          { closeModal: false } // Don't close any modals (we're in bookmark modal)
+        );
+        
+        if (newFolder && newFolder.id) {
+          // Select the newly created folder
+          const folderSelect = document.getElementById("bookmark-folder") as HTMLSelectElement;
+          if (folderSelect) {
+             folderSelect.value = newFolder.id;
+          }
+           showToast(`Folder "${folderName}" created!`, "success");
+        }
+      } catch (err: any) {
+        showToast(err.message || "Failed to create folder", "error");
+      }
+    });
+
   // Bookmark color options (delegation could be used here but keeping simple for now)
   document.querySelectorAll(".color-option-bookmark").forEach((opt) => {
     opt.addEventListener("click", () => {
