@@ -145,29 +145,30 @@ async function parseBookmarkHtml(html) {
     console.warn("[Import] No root DL found");
   }
 
-  // FALLBACK: If structured parsing found nothing, try Regex Scan
+  // FALLBACK: If structured parsing found nothing, try distinct strategies
   if (bookmarks.length === 0) {
-     console.log("[Import] Structured parsing yielded 0 bookmarks. Attempting regex text scan...");
-     const regex = /<A[^>]+HREF=["']([^"']+)["'][^>]*>(.*?)<\/A>/gi;
-     const stripTags = (str) => str.replace(/<[^>]*>/g, "");
+     console.log("[Import] Structured parsing yielded 0 bookmarks. Attempting flat DOM scan...");
      
-     let match;
-     while ((match = regex.exec(html)) !== null) {
-         const url = match[1];
-         const rawTitle = match[2];
-         const title = stripTags(rawTitle).trim() || url;
-         
-         if (!url.startsWith("javascript:") && !url.startsWith("place:")) {
-             bookmarks.push({
-               title,
-               url,
-               folder_id: null, // Flat import
-               tags: null,
-               color: null
-             });
-         }
-     }
-     console.log(`[Import] Regex scan found ${bookmarks.length} bookmarks.`);
+     const links = $("a");
+     links.each((_, el) => {
+        const element = $(el);
+        const url = element.attr("href");
+        if (!url || url.startsWith("javascript:") || url.startsWith("place:")) return;
+        
+        const title = element.text().trim() || url;
+        const tagsAttr = element.attr("tags"); 
+        const tagsString = tagsAttr ? stringifyTags(parseTags(tagsAttr)) : null;
+
+        bookmarks.push({
+            title,
+            url,
+            folder_id: null,
+            tags: tagsString,
+            color: element.attr("color")
+        });
+     });
+     
+     console.log(`[Import] Flat DOM scan found ${bookmarks.length} bookmarks.`);
   }
 
   console.log(`[Import] Completed. Found ${bookmarks.length} bookmarks, ${folders.length} folders.`);
