@@ -156,6 +156,9 @@ function initBookmarkForms(): void {
       const descEl = document.getElementById(
         "bookmark-description",
       ) as HTMLTextAreaElement;
+      const tagsEl = document.getElementById(
+        "bookmark-tags",
+      ) as HTMLInputElement;
 
       const id = idEl?.value;
       const data = {
@@ -164,7 +167,7 @@ function initBookmarkForms(): void {
         folder_id: folderEl?.value || undefined,
         color: colorEl?.value,
         description: descEl?.value,
-        tags: "", // Tags are handled separately by tag-input.ts
+        tags: tagsEl?.value || "", // Read from hidden input populated by tag-input.ts
       };
 
       const bookmarksModule = await import("@features/bookmarks/bookmarks.ts");

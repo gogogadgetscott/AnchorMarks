@@ -318,6 +318,13 @@ export function openModal(id: string): void {
       attachSettingsTabListeners();
       attachSettingsModalLogout();
     }
+
+    // Re-initialize tag input if opening bookmark modal
+    if (id === "bookmark-modal") {
+      import("@features/bookmarks/tag-input.ts").then(({ initTagInput }) => {
+        initTagInput();
+      });
+    }
   }
 }
 
@@ -496,7 +503,7 @@ export function closeModals(): void {
 }
 
 // Reset forms
-export function resetForms(): void {
+export async function resetForms(): Promise<void> {
   const bookmarkForm = document.getElementById(
     "bookmark-form",
   ) as HTMLFormElement;
@@ -536,6 +543,14 @@ export function resetForms(): void {
   if (bookmarkColor) bookmarkColor.value = "";
 
   if (dom.tagSuggestions) dom.tagSuggestions.innerHTML = "";
+
+  // Clear the badge-based tag input
+  try {
+    const { clearTags } = await import("@features/bookmarks/tag-input.ts");
+    clearTags();
+  } catch {
+    // Tag input module may not be available
+  }
 }
 
 // Add tag to input field

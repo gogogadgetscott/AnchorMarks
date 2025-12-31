@@ -100,6 +100,16 @@ export function loadTagsFromInput(tagsString: string): void {
   renderSelectedTags();
 }
 
+// Clear all tags and reset UI
+export function clearTags(): void {
+  selectedTags = [];
+  renderSelectedTags();
+  const hiddenInput = document.getElementById("bookmark-tags") as HTMLInputElement;
+  if (hiddenInput) hiddenInput.value = "";
+  const input = document.getElementById("bookmark-tags-input") as HTMLInputElement;
+  if (input) input.value = "";
+}
+
 // Add a tag
 function addTag(tagName: string, updateInput: boolean = true): void {
   const normalizedTag = tagName.trim();
@@ -306,4 +316,5 @@ function navigateAutocomplete(
 export default {
   initTagInput,
   loadTagsFromInput,
+  clearTags,
 };
