@@ -115,6 +115,7 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.title = "Dashboard";
       headerConfig.countId = "dashboard-view-name";
       headerConfig.rightContent = `
+        ${Omnibar({ id: "search-input" })}
         ${Button("Add Widget", { id: "dashboard-add-widget-btn", variant: "secondary", icon: "plus", data: { action: "toggle-widget-picker" } })}
         ${Button("", { id: "dashboard-layout-btn", variant: "icon", icon: "grid", title: "Layout Settings", data: { action: "toggle-layout-settings" } })}
       `;
@@ -126,6 +127,7 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.countId = "favorites-view-count";
       headerConfig.countSuffix = "favorites";
       headerConfig.rightContent = `
+          ${Omnibar({ id: "search-input" })}
           <div class="sort-controls">
             <label for="favorites-sort">Sort by</label>
             <select id="favorites-sort" class="form-select">
@@ -144,6 +146,7 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.countId = "recents-view-count";
       headerConfig.countSuffix = "recent";
       headerConfig.rightContent = `
+          ${Omnibar({ id: "search-input" })}
           <div class="time-range-controls">
             <label for="recents-range">Time Range</label>
             <select id="recents-range" class="form-select">
@@ -161,11 +164,7 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.countId = "archived-view-count";
       headerConfig.countSuffix = "bookmarks";
       headerConfig.rightContent = `
-          <div class="header-search-bar">
-            ${Icon("search", { size: 18 })}
-            <input type="text" id="archived-search-input" placeholder="Search archived bookmarks..." />
-            <kbd>Ctrl+K</kbd>
-          </div>
+          ${Omnibar({ id: "search-input", placeholder: "Search archived bookmarks..." })}
         `;
       headerConfig.bulkActions = ["unarchive", "delete"];
       break;
@@ -186,6 +185,9 @@ export async function updateHeaderContent(): Promise<void> {
 
     case "tag-cloud":
       headerConfig.title = "Tag Cloud";
+      headerConfig.rightContent = `
+          ${Omnibar({ id: "search-input" })}
+        `;
       break;
 
     case "all":
@@ -220,8 +222,13 @@ export async function updateHeaderContent(): Promise<void> {
   updateFilterButtonVisibility();
 
   // Re-attach sidebar toggle listener
+  // Re-attach sidebar toggle listener
   const { attachSidebarToggle } = await import("@features/ui/navigation.ts");
   attachSidebarToggle();
+
+  // Re-attach Omnibar listeners since header was replaced
+  const { initOmnibarListeners } = await import("@features/ui/omnibar.ts");
+  initOmnibarListeners();
 }
 
 /**

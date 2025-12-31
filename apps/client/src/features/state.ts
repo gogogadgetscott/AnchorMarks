@@ -6,10 +6,6 @@ export function applyTheme(settings: UserSettings) {
   } else {
     document.body.setAttribute("data-theme", settings.theme);
   }
-  document.body.setAttribute(
-    "data-high-contrast",
-    String(settings.highContrast),
-  );
 }
 /**
  * AnchorMarks - Global State Module

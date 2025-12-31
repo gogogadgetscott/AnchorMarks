@@ -20,21 +20,10 @@ export function initThemeControls(settings: UserSettings) {
   const themeSelect = document.getElementById(
     "theme-select",
   ) as HTMLSelectElement;
-  const highContrastToggle = document.getElementById(
-    "high-contrast-toggle",
-  ) as HTMLInputElement;
   if (themeSelect) {
     themeSelect.value = settings.theme || "system";
     themeSelect.addEventListener("change", () => {
       settings.theme = themeSelect.value as UserSettings["theme"];
-      applyTheme(settings);
-      saveSettings(settings);
-    });
-  }
-  if (highContrastToggle) {
-    highContrastToggle.checked = !!settings.highContrast;
-    highContrastToggle.addEventListener("change", () => {
-      settings.highContrast = highContrastToggle.checked;
       applyTheme(settings);
       saveSettings(settings);
     });

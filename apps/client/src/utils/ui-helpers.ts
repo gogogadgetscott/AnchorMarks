@@ -624,7 +624,6 @@ export async function updateCounts(): Promise<void> {
     const bookmarkCountEl = document.getElementById("bookmark-count");
     const favCountEl = document.getElementById("fav-count");
     const recentCountEl = document.getElementById("count-recent");
-    const dashboardCountEl = document.getElementById("dashboard-count");
     const archivedCountEl = document.getElementById("count-archived");
 
     // Helper function to update badge with count
@@ -681,8 +680,7 @@ export async function updateCounts(): Promise<void> {
       dashboardVal = displayedIds.size;
     }
 
-    // Update dashboard badge
-    updateBadge(dashboardCountEl, dashboardVal);
+    // Dashboard badge removed as requested
 
     // Update View Count Label on specific headers
     const bookmarksViewCount = document.getElementById("bookmarks-view-count");
