@@ -53,6 +53,13 @@ const DB_PATH = process.env.DB_PATH || path.join(__dirname, "anchormarks.db");
 const ENABLE_BACKGROUND_JOBS = NODE_ENV !== "test";
 const ENABLE_FAVICON_BACKGROUND_JOBS = false; // Only fetch favicons on import/save
 
+// Thumbnail screenshot configuration
+const THUMBNAIL_ENABLED = process.env.THUMBNAIL_ENABLED === "true";
+const THUMBNAIL_WIDTH = parseInt(process.env.THUMBNAIL_WIDTH) || 1280;
+const THUMBNAIL_HEIGHT = parseInt(process.env.THUMBNAIL_HEIGHT) || 800;
+const THUMBNAIL_QUALITY = parseInt(process.env.THUMBNAIL_QUALITY) || 80;
+const THUMBNAIL_TIMEOUT = parseInt(process.env.THUMBNAIL_TIMEOUT) || 15000;
+
 // Optional AI tag suggestion configuration
 const AI_PROVIDER = (process.env.AI_PROVIDER || "none").toLowerCase();
 const AI_MODEL = process.env.AI_MODEL || null;
@@ -103,6 +110,11 @@ module.exports = {
   DB_PATH,
   ENABLE_BACKGROUND_JOBS,
   ENABLE_FAVICON_BACKGROUND_JOBS,
+  THUMBNAIL_ENABLED,
+  THUMBNAIL_WIDTH,
+  THUMBNAIL_HEIGHT,
+  THUMBNAIL_QUALITY,
+  THUMBNAIL_TIMEOUT,
   validateSecurityConfig,
   resolveCorsOrigin,
   isApiKeyAllowed,

@@ -6,58 +6,31 @@ const {
   ensureTagsExist,
   updateBookmarkTags,
 } = require("../helpers/tag-helpers");
+const {
+  EXAMPLE_BOOKMARKS,
+  STARTER_FOLDER,
+} = require("../helpers/example-bookmarks");
 
 function generateCsrfToken() {
   return uuidv4().replace(/-/g, "");
 }
 
 function createExampleBookmarks(db, userId, folderId = null, fetchFavicon) {
-  const EXAMPLE_BOOKMARKS = [
-    {
-      title: "GitHub",
-      url: "https://github.com",
-      description: "Code hosting and collaboration platform",
-      tags: "dev,git",
-    },
-    {
-      title: "Stack Overflow",
-      url: "https://stackoverflow.com",
-      description: "Q&A for programmers",
-      tags: "dev,help",
-    },
-    {
-      title: "MDN Web Docs",
-      url: "https://developer.mozilla.org",
-      description: "Web development documentation",
-      tags: "dev,docs",
-    },
-    {
-      title: "Hacker News",
-      url: "https://news.ycombinator.com",
-      description: "Tech news and discussion",
-      tags: "news,tech",
-    },
-    {
-      title: "Reddit",
-      url: "https://reddit.com",
-      description: "Social news aggregation",
-      tags: "social,news",
-    },
-  ];
-
   const created = [];
 
   for (let i = 0; i < EXAMPLE_BOOKMARKS.length; i++) {
     const bm = EXAMPLE_BOOKMARKS[i];
     const id = uuidv4();
     const faviconUrl = null;
+    // Place bookmarks marked with inStarterFolder in the provided folder
+    const bookmarkFolderId = bm.inStarterFolder ? folderId : null;
 
     db.prepare(
       `INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       id,
       userId,
-      folderId,
+      bookmarkFolderId,
       bm.title,
       bm.url,
       bm.description,
@@ -79,6 +52,7 @@ function createExampleBookmarks(db, userId, folderId = null, fetchFavicon) {
 
   return created;
 }
+
 
 function setupAuthRoutes(
   app,
@@ -126,7 +100,13 @@ function setupAuthRoutes(
       const defaultFolderId = uuidv4();
       db.prepare(
         "INSERT INTO folders (id, user_id, name, color, icon) VALUES (?, ?, ?, ?, ?)",
-      ).run(defaultFolderId, userId, "My Bookmarks", "#6366f1", "folder");
+      ).run(
+        defaultFolderId,
+        userId,
+        STARTER_FOLDER.name,
+        STARTER_FOLDER.color,
+        STARTER_FOLDER.icon,
+      );
 
       createExampleBookmarks(db, userId, defaultFolderId, fetchFavicon);
 

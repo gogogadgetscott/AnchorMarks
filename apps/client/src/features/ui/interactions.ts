@@ -561,7 +561,7 @@ function initFaviconErrorHandling(): void {
 }
 
 /**
- * Initialize API Settings listeners (Regenerate/Copy Key)
+ * Initialize Settings listeners (API keys, Reset Bookmarks, Tour, etc.)
  */
 function initApiSettingsListeners(): void {
   // Since these buttons might be inside a modal that is created/destroyed or hidden,
@@ -578,6 +578,10 @@ function initApiSettingsListeners(): void {
       );
     } else if (target.id === "copy-api-key") {
       import("@features/auth/auth.ts").then(({ copyApiKey }) => copyApiKey());
+    } else if (target.id === "reset-bookmarks-btn") {
+      import("@/App.ts").then(({ resetBookmarks }) => resetBookmarks());
+    } else if (target.id === "restart-tour-btn") {
+      import("@features/bookmarks/tour.ts").then(({ startTour }) => startTour());
     }
   });
 }

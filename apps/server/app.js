@@ -61,6 +61,19 @@ createBackgroundJobs({
   config,
 });
 
+// Initialize metadata queue for deferred favicon/thumbnail fetching during import
+const metadataQueue = require("./helpers/metadata-queue");
+const { captureScreenshot } = require("./helpers/thumbnail");
+
+metadataQueue.initialize(
+  db,
+  fetchFaviconWrapper,
+  config.THUMBNAIL_ENABLED ? captureScreenshot : null
+);
+if (config.NODE_ENV !== "test") {
+  metadataQueue.startProcessor();
+}
+
 // Rate limiter
 const rateLimiter = require("./middleware/rateLimiter");
 
@@ -167,7 +180,6 @@ setupTagsRoutes(app, db, { authenticateTokenMiddleware });
 controllerTags.setupTagsRoutes(app, db, { authenticateTokenMiddleware });
 setupImportExportRoutes(app, db, {
   authenticateTokenMiddleware,
-  fetchFaviconWrapper,
 });
 setupSyncRoutes(app, db, { authenticateTokenMiddleware, fetchFaviconWrapper });
 setupHealthRoutes(app, db, {
@@ -226,7 +238,7 @@ app.use(
   express.static(path.join(__dirname, "public", "thumbnails"), {
     setHeaders: (res, _filePath) => {
       // Force image content types for thumbnails directory
-      res.setHeader("Content-Type", "image/webp");
+      res.setHeader("Content-Type", "image/jpeg");
       res.setHeader("X-Content-Type-Options", "nosniff");
     },
   }),
@@ -240,14 +252,20 @@ const setupStaticRoutes = require("./routes/static");
 setupStaticRoutes(app);
 
 // Graceful shutdown
-process.on("SIGINT", () => {
-  console.log("\nClosing database connection...");
+const { closeBrowser } = require("./helpers/thumbnail");
+
+process.on("SIGINT", async () => {
+  console.log("\nShutting down gracefully...");
+  metadataQueue.stopProcessor();
+  await closeBrowser();
   db.close();
   process.exit(0);
 });
 
-process.on("SIGTERM", () => {
-  console.log("\nClosing database connection...");
+process.on("SIGTERM", async () => {
+  console.log("\nShutting down gracefully...");
+  metadataQueue.stopProcessor();
+  await closeBrowser();
   db.close();
   process.exit(0);
 });

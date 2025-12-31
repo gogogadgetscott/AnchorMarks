@@ -2,11 +2,12 @@ const importExportModel = require("../models/importExport");
 const { parseBookmarkHtml } = require("../helpers/import");
 const { parseTagsDetailed } = require("../helpers/tags");
 const { generateBookmarkHtml } = require("../helpers/html");
+const { queueMetadataFetch } = require("../helpers/metadata-queue");
 
 function setupImportExportRoutes(
   app,
   db,
-  { authenticateTokenMiddleware, fetchFaviconWrapper },
+  { authenticateTokenMiddleware },
 ) {
   app.post(
     "/api/import/html",
@@ -18,15 +19,19 @@ function setupImportExportRoutes(
           db,
           html,
           req.user.id,
-          fetchFaviconWrapper,
+          null, // No inline favicon fetching - use queue instead
         );
         const result = importExportModel.importJson(db, req.user.id, {
           bookmarks,
           folders,
         });
-        result.imported.forEach((b) =>
-          fetchFaviconWrapper(b.url, b.id).catch(console.error),
-        );
+        
+        // Queue imported bookmarks for background metadata processing (favicons + thumbnails)
+        const bookmarkIds = result.imported.map((b) => b.id);
+        if (bookmarkIds.length > 0) {
+          queueMetadataFetch(bookmarkIds);
+        }
+        
         res.json({
           imported: result.imported.length,
           skipped: result.skipped || 0,
@@ -47,9 +52,13 @@ function setupImportExportRoutes(
         bookmarks,
         folders,
       });
-      result.imported.forEach((b) =>
-        fetchFaviconWrapper(b.url, b.id).catch(console.error),
-      );
+      
+      // Queue imported bookmarks for background metadata processing (favicons + thumbnails)
+      const bookmarkIds = result.imported.map((b) => b.id);
+      if (bookmarkIds.length > 0) {
+        queueMetadataFetch(bookmarkIds);
+      }
+      
       res.json({
         imported: result.imported.length,
         skipped: result.skipped || 0,
@@ -87,3 +96,4 @@ function setupImportExportRoutes(
 }
 
 module.exports = setupImportExportRoutes;
+
