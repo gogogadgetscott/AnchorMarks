@@ -26,4 +26,14 @@ export interface Bookmark {
   [key: string]: any;
 }
 
+export interface Command {
+  label: string;
+  action: () => void;
+  icon?: string;
+  category?: "command" | "folder" | "bookmark" | "tag";
+  description?: string;
+  url?: string;
+  favicon?: string;
+}
+
 // Add any other types as needed
