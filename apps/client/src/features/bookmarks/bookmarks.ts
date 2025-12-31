@@ -684,59 +684,6 @@ export function attachBookmarkCardListeners(): void {
   });
 }
 
-// Setup infinite scroll
-function setupInfiniteScroll(allFiltered: Bookmark[]): void {
-  const sentinel = document.getElementById("load-more-sentinel");
-  if (!sentinel) return;
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      if (entries[0].isIntersecting && !state.isLoadingMore) {
-        loadMoreBookmarks(allFiltered);
-      }
-    },
-    { rootMargin: "100px" },
-  );
-
-  observer.observe(sentinel);
-}
-
-// Load more bookmarks for infinite scroll
-function loadMoreBookmarks(allFiltered: Bookmark[]): void {
-  if (state.isLoadingMore) return;
-  if (state.displayedCount >= allFiltered.length) return;
-
-  state.setIsLoadingMore(true);
-
-  setTimeout(() => {
-    const prevCount = state.displayedCount;
-    state.setDisplayedCount(
-      Math.min(
-        state.displayedCount + state.BOOKMARKS_PER_PAGE,
-        allFiltered.length,
-      ),
-    );
-
-    const newBookmarks = allFiltered.slice(prevCount, state.displayedCount);
-    const sentinel = document.getElementById("load-more-sentinel");
-
-    const newHtml = newBookmarks
-      .map((b, i) => createBookmarkCard(b, prevCount + i))
-      .join("");
-    if (sentinel) {
-      sentinel.insertAdjacentHTML("beforebegin", newHtml);
-    }
-
-    attachBookmarkCardListeners();
-
-    if (state.displayedCount >= allFiltered.length && sentinel) {
-      sentinel.remove();
-    }
-
-    state.setIsLoadingMore(false);
-  }, 100);
-}
-
 // Toggle bookmark selection
 export function toggleBookmarkSelection(
   id: string,
