@@ -269,6 +269,7 @@ export function openModal(id: string): void {
 
     // Attach modal close listeners only once per modal instance
     const closeBtn = modal.querySelector(".modal-close") as HTMLElement | null;
+    const cancelBtn = modal.querySelector(".modal-cancel") as HTMLElement | null;
     const backdrop = modal.querySelector(
       ".modal-backdrop",
     ) as HTMLElement | null;
@@ -276,6 +277,7 @@ export function openModal(id: string): void {
     const closeHandler = (e: Event) => {
       e.preventDefault();
       modal.classList.add("hidden");
+      resetForms();
     };
 
     // Remove existing listeners to avoid duplicates
@@ -286,6 +288,17 @@ export function openModal(id: string): void {
       ) as HTMLElement | null;
       if (newCloseBtn) {
         newCloseBtn.addEventListener("click", closeHandler);
+      }
+    }
+
+    // Handle Cancel button
+    if (cancelBtn) {
+      cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+      const newCancelBtn = modal.querySelector(
+        ".modal-cancel",
+      ) as HTMLElement | null;
+      if (newCancelBtn) {
+        newCancelBtn.addEventListener("click", closeHandler);
       }
     }
 

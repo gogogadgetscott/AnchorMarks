@@ -98,7 +98,7 @@ export function attachViewToggleListeners(): void {
  * This dynamically renders the header without fully re-rendering
  */
 export async function updateHeaderContent(): Promise<void> {
-  const { Omnibar, Icon, Button } = await import("@components/index.ts");
+  const { Omnibar, Icon, Button, Header } = await import("@components/index.ts");
   const headersContainer = document.getElementById("headers-container");
   if (!headersContainer) return;
 
@@ -203,6 +203,9 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.showFilterButton = true;
       break;
   }
+
+  // Render the header with the configured options
+  headersContainer.innerHTML = Header(headerConfig);
 
   // Ensure user profile reflects the logged-in user after re-render
   if (state.currentUser) {
