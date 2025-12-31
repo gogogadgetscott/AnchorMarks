@@ -364,18 +364,66 @@ export function renderBookmarks(): void {
   // Add load more sentinel if needed (optional: only if not virtualized)
   // ...existing code...
 
-  // --- Virtualization scroll handler (type-safe) ---
+  // --- Virtualization scroll handler with debouncing ---
   // Use a WeakMap to store scroll handlers per container
   const scrollHandlerMap: WeakMap<HTMLElement, () => void> =
     (window as any)._bookmarkScrollHandlerMap || new WeakMap();
   (window as any)._bookmarkScrollHandlerMap = scrollHandlerMap;
 
+  // Debounce utility for scroll performance
+  const debounce = <T extends (...args: any[]) => void>(fn: T, delay: number): T => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    return ((...args: Parameters<T>) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => fn(...args), delay);
+    }) as T;
+  };
+
   if (!scrollHandlerMap.has(container)) {
-    const handler = () => {
-      renderBookmarks();
-    };
+    // Debounced scroll handler - only re-render every 50ms at most
+    const handler = debounce(() => {
+      // Only update if scroll position changed significantly (more than half a row)
+      const currentScrollTop = container.scrollTop;
+      const lastScrollTop = (container as any)._lastScrollTop || 0;
+      const scrollDelta = Math.abs(currentScrollTop - lastScrollTop);
+
+      if (scrollDelta > ROW_HEIGHT / 2) {
+        (container as any)._lastScrollTop = currentScrollTop;
+        renderBookmarks();
+      }
+    }, 50);
     scrollHandlerMap.set(container, handler);
-    container.addEventListener("scroll", handler);
+    container.addEventListener("scroll", handler, { passive: true });
+  }
+
+  // --- IntersectionObserver for lazy loading sentinel ---
+  // Add a sentinel at the bottom for infinite scroll trigger
+  const existingSentinel = container.querySelector('[data-load-sentinel]');
+  if (!existingSentinel && end < total) {
+    const sentinel = document.createElement("div");
+    sentinel.setAttribute("data-load-sentinel", "true");
+    sentinel.style.height = "1px";
+    sentinel.style.width = "100%";
+    container.appendChild(sentinel);
+
+    // Set up IntersectionObserver for the sentinel
+    const observerMap: WeakMap<HTMLElement, IntersectionObserver> =
+      (window as any)._bookmarkObserverMap || new WeakMap();
+    (window as any)._bookmarkObserverMap = observerMap;
+
+    if (!observerMap.has(container)) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries[0]?.isIntersecting) {
+            // Trigger re-render to load more items
+            renderBookmarks();
+          }
+        },
+        { root: container, rootMargin: "200px", threshold: 0 }
+      );
+      observer.observe(sentinel);
+      observerMap.set(container, observer);
+    }
   }
 
   // Defer non-urgent UI work
