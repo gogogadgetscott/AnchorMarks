@@ -497,6 +497,7 @@ function sortBookmarks(list: any[], widgetSort?: string): any[] {
 
 // Render dashboard
 export function renderDashboard(): void {
+  if (state.currentView !== "dashboard") return;
   updateFilterButtonVisibility();
 
   const container =

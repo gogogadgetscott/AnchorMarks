@@ -180,6 +180,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 // Render the tag cloud
 export async function renderTagCloud(): Promise<void> {
+  if (state.currentView !== "tag-cloud") return;
   updateFilterButtonVisibility();
 
   const container =

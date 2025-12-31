@@ -174,6 +174,11 @@ const pendingMetadataFetches = new Set<string>();
 let ogImageObserver: IntersectionObserver | null = null;
 
 export function renderBookmarks(): void {
+  // Only render if we're in a bookmark-rendering view
+  if (state.currentView === "dashboard" || state.currentView === "tag-cloud") {
+    return;
+  }
+
   updateFilterButtonVisibility();
 
   const container =
@@ -338,6 +343,10 @@ export function renderBookmarks(): void {
   };
 
   const syncLayout = debounce(() => {
+    // Double check view mode before re-rendering
+    if (state.currentView === "dashboard" || state.currentView === "tag-cloud") {
+      return;
+    }
     renderBookmarks();
 
     // Infinite scroll detection: check if near bottom
@@ -368,6 +377,10 @@ export function renderBookmarks(): void {
 
 // Load more bookmarks for infinite scroll
 export async function loadMoreBookmarks(): Promise<void> {
+  // Only load more if we're in a bookmark-rendering view (not dashboard/tag-cloud)
+  if (state.currentView === "dashboard" || state.currentView === "tag-cloud") {
+    return;
+  }
   // Don't load if already loading, or if we've reached the total count
   if (state.isLoadingMore || state.isLoading || state.bookmarks.length >= state.totalCount) return;
 
