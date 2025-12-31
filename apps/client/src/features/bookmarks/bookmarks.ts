@@ -26,7 +26,7 @@ import {
 } from "@components/index.ts";
 export { createBookmarkCard };
 
-import { confirmDialog } from "@features/ui/confirm-dialog.ts";
+import { confirmDialog, promptDialog } from "@features/ui/confirm-dialog.ts";
 
 /**
  * Render skeletons while loading
@@ -535,9 +535,9 @@ export function attachBookmarkCardListeners(): void {
     const url = bookmark.url;
     if (url.startsWith("view:")) {
       const viewId = url.substring(5);
-      if (state.currentView === "dashboard") {
-        import("@features/bookmarks/dashboard.ts").then(({ restoreView }) => restoreView(viewId));
-      }
+      import("@features/bookmarks/dashboard.ts").then(({ restoreView }) =>
+        restoreView(viewId, bookmark.title),
+      );
     } else if (url.startsWith("bookmark-view:")) {
       restoreBookmarkView(url.substring(14));
     } else {
@@ -1022,7 +1022,11 @@ function closeBookmarkViewsDropdown(e: Event) {
 // Save current bookmark view
 async function saveCurrentBookmarkView() {
   try {
-    const name = prompt("Enter a name for this view:");
+    const name = await promptDialog("Enter a name for this view:", {
+      title: "Save Bookmark View",
+      confirmText: "Save",
+      placeholder: "e.g., My Collection",
+    });
     if (!name) return;
 
     // Capture current state
@@ -1097,7 +1101,8 @@ async function deleteBookmarkView(id: string) {
 }
 
 // Restore bookmark view
-async function restoreBookmarkView(id: string) {
+// Restore bookmark view
+export async function restoreBookmarkView(id: string) {
   try {
     logger.debug("Restoring bookmark view", { viewId: id });
 

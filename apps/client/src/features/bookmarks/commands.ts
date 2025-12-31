@@ -203,12 +203,24 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
     .map((b) => ({
       label: b.title || b.url,
       action: () => {
-        // Open the bookmark URL
-        window.open(b.url, "_blank");
-        // Increment click count
-        import("@services/api.ts").then(({ api }) => {
-          api(`/bookmarks/${b.id}/click`, { method: "POST" }).catch(() => { });
-        });
+        if (b.url.startsWith("view:")) {
+          const viewId = b.url.substring(5);
+          import("@features/bookmarks/dashboard.ts").then(({ restoreView }) =>
+            restoreView(viewId, b.title),
+          );
+        } else if (b.url.startsWith("bookmark-view:")) {
+          const viewId = b.url.substring(14);
+          import("@features/bookmarks/bookmarks.ts").then(
+            ({ restoreBookmarkView }) => restoreBookmarkView(viewId),
+          );
+        } else {
+          // Open the bookmark URL
+          window.open(b.url, "_blank");
+          // Increment click count
+          import("@services/api.ts").then(({ api }) => {
+            api(`/bookmarks/${b.id}/click`, { method: "POST" }).catch(() => {});
+          });
+        }
       },
       icon: "",
       category: "bookmark" as const,

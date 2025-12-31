@@ -10,7 +10,7 @@ import { showToast, dom, updateCounts } from "@utils/ui-helpers.ts";
 import { api } from "@services/api.ts";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
 import { logger } from "@utils/logger.ts";
-import { confirmDialog } from "@features/ui/confirm-dialog.ts";
+import { confirmDialog, promptDialog } from "@features/ui/confirm-dialog.ts";
 
 // Grid size for snap-to-grid feature
 const GRID_SIZE = 20;
@@ -296,7 +296,11 @@ function closeViewsDropdown(e: MouseEvent): void {
 
 // Save View
 export async function saveCurrentView(): Promise<void> {
-  const name = prompt("Enter a name for this view:");
+  const name = await promptDialog("Enter a name for this view:", {
+    title: "Save View",
+    confirmText: "Save",
+    placeholder: "e.g., Work Dashboard",
+  });
   if (!name) return;
 
   try {
