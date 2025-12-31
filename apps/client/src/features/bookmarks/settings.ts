@@ -47,6 +47,7 @@ export function initThemeControls(settings: UserSettings) {
 
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
+import { dom } from "@utils/ui-helpers.ts";
 
 // Load settings from server
 export async function loadSettings(): Promise<void> {
@@ -264,7 +265,8 @@ export function setViewMode(mode: "grid" | "list" | "compact"): void {
     compact: "bookmarks-compact",
   };
 
-  const container = document.getElementById("bookmarks-container");
+  const container =
+    dom.mainViewOutlet || document.getElementById("main-view-outlet");
   if (container) {
     container.className = classMap[mode] || "bookmarks-grid";
   }

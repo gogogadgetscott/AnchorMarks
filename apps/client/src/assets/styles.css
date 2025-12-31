@@ -2122,6 +2122,11 @@ body.sidebar-collapsed .nav-section-header {
   padding: 2rem;
 }
 
+body.dashboard-active .content-body,
+body.tag-cloud-active .content-body {
+  padding: 0;
+}
+
 .folder-tab-btn {
   padding: 0.5rem 0.9rem;
   border-radius: var(--radius-full);

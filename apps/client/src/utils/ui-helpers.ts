@@ -94,7 +94,7 @@ export const dom: {
   loginForm: HTMLFormElement | null;
   registerForm: HTMLFormElement | null;
   authTabs: NodeListOf<HTMLElement> | null;
-  bookmarksContainer: HTMLElement | null;
+  mainViewOutlet: HTMLElement | null;
   emptyState: HTMLElement | null;
   searchInput: HTMLInputElement | null;
   viewTitle: HTMLElement | null;
@@ -116,7 +116,7 @@ export const dom: {
   loginForm: null,
   registerForm: null,
   authTabs: null,
-  bookmarksContainer: null,
+  mainViewOutlet: null,
   emptyState: null,
   searchInput: null,
   viewTitle: null,
@@ -143,7 +143,7 @@ export function initDom(): void {
     "register-form",
   ) as HTMLFormElement;
   dom.authTabs = document.querySelectorAll(".auth-tab");
-  dom.bookmarksContainer = document.getElementById("bookmarks-container");
+  dom.mainViewOutlet = document.getElementById("main-view-outlet");
   dom.emptyState = document.getElementById("empty-state");
   dom.searchInput = document.getElementById("search-input") as HTMLInputElement;
   dom.viewTitle = document.getElementById("view-title");

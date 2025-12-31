@@ -8,6 +8,7 @@ import { api } from "@services/api.ts";
 import { logger } from "@utils/logger.ts";
 import { escapeHtml } from "@utils/index.ts";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
+import { dom } from "@utils/ui-helpers.ts";
 
 // Gradient stops used for count → color mapping (low → high)
 // Designed to resemble the rainbow look in the mock
@@ -181,7 +182,8 @@ function shuffleArray<T>(arr: T[]): T[] {
 export async function renderTagCloud(): Promise<void> {
   updateFilterButtonVisibility();
 
-  const container = document.getElementById("bookmarks-container");
+  const container =
+    dom.mainViewOutlet || document.getElementById("main-view-outlet");
   const emptyState = document.getElementById("empty-state");
   const bulkBar = document.getElementById("bulk-bar");
 

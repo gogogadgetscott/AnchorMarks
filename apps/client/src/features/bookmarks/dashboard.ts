@@ -500,7 +500,7 @@ export function renderDashboard(): void {
   updateFilterButtonVisibility();
 
   const container =
-    dom.bookmarksContainer || document.getElementById("bookmarks-container");
+    dom.mainViewOutlet || document.getElementById("main-view-outlet");
   const emptyState = dom.emptyState || document.getElementById("empty-state");
   const bulkBar = dom.bulkBar || document.getElementById("bulk-bar");
 

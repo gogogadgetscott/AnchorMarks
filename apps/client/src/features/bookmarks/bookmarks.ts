@@ -33,7 +33,7 @@ import { confirmDialog, promptDialog } from "@features/ui/confirm-dialog.ts";
  */
 export function renderSkeletons(): void {
   const container =
-    dom.bookmarksContainer || document.getElementById("bookmarks-container");
+    dom.mainViewOutlet || document.getElementById("main-view-outlet");
   if (!container) return;
 
   // Set container class based on view mode
@@ -177,7 +177,7 @@ export function renderBookmarks(): void {
   updateFilterButtonVisibility();
 
   const container =
-    dom.bookmarksContainer || document.getElementById("bookmarks-container");
+    dom.mainViewOutlet || document.getElementById("main-view-outlet");
   const emptyState = dom.emptyState || document.getElementById("empty-state");
   const searchInput =
     dom.searchInput || document.getElementById("search-input");
@@ -435,7 +435,8 @@ export async function loadMoreBookmarks(): Promise<void> {
 
 // Adaptive Lazy Loading for Rich Cards
 async function lazyLoadOGImages(): Promise<void> {
-  const container = document.getElementById("bookmarks-container");
+  const container =
+    dom.mainViewOutlet || document.getElementById("main-view-outlet");
   if (!container) return;
 
   const placeholders = Array.from(container.querySelectorAll(".rich-card-image-placeholder[data-bookmark-id]")) as HTMLElement[];
@@ -506,7 +507,8 @@ function updateRichCardImage(bookmarkId: string, ogImage: string): void {
 const attachedContainers = new WeakSet<HTMLElement>();
 
 export function attachBookmarkCardListeners(): void {
-  const container = document.getElementById("bookmarks-container");
+  const container =
+    dom.mainViewOutlet || document.getElementById("main-view-outlet");
   if (!container || attachedContainers.has(container)) return;
   attachedContainers.add(container);
 

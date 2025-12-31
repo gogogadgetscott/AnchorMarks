@@ -270,6 +270,10 @@ export function setCurrentView(val: string) {
       (window as any).__tagCloudResizeCleanup = undefined;
     }
   }
+  // Body classes for view-specific layout overrides
+  document.body.classList.toggle("dashboard-active", val === "dashboard");
+  document.body.classList.toggle("tag-cloud-active", val === "tag-cloud");
+
   currentView = val;
 }
 export function setCurrentFolder(val: string | null) {
