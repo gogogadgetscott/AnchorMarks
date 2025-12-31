@@ -52,6 +52,7 @@ import { initOmnibarListeners } from "@features/ui/omnibar.ts";
 import { initInteractions } from "@features/ui/interactions.ts";
 import { initTagListeners } from "@features/ui/tags.ts";
 import { confirmDialog } from "@features/ui/confirm-dialog.ts";
+import { initMaintenance } from "@features/maintenance.ts";
 
 /**
  * Set view mode (grid / list / compact)
@@ -374,6 +375,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initOmnibarListeners();
   initInteractions();
   initTagListeners();
+  initMaintenance();
 
   // Global keyboard shortcuts
   document.addEventListener("keydown", handleKeyboard);
