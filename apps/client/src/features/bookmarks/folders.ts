@@ -16,6 +16,31 @@ import {
 import { Badge } from "@components/index.ts";
 import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
+/**
+ * Count bookmarks in folder and all its subfolders (recursive)
+ */
+export function getRecursiveBookmarkCount(folderId: string): number {
+  const folder = state.folders.find((f) => f.id === folderId);
+  if (!folder) return 0;
+
+  let total = folder.bookmark_count || 0;
+  const children = state.folders.filter((f) => f.parent_id === folderId);
+  children.forEach((child) => {
+    total += getRecursiveBookmarkCount(child.id);
+  });
+  return total;
+}
+
+/**
+ * Sorter for folders: Count (desc) then Name (asc)
+ */
+export const folderSorter = (a: any, b: any) => {
+  const countA = getRecursiveBookmarkCount(a.id);
+  const countB = getRecursiveBookmarkCount(b.id);
+  if (countA !== countB) return countB - countA;
+  return a.name.localeCompare(b.name);
+};
+
 // Load folders from server
 export async function loadFolders(): Promise<void> {
   try {
@@ -34,17 +59,13 @@ export function renderFolders(): void {
   const container = document.getElementById("folders-list");
   if (!container) return;
 
-  const rootFolders = state.folders.filter((f) => !f.parent_id);
+  const sorter = folderSorter;
 
-  const sorter = (a: any, b: any) => {
-    const countA = state.bookmarks.filter((bm) => bm.folder_id === a.id).length;
-    const countB = state.bookmarks.filter((bm) => bm.folder_id === b.id).length;
-    if (countA > 0 && countB === 0) return -1;
-    if (countA === 0 && countB > 0) return 1;
-    return a.name.localeCompare(b.name);
-  };
+  const rootFolders = state.folders
+    .filter((f) => !f.parent_id)
+    .sort(sorter);
+  console.log(`[Folders] Rendering ${state.folders.length} total folders, found ${rootFolders.length} root folders`);
 
-  rootFolders.sort(sorter);
 
   function renderFolderTree(folderList: any[], level = 0): string {
     return folderList
@@ -53,11 +74,7 @@ export function renderFolders(): void {
           .filter((child) => child.parent_id === f.id)
           .sort(sorter);
 
-        const descIds = getAllChildFolderIds(f.id);
-        const allIds = new Set([f.id, ...descIds]);
-        const count = state.bookmarks.filter(
-          (b) => b.folder_id && allIds.has(b.folder_id),
-        ).length;
+        const count = getRecursiveBookmarkCount(f.id);
 
         const isEmpty = count === 0;
         const indentation = level * 12;
@@ -200,7 +217,7 @@ export function updateFolderParentSelect(
     let parent = state.folders.find((f) => f.id === potentialParentId);
     while (parent) {
       if (parent.id === currentId) return true;
-      parent = state.folders.find((f) => f.id === parent.parent_id);
+      parent = state.folders.find((f) => f.id === parent?.parent_id);
     }
     return false;
   }
@@ -247,7 +264,8 @@ export async function createFolder(
       method: "POST",
       body: JSON.stringify(data),
     });
-    state.folders.push(folder);
+    const newFolder = folder as Folder;
+    state.folders.push(newFolder);
     renderFolders();
     updateFolderSelect();
     if (closeModal) closeModals();
@@ -267,7 +285,7 @@ export async function updateFolder(id: string, data: any): Promise<void> {
       body: JSON.stringify(data),
     });
     const index = state.folders.findIndex((f) => f.id === id);
-    if (index !== -1) state.folders[index] = folder;
+    if (index !== -1) state.folders[index] = folder as Folder;
     renderFolders();
     updateFolderSelect();
     closeModals();
@@ -380,10 +398,10 @@ export function navigateToFolderByIndex(index: number): void {
 }
 
 export function getAllChildFolderIds(folderId: string): string[] {
-  const ids = [folderId];
+  let ids = [folderId];
   const children = state.folders.filter((f) => f.parent_id === folderId);
   children.forEach((child) => {
-    ids.push(...getAllChildFolderIds(child.id));
+    ids = ids.concat(getAllChildFolderIds(child.id));
   });
   return ids;
 }

@@ -1,3 +1,10 @@
+export interface UserSettings {
+  theme: "light" | "dark" | "system";
+  highContrast: boolean;
+  view_mode?: string;
+  hide_favicons?: boolean;
+}
+
 export interface User {
   id: string;
   username: string;

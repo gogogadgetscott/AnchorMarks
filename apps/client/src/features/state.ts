@@ -1,4 +1,4 @@
-import type { UserSettings } from "@/types";
+import type { UserSettings } from "../types/index";
 
 export function applyTheme(settings: UserSettings) {
   if (settings.theme === "system") {
@@ -22,9 +22,8 @@ import {
   Folder,
   DashboardWidget,
   FilterConfig,
-  Tag,
   TourStep,
-} from "@types";
+} from "../types/index";
 
 // API Configuration
 export const API_BASE = "/api";
@@ -41,6 +40,7 @@ export let folders: Folder[] = [];
 export let renderedBookmarks: Bookmark[] = [];
 export let collections: any[] = [];
 export let totalCount: number = 0;
+export let widgetDataCache: Record<string, Bookmark[]> = {};
 
 // UI State
 export let currentDashboardTab: string | null = null;
@@ -86,8 +86,11 @@ export let filterConfig: FilterConfig = {
   tagMode: "OR",
 };
 
-// Tag metadata (colors, icons) loaded from database
-export let tagMetadata: Record<string, { color?: string; icon?: string }> = {};
+// Tag metadata (colors, icons, counts) loaded from database
+export let tagMetadata: Record<
+  string,
+  { color?: string; icon?: string; id?: string; count?: number }
+> = {};
 
 // Selection State
 export let selectedBookmarks = new Set<string>();
@@ -245,6 +248,12 @@ export function setRenderedBookmarks(val: Bookmark[]) {
 }
 export function setTotalCount(val: number) {
   totalCount = val;
+}
+export function setWidgetDataCache(id: string, val: Bookmark[]) {
+  widgetDataCache[id] = val;
+}
+export function clearWidgetDataCache() {
+  widgetDataCache = {};
 }
 export function resetPagination() {
   displayedCount = BOOKMARKS_PER_PAGE;
