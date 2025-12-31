@@ -15,12 +15,7 @@ function setupImportExportRoutes(
     async (req, res) => {
       try {
         const { html } = req.body;
-        const { bookmarks, folders } = await parseBookmarkHtml(
-          db,
-          html,
-          req.user.id,
-          null, // No inline favicon fetching - use queue instead
-        );
+        const { bookmarks, folders } = await parseBookmarkHtml(html);
         const result = importExportModel.importJson(db, req.user.id, {
           bookmarks,
           folders,

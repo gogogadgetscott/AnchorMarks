@@ -116,6 +116,24 @@ function initImportExportListeners(): void {
       }
     });
 
+  // Import JSON
+  document.getElementById("import-json-btn")?.addEventListener("click", () => {
+    document.getElementById("import-json-file")?.click();
+  });
+  document
+    .getElementById("import-json-file")
+    ?.addEventListener("change", (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files && target.files[0]) {
+        const file = target.files[0];
+        import("@features/bookmarks/import-export.ts").then(({ importJson }) =>
+          importJson(file),
+        );
+        target.value = "";
+      }
+    });
+
+
   // Export Buttons
   document.getElementById("export-json-btn")?.addEventListener("click", () => {
     import("@features/bookmarks/import-export.ts").then(({ exportJson }) =>

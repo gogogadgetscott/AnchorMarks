@@ -72,6 +72,55 @@ export async function importHtml(file: File): Promise<void> {
     setImportProgress("idle");
   }
 }
+// Import JSON bookmarks file
+export async function importJson(file: File): Promise<void> {
+  setJsonImportProgress("start");
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    const importData =
+      data.bookmarks || data.folders
+        ? data
+        : { bookmarks: Array.isArray(data) ? data : [], folders: [] };
+
+    const result = await api<{
+      imported: number;
+      skipped: number;
+    }>("/import/json", {
+      method: "POST",
+      body: JSON.stringify(importData),
+    });
+
+    const [{ loadBookmarks }, { loadFolders }] = await Promise.all([
+      import("@features/bookmarks/bookmarks.ts"),
+      import("@features/bookmarks/folders.ts"),
+    ]);
+    await Promise.all([loadBookmarks(), loadFolders()]);
+
+    const { renderSidebarTags } = await import("@features/bookmarks/search.ts");
+    await renderSidebarTags();
+
+    showToast(
+      `Imported ${result.imported} bookmarks!${
+        result.skipped ? ` (${result.skipped} skipped)` : ""
+      }`,
+      "success",
+    );
+
+    setJsonImportProgress(
+      "success",
+      `${result.imported} imported${
+        result.skipped ? `, ${result.skipped} skipped` : ""
+      }.`,
+    );
+  } catch (err: any) {
+    showToast(err.message, "error");
+    setJsonImportProgress("error", err.message);
+  } finally {
+    setJsonImportProgress("idle");
+  }
+}
 
 // Export as JSON
 export async function exportJson(): Promise<void> {
@@ -305,8 +354,50 @@ function setDashboardImportProgress(
   }
 }
 
+function setJsonImportProgress(
+  statusState: "start" | "success" | "error" | "idle",
+  message = "",
+): void {
+  const statusEl = document.getElementById("import-json-progress");
+  const btn = document.getElementById("import-json-btn") as HTMLButtonElement;
+  if (!statusEl || !btn) return;
+
+  const setStatus = (content: string) => {
+    statusEl.innerHTML = content;
+  };
+
+  switch (statusState) {
+    case "start": {
+      btn.disabled = true;
+      btn.setAttribute("aria-busy", "true");
+      setStatus(
+        `<span class="spinner" aria-hidden="true"></span><span>Importing JSON bookmarks...</span>`,
+      );
+      break;
+    }
+    case "success": {
+      setStatus(
+        `<span class="success-dot" aria-hidden="true"></span><span>${message || "Import complete"}</span>`,
+      );
+      break;
+    }
+    case "error": {
+      setStatus(
+        `<span class="error-dot" aria-hidden="true"></span><span>${message || "Import failed"}</span>`,
+      );
+      break;
+    }
+    case "idle": {
+      btn.disabled = false;
+      btn.removeAttribute("aria-busy");
+      break;
+    }
+  }
+}
+
 export default {
   importHtml,
+  importJson,
   exportJson,
   exportHtml,
   resetBookmarks,
