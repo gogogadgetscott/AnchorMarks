@@ -55,7 +55,11 @@ async function refreshFavicons(): Promise<void> {
   progress.classList.remove("hidden");
 
   try {
-    const bookmarks = state.bookmarks.filter(
+    // Fetch all bookmarks directly from API to ensure we process everything
+    const response = await api<{ bookmarks: any[] }>("/bookmarks?limit=10000"); // Ensure we get all bookmarks
+    const allBookmarks = response.bookmarks || [];
+    
+    const bookmarks = allBookmarks.filter(
       (b) =>
         b.url &&
         !b.url.startsWith("view:") &&

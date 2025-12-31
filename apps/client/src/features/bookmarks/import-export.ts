@@ -201,72 +201,108 @@ export async function resetBookmarks(): Promise<void> {
   }
 }
 
-// Export dashboard views as JSON
-export async function exportDashboardViews(): Promise<void> {
+// Export dashboard views and bookmark views as JSON
+export async function exportViews(): Promise<void> {
   try {
-    const views = await api<any[]>("/dashboard/views");
-    if (!views || views.length === 0) {
-      showToast("No dashboard views to export", "info");
+    const [dashboardViews, bookmarkViews] = await Promise.all([
+      api<any[]>("/dashboard/views"),
+      api<any[]>("/bookmark/views"),
+    ]);
+
+    if (
+      (!dashboardViews || dashboardViews.length === 0) &&
+      (!bookmarkViews || bookmarkViews.length === 0)
+    ) {
+      showToast("No views to export", "info");
       return;
     }
 
     const exportData = {
-      version: "1.0",
+      version: "1.1",
       exported_at: new Date().toISOString(),
-      views: views,
+      views: dashboardViews || [],
+      bookmark_views: bookmarkViews || [],
     };
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], {
       type: "application/json",
     });
-    downloadBlob(blob, "anchormarks-dashboard-views.json");
-    showToast(`Exported ${views.length} dashboard view(s)`, "success");
+    downloadBlob(blob, "anchormarks-views.json");
+    showToast(
+      `Exported ${exportData.views.length} dashboard view(s) and ${exportData.bookmark_views.length} bookmark view(s)`,
+      "success",
+    );
   } catch (err: any) {
     showToast(err.message, "error");
   }
 }
 
-// Import dashboard views from JSON file
-export async function importDashboardViews(file: File): Promise<void> {
-  setDashboardImportProgress("start");
+// Import dashboard views and bookmark views from JSON file
+export async function importViews(file: File): Promise<void> {
+  setViewsImportProgress("start");
   try {
     const text = await file.text();
     const data = JSON.parse(text);
 
-    // Validate format
-    if (!data.views || !Array.isArray(data.views)) {
-      throw new Error("Invalid dashboard views file format");
+    // Validate format (support both old format with just 'views' and new format)
+    if (!data.views && !data.bookmark_views) {
+      throw new Error("Invalid views file format");
     }
 
-    let imported = 0;
+    let importedDashboard = 0;
+    let importedBookmark = 0;
     let skipped = 0;
 
-    // Import each view
-    for (const view of data.views) {
-      try {
-        // Create new view (exclude id, user_id, created_at, updated_at)
-        await api("/dashboard/views", {
-          method: "POST",
-          body: JSON.stringify({
-            name: view.name,
-            config: view.config,
-          }),
-        });
-        imported++;
-      } catch (err) {
-        console.error(`Failed to import view "${view.name}":`, err);
-        skipped++;
+    // Import Dashboard Views
+    if (data.views && Array.isArray(data.views)) {
+      for (const view of data.views) {
+        try {
+          // Create new view (exclude id, user_id, created_at, updated_at)
+          await api("/dashboard/views", {
+            method: "POST",
+            body: JSON.stringify({
+              name: view.name,
+              config: view.config,
+            }),
+          });
+          importedDashboard++;
+        } catch (err) {
+          console.error(`Failed to import dashboard view "${view.name}":`, err);
+          skipped++;
+        }
       }
     }
 
-    const message = `Imported ${imported} view(s)${skipped > 0 ? `, skipped ${skipped}` : ""}`;
+    // Import Bookmark Views
+    if (data.bookmark_views && Array.isArray(data.bookmark_views)) {
+      for (const view of data.bookmark_views) {
+        try {
+          await api("/bookmark/views", {
+            method: "POST",
+            body: JSON.stringify({
+              name: view.name,
+              config: view.config,
+            }),
+          });
+          importedBookmark++;
+        } catch (err) {
+          console.error(`Failed to import bookmark view "${view.name}":`, err);
+          skipped++;
+        }
+      }
+    }
+
+    const message = `Imported ${importedDashboard} dashboard view(s), ${importedBookmark} bookmark view(s)${
+      skipped > 0 ? `, skipped ${skipped}` : ""
+    }`;
     showToast(message, "success");
-    setDashboardImportProgress("success", message);
+    showToast(message, "success");
+    setViewsImportProgress("success", message);
   } catch (err: any) {
     showToast(err.message, "error");
-    setDashboardImportProgress("error", err.message);
+    setViewsImportProgress("error", err.message);
   } finally {
-    setDashboardImportProgress("idle");
+    setViewsImportProgress("idle");
   }
 }
 
@@ -311,13 +347,13 @@ function setImportProgress(
   }
 }
 
-function setDashboardImportProgress(
+function setViewsImportProgress(
   statusState: "start" | "success" | "error" | "idle",
   message = "",
 ): void {
-  const statusEl = document.getElementById("import-dashboard-views-progress");
+  const statusEl = document.getElementById("import-views-progress");
   const btn = document.getElementById(
-    "import-dashboard-views-btn",
+    "import-views-btn",
   ) as HTMLButtonElement;
   if (!statusEl || !btn) return;
 
@@ -330,7 +366,7 @@ function setDashboardImportProgress(
       btn.disabled = true;
       btn.setAttribute("aria-busy", "true");
       setStatus(
-        `<span class="spinner" aria-hidden="true"></span><span>Importing dashboard views...</span>`,
+        `<span class="spinner" aria-hidden="true"></span><span>Importing views...</span>`,
       );
       break;
     }
@@ -401,6 +437,6 @@ export default {
   exportJson,
   exportHtml,
   resetBookmarks,
-  exportDashboardViews,
-  importDashboardViews,
+  exportViews,
+  importViews,
 };

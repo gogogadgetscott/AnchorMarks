@@ -146,24 +146,24 @@ function initImportExportListeners(): void {
 
   // Dashboard Export/Import
   document
-    .getElementById("export-dashboard-views-btn")
+    .getElementById("export-views-btn")
     ?.addEventListener("click", () => {
       import("@features/bookmarks/import-export.ts").then(
-        ({ exportDashboardViews }) => exportDashboardViews(),
+        ({ exportViews }) => exportViews(),
       );
     });
   document
-    .getElementById("import-dashboard-views-btn")
+    .getElementById("import-views-btn")
     ?.addEventListener("click", () => {
-      document.getElementById("import-dashboard-views-file")?.click();
+      document.getElementById("import-views-file")?.click();
     });
   document
-    .getElementById("import-dashboard-views-file")
+    .getElementById("import-views-file")
     ?.addEventListener("change", (e: Event) => {
       const target = e.target as HTMLInputElement;
       if (target.files && target.files[0]) {
         import("@features/bookmarks/import-export.ts").then(
-          ({ importDashboardViews }) => importDashboardViews(target.files![0]),
+          ({ importViews }) => importViews(target.files![0]),
         );
       }
     });
