@@ -21,6 +21,7 @@ coverage/
 # Application directories that should not be committed
 database/
 favicons/
+thumbnails/
 apps/dist/
 dist/
 .vite/
