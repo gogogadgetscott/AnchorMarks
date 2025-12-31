@@ -127,12 +127,6 @@
                   >
                 </li>
                 <li>
-                  <a href="#quick-launch"
-                    ><span class="nav-icon" aria-hidden="true">🎯</span
-                    ><span class="nav-text">Quick Launch</span></a
-                  >
-                </li>
-                <li>
                   <a href="#troubleshooting"
                     ><span class="nav-icon" aria-hidden="true">🛠️</span
                     ><span class="nav-text">Troubleshooting</span></a
@@ -315,7 +309,6 @@
                   </li>
                   <li><a href="#folders">Create 1 folder</a></li>
                   <li><a href="#tags">Add tags to your bookmarks</a></li>
-                  <li><a href="#search">Try Quick Launch search</a></li>
                   <li><a href="#dashboard">Set up your dashboard</a></li>
                 </ol>
               </div>
@@ -333,7 +326,6 @@
                   <li><a href="#tag-analytics">Explore Tag Analytics</a></li>
                   <li><a href="#views">Save and restore Views</a></li>
                   <li><a href="#shortcuts">Learn keyboard shortcuts</a></li>
-                  <li><a href="#quick-launch">Master Quick Launch</a></li>
                 </ol>
               </div>
               <div class="journey-card">
@@ -728,10 +720,6 @@
                 <kbd>Ctrl+Shift+T</kbd> / <kbd>Cmd+Shift+T</kbd> to open the Tag
                 Cloud instantly.
               </li>
-              <li>
-                <strong>Quick Launch:</strong> Open Quick Launch
-                (<kbd>Ctrl+Shift+P</kbd>) and search for "tag cloud".
-              </li>
             </ul>
             <h4>Features</h4>
             <ul>
@@ -1118,12 +1106,6 @@
               same time. Combine folder + tag filters to create powerful queries
               (example: "Work" folder + "urgent" tag).
             </div>
-
-            <p>
-              Open <strong>Quick Launch</strong> with <kbd>Ctrl+K</kbd> /
-              <kbd>Cmd+K</kbd> to quickly search and open bookmarks, navigate to
-              folders, or run commands.
-            </p>
 
             <h3 class="help-anchor" id="smart-collections">
               <span class="section-icon" aria-hidden="true">✨</span>Smart
@@ -1545,11 +1527,6 @@
                   <td><kbd>Cmd+A</kbd></td>
                 </tr>
                 <tr>
-                  <td>Open Quick Launch</td>
-                  <td><kbd>Ctrl+Shift+P</kbd></td>
-                  <td><kbd>Cmd+Shift+P</kbd></td>
-                </tr>
-                <tr>
                   <td>Show shortcuts help</td>
                   <td><kbd>?</kbd></td>
                   <td><kbd>?</kbd></td>
@@ -1561,232 +1538,6 @@
                 </tr>
               </tbody>
             </table>
-
-            <h4>Quick Launch Navigation</h4>
-            <table
-              class="shortcuts-table"
-              aria-label="Quick launch navigation shortcuts"
-            >
-              <thead>
-                <tr>
-                  <th>Action</th>
-                  <th>Shortcut</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Move selection one item down</td>
-                  <td><kbd>↓</kbd> (Arrow Down)</td>
-                </tr>
-                <tr>
-                  <td>Move selection one item up</td>
-                  <td><kbd>↑</kbd> (Arrow Up)</td>
-                </tr>
-                <tr>
-                  <td>Move selection 5 items down</td>
-                  <td><kbd>Page Down</kbd></td>
-                </tr>
-                <tr>
-                  <td>Move selection 5 items up</td>
-                  <td><kbd>Page Up</kbd></td>
-                </tr>
-                <tr>
-                  <td>Jump to first item</td>
-                  <td><kbd>Home</kbd></td>
-                </tr>
-                <tr>
-                  <td>Jump to last item</td>
-                  <td><kbd>End</kbd></td>
-                </tr>
-                <tr>
-                  <td>Execute selected command</td>
-                  <td><kbd>Enter</kbd></td>
-                </tr>
-                <tr>
-                  <td>Close Quick Launch</td>
-                  <td><kbd>Esc</kbd></td>
-                </tr>
-              </tbody>
-            </table>
-
-            <section class="help-section" id="quick-launch">
-              <h2>
-                <span class="section-icon" aria-hidden="true">🎯</span>Quick
-                Launch
-              </h2>
-              <p>
-                The Quick Launch is a powerful universal launcher for
-                AnchorMarks. Use it to instantly search and open bookmarks,
-                navigate to folders, or run actions without touching the mouse.
-                Think of it like Spotlight (Mac), Alfred, or Raycast — but for
-                your bookmarks.
-              </p>
-
-              <h3 class="help-anchor" id="cp-open">Open Quick Launch</h3>
-              <ul>
-                <li>
-                  <strong>Keyboard:</strong> press <kbd>Ctrl+K</kbd> on
-                  Windows/Linux or <kbd>Cmd+K</kbd> on macOS (same as focusing
-                  the search bar).
-                </li>
-                <li>
-                  <strong>Alternative:</strong> press <kbd>Ctrl+Shift+P</kbd> /
-                  <kbd>Cmd+Shift+P</kbd> for commands only.
-                </li>
-              </ul>
-
-              <h3 class="help-anchor" id="cp-bookmark-search">
-                Bookmark Launcher
-              </h3>
-              <p>
-                The primary use case: quickly find and open any bookmark by
-                typing part of its title or URL.
-              </p>
-              <ul>
-                <li>
-                  <strong>Search bookmarks:</strong> just start typing — results
-                  show matching bookmarks with their favicons.
-                </li>
-                <li>
-                  <strong>Open instantly:</strong> press <kbd>Enter</kbd> to
-                  open the selected bookmark in a new tab.
-                </li>
-                <li>
-                  <strong>Click tracking:</strong> opening a bookmark from Quick
-                  Launch counts as a click, keeping your analytics up to date.
-                </li>
-              </ul>
-
-              <h3 class="help-anchor" id="cp-prefixes">Smart Prefixes</h3>
-              <p>Use special prefixes to filter results by category:</p>
-              <table class="shortcuts-table" aria-label="Quick Launch prefixes">
-                <thead>
-                  <tr>
-                    <th>Prefix</th>
-                    <th>What it shows</th>
-                    <th>Example</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><kbd>></kbd></td>
-                    <td>Commands only</td>
-                    <td><code>>settings</code> → "Open settings"</td>
-                  </tr>
-                  <tr>
-                    <td><kbd>@</kbd></td>
-                    <td>Folders only</td>
-                    <td><code>@work</code> → folders containing "work"</td>
-                  </tr>
-                  <tr>
-                    <td><kbd>#</kbd></td>
-                    <td>Bookmarks by tag</td>
-                    <td><code>#dev</code> → bookmarks tagged "dev"</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <h3 class="help-anchor" id="cp-navigation">Navigation</h3>
-              <ul>
-                <li><kbd>↑</kbd>/<kbd>↓</kbd> — move selection up/down</li>
-                <li><kbd>Page Up</kbd>/<kbd>Page Down</kbd> — jump 5 items</li>
-                <li>
-                  <kbd>Home</kbd>/<kbd>End</kbd> — jump to first/last item
-                </li>
-                <li>
-                  <kbd>Enter</kbd> — execute the selected command or open the
-                  bookmark
-                </li>
-                <li><kbd>Esc</kbd> — close Quick Launch</li>
-              </ul>
-
-              <h3 class="help-anchor" id="cp-commands">Available Commands</h3>
-              <p>
-                When empty or using the <kbd>></kbd> prefix, you'll see commands
-                like:
-              </p>
-              <ul>
-                <li>
-                  <strong>📊 Show dashboard</strong> — jumps to the Dashboard
-                </li>
-                <li>
-                  <strong>➕ Add bookmark</strong> — opens the add bookmark
-                  modal
-                </li>
-                <li>
-                  <strong>🔍 Focus search</strong> — focuses the global search
-                  box
-                </li>
-                <li>
-                  <strong>⭐ View favorites</strong> — shows only favorite
-                  bookmarks
-                </li>
-                <li>
-                  <strong>📚 View all bookmarks</strong> — shows all bookmarks
-                </li>
-                <li>
-                  <strong>⚙️ Open settings</strong> — opens the settings modal
-                </li>
-                <li>
-                  <strong>📥 Import bookmarks</strong> — opens import dialog
-                </li>
-                <li>
-                  <strong>📤 Export bookmarks</strong> — exports bookmarks to
-                  JSON
-                </li>
-              </ul>
-
-              <h3 class="help-anchor" id="cp-visual">Visual Indicators</h3>
-              <ul>
-                <li>
-                  <strong>Favicons:</strong> bookmarks display their site
-                  favicon for quick visual identification.
-                </li>
-                <li>
-                  <strong>Category badges:</strong> items show colored badges
-                  (blue for bookmarks, orange for folders).
-                </li>
-                <li>
-                  <strong>URL preview:</strong> bookmark results show a
-                  truncated URL as a description.
-                </li>
-                <li>
-                  <strong>Color-coded borders:</strong> active bookmark items
-                  have a blue left border; folders have orange.
-                </li>
-              </ul>
-
-              <h3 class="help-anchor" id="cp-tips">Tips for Power Users</h3>
-              <ul>
-                <li>
-                  <strong>Fastest workflow:</strong> press <kbd>Ctrl+K</kbd>,
-                  type 2-3 characters of a bookmark name, press
-                  <kbd>Enter</kbd>. You can launch any bookmark in under 2
-                  seconds.
-                </li>
-                <li>
-                  <strong>Navigate to folders:</strong> type <code>@</code>
-                  followed by folder name to quickly jump to any folder view.
-                </li>
-                <li>
-                  <strong>Find by tag:</strong> use <code>#tagname</code> to see
-                  all bookmarks with a specific tag.
-                </li>
-                <li>
-                  <strong>Recent bookmarks:</strong> when the palette opens with
-                  no search term, it shows your most recent bookmarks for quick
-                  access.
-                </li>
-              </ul>
-
-              <div class="tip-box">
-                <span class="callout-icon" aria-hidden="true">🚀</span
-                ><strong>Pro Tip:</strong> Quick Launch searches both bookmark
-                titles AND URLs. If you can't remember a bookmark's name, try
-                typing part of the domain (e.g., "github" to find all GitHub
-                links).
-              </div>
-            </section>
 
             <h3 class="help-anchor" id="troubleshooting">
               <span class="section-icon" aria-hidden="true">🛠️</span
@@ -1831,12 +1582,6 @@
               <li>Review CONTRIBUTING for development workflow.</li>
               <li>Report issues on the GitHub repository.</li>
             </ul>
-            <div class="tip-box">
-              <span class="callout-icon" aria-hidden="true">💡</span
-              ><strong>Quick tip:</strong> Press <kbd>&gt;</kbd> for shortcut
-              help, or <kbd>Ctrl+Shift+P</kbd> / <kbd>Cmd+Shift+P</kbd> for the
-              Quick Launch.
-            </div>
 
             <section class="help-section" id="faq">
               <h2>

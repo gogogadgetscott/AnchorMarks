@@ -2,10 +2,10 @@
 function listFolders(db, userId) {
   return db
     .prepare(
-      `
+    `
     SELECT f.*, COUNT(b.id) AS bookmark_count
     FROM folders f
-    LEFT JOIN bookmarks b ON b.folder_id = f.id AND b.user_id = f.user_id
+    LEFT JOIN bookmarks b ON b.folder_id = f.id AND b.user_id = f.user_id AND b.is_archived = 0
     WHERE f.user_id = ?
     GROUP BY f.id
     ORDER BY f.position
