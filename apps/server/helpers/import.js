@@ -97,6 +97,19 @@ async function parseBookmarkHtml(html) {
 
     if (dl.length > 0) {
       processList(dl, folderId);
+    } else {
+        // Fallback: Try looking for the next DL in siblings even if not immediate
+        // Some exports might have <H3>...</H3><P><DL>...</DL> or similar spacing issues
+        // We limit this search to avoid grabbing a DL belonging to a later H3
+        const nextDL = h3Element.nextAll("dl").first();
+        const nextH3 = h3Element.nextAll("h3").first();
+        
+        // If we found a DL and it appears BEFORE the next H3 (or there is no next H3), it's likely ours
+        if (nextDL.length > 0) {
+             if (nextH3.length === 0 || nextDL.index() < nextH3.index()) {
+                 processList(nextDL, folderId);
+             }
+        }
     }
   }
 
