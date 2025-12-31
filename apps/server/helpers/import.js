@@ -99,16 +99,16 @@ async function parseBookmarkHtml(html) {
       processList(dl, folderId);
     } else {
         // Fallback: Try looking for the next DL in siblings even if not immediate
-        // Some exports might have <H3>...</H3><P><DL>...</DL> or similar spacing issues
-        // We limit this search to avoid grabbing a DL belonging to a later H3
         const nextDL = h3Element.nextAll("dl").first();
         const nextH3 = h3Element.nextAll("h3").first();
         
-        // If we found a DL and it appears BEFORE the next H3 (or there is no next H3), it's likely ours
         if (nextDL.length > 0) {
              if (nextH3.length === 0 || nextDL.index() < nextH3.index()) {
+                 console.log(`[Import] Found detached sibling DL for folder "${folderName}"`);
                  processList(nextDL, folderId);
              }
+        } else {
+             console.warn(`[Import] No content DL found for folder "${folderName}"`);
         }
     }
   }
@@ -137,12 +137,40 @@ async function parseBookmarkHtml(html) {
   }
 
   // Start parsing from the root DL
-  // Many exports capture data in the first DL found
   const rootDl = $("dl").first();
   if (rootDl.length > 0) {
+    console.log("[Import] Processing root DL");
     processList(rootDl, null);
+  } else {
+    console.warn("[Import] No root DL found");
   }
 
+  // FALLBACK: If structured parsing found nothing, try Regex Scan
+  if (bookmarks.length === 0) {
+     console.log("[Import] Structured parsing yielded 0 bookmarks. Attempting regex text scan...");
+     const regex = /<A[^>]+HREF=["']([^"']+)["'][^>]*>(.*?)<\/A>/gi;
+     const stripTags = (str) => str.replace(/<[^>]*>/g, "");
+     
+     let match;
+     while ((match = regex.exec(html)) !== null) {
+         const url = match[1];
+         const rawTitle = match[2];
+         const title = stripTags(rawTitle).trim() || url;
+         
+         if (!url.startsWith("javascript:") && !url.startsWith("place:")) {
+             bookmarks.push({
+               title,
+               url,
+               folder_id: null, // Flat import
+               tags: null,
+               color: null
+             });
+         }
+     }
+     console.log(`[Import] Regex scan found ${bookmarks.length} bookmarks.`);
+  }
+
+  console.log(`[Import] Completed. Found ${bookmarks.length} bookmarks, ${folders.length} folders.`);
   return { bookmarks, folders };
 }
 
