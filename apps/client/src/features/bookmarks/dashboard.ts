@@ -407,6 +407,8 @@ export async function restoreView(
 
     // Ensure current view is set to dashboard and persist view info
     state.setCurrentView("dashboard");
+    const { updateActiveNav } = await import("@utils/ui-helpers.ts");
+    updateActiveNav();
     await saveSettings({
       current_view: "dashboard",
       current_dashboard_view_id: id,
