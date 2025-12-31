@@ -23,6 +23,7 @@ export interface Bookmark {
   click_count?: number;
   created_at?: string;
   og_image?: string; // Added for rich card support
+  thumbnail_local?: string; // Added for Puppeteer-generated thumbnails
   [key: string]: any;
 }
 

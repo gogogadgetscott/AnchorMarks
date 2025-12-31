@@ -14,11 +14,7 @@ module.exports = [
 
   // Node/server code
   {
-    files: [
-      "apps/server/**/*.js",
-      "tooling/jest.config.js",
-      "tooling/deploy/**/*.js",
-    ],
+    files: ["apps/server/**/*.js", "tooling/deploy/**/*.js"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "script",
@@ -33,7 +29,7 @@ module.exports = [
     },
   },
 
-  // Jest tests
+  // Server Tests (Vitest)
   {
     files: ["apps/server/__tests__/**/*.js"],
     languageOptions: {
@@ -43,7 +39,15 @@ module.exports = [
         ...globals.es2022,
         ...globals.node,
         ...globals.commonjs,
-        ...globals.jest,
+        describe: "readonly",
+        it: "readonly",
+        test: "readonly",
+        expect: "readonly",
+        vi: "readonly",
+        beforeAll: "readonly",
+        afterAll: "readonly",
+        beforeEach: "readonly",
+        afterEach: "readonly",
       },
     },
     rules: {
