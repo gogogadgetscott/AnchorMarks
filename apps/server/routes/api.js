@@ -119,6 +119,10 @@ function setupApiRoutes(app, db, helpers) {
     setupMaintenanceRoutes(db, authenticateTokenMiddleware),
   );
 
+  // Import/Export Routes
+  const setupImportExportRoutes = require("./importExport");
+  setupImportExportRoutes(app, db, { authenticateTokenMiddleware });
+
   // Settings API
   app.get("/api/settings", authenticateTokenMiddleware, (req, res) => {
     try {
