@@ -63,7 +63,6 @@ createBackgroundJobs({
 });
 
 // Initialize metadata queue for deferred favicon/thumbnail fetching during import
-const metadataQueue = require("./helpers/metadata-queue");
 const { captureScreenshot } = require("./helpers/thumbnail");
 
 metadataQueue.initialize(
