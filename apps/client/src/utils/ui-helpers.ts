@@ -102,9 +102,6 @@ export const dom: {
   bulkBar: HTMLElement | null;
   bulkMoveSelect: HTMLSelectElement | null;
   bulkCount: HTMLElement | null;
-  commandPalette: HTMLElement | null;
-  commandPaletteInput: HTMLInputElement | null;
-  commandPaletteList: HTMLElement | null;
   bookmarkUrlInput: HTMLInputElement | null;
   bookmarkTagsInput: HTMLInputElement | null;
   tagSuggestions: HTMLElement | null;
@@ -127,9 +124,6 @@ export const dom: {
   bulkBar: null,
   bulkMoveSelect: null,
   bulkCount: null,
-  commandPalette: null,
-  commandPaletteInput: null,
-  commandPaletteList: null,
   bookmarkUrlInput: null,
   bookmarkTagsInput: null,
   tagSuggestions: null,
@@ -159,11 +153,6 @@ export function initDom(): void {
     "bulk-move-select",
   ) as HTMLSelectElement;
   dom.bulkCount = document.getElementById("bulk-count");
-  dom.commandPalette = document.getElementById("quick-launch");
-  dom.commandPaletteInput = document.getElementById(
-    "quick-launch-input",
-  ) as HTMLInputElement;
-  dom.commandPaletteList = document.getElementById("quick-launch-list");
   dom.bookmarkUrlInput = document.getElementById(
     "bookmark-url",
   ) as HTMLInputElement;

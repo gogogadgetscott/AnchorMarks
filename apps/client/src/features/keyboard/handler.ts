@@ -5,14 +5,10 @@
 
 import * as state from "@features/state.ts";
 import {
-  openCommandPalette,
-  closeCommandPalette,
-  updateCommandPaletteActive,
-  runActiveCommand,
   openShortcutsPopup,
   closeShortcutsPopup,
 } from "@features/bookmarks/commands.ts";
-import { openOmnibar } from "@features/bookmarks/omnibar.ts";
+import { openOmnibar, closeOmnibar } from "@features/bookmarks/omnibar.ts";
 import { openModal, updateActiveNav } from "@utils/ui-helpers.ts";
 
 /**
@@ -28,13 +24,13 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     if (shortcutsPopup && !shortcutsPopup.classList.contains("hidden")) {
       e.preventDefault();
       closeShortcutsPopup();
-    } else if (state.commandPaletteOpen) {
-      e.preventDefault();
-      closeCommandPalette();
     } else if (state.bulkMode) {
       const { clearSelections } =
         await import("@features/bookmarks/bookmarks.ts");
       clearSelections();
+    } else {
+      // Close omnibar if open
+      closeOmnibar();
     }
     return;
   }
@@ -44,8 +40,7 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     const activeEl = document.activeElement;
     if (
       !activeEl ||
-      !["INPUT", "TEXTAREA"].includes(activeEl.tagName) ||
-      activeEl.id === "quick-launch-input"
+      !["INPUT", "TEXTAREA"].includes(activeEl.tagName)
     ) {
       e.preventDefault();
       openModal("bookmark-modal");
@@ -69,7 +64,7 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
   }
 
   // Ctrl+K: Focus search (opens omnibar)
-  if (modifier && key === "k" && !state.commandPaletteOpen) {
+  if (modifier && key === "k") {
     e.preventDefault();
     const searchInput = document.getElementById(
       "search-input",
@@ -78,13 +73,17 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     openOmnibar();
   }
 
-  // Ctrl+Shift+P: Command palette
+  // Ctrl+Shift+P: Focus search with > prefix for commands (opens omnibar in command mode)
   if (modifier && e.shiftKey && key === "p") {
     e.preventDefault();
-    if (state.commandPaletteOpen) {
-      closeCommandPalette();
-    } else {
-      openCommandPalette();
+    const searchInput = document.getElementById(
+      "search-input",
+    ) as HTMLInputElement;
+    if (searchInput) {
+      searchInput.focus();
+      searchInput.value = ">";
+      searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+      openOmnibar();
     }
   }
 
@@ -169,41 +168,6 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     openShortcutsPopup();
   }
 
-  // Command palette navigation (avoid double-handling when input is focused)
-  if (state.commandPaletteOpen) {
-    const isPaletteInputFocused =
-      document.activeElement &&
-      document.activeElement.id === "quick-launch-input";
-    if (!isPaletteInputFocused) {
-      if (key === "arrowdown") {
-        e.preventDefault();
-        updateCommandPaletteActive(1);
-      } else if (key === "arrowup") {
-        e.preventDefault();
-        updateCommandPaletteActive(-1);
-      } else if (key === "pagedown") {
-        e.preventDefault();
-        updateCommandPaletteActive(5);
-      } else if (key === "pageup") {
-        e.preventDefault();
-        updateCommandPaletteActive(-5);
-      } else if (key === "home") {
-        e.preventDefault();
-        const delta = -state.commandPaletteActiveIndex;
-        updateCommandPaletteActive(delta);
-      } else if (key === "end") {
-        e.preventDefault();
-        const delta =
-          state.commandPaletteEntries.length -
-          1 -
-          state.commandPaletteActiveIndex;
-        updateCommandPaletteActive(delta);
-      } else if (key === "enter") {
-        e.preventDefault();
-        runActiveCommand();
-      }
-    }
-  }
 }
 
 /**
