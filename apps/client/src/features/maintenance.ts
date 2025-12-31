@@ -56,7 +56,11 @@ async function refreshFavicons(): Promise<void> {
 
   try {
     const bookmarks = state.bookmarks.filter(
-      (b) => b.url && !b.url.startsWith("view:"),
+      (b) =>
+        b.url &&
+        !b.url.startsWith("view:") &&
+        !b.url.startsWith("bookmark-view:") &&
+        !b.url.startsWith("javascript:"),
     );
     const total = bookmarks.length;
     let completed = 0;
@@ -118,7 +122,7 @@ async function findDuplicates(): Promise<void> {
   btn.disabled = true;
 
   try {
-    const duplicates = await api("/maintenance/duplicates");
+    const duplicates = await api<any[]>("/maintenance/duplicates");
 
     if (duplicates.length === 0) {
       showToast("No duplicate bookmarks found!", "success");
@@ -228,7 +232,10 @@ async function checkBrokenLinks(): Promise<void> {
 
   const bookmarks = state.bookmarks.filter(
     (b) =>
-      b.url && !b.url.startsWith("view:") && !b.url.startsWith("javascript:"),
+      b.url &&
+      !b.url.startsWith("view:") &&
+      !b.url.startsWith("bookmark-view:") &&
+      !b.url.startsWith("javascript:"),
   );
   const total = bookmarks.length;
   let completed = 0;
@@ -239,7 +246,7 @@ async function checkBrokenLinks(): Promise<void> {
       if (linkCheckAbortController.signal.aborted) break;
 
       try {
-        const result = await api("/maintenance/check-link", {
+        const result = await api<{ ok: boolean; status: number }>("/maintenance/check-link", {
           method: "POST",
           body: JSON.stringify({ url: bookmark.url }),
         });
