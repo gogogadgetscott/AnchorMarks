@@ -80,7 +80,7 @@ export function initNavigationListeners(): void {
 
   // Mobile sidebar backdrop
   document.getElementById("sidebar-backdrop")?.addEventListener("click", () => {
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= 1024) {
       document.body.classList.remove("mobile-sidebar-open");
     }
   });
@@ -88,7 +88,7 @@ export function initNavigationListeners(): void {
   // Close mobile sidebar when clicking on navigation items
   document.querySelectorAll(".sidebar .nav-item").forEach((item) => {
     item.addEventListener("click", () => {
-      if (window.innerWidth <= 768) {
+      if (window.innerWidth <= 1024) {
         document.body.classList.remove("mobile-sidebar-open");
       }
     });
@@ -112,7 +112,7 @@ export function initNavigationListeners(): void {
 
   // Global resize listener for mobile sidebar state
   window.addEventListener("resize", () => {
-    if (window.innerWidth > 768) {
+    if (window.innerWidth > 1024) {
       document.body.classList.remove("mobile-sidebar-open");
     }
   });
@@ -120,7 +120,7 @@ export function initNavigationListeners(): void {
   // Close overlays on Escape (Mobile sidebar + Modals)
   document.addEventListener("keydown", (e: KeyboardEvent) => {
     if (e.key !== "Escape") return;
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= 1024) {
       document.body.classList.remove("mobile-sidebar-open");
     }
     closeModals();

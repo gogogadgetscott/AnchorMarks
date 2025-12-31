@@ -12,13 +12,13 @@ process.env.CORS_ORIGIN = "http://localhost";
 const app = require("../app");
 
 // Mock metadata fetching to avoid timeouts / network requests
-jest.mock("../helpers/metadata", () => ({
-  fetchUrlMetadata: jest.fn().mockResolvedValue({
+vi.mock("../helpers/metadata", () => ({
+  fetchUrlMetadata: vi.fn().mockResolvedValue({
     title: "Mock Title",
     description: "Mock Description",
     og_image: null,
   }),
-  detectContentType: jest.fn().mockReturnValue("link"),
+  detectContentType: vi.fn().mockReturnValue("link"),
 }));
 
 let agent;
@@ -44,7 +44,7 @@ beforeAll(async () => {
     .post("/api/bookmarks")
     .set("X-CSRF-Token", csrfToken)
     .send({ url: "https://dup.com", title: "Duplicate" });
-});
+}, 30000);
 
 afterAll(() => {
   if (app.db) app.db.close();

@@ -21,7 +21,8 @@ const INSECURE_SECRETS = [
 ];
 
 function validateSecurityConfig() {
-  if (NODE_ENV !== "production") return;
+  const env = process.env.NODE_ENV || "development";
+  if (env !== "production") return;
 
   if (
     !process.env.JWT_SECRET ||
@@ -36,7 +37,8 @@ function validateSecurityConfig() {
 }
 
 function resolveCorsOrigin() {
-  if (NODE_ENV !== "production") return true;
+  const env = process.env.NODE_ENV || "development";
+  if (env !== "production") return true;
 
   const origin = process.env.CORS_ORIGIN;
   if (origin.trim() === "*") {
@@ -49,7 +51,8 @@ function resolveCorsOrigin() {
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || DEFAULT_JWT_SECRET;
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, "anchormarks.db");
+const DB_PATH =
+  process.env.DB_PATH || path.join(__dirname, "../../database/anchormarks.db");
 const ENABLE_BACKGROUND_JOBS = NODE_ENV !== "test";
 const ENABLE_FAVICON_BACKGROUND_JOBS = false; // Only fetch favicons on import/save
 
@@ -65,6 +68,13 @@ const AI_PROVIDER = (process.env.AI_PROVIDER || "none").toLowerCase();
 const AI_MODEL = process.env.AI_MODEL || null;
 const AI_API_URL = process.env.AI_API_URL || null; // e.g., https://api.openai.com/v1
 const AI_API_KEY = process.env.AI_API_KEY || null;
+
+// Thumbnail screenshot configuration
+const THUMBNAIL_ENABLED = process.env.THUMBNAIL_ENABLED === "true";
+const THUMBNAIL_WIDTH = parseInt(process.env.THUMBNAIL_WIDTH) || 1280;
+const THUMBNAIL_HEIGHT = parseInt(process.env.THUMBNAIL_HEIGHT) || 800;
+const THUMBNAIL_QUALITY = parseInt(process.env.THUMBNAIL_QUALITY) || 80;
+const THUMBNAIL_TIMEOUT = parseInt(process.env.THUMBNAIL_TIMEOUT) || 15000;
 
 // API key scope whitelist (method + path regex)
 const API_KEY_WHITELIST = [

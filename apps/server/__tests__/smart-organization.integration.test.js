@@ -10,25 +10,13 @@ const { v4: uuidv4 } = require("uuid");
 
 const smartOrg = require("../helpers/smart-organization.js");
 
-const TEST_DB_PATH = path.join(
-  __dirname,
-  "anchormarks-test-smartorg-integration.db",
-);
-
 describe("smart-organization.js - Integration Tests (DB-backed)", () => {
   let db;
   let userId;
 
   beforeAll(() => {
-    // Clean up any existing test database
-    [TEST_DB_PATH, `${TEST_DB_PATH}-shm`, `${TEST_DB_PATH}-wal`].forEach(
-      (file) => {
-        if (fs.existsSync(file)) fs.unlinkSync(file);
-      },
-    );
-
     // Create in-memory database with schema
-    db = new Database(TEST_DB_PATH);
+    db = new Database(":memory:");
 
     // Create schema
     db.exec(`
@@ -81,11 +69,6 @@ describe("smart-organization.js - Integration Tests (DB-backed)", () => {
 
   afterAll(() => {
     if (db) db.close();
-    [TEST_DB_PATH, `${TEST_DB_PATH}-shm`, `${TEST_DB_PATH}-wal`].forEach(
-      (file) => {
-        if (fs.existsSync(file)) fs.unlinkSync(file);
-      },
-    );
   });
 
   describe("getDomainScore", () => {
@@ -200,15 +183,18 @@ describe("smart-organization.js - Integration Tests (DB-backed)", () => {
         "javascript",
       );
 
-      for (let i = 0; i < 100; i++) {
-        const bmId = uuidv4();
-        db.prepare(
-          "INSERT INTO bookmarks (id, user_id, url, title) VALUES (?, ?, ?, ?)",
-        ).run(bmId, userId, `https://github.com/test/repo${i}`, `Repo ${i}`);
-        db.prepare(
-          "INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)",
-        ).run(bmId, tag1);
-      }
+      const insertMany = db.transaction(() => {
+        for (let i = 0; i < 100; i++) {
+          const bmId = uuidv4();
+          db.prepare(
+            "INSERT INTO bookmarks (id, user_id, url, title) VALUES (?, ?, ?, ?)",
+          ).run(bmId, userId, `https://github.com/test/repo${i}`, `Repo ${i}`);
+          db.prepare(
+            "INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)",
+          ).run(bmId, tag1);
+        }
+      });
+      insertMany();
 
       const score = smartOrg.getDomainScore(
         db,
@@ -218,7 +204,7 @@ describe("smart-organization.js - Integration Tests (DB-backed)", () => {
       );
       // frequency = 100/100 = 1.0, scale = min(100/100, 1.0) = 1.0
       expect(score).toBeCloseTo(1.0, 2);
-    });
+    }, 20000);
 
     it("should cap scale at 1.0 for more than 100 bookmarks", () => {
       // Create 150 bookmarks from domain, all tagged
@@ -229,20 +215,23 @@ describe("smart-organization.js - Integration Tests (DB-backed)", () => {
         "python",
       );
 
-      for (let i = 0; i < 150; i++) {
-        const bmId = uuidv4();
-        db.prepare(
-          "INSERT INTO bookmarks (id, user_id, url, title) VALUES (?, ?, ?, ?)",
-        ).run(bmId, userId, `https://github.com/python/repo${i}`, `Repo ${i}`);
-        db.prepare(
-          "INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)",
-        ).run(bmId, tag1);
-      }
+      const insertEvenMore = db.transaction(() => {
+        for (let i = 0; i < 150; i++) {
+          const bmId = uuidv4();
+          db.prepare(
+            "INSERT INTO bookmarks (id, user_id, url, title) VALUES (?, ?, ?, ?)",
+          ).run(bmId, userId, `https://github.com/python/repo${i}`, `Repo ${i}`);
+          db.prepare(
+            "INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)",
+          ).run(bmId, tag1);
+        }
+      });
+      insertEvenMore();
 
       const score = smartOrg.getDomainScore(db, userId, "github.com", "python");
       // frequency = 150/150 = 1.0, scale = min(150/100, 1.0) = 1.0
       expect(score).toBeCloseTo(1.0, 2);
-    });
+    }, 20000); // 20s timeout for bulk insert test
 
     it("should handle errors gracefully", () => {
       const badDb = {

@@ -24,7 +24,6 @@ import {
   FilterConfig,
   Tag,
   TourStep,
-  Command,
 } from "@types";
 
 // API Configuration
@@ -41,6 +40,7 @@ export let bookmarks: Bookmark[] = [];
 export let folders: Folder[] = [];
 export let renderedBookmarks: Bookmark[] = [];
 export let collections: any[] = [];
+export let totalCount: number = 0;
 
 // UI State
 export let currentDashboardTab: string | null = null;
@@ -93,11 +93,6 @@ export let tagMetadata: Record<string, { color?: string; icon?: string }> = {};
 export let selectedBookmarks = new Set<string>();
 export let lastSelectedIndex: number | null = null;
 export let bulkMode: boolean = false;
-
-// Command Palette State
-export let commandPaletteOpen: boolean = false;
-export let commandPaletteEntries: Command[] = [];
-export let commandPaletteActiveIndex: number = 0;
 
 // Tour State
 export let tourState = {
@@ -248,6 +243,13 @@ export function setCollections(val: any[]) {
 export function setRenderedBookmarks(val: Bookmark[]) {
   renderedBookmarks = val;
 }
+export function setTotalCount(val: number) {
+  totalCount = val;
+}
+export function resetPagination() {
+  displayedCount = BOOKMARKS_PER_PAGE;
+  totalCount = 0;
+}
 export function setCurrentDashboardTab(val: string | null) {
   currentDashboardTab = val;
 }
@@ -335,15 +337,6 @@ export function setLastSelectedIndex(val: number | null) {
 }
 export function setBulkMode(val: boolean) {
   bulkMode = val;
-}
-export function setCommandPaletteOpen(val: boolean) {
-  commandPaletteOpen = val;
-}
-export function setCommandPaletteEntries(val: Command[]) {
-  commandPaletteEntries = val;
-}
-export function setCommandPaletteActiveIndex(val: number) {
-  commandPaletteActiveIndex = val;
 }
 export function setTourState(val: any) {
   tourState = val;

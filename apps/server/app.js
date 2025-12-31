@@ -40,6 +40,7 @@ const authenticateTokenMiddleware = authenticateToken(db);
 const validateCsrfTokenMiddleware = validateCsrfToken(db);
 
 const { makeFetchFaviconWrapper } = require("./helpers/favicon");
+const metadataQueue = require("./helpers/metadata-queue");
 
 // Background jobs and thumbnail cache are handled in background.js
 const { createBackgroundJobs } = require("./background");
@@ -215,7 +216,7 @@ setupSmartOrganizationRoutes(app, db, {
 // In production: Express serves built Vite assets from dist/
 const staticDir =
   config.NODE_ENV === "production" &&
-  fs.existsSync(path.join(__dirname, "..", "client", "dist"))
+    fs.existsSync(path.join(__dirname, "..", "client", "dist"))
     ? path.join(__dirname, "..", "client", "dist")
     : path.join(__dirname, "..", "client");
 
