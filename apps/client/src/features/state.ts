@@ -294,6 +294,9 @@ export function setAiSuggestionsEnabled(val: boolean) {
   aiSuggestionsEnabled = val;
 }
 export function setIncludeChildBookmarks(val: boolean) {
+  if (includeChildBookmarks !== val) {
+    widgetDataCache = {};
+  }
   includeChildBookmarks = val;
 }
 export function setSnapToGrid(val: boolean) {

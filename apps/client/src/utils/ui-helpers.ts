@@ -603,7 +603,7 @@ export function updateActiveNav(): void {
 export async function updateCounts(): Promise<void> {
   try {
     // Fetch counts from server to avoid issues with filtered state.bookmarks
-    const counts = await api("/bookmarks/counts");
+    const counts = await api<any>("/bookmarks/counts");
 
     // Validate API response
     if (!counts || typeof counts !== "object") {

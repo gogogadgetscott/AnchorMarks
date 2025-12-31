@@ -8,10 +8,8 @@ import { api } from "@services/api.ts";
 import {
   showToast,
   openModal,
-  closeModals,
   updateActiveNav,
 } from "@utils/ui-helpers.ts";
-import { escapeHtml, getHostname, parseTagInput } from "@utils/index.ts";
 
 /**
  * Initialize interaction-related listeners

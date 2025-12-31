@@ -5,10 +5,7 @@
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 
-interface LogOptions {
-  context?: string;
-  level?: LogLevel;
-}
+
 
 class Logger {
   private isDevelopment(): boolean {

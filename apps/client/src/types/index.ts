@@ -29,6 +29,8 @@ export interface Bookmark {
   updated_at?: string;
   color?: string;
   is_archived?: number;
+  og_image?: string;
+  thumbnail_local?: string;
 }
 
 export interface Folder {

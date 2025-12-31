@@ -5,7 +5,7 @@
 
 import * as state from "@features/state.ts";
 import { openModal, updateActiveNav } from "@utils/ui-helpers.ts";
-import type { Command } from "@/types";
+import type { Command } from "../../types/index";
 
 // Get command palette commands
 export function getCommandPaletteCommands(filterText: string = ""): Command[] {

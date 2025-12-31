@@ -11,7 +11,7 @@ import {
   hideServerStatusBanner,
 } from "@utils/error-handler.ts";
 import { logger } from "@utils/logger.ts";
-import type { User } from "@types";
+import type { User } from "../../types/index";
 import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
 // Auth form HTML templates

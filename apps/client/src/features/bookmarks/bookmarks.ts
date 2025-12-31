@@ -17,7 +17,7 @@ import {
   updateBulkUI,
   updateActiveNav,
 } from "@utils/ui-helpers.ts";
-import { Bookmark } from "@/types";
+import { Bookmark } from "../../types/index";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
 import {
   BookmarkCard as createBookmarkCard,
@@ -170,7 +170,6 @@ export async function loadBookmarks(): Promise<void> {
 
 // Render bookmarks list
 // --- Virtualization State & Constants ---
-let isLazyLoadingInProgress = false;
 const pendingMetadataFetches = new Set<string>();
 let ogImageObserver: IntersectionObserver | null = null;
 
@@ -642,6 +641,7 @@ export async function updateBookmark(
 
     // Re-render the appropriate view based on current state
     if (state.currentView === "dashboard") {
+      state.clearWidgetDataCache();
       // Dynamically import and render dashboard
       const { renderDashboard } =
         await import("@features/bookmarks/dashboard.ts");

@@ -281,7 +281,7 @@ function attachWidgetFolderListeners() {
       document.body.classList.add("dragging-widget");
     });
 
-    item.addEventListener("dragend", (e: Event) => {
+    item.addEventListener("dragend", () => {
       (item as HTMLElement).style.opacity = "1";
       document.body.classList.remove("dragging-widget");
     });
@@ -335,7 +335,7 @@ function attachWidgetTagListeners() {
       document.body.classList.add("dragging-widget");
     });
 
-    item.addEventListener("dragend", (e: Event) => {
+    item.addEventListener("dragend", () => {
       (item as HTMLElement).style.opacity = "1";
       document.body.classList.remove("dragging-widget");
     });

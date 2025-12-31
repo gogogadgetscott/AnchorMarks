@@ -12,7 +12,7 @@ export async function saveSettings(
   }
 }
 import { applyTheme } from "@features/state.ts";
-import type { UserSettings } from "@/types";
+import type { UserSettings } from "../../types/index";
 // Import saveSettings at the top for use in all functions
 // (function is defined below)
 // Initialize theme and high contrast controls
