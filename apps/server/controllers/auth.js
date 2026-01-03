@@ -142,6 +142,9 @@ function setupAuthRoutes(
         csrfToken,
       });
     } catch (err) {
+      if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
+        return res.status(400).json({ error: "User already exists" });
+      }
       console.error(err);
       res.status(500).json({ error: "Server error" });
     }
