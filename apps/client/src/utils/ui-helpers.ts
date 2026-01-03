@@ -460,6 +460,11 @@ function attachSettingsTabListeners(): void {
       renderBookmarks();
     });
   }
+
+  // Bookmark shortcut (drag-to-bookmarks-bar)
+  import("@features/bookmarks/settings.ts").then(({ installBookmarkShortcut }) => {
+    installBookmarkShortcut();
+  });
 }
 
 // Attach settings modal logout button listener

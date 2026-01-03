@@ -104,7 +104,7 @@ if (config.NODE_ENV === "development") {
   // If external CDN scripts are added, use the SRI helper: helpers/sri.js
 }
 
-// Enhanced security headers
+// Enhanced security headers (default CSP)
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -118,6 +118,20 @@ app.use(
     xXssProtection: true, // Legacy XSS protection header
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
     frameguard: { action: "deny" },
+  }),
+);
+
+// Relax CSP for inline-script bookmark pages (/addbookmark, /m-addbookmark)
+// These static pages are self-hosted but require inline JS to prefill fields.
+const relaxedCspDirectives = {
+  ...cspDirectives,
+  scriptSrc: [...(cspDirectives.scriptSrc || ["'self'"]), "'unsafe-inline'"],
+};
+
+app.use(
+  ["/addbookmark", "/m-addbookmark"],
+  helmet({
+    contentSecurityPolicy: { directives: relaxedCspDirectives },
   }),
 );
 // Additional manual headers for redundancy

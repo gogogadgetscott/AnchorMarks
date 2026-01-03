@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Bookmark · AnchorMarks</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #6366f1;
+      --accent-strong: #4f46e5;
+      --error: #ef4444;
+      --success: #22c55e;
+      --border: #1f2937;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(99,102,241,0.12), transparent 30%),
+                  radial-gradient(circle at 80% 0%, rgba(76,29,149,0.12), transparent 32%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      width: min(720px, 94vw);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+    }
+    h1 {
+      margin: 0 0 16px;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    p.sub {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    form {
+      display: grid;
+      gap: 14px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: 0.1px;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 10px 12px;
+      background: #0b1220;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 14px;
+    }
+    textarea { resize: vertical; min-height: 80px; }
+    .row { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 6px;
+    }
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: #fff;
+      box-shadow: 0 10px 30px rgba(99,102,241,0.35);
+    }
+    .btn-secondary {
+      background: #1f2937;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    button:disabled { opacity: 0.7; cursor: not-allowed; }
+    button:hover:not(:disabled) { transform: translateY(-1px); }
+    .status {
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      background: #0b1220;
+      color: var(--muted);
+    }
+    .status.success { color: var(--success); border-color: rgba(34,197,94,0.35); }
+    .status.error { color: var(--error); border-color: rgba(239,68,68,0.35); }
+    .status.info { color: var(--muted); }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: #0b1220;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Add Bookmark</h1>
+    <p class="sub">Quickly save the current page to AnchorMarks. Fields are prefilled from your bookmark button.</p>
+    <div class="pill" id="auth-pill">Checking session…</div>
+    <form id="bookmark-form">
+      <div class="row">
+        <div>
+          <label for="title">Title</label>
+          <input id="title" name="title" required placeholder="Page title" />
+        </div>
+        <div>
+          <label for="url">URL</label>
+          <input id="url" name="url" required placeholder="https://example.com" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="folder">Folder</label>
+          <select id="folder" name="folder">
+            <option value="">— No folder (top level) —</option>
+          </select>
+        </div>
+        <div>
+          <label for="tags">Tags (comma separated)</label>
+          <input id="tags" name="tags" placeholder="work, reading" />
+        </div>
+      </div>
+
+      <div>
+        <label for="notes">Notes (optional)</label>
+        <textarea id="notes" name="notes" placeholder="Add a short note or description"></textarea>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-secondary" id="cancel-btn">Cancel</button>
+        <button type="submit" class="btn-primary" id="save-btn">Save Bookmark</button>
+      </div>
+    </form>
+    <div id="status" class="status info" style="margin-top:12px;">Loading…</div>
+  </div>
+
+  <script>
+    (function() {
+      const form = document.getElementById('bookmark-form');
+      const titleInput = document.getElementById('title');
+      const urlInput = document.getElementById('url');
+      const tagsInput = document.getElementById('tags');
+      const notesInput = document.getElementById('notes');
+      const folderSelect = document.getElementById('folder');
+      const statusEl = document.getElementById('status');
+      const saveBtn = document.getElementById('save-btn');
+      const cancelBtn = document.getElementById('cancel-btn');
+      const authPill = document.getElementById('auth-pill');
+
+      function safeDecode(value) {
+        if (!value) return '';
+        // Convert + back to space before decoding to handle alternate encoding styles
+        const normalized = String(value).replace(/\+/g, ' ');
+        try { return decodeURIComponent(normalized); } catch (_) { return normalized; }
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const initialUrl = safeDecode(params.get('url')) || document.referrer || '';
+      const initialTitle = safeDecode(params.get('title')) || document.title || '';
+      const initialTags = safeDecode(params.get('tags')) || '';
+      const preselectFolder = params.get('folder_id') || '';
+
+      urlInput.value = initialUrl;
+      titleInput.value = initialTitle;
+      tagsInput.value = initialTags;
+
+      let csrfToken = null;
+      let isAuthed = false;
+
+      function setStatus(text, type = 'info') {
+        statusEl.textContent = text;
+        statusEl.className = `status ${type}`;
+      }
+
+      function setAuth(text, type = 'info') {
+        authPill.textContent = text;
+        authPill.style.color = type === 'error' ? '#ef4444' : '#9ca3af';
+      }
+
+      async function ensureAuth() {
+        try {
+          const res = await fetch('/api/auth/me', { credentials: 'include' });
+          if (!res.ok) throw new Error('Not authenticated');
+          const data = await res.json();
+          csrfToken = data.csrfToken || null;
+          isAuthed = true;
+          setAuth('Signed in');
+        } catch (err) {
+          isAuthed = false;
+          setAuth('You are not signed in. Please log in to AnchorMarks first.', 'error');
+          throw err;
+        }
+      }
+
+      async function loadFolders() {
+        try {
+          const res = await fetch('/api/folders', { credentials: 'include' });
+          if (!res.ok) throw new Error('Failed to load folders');
+          const folders = await res.json();
+          folders.forEach((f) => {
+            const opt = document.createElement('option');
+            opt.value = f.id;
+            opt.textContent = f.name;
+            folderSelect.appendChild(opt);
+          });
+          if (preselectFolder) {
+            folderSelect.value = preselectFolder;
+          }
+        } catch (err) {
+          console.error('Folder load failed', err);
+          setStatus('Loaded, but folders could not be fetched.', 'error');
+        }
+      }
+
+      async function init() {
+        try {
+          await ensureAuth();
+          await loadFolders();
+          setStatus('Ready to add bookmark.', 'info');
+        } catch (err) {
+          setStatus('Please log in to AnchorMarks in another tab, then retry.', 'error');
+        }
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const url = urlInput.value.trim();
+        const title = titleInput.value.trim() || url;
+        if (!url) {
+          setStatus('URL is required.', 'error');
+          return;
+        }
+
+        saveBtn.disabled = true;
+        setStatus('Saving…', 'info');
+
+        try {
+          const payload = {
+            url,
+            title,
+            description: notesInput.value.trim() || undefined,
+            tags: tagsInput.value.trim(),
+            folder_id: folderSelect.value || null,
+          };
+
+          const res = await fetch('/api/bookmarks', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({ error: 'Failed to save' }));
+            throw new Error(data.error || 'Failed to save');
+          }
+
+          setStatus('Saved! You can close this window.', 'success');
+          setTimeout(() => {
+            try { window.close(); } catch (_) { /* ignore */ }
+          }, 800);
+        } catch (err) {
+          console.error('Save failed', err);
+          setStatus(err.message || 'Failed to save bookmark.', 'error');
+        } finally {
+          saveBtn.disabled = false;
+        }
+      });
+
+      cancelBtn.addEventListener('click', () => {
+        try { window.close(); } catch (_) { /* ignore */ }
+      });
+
+      init();
+    })();
+  </script>
+</body>
+</html>
