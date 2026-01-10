@@ -21,6 +21,9 @@ function setupMiddleware(app, { config, validateCsrfTokenMiddleware }) {
     helmet({
       contentSecurityPolicy: { directives: cspDirectives },
       referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+      hsts: false,
+      crossOriginOpenerPolicy: false,
+      originAgentCluster: false,
     }),
   );
 

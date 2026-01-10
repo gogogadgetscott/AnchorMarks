@@ -113,6 +113,8 @@ app.use(
     hsts: config.SSL_ENABLED
       ? { maxAge: 31536000, includeSubDomains: true, preload: true }
       : false,
+    crossOriginOpenerPolicy: config.SSL_ENABLED ? { policy: "same-origin" } : false,
+    originAgentCluster: config.SSL_ENABLED,
     crossOriginEmbedderPolicy: false, // Required for favicon loading from external sources
     xContentTypeOptions: true, // Prevent MIME type sniffing
     xXssProtection: true, // Legacy XSS protection header
@@ -132,6 +134,9 @@ app.use(
   ["/addbookmark", "/m-addbookmark"],
   helmet({
     contentSecurityPolicy: { directives: relaxedCspDirectives },
+    hsts: false,
+    crossOriginOpenerPolicy: config.SSL_ENABLED ? { policy: "same-origin" } : false,
+    originAgentCluster: config.SSL_ENABLED,
   }),
 );
 // Additional manual headers for redundancy
