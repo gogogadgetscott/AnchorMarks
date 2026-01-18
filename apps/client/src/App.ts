@@ -379,7 +379,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Initialize modular listeners
   initNavigationListeners();
   initFormListeners();
-  initOmnibarListeners();
+  // Only call initOmnibarListeners here if NOT authenticated, since
+  // updateHeaderContent() already attaches listeners when authenticated
+  if (!isAuthed) {
+    initOmnibarListeners();
+  }
   initInteractions();
   initTagListeners();
   initMaintenance();
