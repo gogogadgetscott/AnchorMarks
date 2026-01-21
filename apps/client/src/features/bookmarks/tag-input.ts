@@ -104,9 +104,13 @@ export function loadTagsFromInput(tagsString: string): void {
 export function clearTags(): void {
   selectedTags = [];
   renderSelectedTags();
-  const hiddenInput = document.getElementById("bookmark-tags") as HTMLInputElement;
+  const hiddenInput = document.getElementById(
+    "bookmark-tags",
+  ) as HTMLInputElement;
   if (hiddenInput) hiddenInput.value = "";
-  const input = document.getElementById("bookmark-tags-input") as HTMLInputElement;
+  const input = document.getElementById(
+    "bookmark-tags-input",
+  ) as HTMLInputElement;
   if (input) input.value = "";
 }
 

@@ -5,11 +5,7 @@
 
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
-import {
-  showToast,
-  openModal,
-  updateActiveNav,
-} from "@utils/ui-helpers.ts";
+import { showToast, openModal, updateActiveNav } from "@utils/ui-helpers.ts";
 
 /**
  * Initialize interaction-related listeners
@@ -131,7 +127,6 @@ function initImportExportListeners(): void {
       }
     });
 
-
   // Export Buttons
   document.getElementById("export-json-btn")?.addEventListener("click", () => {
     import("@features/bookmarks/import-export.ts").then(({ exportJson }) =>
@@ -145,25 +140,21 @@ function initImportExportListeners(): void {
   });
 
   // Dashboard Export/Import
-  document
-    .getElementById("export-views-btn")
-    ?.addEventListener("click", () => {
-      import("@features/bookmarks/import-export.ts").then(
-        ({ exportViews }) => exportViews(),
-      );
-    });
-  document
-    .getElementById("import-views-btn")
-    ?.addEventListener("click", () => {
-      document.getElementById("import-views-file")?.click();
-    });
+  document.getElementById("export-views-btn")?.addEventListener("click", () => {
+    import("@features/bookmarks/import-export.ts").then(({ exportViews }) =>
+      exportViews(),
+    );
+  });
+  document.getElementById("import-views-btn")?.addEventListener("click", () => {
+    document.getElementById("import-views-file")?.click();
+  });
   document
     .getElementById("import-views-file")
     ?.addEventListener("change", (e: Event) => {
       const target = e.target as HTMLInputElement;
       if (target.files && target.files[0]) {
-        import("@features/bookmarks/import-export.ts").then(
-          ({ importViews }) => importViews(target.files![0]),
+        import("@features/bookmarks/import-export.ts").then(({ importViews }) =>
+          importViews(target.files![0]),
         );
       }
     });
@@ -597,7 +588,9 @@ function initApiSettingsListeners(): void {
     } else if (target.id === "reset-bookmarks-btn") {
       import("@/App.ts").then(({ resetBookmarks }) => resetBookmarks());
     } else if (target.id === "restart-tour-btn") {
-      import("@features/bookmarks/tour.ts").then(({ startTour }) => startTour());
+      import("@features/bookmarks/tour.ts").then(({ startTour }) =>
+        startTour(),
+      );
     }
   });
 }

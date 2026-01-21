@@ -141,7 +141,6 @@ export class ConfirmDialog {
   }
 }
 
-
 export const confirmDialog = (message: string, options?: ConfirmOptions) =>
   ConfirmDialog.getInstance().show(message, options);
 
@@ -196,7 +195,10 @@ export class PromptDialog {
     return modal;
   }
 
-  public show(message: string, options: PromptOptions = {}): Promise<string | null> {
+  public show(
+    message: string,
+    options: PromptOptions = {},
+  ): Promise<string | null> {
     return new Promise((resolve) => {
       // 1. Setup DOM
       if (!this.modalElement) {
@@ -209,9 +211,15 @@ export class PromptDialog {
       // 2. Update Content
       const titleEl = this.modalElement.querySelector(".prompt-title");
       const msgEl = this.modalElement.querySelector(".prompt-message");
-      const inputEl = this.modalElement.querySelector(".prompt-input") as HTMLInputElement;
-      const okBtn = this.modalElement.querySelector(".prompt-ok") as HTMLElement;
-      const cancelBtn = this.modalElement.querySelector(".prompt-cancel") as HTMLElement;
+      const inputEl = this.modalElement.querySelector(
+        ".prompt-input",
+      ) as HTMLInputElement;
+      const okBtn = this.modalElement.querySelector(
+        ".prompt-ok",
+      ) as HTMLElement;
+      const cancelBtn = this.modalElement.querySelector(
+        ".prompt-cancel",
+      ) as HTMLElement;
 
       if (titleEl) titleEl.textContent = options.title || "Input Required";
       if (msgEl) msgEl.textContent = message;
@@ -275,7 +283,7 @@ export class PromptDialog {
 
       // 4. Show Modal
       this.modalElement.classList.remove("hidden");
-      
+
       // Focus input
       setTimeout(() => {
         inputEl?.focus();

@@ -7,6 +7,7 @@ import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { Folder } from "../../types/index";
 import { escapeHtml } from "@utils/index.ts";
+import { buildFolderOptionsHTML } from "./folders-utils";
 import {
   showToast,
   closeModals,
@@ -61,11 +62,10 @@ export function renderFolders(): void {
 
   const sorter = folderSorter;
 
-  const rootFolders = state.folders
-    .filter((f) => !f.parent_id)
-    .sort(sorter);
-  console.log(`[Folders] Rendering ${state.folders.length} total folders, found ${rootFolders.length} root folders`);
-
+  const rootFolders = state.folders.filter((f) => !f.parent_id).sort(sorter);
+  console.log(
+    `[Folders] Rendering ${state.folders.length} total folders, found ${rootFolders.length} root folders`,
+  );
 
   function renderFolderTree(folderList: any[], level = 0): string {
     return folderList
@@ -183,22 +183,9 @@ export function updateFolderSelect(): void {
   const select = document.getElementById("bookmark-folder");
   if (!select) return;
 
-  let options = '<option value="">None</option>';
-  const sorter = (a: any, b: any) => a.name.localeCompare(b.name);
-
-  function buildOptions(parent_id: string | null, level = 0) {
-    const children = state.folders
-      .filter((f) => f.parent_id === parent_id)
-      .sort(sorter);
-    children.forEach((f) => {
-      const prefix = "&nbsp;&nbsp;&nbsp;".repeat(level);
-      options += `<option value="${f.id}">${prefix}${escapeHtml(f.name)}</option>`;
-      buildOptions(f.id, level + 1);
-    });
-  }
-
-  buildOptions(null);
-  select.innerHTML = options;
+  // Use shared helper to build nested, sorted options
+  const optionsHtml = buildFolderOptionsHTML(state.folders, "None");
+  select.innerHTML = optionsHtml;
 }
 
 // Update folder parent select dropdown

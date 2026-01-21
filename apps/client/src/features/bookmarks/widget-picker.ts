@@ -442,8 +442,10 @@ export function renderWidgetPickerFolders(): void {
   const foldersToRender = state.folders.filter(
     (f) => getRecursiveBookmarkCount(f.id) > 0,
   );
-  
-  console.log(`[WidgetPicker] Found ${state.folders.length} total folders, ${foldersToRender.length} have bookmarks (recursive)`);
+
+  console.log(
+    `[WidgetPicker] Found ${state.folders.length} total folders, ${foldersToRender.length} have bookmarks (recursive)`,
+  );
 
   if (foldersToRender.length === 0) {
     container.innerHTML =
@@ -458,7 +460,9 @@ export function renderWidgetPickerFolders(): void {
     return folderList
       .sort(sorter)
       .map((folder) => {
-        const children = foldersToRender.filter((f) => f.parent_id === folder.id);
+        const children = foldersToRender.filter(
+          (f) => f.parent_id === folder.id,
+        );
         const count = getRecursiveBookmarkCount(folder.id);
         const isAdded = state.dashboardWidgets.some(
           (w) => w.type === "folder" && w.id === folder.id,

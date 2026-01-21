@@ -38,10 +38,7 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
   // Ctrl+N: Add new bookmark
   if (modifier && key === "n") {
     const activeEl = document.activeElement;
-    if (
-      !activeEl ||
-      !["INPUT", "TEXTAREA"].includes(activeEl.tagName)
-    ) {
+    if (!activeEl || !["INPUT", "TEXTAREA"].includes(activeEl.tagName)) {
       e.preventDefault();
       openModal("bookmark-modal");
     }
@@ -167,7 +164,6 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     e.preventDefault();
     openShortcutsPopup();
   }
-
 }
 
 /**

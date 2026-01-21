@@ -68,7 +68,7 @@ const { captureScreenshot } = require("./helpers/thumbnail");
 metadataQueue.initialize(
   db,
   fetchFaviconWrapper,
-  config.THUMBNAIL_ENABLED ? captureScreenshot : null
+  config.THUMBNAIL_ENABLED ? captureScreenshot : null,
 );
 if (config.NODE_ENV !== "test") {
   metadataQueue.startProcessor();
@@ -113,7 +113,9 @@ app.use(
     hsts: config.SSL_ENABLED
       ? { maxAge: 31536000, includeSubDomains: true, preload: true }
       : false,
-    crossOriginOpenerPolicy: config.SSL_ENABLED ? { policy: "same-origin" } : false,
+    crossOriginOpenerPolicy: config.SSL_ENABLED
+      ? { policy: "same-origin" }
+      : false,
     originAgentCluster: config.SSL_ENABLED,
     crossOriginEmbedderPolicy: false, // Required for favicon loading from external sources
     xContentTypeOptions: true, // Prevent MIME type sniffing
@@ -135,7 +137,9 @@ app.use(
   helmet({
     contentSecurityPolicy: { directives: relaxedCspDirectives },
     hsts: false,
-    crossOriginOpenerPolicy: config.SSL_ENABLED ? { policy: "same-origin" } : false,
+    crossOriginOpenerPolicy: config.SSL_ENABLED
+      ? { policy: "same-origin" }
+      : false,
     originAgentCluster: config.SSL_ENABLED,
   }),
 );
@@ -234,7 +238,7 @@ setupSmartOrganizationRoutes(app, db, {
 // In production: Express serves built Vite assets from dist/
 const staticDir =
   config.NODE_ENV === "production" &&
-    fs.existsSync(path.join(__dirname, "..", "client", "dist"))
+  fs.existsSync(path.join(__dirname, "..", "client", "dist"))
     ? path.join(__dirname, "..", "client", "dist")
     : path.join(__dirname, "..", "client");
 

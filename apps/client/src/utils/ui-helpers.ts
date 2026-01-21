@@ -269,7 +269,9 @@ export function openModal(id: string): void {
 
     // Attach modal close listeners only once per modal instance
     const closeBtn = modal.querySelector(".modal-close") as HTMLElement | null;
-    const cancelBtn = modal.querySelector(".modal-cancel") as HTMLElement | null;
+    const cancelBtn = modal.querySelector(
+      ".modal-cancel",
+    ) as HTMLElement | null;
     const backdrop = modal.querySelector(
       ".modal-backdrop",
     ) as HTMLElement | null;
@@ -462,9 +464,11 @@ function attachSettingsTabListeners(): void {
   }
 
   // Bookmark shortcut (drag-to-bookmarks-bar)
-  import("@features/bookmarks/settings.ts").then(({ installBookmarkShortcut }) => {
-    installBookmarkShortcut();
-  });
+  import("@features/bookmarks/settings.ts").then(
+    ({ installBookmarkShortcut }) => {
+      installBookmarkShortcut();
+    },
+  );
 }
 
 // Attach settings modal logout button listener

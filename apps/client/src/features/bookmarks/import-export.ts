@@ -352,9 +352,7 @@ function setViewsImportProgress(
   message = "",
 ): void {
   const statusEl = document.getElementById("import-views-progress");
-  const btn = document.getElementById(
-    "import-views-btn",
-  ) as HTMLButtonElement;
+  const btn = document.getElementById("import-views-btn") as HTMLButtonElement;
   if (!statusEl || !btn) return;
 
   const setStatus = (content: string) => {

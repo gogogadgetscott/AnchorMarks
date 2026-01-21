@@ -4,11 +4,7 @@ const { parseTagsDetailed } = require("../helpers/tags");
 const { generateBookmarkHtml } = require("../helpers/html");
 const { queueMetadataFetch } = require("../helpers/metadata-queue");
 
-function setupImportExportRoutes(
-  app,
-  db,
-  { authenticateTokenMiddleware },
-) {
+function setupImportExportRoutes(app, db, { authenticateTokenMiddleware }) {
   app.post(
     "/api/import/html",
     authenticateTokenMiddleware,
@@ -20,13 +16,13 @@ function setupImportExportRoutes(
           bookmarks,
           folders,
         });
-        
+
         // Queue imported bookmarks for background metadata processing (favicons + thumbnails)
         const bookmarkIds = result.imported.map((b) => b.id);
         if (bookmarkIds.length > 0) {
           queueMetadataFetch(bookmarkIds);
         }
-        
+
         res.json({
           imported: result.imported.length,
           skipped: result.skipped || 0,
@@ -47,13 +43,13 @@ function setupImportExportRoutes(
         bookmarks,
         folders,
       });
-      
+
       // Queue imported bookmarks for background metadata processing (favicons + thumbnails)
       const bookmarkIds = result.imported.map((b) => b.id);
       if (bookmarkIds.length > 0) {
         queueMetadataFetch(bookmarkIds);
       }
-      
+
       res.json({
         imported: result.imported.length,
         skipped: result.skipped || 0,
@@ -91,4 +87,3 @@ function setupImportExportRoutes(
 }
 
 module.exports = setupImportExportRoutes;
-

@@ -1,5 +1,12 @@
 export interface UserSettings {
-  theme: "light" | "dark" | "system" | "ocean" | "sunset" | "midnight" | "high-contrast";
+  theme:
+    | "light"
+    | "dark"
+    | "system"
+    | "ocean"
+    | "sunset"
+    | "midnight"
+    | "high-contrast";
   view_mode?: string;
   hide_favicons?: boolean;
 }

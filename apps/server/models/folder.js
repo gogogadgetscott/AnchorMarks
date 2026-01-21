@@ -2,7 +2,7 @@
 function listFolders(db, userId) {
   return db
     .prepare(
-    `
+      `
     SELECT f.*, COUNT(b.id) AS bookmark_count
     FROM folders f
     LEFT JOIN bookmarks b ON b.folder_id = f.id AND b.user_id = f.user_id AND b.is_archived = 0
@@ -54,7 +54,16 @@ function deleteAllForUser(db, userId) {
   return db.prepare("DELETE FROM folders WHERE user_id = ?").run(userId);
 }
 
-function createFolder(db, id, userId, name, color, icon, position, parentId = null) {
+function createFolder(
+  db,
+  id,
+  userId,
+  name,
+  color,
+  icon,
+  position,
+  parentId = null,
+) {
   return db
     .prepare(
       "INSERT INTO folders (id, user_id, parent_id, name, color, icon, position) VALUES (?, ?, ?, ?, ?, ?, ?)",

@@ -5,8 +5,6 @@
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 
-
-
 class Logger {
   private isDevelopment(): boolean {
     return (

@@ -58,7 +58,7 @@ async function refreshFavicons(): Promise<void> {
     // Fetch all bookmarks directly from API to ensure we process everything
     const response = await api<{ bookmarks: any[] }>("/bookmarks?limit=10000"); // Ensure we get all bookmarks
     const allBookmarks = response.bookmarks || [];
-    
+
     const bookmarks = allBookmarks.filter(
       (b) =>
         b.url &&
@@ -250,10 +250,13 @@ async function checkBrokenLinks(): Promise<void> {
       if (linkCheckAbortController.signal.aborted) break;
 
       try {
-        const result = await api<{ ok: boolean; status: number }>("/maintenance/check-link", {
-          method: "POST",
-          body: JSON.stringify({ url: bookmark.url }),
-        });
+        const result = await api<{ ok: boolean; status: number }>(
+          "/maintenance/check-link",
+          {
+            method: "POST",
+            body: JSON.stringify({ url: bookmark.url }),
+          },
+        );
 
         if (!result.ok) {
           brokenCount++;

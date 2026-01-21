@@ -53,7 +53,6 @@ function createExampleBookmarks(db, userId, folderId = null, fetchFavicon) {
   return created;
 }
 
-
 function setupAuthRoutes(
   app,
   db,

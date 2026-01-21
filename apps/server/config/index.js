@@ -69,7 +69,6 @@ const AI_MODEL = process.env.AI_MODEL || null;
 const AI_API_URL = process.env.AI_API_URL || null; // e.g., https://api.openai.com/v1
 const AI_API_KEY = process.env.AI_API_KEY || null;
 
-
 // API key scope whitelist (method + path regex)
 const API_KEY_WHITELIST = [
   // Bookmarks sync endpoints

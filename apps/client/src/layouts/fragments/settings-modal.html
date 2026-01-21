@@ -183,19 +183,44 @@
         <div class="setting-item">
           <div class="setting-info">
             <h4>Bookmark Button Shortcut</h4>
-            <p>Drag the button below to your browser's Bookmarks Bar (<a href="#" id="bookmark-help-link" style="color: var(--link-color); text-decoration: underline; cursor: pointer;">click here for Help</a>)</p>
+            <p>
+              Drag the button below to your browser's Bookmarks Bar (<a
+                href="#"
+                id="bookmark-help-link"
+                style="
+                  color: var(--link-color);
+                  text-decoration: underline;
+                  cursor: pointer;
+                "
+                >click here for Help</a
+              >)
+            </p>
           </div>
-          <div id="bookmark-buttons-container" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem;">
+          <div
+            id="bookmark-buttons-container"
+            style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem"
+          >
             <a
               id="add-bookmark-button"
               href="javascript:void(0)"
               class="btn btn-secondary"
               draggable="true"
               title="Drag this button to your browser's bookmarks bar to add bookmarks quickly"
-              style="cursor: grab; user-select: none;"
-            >📌 Add to AnchorMarks</a>
+              style="cursor: grab; user-select: none"
+              >📌 Add to AnchorMarks</a
+            >
           </div>
-          <div id="bookmark-shortcut-status" style="margin-top: 1rem; font-size: 0.85rem; display: none; padding: 0.5rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+          <div
+            id="bookmark-shortcut-status"
+            style="
+              margin-top: 1rem;
+              font-size: 0.85rem;
+              display: none;
+              padding: 0.5rem;
+              background: var(--bg-secondary);
+              border-radius: var(--radius-md);
+            "
+          >
             <span id="shortcut-status-text"></span>
           </div>
         </div>
@@ -310,12 +335,7 @@
               </svg>
               Export Views
             </button>
-            <input
-              type="file"
-              id="import-views-file"
-              accept=".json"
-              hidden
-            />
+            <input type="file" id="import-views-file" accept=".json" hidden />
             <button class="btn btn-secondary" id="import-views-btn">
               <svg
                 viewBox="0 0 24 24"

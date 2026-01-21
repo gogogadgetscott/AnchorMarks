@@ -477,7 +477,9 @@ export async function loadTagStats(): Promise<void> {
       return;
     }
 
-    const tagStatsListElement = tagStatsList as HTMLElement & { _allTags: any[] };
+    const tagStatsListElement = tagStatsList as HTMLElement & {
+      _allTags: any[];
+    };
     // Sort tags based on user preference
     const sortMode = state.filterConfig.tagSort || "count_desc";
     tags.sort((a: any, b: any) => {

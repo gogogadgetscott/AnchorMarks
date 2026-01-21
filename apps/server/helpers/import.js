@@ -23,10 +23,10 @@ async function parseBookmarkHtml(html) {
   function processList(dlElement, parentId) {
     // Netscape format: <DL> contains <DT> items which contain either <H3> (folder) or <A> (link)
     // <H3> is followed by another <DL> for the folder contents
-    
+
     // We iterate over all children to handle malformed HTML where DT might be missing
     const children = $(dlElement).children();
-    
+
     children.each((_, el) => {
       const element = $(el);
       const tagName = element.prop("tagName");
@@ -34,14 +34,14 @@ async function parseBookmarkHtml(html) {
       // Handle <DT> wrapper (standard format)
       if (tagName === "DT") {
         processItem(element, parentId);
-      } 
+      }
       // Handle direct <A> or <H3> (loose format)
       else if (tagName === "A" || tagName === "H3") {
-         // If it's a direct child, we process it directly. 
-         // Note: processItem expects the container (DT) or the item itself if checking children.
-         // Let's make a specific handler for the node type.
-         if (tagName === "A") processBookmark(element, parentId);
-         if (tagName === "H3") processFolder(element, parentId);
+        // If it's a direct child, we process it directly.
+        // Note: processItem expects the container (DT) or the item itself if checking children.
+        // Let's make a specific handler for the node type.
+        if (tagName === "A") processBookmark(element, parentId);
+        if (tagName === "H3") processFolder(element, parentId);
       }
     });
   }
@@ -68,55 +68,57 @@ async function parseBookmarkHtml(html) {
     // The folder contents <DL> usually follows the <H3>
     // In standard structure: <DT><H3>...</H3><DL>...</DL></DT>
     // So we look for a sibling DL of the H3, or a child DL of the parent DT
-    
+
     let dl = h3Element.next("dl");
-    
+
     // Sometimes it's nested differently or H3 matches the DT parent's next sibling
     if (dl.length === 0) {
-        // Try next sibling of parent DT
-        dl = h3Element.parent("dt").next("dd").children("dl");
+      // Try next sibling of parent DT
+      dl = h3Element.parent("dt").next("dd").children("dl");
     }
     // Try standard netscape: DT -> H3, DL (DL is sibling of H3 inside DT? No, usually DT contains H3, and DL follows DT... or DL is inside DD?)
     // Actually standard is: <DT><H3>...</H3><DL>...</DL></DT> (some browsers)
     // Or: <DT><H3>...</H3></DT><DD><DL>...</DL></DD> (IE style)
-    
+
     if (dl.length === 0) {
-        // Look for DL as sibling of H3
-         dl = h3Element.siblings("dl");
+      // Look for DL as sibling of H3
+      dl = h3Element.siblings("dl");
     }
-    
+
     if (dl.length === 0) {
-        // Look for DL as immediate sibling of parent DT (some formats)
-        dl = h3Element.parent().next("dl");
+      // Look for DL as immediate sibling of parent DT (some formats)
+      dl = h3Element.parent().next("dl");
     }
-    
+
     if (dl.length === 0) {
-        // Look for DL in the next DD (definition description)
-        dl = h3Element.parent().next("dd").children("dl");
+      // Look for DL in the next DD (definition description)
+      dl = h3Element.parent().next("dd").children("dl");
     }
 
     if (dl.length > 0) {
       processList(dl, folderId);
     } else {
-        // Fallback: Try looking for the next DL in siblings even if not immediate
-        const nextDL = h3Element.nextAll("dl").first();
-        const nextH3 = h3Element.nextAll("h3").first();
-        
-        if (nextDL.length > 0) {
-             if (nextH3.length === 0 || nextDL.index() < nextH3.index()) {
-                 console.log(`[Import] Found detached sibling DL for folder "${folderName}"`);
-                 processList(nextDL, folderId);
-             }
-        } else {
-             console.warn(`[Import] No content DL found for folder "${folderName}"`);
+      // Fallback: Try looking for the next DL in siblings even if not immediate
+      const nextDL = h3Element.nextAll("dl").first();
+      const nextH3 = h3Element.nextAll("h3").first();
+
+      if (nextDL.length > 0) {
+        if (nextH3.length === 0 || nextDL.index() < nextH3.index()) {
+          console.log(
+            `[Import] Found detached sibling DL for folder "${folderName}"`,
+          );
+          processList(nextDL, folderId);
         }
+      } else {
+        console.warn(`[Import] No content DL found for folder "${folderName}"`);
+      }
     }
   }
 
   function processBookmark(aElement, parentId) {
     const url = aElement.attr("href");
     const title = aElement.text().trim() || url;
-    
+
     if (!url || url.startsWith("javascript:") || url.startsWith("place:")) {
       return;
     }
@@ -124,7 +126,7 @@ async function parseBookmarkHtml(html) {
     // Extract attributes
     const tagsAttr = aElement.attr("tags");
     const colorAttr = aElement.attr("color");
-    
+
     const tagsString = tagsAttr ? stringifyTags(parseTags(tagsAttr)) : null;
 
     bookmarks.push({
@@ -132,7 +134,7 @@ async function parseBookmarkHtml(html) {
       url,
       folder_id: parentId,
       tags: tagsString,
-      color: colorAttr
+      color: colorAttr,
     });
   }
 
@@ -147,31 +149,36 @@ async function parseBookmarkHtml(html) {
 
   // FALLBACK: If structured parsing found nothing, try distinct strategies
   if (bookmarks.length === 0) {
-     console.log("[Import] Structured parsing yielded 0 bookmarks. Attempting flat DOM scan...");
-     
-     const links = $("a");
-     links.each((_, el) => {
-        const element = $(el);
-        const url = element.attr("href");
-        if (!url || url.startsWith("javascript:") || url.startsWith("place:")) return;
-        
-        const title = element.text().trim() || url;
-        const tagsAttr = element.attr("tags"); 
-        const tagsString = tagsAttr ? stringifyTags(parseTags(tagsAttr)) : null;
+    console.log(
+      "[Import] Structured parsing yielded 0 bookmarks. Attempting flat DOM scan...",
+    );
 
-        bookmarks.push({
-            title,
-            url,
-            folder_id: null,
-            tags: tagsString,
-            color: element.attr("color")
-        });
-     });
-     
-     console.log(`[Import] Flat DOM scan found ${bookmarks.length} bookmarks.`);
+    const links = $("a");
+    links.each((_, el) => {
+      const element = $(el);
+      const url = element.attr("href");
+      if (!url || url.startsWith("javascript:") || url.startsWith("place:"))
+        return;
+
+      const title = element.text().trim() || url;
+      const tagsAttr = element.attr("tags");
+      const tagsString = tagsAttr ? stringifyTags(parseTags(tagsAttr)) : null;
+
+      bookmarks.push({
+        title,
+        url,
+        folder_id: null,
+        tags: tagsString,
+        color: element.attr("color"),
+      });
+    });
+
+    console.log(`[Import] Flat DOM scan found ${bookmarks.length} bookmarks.`);
   }
 
-  console.log(`[Import] Completed. Found ${bookmarks.length} bookmarks, ${folders.length} folders.`);
+  console.log(
+    `[Import] Completed. Found ${bookmarks.length} bookmarks, ${folders.length} folders.`,
+  );
   return { bookmarks, folders };
 }
 
