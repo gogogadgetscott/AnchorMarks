@@ -4551,8 +4551,9 @@ body.dragging-widget .widget-sidebar-overlay {
 }
 
 .command-category.view {
-  background: rgba(99, 102, 241, 0.15);
-  color: #6366f1;
+  /* Off-yellow background with darker amber text for better contrast */
+  background: rgba(250, 204, 21, 0.15);
+  color: #b59f1a;
 }
 
 .command-category.tag {
