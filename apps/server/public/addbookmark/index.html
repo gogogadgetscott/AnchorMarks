@@ -311,9 +311,14 @@
             if (!res.ok) throw new Error("Failed to load folders");
             const folders = await res.json();
 
-            // Build nested, alphabetically sorted options (use shared helper when available)
-            if (typeof buildFolderOptionsHTML === "function") {
-              folderSelect.innerHTML = buildFolderOptionsHTML(
+            // Build nested, alphabetically sorted options (use namespaced shared helper when available)
+            const sharedBuilder =
+              (window.anchorMarks && window.anchorMarks.buildFolderOptionsHTML) ||
+              window.buildFolderOptionsHTML ||
+              null;
+
+            if (typeof sharedBuilder === "function") {
+              folderSelect.innerHTML = sharedBuilder(
                 folders,
                 "— No folder (top level) —",
               );
