@@ -29,6 +29,7 @@ function listBookmarks(db, userId, opts = {}) {
     favorites,
     search,
     tags,
+    tagMode,
     sort,
     limit,
     offset,
@@ -83,9 +84,28 @@ function listBookmarks(db, userId, opts = {}) {
   }
 
   if (tags) {
-    query += " AND tg.tags_joined LIKE ?";
-    countQuery += " AND tg.tags_joined LIKE ?";
-    params.push(`%${tags}%`);
+    // Support multiple tags with AND/OR semantics. 'tags' expected as comma-separated string.
+    const tagArr = String(tags)
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    if (tagArr.length > 0) {
+      if (tagMode && String(tagMode).toLowerCase() === "and") {
+        // Require all tags
+        tagArr.forEach((t) => {
+          query += " AND tg.tags_joined LIKE ?";
+          countQuery += " AND tg.tags_joined LIKE ?";
+          params.push(`%${t}%`);
+        });
+      } else {
+        // Default: OR semantics (any tag)
+        const likeClauses = tagArr.map(() => "tg.tags_joined LIKE ?").join(" OR ");
+        query += ` AND (${likeClauses})`;
+        countQuery += ` AND (${likeClauses})`;
+        tagArr.forEach((t) => params.push(`%${t}%`));
+      }
+    }
   }
 
   // Handle archiving filter

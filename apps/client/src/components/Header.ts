@@ -1,5 +1,6 @@
 import { Icon } from "./Icon.ts";
 import { ViewToggle, ViewMode } from "./ViewToggle.ts";
+import * as state from "@features/state.ts";
 import { UserProfile } from "./UserProfile.ts";
 import { SelectionUI, BulkAction } from "./SelectionUI.ts";
 
@@ -40,7 +41,7 @@ export function Header(options: HeaderOptions): string {
     showFilterButton = false,
   } = options;
 
-  const toggleHtml = showViewToggle ? ViewToggle({ modes: viewModes }) : "";
+  const toggleHtml = showViewToggle ? ViewToggle({ modes: viewModes, activeMode: state.viewMode }) : "";
   const profileHtml = showUserProfile ? UserProfile() : "";
   const filterBtnHtml = showFilterButton
     ? `<button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">

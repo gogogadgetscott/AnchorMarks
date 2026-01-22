@@ -2161,9 +2161,14 @@ body.sidebar-collapsed .nav-section-header {
   padding: 2rem;
 }
 
-body.dashboard-active .content-body,
+body.dashboard-active .content-body {
+  padding: 0;
+}
+
+/* Keep a small bottom padding for the Tag Cloud so the legend and rounded corners are not clipped */
 body.tag-cloud-active .content-body {
   padding: 0;
+  padding-bottom: 2rem;
 }
 
 .folder-tab-btn {
@@ -2819,6 +2824,30 @@ body.tag-cloud-active .content-body {
   padding: 0.25rem 0;
 }
 
+/* Stack URL and tags under the description in list view and normalize spacing */
+.bookmarks-list .bookmark-url-and-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem; /* 4px */
+  margin-left: 1rem;
+  margin-top: 0.25rem;
+  min-width: 0;
+}
+
+.bookmarks-list .bookmark-url-and-tags .bookmark-url {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bookmarks-list .bookmark-url-and-tags .bookmark-tags {
+  margin-left: 0;
+  max-width: 100%;
+  justify-content: flex-start;
+  padding: 0;
+}
+
 .bookmarks-list .bookmark-actions {
   position: static;
   opacity: 0;
@@ -2829,6 +2858,38 @@ body.tag-cloud-active .content-body {
   margin: 0;
 }
 
+/* List view: use grid columns for consistent alignment */
+.bookmarks-list .bookmark-card {
+  display: grid;
+  grid-template-columns: auto 40px 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.bookmarks-list .bookmark-select {
+  grid-column: 1;
+}
+
+.bookmarks-list .bookmark-favicon {
+  grid-column: 2;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.bookmarks-list .bookmark-title-tags {
+  grid-column: 3;
+  min-width: 0;
+}
+
+.bookmarks-list .bookmark-desc-url {
+  grid-column: 4;
+  min-width: 0;
+}
+
+.bookmarks-list .bookmark-actions {
+  grid-column: 5;
+} 
 .bookmarks-list .bookmark-card:hover .bookmark-actions {
   opacity: 1;
 }
@@ -7341,20 +7402,31 @@ html {
    ============================================ */
 
 .tag-cloud-container {
-  padding: 0;
-  height: calc(100vh - 100px);
-  max-height: calc(100vh - 150px);
+  padding: 0 0 1.5rem 0; /* bottom padding reserved for legend */
+  height: calc(100vh - 80px); /* allow slightly more space at the bottom */
+  max-height: calc(100vh - 120px);
   width: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative; /* needed for absolute-positioned legend */
 }
+
+/* Hide global empty state when Tag Cloud is active to avoid overlap */
+body.tag-cloud-active #empty-state-container {
+  display: none !important;
+}
+
+/* Slightly increase bottom padding of content-body so tag-cloud legend doesn't overlay edge */
+body.tag-cloud-active .content-body {
+  padding-bottom: 1.5rem;
+} 
 
 .tag-cloud-view {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 1.25rem;
+  padding: 0.75rem; /* reduced padding to fit more tags */
   background: linear-gradient(
     135deg,
     var(--bg-primary) 0%,
@@ -7362,13 +7434,13 @@ html {
     var(--bg-primary) 100%
   );
   border-radius: var(--radius-xl);
-  margin: 0.5rem;
+  margin: 0.25rem; /* smaller margins */
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--border-color);
   position: relative;
   overflow: hidden;
-  max-height: calc(100vh - 110px);
-}
+  max-height: calc(100vh - 90px); /* tightened max height */
+} 
 
 .tag-cloud-view::before {
   content: "";
@@ -7376,14 +7448,14 @@ html {
   top: 0;
   left: 0;
   right: 0;
-  height: 200px;
+  height: 120px; /* reduced overlay height */
   background: linear-gradient(
     180deg,
-    rgba(99, 102, 241, 0.05) 0%,
+    rgba(99, 102, 241, 0.03) 0%,
     transparent 100%
   );
   pointer-events: none;
-}
+} 
 
 .tag-cloud-header {
   display: flex;
@@ -7481,16 +7553,18 @@ html {
   align-content: center;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem 0.75rem;
-  padding: 1rem;
+  gap: 0.35rem 0.5rem; /* tighter gaps to fit more tags */
+  padding: 0.75rem; /* smaller padding */
+  /* Reserve space at bottom so absolute legend doesn't overlap content */
+  padding-bottom: 3.5rem;
   min-height: 0;
   position: relative;
   z-index: 1;
-  overflow: hidden;
-  /* Prevent scrolling */
+  overflow: auto; /* allow scrolling when content exceeds available space */
+  -webkit-overflow-scrolling: touch;
   container-type: inline-size;
   /* Enable container queries */
-}
+}   
 
 .tag-cloud-canvas::-webkit-scrollbar {
   display: none;
@@ -7500,9 +7574,9 @@ html {
 .tag-cloud-tag {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5em 0.9em;
-  font-size: var(--tag-size, 1rem);
+  gap: 0.4rem; /* slightly smaller inter-item gap */
+  padding: 0.35em 0.6em; /* reduced padding */
+  font-size: var(--tag-size, 0.95rem);
   font-weight: 600;
   line-height: 1.2;
   color: var(--tag-text, #ffffff);
@@ -7515,22 +7589,22 @@ html {
     color-mix(in srgb, var(--tag-color, var(--primary-500)) 55%, transparent);
   border-radius: var(--radius-full);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   opacity: 0;
-  animation: tagCloudFadeIn 0.5s ease forwards;
+  animation: tagCloudFadeIn 0.4s ease forwards;
   animation-delay: var(--tag-delay, 0s);
   transform: var(--tag-rotation, rotate(0deg)) scale(0.9);
   text-shadow: none;
   white-space: nowrap;
   box-shadow:
-    0 4px 14px
+    0 4px 10px
       color-mix(in srgb, var(--tag-color, var(--primary-500)) 28%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  max-width: 95%;
+  max-width: 90%;
   overflow: hidden;
   text-overflow: ellipsis;
   flex-shrink: 1;
-}
+} 
 
 @keyframes tagCloudFadeIn {
   from {
@@ -7588,12 +7662,23 @@ html {
   justify-content: center;
   gap: 1rem;
   margin-top: 1rem;
-  padding-top: 1rem;
+  padding: 0.75rem 1rem; /* compact vertical padding */
   border-top: 1px solid var(--border-color);
-  position: relative;
-  z-index: 1;
+  /* Pin to the bottom of the tag-cloud container */
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.0) 0%,
+    rgba(3,37,58,0.6) 100%
+  );
+  backdrop-filter: blur(6px);
+  color: var(--text-primary);
   flex-shrink: 0;
-}
+} 
 
 .legend-item {
   display: flex;
@@ -7706,19 +7791,21 @@ html {
   }
 
   .tag-cloud-canvas {
-    padding: 0.5rem;
-    gap: 0.4rem 0.5rem;
+    padding: 0.4rem;
+    gap: 0.3rem 0.45rem;
   }
 
   .tag-cloud-tag {
-    padding: 0.4em 0.7em;
-    gap: 0.4rem;
+    padding: 0.3em 0.55em;
+    gap: 0.3rem;
   }
 
   .tag-cloud-legend {
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
     font-size: 0.75rem;
+    left: 0;
+    right: 0;
   }
 
   .legend-gradient {
@@ -7734,12 +7821,12 @@ html {
   }
 
   .tag-cloud-canvas {
-    padding: 0.4rem;
-    gap: 0.3rem 0.4rem;
+    padding: 0.35rem;
+    gap: 0.25rem 0.35rem;
   }
 
   .tag-cloud-tag {
-    padding: 0.35em 0.6em;
+    padding: 0.3em 0.5em;
   }
 
   .tag-cloud-header {
