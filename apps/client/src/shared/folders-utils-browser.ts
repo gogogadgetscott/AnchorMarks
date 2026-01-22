@@ -4,11 +4,11 @@ import { buildFolderOptionsHTML } from "@features/bookmarks/folders-utils";
 // (e.g., /addbookmark)
 declare global {
   interface Window {
-    anchorMarks?: { buildFolderOptionsHTML?: typeof buildFolderOptionsHTML };
+    anchormarks?: { buildFolderOptionsHTML?: typeof buildFolderOptionsHTML };
   }
 }
 
-// Ensure a small, stable namespace to avoid polluting global scope
-window.anchorMarks = window.anchorMarks || {};
-window.anchorMarks.buildFolderOptionsHTML = buildFolderOptionsHTML;
+// Ensure a small, stable namespace (lowercase) to avoid polluting global scope
+window.anchormarks = window.anchormarks || {};
+window.anchormarks.buildFolderOptionsHTML = buildFolderOptionsHTML;
 export {};
