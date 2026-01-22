@@ -115,8 +115,8 @@ export async function updateHeaderContent(): Promise<void> {
     case "dashboard":
       headerConfig.title = "Dashboard";
       headerConfig.countId = "dashboard-view-name";
+      headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
       headerConfig.rightContent = `
-        ${Omnibar({ id: "search-input" })}
         ${Button("Add Widget", { id: "dashboard-add-widget-btn", variant: "secondary", icon: "plus", data: { action: "toggle-widget-picker" } })}
         ${Button("", { id: "dashboard-layout-btn", variant: "icon", icon: "grid", title: "Layout Settings", data: { action: "toggle-layout-settings" } })}
       `;
@@ -164,9 +164,7 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.title = "Archived";
       headerConfig.countId = "archived-view-count";
       headerConfig.countSuffix = "bookmarks";
-      headerConfig.rightContent = `
-          ${Omnibar({ id: "search-input", placeholder: "Search archived bookmarks..." })}
-        `;
+      headerConfig.centerContent = `${Omnibar({ id: "search-input", placeholder: "Search archived bookmarks..." })}`;
       headerConfig.bulkActions = ["unarchive", "delete"];
       break;
 
@@ -174,17 +172,13 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.title = `Collection: ${state.currentCollection}`;
       headerConfig.countId = "collection-view-count";
       headerConfig.countSuffix = "bookmarks";
-      headerConfig.rightContent = `
-          ${Omnibar({ id: "search-input" })}
-        `;
+      headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
       headerConfig.showFilterButton = true;
       break;
 
     case "tag-cloud":
       headerConfig.title = "Tag Cloud";
-      headerConfig.rightContent = `
-          ${Omnibar({ id: "search-input" })}
-        `;
+      headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
       break;
 
     case "all":
@@ -193,9 +187,7 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.title = "Bookmarks";
       headerConfig.countId = "bookmarks-view-count";
       headerConfig.countSuffix = "bookmarks";
-      headerConfig.rightContent = `
-          ${Omnibar({ id: "search-input" })}
-        `;
+      headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
       headerConfig.showFilterButton = true;
       break;
   }

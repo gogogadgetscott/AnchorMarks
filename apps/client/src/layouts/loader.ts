@@ -64,12 +64,8 @@ export function loadComponents(): void {
         className: "main-header",
         countId: "bookmarks-view-count",
         countSuffix: "bookmarks",
-        rightContent: `
+        centerContent: `
           ${Omnibar({ id: "search-input" })}
-          <button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
-            ${Icon("filter", { size: 16 })}
-            <span class="filter-btn-text">Filters</span>
-          </button>
         `,
         bulkActions: ["archive", "move", "tag", "delete"],
       });
