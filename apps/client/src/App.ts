@@ -127,8 +127,8 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.title = "Favorites";
       headerConfig.countId = "favorites-view-count";
       headerConfig.countSuffix = "favorites";
+      headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
       headerConfig.rightContent = `
-          ${Omnibar({ id: "search-input" })}
           <div class="sort-controls">
             <label for="favorites-sort">Sort by</label>
             <select id="favorites-sort" class="form-select">
@@ -146,8 +146,8 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.title = "Recent";
       headerConfig.countId = "recents-view-count";
       headerConfig.countSuffix = "recent";
+      headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
       headerConfig.rightContent = `
-          ${Omnibar({ id: "search-input" })}
           <div class="time-range-controls">
             <label for="recents-range">Time Range</label>
             <select id="recents-range" class="form-select">
