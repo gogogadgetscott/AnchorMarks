@@ -38,6 +38,12 @@ jobs:
       - name: Build client (Vite)
         run: npm run build --workspace=anchormarks-client
 
+      - name: Build shared helpers
+        run: npm run build:shared --workspace=anchormarks-client
+
+      - name: Ensure shared helper exists
+        run: test -f apps/server/public/js/folders-utils.js
+
       - name: Server coverage (non-blocking)
         run: npm run test:server -- --coverage
         continue-on-error: true
