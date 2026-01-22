@@ -198,8 +198,20 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
       // Add view bookmarks
       // @ts-ignore
       state.bookmarks = [
-        { id: "v1", title: "Dashboard View", url: "view:dash1", favicon: "", tags: "" },
-        { id: "v2", title: "Bookmark View", url: "bookmark-view:bmv1", favicon: "", tags: "" },
+        {
+          id: "v1",
+          title: "Dashboard View",
+          url: "view:dash1",
+          favicon: "",
+          tags: "",
+        },
+        {
+          id: "v2",
+          title: "Bookmark View",
+          url: "bookmark-view:bmv1",
+          favicon: "",
+          tags: "",
+        },
       ];
 
       const results = getCommandPaletteCommands("dash1");

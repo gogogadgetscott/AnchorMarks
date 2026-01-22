@@ -17,7 +17,12 @@ describe("Omnibar keyboard behavior for views", () => {
   it("keeps omnibar open after executing a view item via keyboard", () => {
     let called = false;
     _testSetCurrentItems([
-      { type: "result", label: "View1", action: () => (called = true), category: "view" },
+      {
+        type: "result",
+        label: "View1",
+        action: () => (called = true),
+        category: "view",
+      },
     ]);
     _testSetActiveIndex(0);
     _testSetOpen(true);
@@ -31,7 +36,12 @@ describe("Omnibar keyboard behavior for views", () => {
   it("closes omnibar after executing a non-view item via keyboard", () => {
     let called = false;
     _testSetCurrentItems([
-      { type: "result", label: "BM1", action: () => (called = true), category: "bookmark" },
+      {
+        type: "result",
+        label: "BM1",
+        action: () => (called = true),
+        category: "bookmark",
+      },
     ]);
     _testSetActiveIndex(0);
     _testSetOpen(true);

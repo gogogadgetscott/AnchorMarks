@@ -415,13 +415,19 @@ function renderResultsList(commands: any[]): void {
 
       let categoryBadge = "";
       if (cmd.category && cmd.category !== "command") {
-        if (cmd.category === "view") {
-          categoryBadge = `<span class="command-category view">${Icon("eye", { size: 12 })} View</span>`;
-        } else {
-          categoryBadge = `<span class="command-category ${cmd.category}">${escapeHtml(
-            cmd.category,
-          )}</span>`;
-        }
+        // Provide an icon for all category badges
+        const cat = cmd.category;
+        const label = `${cat.charAt(0).toUpperCase()}${cat.slice(1)}`;
+        const iconMap: Record<string, string> = {
+          view: "eye",
+          bookmark: "bookmark",
+          folder: "folder",
+          tag: "tag",
+          action: "bolt",
+        };
+        const iconName = iconMap[cat] || "dot";
+
+        categoryBadge = `<span class="command-category ${escapeHtml(cat)}">${Icon(iconName, { size: 12 })} ${escapeHtml(label)}</span>`;
       }
 
       return `

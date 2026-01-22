@@ -202,7 +202,9 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
     .slice(0, 100) // Limit to first 100 for performance
     .map((b) => {
       // Determine category: view bookmarks use 'view' category
-      const isView = b.url && (b.url.startsWith("view:") || b.url.startsWith("bookmark-view:"));
+      const isView =
+        b.url &&
+        (b.url.startsWith("view:") || b.url.startsWith("bookmark-view:"));
       const category = isView ? ("view" as const) : ("bookmark" as const);
 
       return {
@@ -223,7 +225,9 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
             window.open(b.url, "_blank");
             // Increment click count
             import("@services/api.ts").then(({ api }) => {
-              api(`/bookmarks/${b.id}/click`, { method: "POST" }).catch(() => {});
+              api(`/bookmarks/${b.id}/click`, { method: "POST" }).catch(
+                () => {},
+              );
             });
           }
         },
