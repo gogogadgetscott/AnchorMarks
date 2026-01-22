@@ -88,7 +88,7 @@ export interface Command {
   label: string;
   action: () => void;
   icon?: string;
-  category?: "command" | "folder" | "bookmark" | "tag";
+  category?: "command" | "folder" | "bookmark" | "tag" | "view";
   description?: string;
   url?: string;
   favicon?: string;
