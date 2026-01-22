@@ -318,10 +318,21 @@
               null;
 
             if (typeof sharedBuilder === "function") {
-              folderSelect.innerHTML = sharedBuilder(
-                folders,
-                "— No folder (top level) —",
-              );
+              try {
+                const html = sharedBuilder(
+                  folders,
+                  "— No folder (top level) —",
+                );
+                if (typeof html === "string" && html.indexOf("<option") !== -1) {
+                  folderSelect.innerHTML = html;
+                } else {
+                  console.warn("Shared builder returned unexpected value, falling back to local builder:", html);
+                  folderSelect.innerHTML = "";
+                }
+              } catch (err) {
+                console.error("Shared builder threw an error, falling back to local builder:", err);
+                folderSelect.innerHTML = "";
+              }
             } else {
               folderSelect.innerHTML = "";
               const topOpt = document.createElement("option");
