@@ -99,7 +99,7 @@ export function attachViewToggleListeners(): void {
  * This dynamically renders the header without fully re-rendering
  */
 export async function updateHeaderContent(): Promise<void> {
-  const { Omnibar, Icon, Button, Header } =
+  const { Omnibar, Button, Header } =
     await import("@components/index.ts");
   const headersContainer = document.getElementById("headers-container");
   if (!headersContainer) return;
@@ -176,10 +176,6 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.countSuffix = "bookmarks";
       headerConfig.rightContent = `
           ${Omnibar({ id: "search-input" })}
-          <button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
-            ${Icon("filter", { size: 16 })}
-            <span class="filter-btn-text">Filters</span>
-          </button>
         `;
       headerConfig.showFilterButton = true;
       break;
@@ -199,10 +195,6 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.countSuffix = "bookmarks";
       headerConfig.rightContent = `
           ${Omnibar({ id: "search-input" })}
-          <button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
-            ${Icon("filter", { size: 16 })}
-            <span class="filter-btn-text">Filters</span>
-          </button>
         `;
       headerConfig.showFilterButton = true;
       break;
