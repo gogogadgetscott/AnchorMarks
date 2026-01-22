@@ -1256,38 +1256,6 @@ body.sidebar-collapsed .nav-section-header {
   color: var(--text-primary);
 }
 
-.command-category {
-  font-size: 0.625rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 0.125rem 0.5rem;
-  border-radius: var(--radius-full);
-  background: var(--bg-tertiary);
-  color: var(--text-tertiary);
-  flex-shrink: 0;
-}
-
-.command-category.bookmark {
-  background: rgba(59, 130, 246, 0.15);
-  color: #3b82f6;
-}
-
-.command-category.folder {
-  background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
-}
-
-.command-category.view {
-  background: rgba(99, 102, 241, 0.15);
-  color: #6366f1;
-}
-
-.command-category.tag {
-  background: rgba(16, 185, 129, 0.15);
-  color: #10b981;
-}
-
 .command-favicon {
   width: 16px;
   height: 16px;
@@ -4569,6 +4537,7 @@ body.dragging-widget .widget-sidebar-overlay {
   border-radius: var(--radius-full);
   background: var(--bg-tertiary);
   color: var(--text-tertiary);
+  flex-shrink: 0;
 }
 
 .command-category.bookmark {
