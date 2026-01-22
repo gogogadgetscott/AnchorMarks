@@ -250,6 +250,17 @@
           }
         }
 
+        // Simple HTML escape for folder names to avoid injecting HTML
+        function escapeHtml(str) {
+          if (!str) return "";
+          return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+        }
+
         const params = new URLSearchParams(window.location.search);
         const initialUrl =
           safeDecode(params.get("url")) || document.referrer || "";
@@ -315,7 +326,8 @@
               children.forEach((f) => {
                 const opt = document.createElement("option");
                 opt.value = f.id;
-                opt.textContent = "\u00A0\u00A0\u00A0".repeat(level) + f.name;
+                const prefix = "&nbsp;&nbsp;&nbsp;".repeat(level);
+                opt.innerHTML = prefix + escapeHtml(f.name);
                 folderSelect.appendChild(opt);
                 buildOptions(f.id, level + 1);
               });
