@@ -226,6 +226,7 @@
       </div>
     </div>
 
+    <script src="/js/folders-utils.js"></script>
     <script>
       (function () {
         const form = document.getElementById("bookmark-form");
@@ -310,30 +311,37 @@
             if (!res.ok) throw new Error("Failed to load folders");
             const folders = await res.json();
 
-            // Build nested, alphabetically sorted options
-            folderSelect.innerHTML = "";
-            const topOpt = document.createElement("option");
-            topOpt.value = "";
-            topOpt.textContent = "— No folder (top level) —";
-            folderSelect.appendChild(topOpt);
+            // Build nested, alphabetically sorted options (use shared helper when available)
+            if (typeof buildFolderOptionsHTML === "function") {
+              folderSelect.innerHTML = buildFolderOptionsHTML(
+                folders,
+                "— No folder (top level) —",
+              );
+            } else {
+              folderSelect.innerHTML = "";
+              const topOpt = document.createElement("option");
+              topOpt.value = "";
+              topOpt.textContent = "— No folder (top level) —";
+              folderSelect.appendChild(topOpt);
 
-            const sorter = (a, b) => a.name.localeCompare(b.name);
+              const sorter = (a, b) => a.name.localeCompare(b.name);
 
-            function buildOptions(parentId = null, level = 0) {
-              const children = folders
-                .filter((f) => (f.parent_id || null) === parentId)
-                .sort(sorter);
-              children.forEach((f) => {
-                const opt = document.createElement("option");
-                opt.value = f.id;
-                const prefix = "&nbsp;&nbsp;&nbsp;".repeat(level);
-                opt.innerHTML = prefix + escapeHtml(f.name);
-                folderSelect.appendChild(opt);
-                buildOptions(f.id, level + 1);
-              });
+              function buildOptions(parentId = null, level = 0) {
+                const children = folders
+                  .filter((f) => (f.parent_id || null) === parentId)
+                  .sort(sorter);
+                children.forEach((f) => {
+                  const opt = document.createElement("option");
+                  opt.value = f.id;
+                  const prefix = "&nbsp;&nbsp;&nbsp;".repeat(level);
+                  opt.innerHTML = prefix + escapeHtml(f.name);
+                  folderSelect.appendChild(opt);
+                  buildOptions(f.id, level + 1);
+                });
+              }
+
+              buildOptions(null);
             }
-
-            buildOptions(null);
 
             if (preselectFolder) {
               const exists = Array.from(folderSelect.options).some(
