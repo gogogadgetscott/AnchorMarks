@@ -286,6 +286,21 @@ export async function resetBookmarks(): Promise<void> {
 }
 
 /**
+ * Fetch and display app version
+ */
+async function updateAppVersion(): Promise<void> {
+  try {
+    const response = await api<{ version: string }>("/health");
+    const versionEl = document.getElementById("app-version");
+    if (versionEl && response.version) {
+      versionEl.textContent = `v${response.version}`;
+    }
+  } catch (error) {
+    console.warn("Failed to fetch app version:", error);
+  }
+}
+
+/**
  * Initialize application state and UI
  */
 export async function initializeApp(): Promise<void> {
@@ -294,7 +309,7 @@ export async function initializeApp(): Promise<void> {
   const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
 
   updateUserInfo();
-  await Promise.all([loadFolders(), loadBookmarks()]);
+  await Promise.all([loadFolders(), loadBookmarks(), updateAppVersion()]);
 
   // Update header based on current view before rendering
   await updateHeaderContent();

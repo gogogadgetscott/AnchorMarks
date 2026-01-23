@@ -8,13 +8,14 @@ function setupApiRoutes(app, db, helpers) {
     validateCsrfTokenMiddleware,
     fetchFaviconWrapper,
     config,
+    version,
   } = helpers;
 
   // Health
   app.get("/api/health", (req, res) => {
     res.json({
       status: "ok",
-      version: "1.0.0",
+      version: version || "1.0.0",
       environment: config.NODE_ENV,
       timestamp: new Date().toISOString(),
     });

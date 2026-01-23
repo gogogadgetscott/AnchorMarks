@@ -11,6 +11,15 @@ const cookieParser = require("cookie-parser");
 const fs = require("fs");
 const helmet = require("helmet");
 
+// Read app version from root package.json
+let APP_VERSION = "unknown";
+try {
+  const pkg = require(path.join(__dirname, "..", "..", "package.json"));
+  APP_VERSION = (pkg && pkg.version) || "unknown";
+} catch {
+  console.warn("package.json not found, version unknown");
+}
+
 const config = require("./config");
 const { initializeDatabase, ensureDirectories } = require("./models/database");
 const { authenticateToken, validateCsrfToken } = require("./middleware/index");
@@ -214,6 +223,7 @@ setupApiRoutes(app, db, {
   validateCsrfTokenMiddleware,
   fetchFaviconWrapper,
   config,
+  version: APP_VERSION,
 });
 
 // Helper functions are imported in route modules as needed

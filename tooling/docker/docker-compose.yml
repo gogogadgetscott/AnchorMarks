@@ -20,7 +20,6 @@ services:
       - "${PORT:-3000}:${PORT:-3000}"
     volumes:
       - ../../apps/server:/apps/server
-      - ../../apps/public:/apps/public
       - ../../apps/database:/apps/database
       - ../../apps/ssl:/apps/ssl
       - ./.env:/apps/.env
