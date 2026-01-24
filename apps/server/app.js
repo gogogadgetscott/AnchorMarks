@@ -1,8 +1,8 @@
 const path = require("path");
 
-// Load environment from repository `apps/.env` explicitly so running from
+// Load environment from repository `.env` explicitly so running from
 // project root still picks up the correct file.
-const _envPath = path.join(__dirname, "..", ".env");
+const _envPath = path.join(__dirname, "..", "..", ".env");
 require("dotenv").config({ path: _envPath, quiet: true });
 
 const express = require("express");

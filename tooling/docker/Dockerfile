@@ -35,7 +35,7 @@ COPY --from=client-build /client/dist /apps/client/dist
 COPY tooling/docker/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
-RUN mkdir -p /apps/data /apps/data/database /apps/public/favicons
+RUN mkdir -p /apps/public/favicons
 # Build-time ARGs for environment variables
 ARG NODE_ENV=production
 ARG PORT=3000

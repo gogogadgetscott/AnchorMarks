@@ -1,0 +1,210 @@
+# AnchorMarks Makefile - Build, Test, Run & Debug Helper
+
+.PHONY: help build build-backend build-frontend run run-dev run-backend run-frontend run-docker \
+	test test-backend test-frontend lint lint-check fmt clean clean-backend clean-frontend \
+	docker-build docker-rebuild docker-up docker-down docker-restart docker-logs docker-shell \
+	install dev dev-full restart stop prod deploy-install demo-gif screenshots
+
+# Variables
+BACKEND_DIR := apps/server
+FRONTEND_DIR := apps/client
+DOCKER_COMPOSE := tooling/docker/docker-compose.yml
+DOCKER_CMD := docker compose --env-file ./.env -f $(DOCKER_COMPOSE)
+
+# Colors for output
+BLUE := \033[0;34m
+GREEN := \033[0;32m
+YELLOW := \033[0;33m
+RED := \033[0;31m
+NC := \033[0m # No Color
+
+# Default target
+.DEFAULT_GOAL := help
+
+# ============================================================================
+# HELP
+# ============================================================================
+help: ## Display this help screen
+	@echo "$(BLUE)╔════════════════════════════════════════════════════════════════════╗$(NC)"
+	@echo "$(BLUE)║           AnchorMarks - Build, Test, Run & Debug Helper            ║$(NC)"
+	@echo "$(BLUE)╚════════════════════════════════════════════════════════════════════╝$(NC)"
+	@echo ""
+	@echo "$(GREEN)BUILD TARGETS:$(NC)"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '^build|^clean' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-25s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(GREEN)RUN TARGETS:$(NC)"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '^run|^dev|^prod|^start|^stop|^restart' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-25s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(GREEN)TEST TARGETS:$(NC)"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '^test' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-25s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(GREEN)DOCKER TARGETS:$(NC)"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '^docker' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-25s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(GREEN)CLEANUP TARGETS:$(NC)"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '^clean|^reinstall' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-25s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(GREEN)UTILITY TARGETS:$(NC)"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '^lint|^fmt|^install|^deploy|^demo|^screenshots' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-25s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+
+# ============================================================================
+# BUILD TARGETS
+# ============================================================================
+build: build-frontend ## Build frontend for production
+
+build-frontend: ## Build Vite frontend
+	@echo "$(BLUE)Building frontend...$(NC)"
+	@cd $(FRONTEND_DIR) && npm run build
+	@echo "$(GREEN)✓ Frontend built successfully$(NC)"
+
+# ============================================================================
+# RUN TARGETS
+# ============================================================================
+run: run-dev ## Run in development mode (default)
+
+run-dev: dev-full ## Run both backend and frontend in development
+
+run-backend: dev ## Run backend server in development
+
+run-frontend: dev-vite ## Run frontend dev server
+
+run-docker: docker-up ## Run using Docker Compose
+
+run-prod: prod ## Run in production mode
+
+dev: ## Start backend server in development mode
+	@echo "$(BLUE)Starting backend server...$(NC)"
+	NODE_ENV=development node $(BACKEND_DIR)
+
+dev-vite: ## Start Vite dev server for frontend
+	@echo "$(BLUE)Starting Vite dev server...$(NC)"
+	@cd $(FRONTEND_DIR) && npm run dev
+
+dev-full: ## Start both backend and frontend concurrently
+	@echo "$(BLUE)Starting development environment...$(NC)"
+	@npx concurrently "make dev" "make dev-vite"
+
+prod: ## Start server in production mode
+	@echo "$(BLUE)Starting production server...$(NC)"
+	NODE_ENV=production node $(BACKEND_DIR)
+
+start: dev-full ## Alias for dev-full
+
+stop: ## Stop running development processes
+	@echo "$(BLUE)Stopping development processes...$(NC)"
+	. ./.env 2>/dev/null || true; \
+	PORT=$$(printf '%s' "$${PORT:-3000}" | tr -d '\r'); \
+	VITE_PORT=$$(printf '%s' "$${VITE_PORT:-5173}" | tr -d '\r'); \
+	BACKEND_PID=$$(lsof -ti:$$PORT 2>/dev/null); \
+	VITE_PID=$$(lsof -ti:$$VITE_PORT 2>/dev/null); \
+	[ -n "$$BACKEND_PID" ] && kill -9 $$BACKEND_PID && echo "$(GREEN)✓ Stopped backend process $$BACKEND_PID on port $$PORT$(NC)" || echo "$(YELLOW)⚠ No backend process found on port $$PORT$(NC)"; \
+	[ -n "$$VITE_PID" ] && kill -9 $$VITE_PID && echo "$(GREEN)✓ Stopped Vite process $$VITE_PID on port $$VITE_PORT$(NC)" || echo "$(YELLOW)⚠ No Vite process found on port $$VITE_PORT$(NC)"
+
+restart: stop start ## Restart development processes
+
+# ============================================================================
+# TEST TARGETS
+# ============================================================================
+test: test-all ## Run all tests
+
+test-backend: ## Run backend tests
+	@echo "$(BLUE)Running backend tests...$(NC)"
+	@cd $(BACKEND_DIR) && npm test
+	@echo "$(GREEN)✓ Backend tests completed$(NC)"
+
+test-frontend: ## Run frontend tests
+	@echo "$(BLUE)Running frontend tests...$(NC)"
+	@cd $(FRONTEND_DIR) && npm test
+	@echo "$(GREEN)✓ Frontend tests completed$(NC)"
+
+test-all: test-backend test-frontend ## Run all tests
+
+# ============================================================================
+# LINT & FORMAT TARGETS
+# ============================================================================
+lint: ## Lint and format code
+	@echo "$(BLUE)Linting and formatting code...$(NC)"
+	eslint "**/*.js" --config tooling/eslint.config.cjs --fix && prettier . --write
+	@echo "$(GREEN)✓ Code linted and formatted$(NC)"
+
+lint-check: ## Check linting without fixing
+	@echo "$(BLUE)Checking code linting...$(NC)"
+	eslint "**/*.js" --config tooling/eslint.config.cjs && prettier . --check
+	@echo "$(GREEN)✓ Linting check passed$(NC)"
+
+fmt: lint ## Alias for lint
+
+# ============================================================================
+# DOCKER TARGETS
+# ============================================================================
+docker-build: ## Build Docker containers
+	@echo "$(BLUE)Building Docker containers...$(NC)"
+	@$(DOCKER_CMD) build
+	@echo "$(GREEN)✓ Docker containers built$(NC)"
+
+docker-rebuild: ## Rebuild Docker containers from scratch
+	@echo "$(BLUE)Rebuilding Docker containers...$(NC)"
+	@$(DOCKER_CMD) down && $(DOCKER_CMD) build --no-cache && $(DOCKER_CMD) up -d
+	@echo "$(GREEN)✓ Docker containers rebuilt$(NC)"
+
+docker-up: ## Start Docker containers
+	@echo "$(BLUE)Starting Docker containers...$(NC)"
+	@$(DOCKER_CMD) pull && $(DOCKER_CMD) up -d && $(DOCKER_CMD) logs -f
+
+docker-down: ## Stop Docker containers
+	@echo "$(BLUE)Stopping Docker containers...$(NC)"
+	@$(DOCKER_CMD) down
+	@echo "$(GREEN)✓ Docker containers stopped$(NC)"
+
+docker-restart: ## Restart Docker containers
+	@echo "$(BLUE)Restarting Docker containers...$(NC)"
+	@$(DOCKER_CMD) restart
+	@echo "$(GREEN)✓ Docker containers restarted$(NC)"
+
+docker-logs: ## Follow Docker container logs
+	@echo "$(BLUE)Following Docker logs...$(NC)"
+	@$(DOCKER_CMD) logs -f
+
+docker-shell: ## Open shell in Docker container
+	@$(DOCKER_CMD) exec -it anchormarks /bin/sh
+
+# ============================================================================
+# CLEANUP TARGETS
+# ============================================================================
+clean: clean-frontend ## Clean build artifacts
+
+clean-frontend: ## Clean frontend build artifacts
+	@echo "$(BLUE)Cleaning frontend...$(NC)"
+	@cd $(FRONTEND_DIR) && rm -rf dist
+	@echo "$(GREEN)✓ Frontend cleaned$(NC)"
+
+reinstall: clean ## Clean and reinstall dependencies
+	@echo "$(BLUE)Reinstalling dependencies...$(NC)"
+	@rm -rf node_modules
+	@npm install
+	@echo "$(GREEN)✓ Dependencies reinstalled$(NC)"
+
+# ============================================================================
+# UTILITY TARGETS
+# ============================================================================
+install: ## Install all dependencies
+	@echo "$(BLUE)Installing dependencies...$(NC)"
+	@npm install
+	@echo "$(GREEN)✓ Dependencies installed$(NC)"
+
+deploy-install: ## Install for deployment
+	@echo "$(BLUE)Installing for deployment...$(NC)"
+	@sudo bash tooling/deploy/install.sh
+	@echo "$(GREEN)✓ Deployment installation completed$(NC)"
+
+demo-gif: ## Create demo GIF
+	@echo "$(BLUE)Creating demo GIF...$(NC)"
+	@bash tooling/scripts/make-demo-gif.sh
+	@echo "$(GREEN)✓ Demo GIF created$(NC)"
+
+screenshots: ## Capture screenshots
+	@echo "$(BLUE)Capturing screenshots...$(NC)"
+	@node tooling/scripts/capture-screenshots.js
+	@echo "$(GREEN)✓ Screenshots captured$(NC)"
+	

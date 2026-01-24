@@ -97,7 +97,7 @@ npm run docker:logs
 npm run docker:shell
 ```
 
-Compose file: tooling/docker/docker-compose.yml. The stack reads variables from apps/.env.
+Compose file: tooling/docker/docker-compose.yml. The stack reads variables from .env.
 
 ### Production Hardening
 
@@ -204,7 +204,7 @@ MIT License - use, modify, and distribute freely.
 ## 🛳️ Deployment Notes
 
 - Docker compose file: `tooling/docker/docker-compose.yml` (use from project root)
-- Environment file: `apps/.env` — `docker:up` parses `PORT` from this file and the compose stack uses `env_file` to inject runtime variables.
+- Environment file: `.env` — `docker:up` parses `PORT` from this file and the compose stack uses `env_file` to inject runtime variables.
 - If host bind-mounted `data/` directory lacks correct permissions, run the helper before starting:
 
 ```bash

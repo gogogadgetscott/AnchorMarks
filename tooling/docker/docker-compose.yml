@@ -13,7 +13,7 @@ services:
         SSL_KEY: ${SSL_KEY}
         SSL_CERT: ${SSL_CERT}
     env_file:
-      - .env
+      - ../../.env
     container_name: anchormarks
     restart: unless-stopped
     ports:
@@ -22,7 +22,7 @@ services:
       - ../../apps/server:/apps/server
       - ../../apps/database:/apps/database
       - ../../apps/ssl:/apps/ssl
-      - ./.env:/apps/.env
+      - ../../.env:/apps/.env
     healthcheck:
       test:
         [
