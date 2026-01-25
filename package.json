@@ -1,18 +1,17 @@
 {
   "name": "anchormarks",
   "version": "1.0.1",
-  "description": "A modern web-based bookmark manager with browser sync, API access, and AI-assisted development",
+  "description": "A modern web-based bookmark manager with browser sync, API access, and intelligent organization.",
   "keywords": [
     "bookmarks",
     "manager",
     "sync",
     "api",
     "flow-launcher",
-    "ai",
-    "gpt",
     "web",
     "application",
-    "bookmarklet"
+    "bookmarklet",
+    "self-hosted"
   ],
   "homepage": "https://github.com/gogogadgetscott/AnchorMarks#readme",
   "bugs": {
