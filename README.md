@@ -236,13 +236,6 @@ docker compose -f tooling/docker/docker-compose.yml run --rm anchormarks sh -c "
 
 ### Next Steps
 
-Make server tag matching exact (avoid substring matches)
-
-Replace GROUP_CONCAT + LIKE approach with a proper JOIN + GROUP BY + HAVING implementation. This avoids false positives when tags are substrings of other tags.
-Files to change: bookmark.js (+ controller tests).
-Add unit tests covering edge cases (e.g., tags a, ab, multiple tags with AND mode).
-Add an E2E Playwright test for Tag Cloud → Bookmarks flow
-
 Verify clicking a tag updates header and renders bookmark cards in the Bookmarks view (real DOM/visual check).
 Files to add: e2e/tag-cloud.spec.ts (Playwright config/update if not present).
 Make legend height/reserve dynamic

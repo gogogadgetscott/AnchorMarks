@@ -84,28 +84,45 @@ function listBookmarks(db, userId, opts = {}) {
   }
 
   if (tags) {
-    // Support multiple tags with AND/OR semantics. 'tags' expected as comma-separated string.
+    // Support multiple tags with AND/OR semantics using proper JOIN + GROUP BY + HAVING
     const tagArr = String(tags)
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean);
 
     if (tagArr.length > 0) {
+      // Use a subquery with proper tag matching to avoid substring false positives
       if (tagMode && String(tagMode).toLowerCase() === "and") {
-        // Require all tags
-        tagArr.forEach((t) => {
-          query += " AND tg.tags_joined LIKE ?";
-          countQuery += " AND tg.tags_joined LIKE ?";
-          params.push(`%${t}%`);
-        });
+        // AND mode: bookmark must have ALL specified tags
+        // We need a HAVING COUNT that matches the number of requested tags
+        const tagPlaceholders = tagArr.map(() => "?").join(",");
+        const tagFilter = `
+          AND b.id IN (
+            SELECT DISTINCT bt.bookmark_id
+            FROM bookmark_tags bt
+            JOIN tags t ON t.id = bt.tag_id
+            WHERE t.user_id = ? AND t.name IN (${tagPlaceholders})
+            GROUP BY bt.bookmark_id
+            HAVING COUNT(DISTINCT t.name) = ?
+          )
+        `;
+        query += tagFilter;
+        countQuery += tagFilter;
+        params.push(userId, ...tagArr, tagArr.length);
       } else {
-        // Default: OR semantics (any tag)
-        const likeClauses = tagArr
-          .map(() => "tg.tags_joined LIKE ?")
-          .join(" OR ");
-        query += ` AND (${likeClauses})`;
-        countQuery += ` AND (${likeClauses})`;
-        tagArr.forEach((t) => params.push(`%${t}%`));
+        // OR mode: bookmark must have ANY of the specified tags
+        const tagPlaceholders = tagArr.map(() => "?").join(",");
+        const tagFilter = `
+          AND b.id IN (
+            SELECT DISTINCT bt.bookmark_id
+            FROM bookmark_tags bt
+            JOIN tags t ON t.id = bt.tag_id
+            WHERE t.user_id = ? AND t.name IN (${tagPlaceholders})
+          )
+        `;
+        query += tagFilter;
+        countQuery += tagFilter;
+        params.push(userId, ...tagArr);
       }
     }
   }
