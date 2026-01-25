@@ -293,11 +293,17 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
     });
   } else if (isBookmarkOnly && searchTerm.length >= 1) {
     // When searching, prioritize bookmarks but show everything that matches
-    const matchingBookmarks = bookmarkCommands.filter(
-      (cmd) =>
-        cmd.label.toLowerCase().includes(searchTerm) ||
-        cmd.description?.toLowerCase().includes(searchTerm),
-    );
+    const matchingBookmarks = bookmarkCommands.filter((cmd) => {
+      const label = cmd.label?.toLowerCase() || "";
+      const description = cmd.description?.toLowerCase() || "";
+      const url = (cmd as any).url ? String((cmd as any).url).toLowerCase() : "";
+
+      return (
+        label.includes(searchTerm) ||
+        description.includes(searchTerm) ||
+        url.includes(searchTerm)
+      );
+    });
     const matchingCommands = baseCommands.filter((cmd) =>
       cmd.label.toLowerCase().includes(searchTerm),
     );

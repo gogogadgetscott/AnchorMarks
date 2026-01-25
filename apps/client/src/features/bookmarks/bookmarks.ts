@@ -91,6 +91,11 @@ export async function loadBookmarks(): Promise<void> {
         "recently_added";
       params.append("sort", sortOption);
 
+      const searchTerm = state.filterConfig.search?.trim();
+      if (searchTerm) {
+        params.append("search", searchTerm);
+      }
+
       // Recent view should bypass filters to show all recent bookmarks
       if (state.currentView !== "recent") {
         // If client-side filters contain tags, include them in the server request
@@ -230,8 +235,10 @@ export function renderBookmarks(): void {
 
   container.className = containerClass;
 
-  const searchTerm =
-    (searchInput as HTMLInputElement)?.value.toLowerCase() || "";
+  const searchSource =
+    state.filterConfig.search ??
+    ((searchInput as HTMLInputElement)?.value || "");
+  const searchTerm = searchSource.toLowerCase();
   let filtered = [...state.bookmarks];
 
   // Recent view bypasses all filters to show all recent bookmarks

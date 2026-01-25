@@ -36,14 +36,33 @@ export function initOmnibarListeners(): void {
     }, 200);
   });
 
+  // Debounce timer for live bookmark filtering from the main search box
+  let searchFilterTimeout: ReturnType<typeof setTimeout> | undefined;
+
   // Input - search
   searchInput.addEventListener("input", (e) => {
     const query = (e.target as HTMLInputElement).value;
     renderOmnibarPanel(query);
 
-    // Don't automatically filter bookmarks while typing in omnibar
-    // Only the omnibar dropdown should show results
-    // Actual filtering happens when user selects "Apply filter" command
+    // Keep bookmark list filtered in real time using the search box
+    const trimmed = query.trim();
+    state.setFilterConfig({
+      ...state.filterConfig,
+      search: trimmed,
+    });
+
+    if (searchFilterTimeout) clearTimeout(searchFilterTimeout);
+    searchFilterTimeout = setTimeout(() => {
+      Promise.all([
+        import("@features/bookmarks/bookmarks.ts"),
+        import("@features/bookmarks/search.ts"),
+        import("@features/bookmarks/filters.ts"),
+      ]).then(([bookmarksModule, searchModule, filtersModule]) => {
+        bookmarksModule.renderBookmarks();
+        searchModule.renderActiveFilters();
+        filtersModule.updateFilterButtonText();
+      });
+    }, 120);
   });
 
   // Keyboard navigation in omnibar
