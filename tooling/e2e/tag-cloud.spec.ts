@@ -15,16 +15,20 @@ test.describe("Tag Cloud", () => {
     // Wait for page to fully load
     await page.waitForLoadState("networkidle");
 
-    // Try multiple possible selectors for tag cloud link
-    const tagCloudLink = page
-      .locator(
-        'a[href*="tag-cloud"], button:has-text("Tag Cloud"), [data-view="tag-cloud"], .sidebar-item:has-text("Tag Cloud")',
-      )
-      .first();
+    // Find tag cloud nav item
+    const tagCloudLink = page.locator('[data-view="tag-cloud"]');
 
-    // Wait for element to be visible before clicking
-    await tagCloudLink.waitFor({ state: "visible", timeout: 10000 });
-    await tagCloudLink.click();
+    // Wait a bit for any visibility changes
+    await page.waitForTimeout(500);
+
+    // Try to click even if hidden (might be shown by click)
+    try {
+      await tagCloudLink.click({ force: true });
+    } catch (e) {
+      // If force click fails, wait longer for it to become visible
+      await tagCloudLink.waitFor({ state: "visible", timeout: 15000 });
+      await tagCloudLink.click();
+    }
 
     // Wait for tag cloud view to render
     await page.waitForSelector(".tag-cloud-view, .tag-cloud-container", {

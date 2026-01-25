@@ -18,6 +18,7 @@ Thumbs.db
 *.lcov
 coverage/
 playwright-report/
+test-results/
 
 # Application directories that should not be committed
 database/
@@ -26,7 +27,7 @@ thumbnails/
 apps/dist/
 dist/
 .vite/
-tooling/screenshots/
+screenshots/
 
 # SSL certs/keys (can be generated locally or provided by deploy scripts)
 # Keep these out of the repo for security; the installer may create apps/ssl/
