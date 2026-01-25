@@ -91,12 +91,15 @@ export async function loadBookmarks(): Promise<void> {
         "recently_added";
       params.append("sort", sortOption);
 
-      // If client-side filters contain tags, include them in the server request
-      if (state.filterConfig.tags && state.filterConfig.tags.length > 0) {
-        // Use comma-separated tags; server performs a LIKE match on tg.tags_joined
-        params.append("tags", state.filterConfig.tags.join(","));
-        // Pass tagMode so server can apply AND/OR semantics
-        params.append("tagMode", state.filterConfig.tagMode || "OR");
+      // Recent view should bypass filters to show all recent bookmarks
+      if (state.currentView !== "recent") {
+        // If client-side filters contain tags, include them in the server request
+        if (state.filterConfig.tags && state.filterConfig.tags.length > 0) {
+          // Use comma-separated tags; server performs a LIKE match on tg.tags_joined
+          params.append("tags", state.filterConfig.tags.join(","));
+          // Pass tagMode so server can apply AND/OR semantics
+          params.append("tagMode", state.filterConfig.tagMode || "OR");
+        }
       }
     }
 
@@ -231,22 +234,7 @@ export function renderBookmarks(): void {
     (searchInput as HTMLInputElement)?.value.toLowerCase() || "";
   let filtered = [...state.bookmarks];
 
-  // Apply filters...
-  if (state.currentView === "archived") {
-    filtered = filtered.filter((b) => b.is_archived === 1);
-  } else {
-    filtered = filtered.filter((b) => !b.is_archived);
-  }
-
-  if (searchTerm) {
-    filtered = filtered.filter(
-      (b) =>
-        b.title.toLowerCase().includes(searchTerm) ||
-        b.url.toLowerCase().includes(searchTerm) ||
-        (b.tags && b.tags.toLowerCase().includes(searchTerm)),
-    );
-  }
-
+  // Recent view bypasses all filters to show all recent bookmarks
   if (state.currentView === "recent") {
     filtered = filtered
       .sort(
@@ -256,6 +244,22 @@ export function renderBookmarks(): void {
       )
       .slice(0, 20);
   } else {
+    // Apply filters for other views
+    if (state.currentView === "archived") {
+      filtered = filtered.filter((b) => b.is_archived === 1);
+    } else {
+      filtered = filtered.filter((b) => !b.is_archived);
+    }
+
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (b) =>
+          b.title.toLowerCase().includes(searchTerm) ||
+          b.url.toLowerCase().includes(searchTerm) ||
+          (b.tags && b.tags.toLowerCase().includes(searchTerm)),
+      );
+    }
+
     if (state.filterConfig.tags.length > 0) {
       // Normalize tags for robust comparison (trim & case-insensitive)
       const filterTags = state.filterConfig.tags.map((t) =>
