@@ -322,7 +322,7 @@ export function renderActiveFilters(): void {
                   <line x1="7" y1="7" x2="7.01" y2="7" />
                 </svg>
                 <span>${escapeHtml(tag)}</span>
-                <button data-action="remove-tag-filter" data-tag="${escapeHtml(tag)}" title="Remove">
+                <button data-action="remove-tag-filter" data-tag="${JSON.stringify(tag).slice(1, -1)}" title="Remove">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                     </svg>
@@ -647,7 +647,7 @@ export async function renderTagsForFilter(
     .map((tag) => {
       const isActive = state.filterConfig.tags.includes(tag.name);
       return `
-            <div class="tag-item ${isActive ? "active" : ""}" data-tag="${escapeHtml(tag.name)}" 
+            <div class="tag-item ${isActive ? "active" : ""}" data-tag="${JSON.stringify(tag.name).slice(1, -1)}" 
                  style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.35rem 0.6rem;
                         background:${isActive ? "var(--primary-500)" : "var(--bg-tertiary)"};
                         color:${isActive ? "white" : "var(--text-primary)"};

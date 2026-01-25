@@ -320,7 +320,7 @@ export async function renderTagCloud(): Promise<void> {
 
             return `
               <button class="tag-cloud-tag" 
-                      data-tag="${escapeHtml(tag.name)}"
+                      data-tag="${JSON.stringify(tag.name).slice(1, -1)}"
                       data-count="${tag.count}"
                       style="
                         --tag-color: ${bgColor};

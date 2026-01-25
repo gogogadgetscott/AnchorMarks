@@ -160,7 +160,7 @@ function renderSelectedTags(): void {
       return `
         <span class="selected-tag" style="--tag-color: ${tagColor}">
           <span class="selected-tag-name">${escapeHtml(tag)}</span>
-          <button type="button" class="selected-tag-remove" data-tag="${escapeHtml(tag)}">
+          <button type="button" class="selected-tag-remove" data-tag="${JSON.stringify(tag).slice(1, -1)}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 10px; height: 10px;">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
@@ -225,7 +225,7 @@ function showAutocomplete(searchTerm: string, autocomplete: HTMLElement): void {
       const tagMeta = state.tagMetadata[tag];
       const isSelected = index === 0 && !searchTerm; // Select first if list mode
       return `
-        <div class="tag-autocomplete-item ${isSelected ? "" : ""}" data-tag="${escapeHtml(tag)}">
+        <div class="tag-autocomplete-item ${isSelected ? "" : ""}" data-tag="${JSON.stringify(tag).slice(1, -1)}">
           <span class="tag-autocomplete-name">${escapeHtml(tag)}</span>
           <span class="tag-autocomplete-count">${(tagMeta as any).count || 0}</span>
         </div>

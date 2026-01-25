@@ -647,7 +647,7 @@ async function renderTagsInDropdown(): Promise<void> {
     const isActive = state.filterConfig.tags.includes(tag.name);
 
     html += `
-            <div class="filter-item ${isActive ? "active" : ""}" data-tag="${escapeHtml(tag.name)}">
+            <div class="filter-item ${isActive ? "active" : ""}" data-tag="${JSON.stringify(tag.name).slice(1, -1)}">
                 <span class="filter-item-name">${escapeHtml(tag.name)}</span>
                 <span class="filter-item-count">${tag.count}</span>
             </div>

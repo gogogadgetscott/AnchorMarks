@@ -334,7 +334,7 @@ function renderSuggestedTags(
       ${tags
         .map(
           (tag) => `
-        <div class="omnibar-tag-pill" data-tag="${escapeHtml(tag.name)}">
+        <div class="omnibar-tag-pill" data-tag="${JSON.stringify(tag.name).slice(1, -1)}">
           <span>${escapeHtml(tag.name)}</span>
           <span style="opacity: 0.6; font-size: 0.75rem;">${tag.count}</span>
         </div>
