@@ -1899,6 +1899,25 @@ body.sidebar-collapsed .nav-section-header {
   pointer-events: none; /* allow clicks to pass through edges */
 }
 
+/* Shift center content left on narrower screens to avoid overlap */
+@media (max-width: 1200px) {
+  .header-center {
+    left: 42%;
+  }
+}
+
+@media (max-width: 900px) {
+  .header-center {
+    left: 35%;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-center {
+    left: 32%;
+  }
+}
+
 .header-center .omnibar-container {
   pointer-events: auto; /* enable interactions inside the omnibar */
 }
@@ -2068,7 +2087,9 @@ body.sidebar-collapsed .nav-section-header {
   display: flex;
   align-items: center;
   gap: 1rem;
-  flex: 1;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 250px;
 }
 
 .header-left h1 {
@@ -2076,6 +2097,9 @@ body.sidebar-collapsed .nav-section-header {
   font-size: 1.5rem;
   font-weight: 600;
   color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .header-right {
