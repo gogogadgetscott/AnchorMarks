@@ -1015,8 +1015,9 @@ body.sidebar-collapsed .nav-section-header {
   top: calc(100% + 0.5rem);
   left: 50%;
   transform: translateX(-50%);
-  width: calc(100vw - 200px);
-  max-width: 600px;
+  width: auto;
+  min-width: 300px;
+  max-width: 480px;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
