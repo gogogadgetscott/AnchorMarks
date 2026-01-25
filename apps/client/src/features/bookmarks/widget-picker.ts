@@ -7,6 +7,7 @@ import * as state from "@features/state.ts";
 import { escapeHtml } from "@utils/index.ts";
 import { showToast } from "@utils/ui-helpers.ts";
 import { addDashboardWidget } from "@features/bookmarks/dashboard.ts";
+import { getRecursiveBookmarkCount } from "@features/bookmarks/folders.ts";
 
 // Track if dropdown is pinned
 let widgetDropdownPinned = false;
@@ -137,9 +138,7 @@ function filterWidgetPickerFolders(searchTerm: string): void {
 
   let html = "";
   filtered.forEach((folder) => {
-    const bookmarkCount = state.bookmarks.filter(
-      (b) => b.folder_id === folder.id,
-    ).length;
+    const bookmarkCount = getRecursiveBookmarkCount(folder.id);
     const isAdded = state.dashboardWidgets.some(
       (w) => w.type === "folder" && w.id === folder.id,
     );
@@ -150,7 +149,7 @@ function filterWidgetPickerFolders(searchTerm: string): void {
            data-id="${folder.id}"
            data-name="${escapeHtml(folder.name)}"
            draggable="${!isAdded ? "true" : "false"}"
-           style="${isAdded ? "opacity: 0.5; cursor: not-allowed;" : ""}">
+           style="${isAdded ? "opacity: 0.5; cursor: not-allowed;" : ""}; margin-bottom: 4px;">
         <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
           <span class="folder-color" style="background:${folder.color || "#6366f1"}"></span>
           <span class="filter-item-name">${escapeHtml(folder.name)}</span>
@@ -282,7 +281,7 @@ function attachWidgetFolderListeners() {
       document.body.classList.add("dragging-widget");
     });
 
-    item.addEventListener("dragend", (e: Event) => {
+    item.addEventListener("dragend", () => {
       (item as HTMLElement).style.opacity = "1";
       document.body.classList.remove("dragging-widget");
     });
@@ -336,7 +335,7 @@ function attachWidgetTagListeners() {
       document.body.classList.add("dragging-widget");
     });
 
-    item.addEventListener("dragend", (e: Event) => {
+    item.addEventListener("dragend", () => {
       (item as HTMLElement).style.opacity = "1";
       document.body.classList.remove("dragging-widget");
     });
@@ -435,49 +434,65 @@ export function renderWidgetPickerFolders(): void {
   ) as HTMLElement & { _allFolders: any[]; _originalHTML: string };
   if (!container) return;
 
-  const folders = state.folders.filter((f) => {
-    const bookmarkCount = state.bookmarks.filter(
-      (b) => b.folder_id === f.id,
-    ).length;
-    return bookmarkCount > 0;
-  });
+  // Use a flex column layout for the tree structure instead of flat grid
+  container.style.display = "flex";
+  container.style.flexDirection = "column";
 
-  if (folders.length === 0) {
+  // Filter out folders that don't have bookmarks (even in subfolders)
+  const foldersToRender = state.folders.filter(
+    (f) => getRecursiveBookmarkCount(f.id) > 0,
+  );
+
+  console.log(
+    `[WidgetPicker] Found ${state.folders.length} total folders, ${foldersToRender.length} have bookmarks (recursive)`,
+  );
+
+  if (foldersToRender.length === 0) {
     container.innerHTML =
       '<p style="color:var(--text-tertiary);font-size:0.875rem;padding:1rem;">No folders with bookmarks</p>';
     return;
   }
 
-  let html = "";
-  folders.forEach((folder) => {
-    const bookmarkCount = state.bookmarks.filter(
-      (b) => b.folder_id === folder.id,
-    ).length;
-    const isAdded = state.dashboardWidgets.some(
-      (w) => w.type === "folder" && w.id === folder.id,
-    );
+  const rootFolders = foldersToRender.filter((f) => !f.parent_id);
+  const sorter = (a: any, b: any) => a.name.localeCompare(b.name);
 
-    html += `
-      <div class="filter-item widget-picker-item ${isAdded ? "added" : "draggable"}"
-           data-type="folder"
-           data-id="${folder.id}"
-           data-name="${escapeHtml(folder.name)}"
-           draggable="${!isAdded ? "true" : "false"}"
-           style="${isAdded ? "opacity: 0.5; cursor: not-allowed;" : ""}">
-        <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
-          <span class="folder-color" style="background:${folder.color || "#6366f1"}"></span>
-          <span class="filter-item-name">${escapeHtml(folder.name)}</span>
-        </div>
-        <span class="filter-item-count">${bookmarkCount}</span>
-        ${isAdded ? '<span style="font-size:0.65rem;color:var(--text-tertiary);margin-left:0.25rem;">✓</span>' : ""}
-      </div>
-    `;
-  });
+  function renderTree(folderList: any[], level = 0): string {
+    return folderList
+      .sort(sorter)
+      .map((folder) => {
+        const children = foldersToRender.filter(
+          (f) => f.parent_id === folder.id,
+        );
+        const count = getRecursiveBookmarkCount(folder.id);
+        const isAdded = state.dashboardWidgets.some(
+          (w) => w.type === "folder" && w.id === folder.id,
+        );
+        const indentation = level * 16;
 
-  container.innerHTML = html;
+        return `
+            <div class="filter-item widget-picker-item ${isAdded ? "added" : "draggable"}"
+                 data-type="folder"
+                 data-id="${folder.id}"
+                 data-name="${escapeHtml(folder.name)}"
+                 draggable="${!isAdded ? "true" : "false"}"
+                 style="${isAdded ? "opacity: 0.5; cursor: not-allowed;" : ""}; margin-left: ${indentation}px; margin-bottom: 4px;">
+              <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
+                <span class="folder-color" style="background:${folder.color || "#6366f1"}"></span>
+                <span class="filter-item-name">${escapeHtml(folder.name)}</span>
+              </div>
+              <span class="filter-item-count">${count}</span>
+              ${isAdded ? '<span style="font-size:0.65rem;color:var(--text-tertiary);margin-left:0.25rem;">✓</span>' : ""}
+            </div>
+            ${renderTree(children, level + 1)}
+          `;
+      })
+      .join("");
+  }
+
+  container.innerHTML = renderTree(rootFolders);
 
   // Store original data for filtering
-  container._allFolders = folders;
+  container._allFolders = foldersToRender;
   container._originalHTML = container.innerHTML;
 
   // Attach listeners to items
@@ -491,20 +506,13 @@ export function renderWidgetPickerTags(): void {
   ) as HTMLElement & { _allTags: any[]; _originalHTML: string };
   if (!container) return;
 
-  // Collect all unique tags with counts
+  // Use tag metadata from state which has accurate counts
   const tagCounts: Record<string, number> = {};
-  state.bookmarks.forEach((bookmark) => {
-    if (bookmark.tags) {
-      bookmark.tags.split(",").forEach((tag) => {
-        const trimmed = tag.trim();
-        if (trimmed) {
-          tagCounts[trimmed] = (tagCounts[trimmed] || 0) + 1;
-        }
-      });
-    }
+  Object.keys(state.tagMetadata).forEach((tagName) => {
+    tagCounts[tagName] = state.tagMetadata[tagName].count || 0;
   });
 
-  const allTags = Object.keys(tagCounts);
+  const allTags = Object.keys(tagCounts).filter((t) => tagCounts[t] > 0);
 
   if (allTags.length === 0) {
     container.innerHTML =

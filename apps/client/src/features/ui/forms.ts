@@ -3,8 +3,8 @@
  * Handles all form-related event listeners (Auth, Bookmarks, Folders)
  */
 
-import * as state from "@features/state.ts";
-import { openModal, closeModals } from "@utils/ui-helpers.ts";
+import { api } from "@services/api.ts";
+import { openModal, showToast } from "@utils/ui-helpers.ts";
 
 /**
  * Initialize all form-related listeners
@@ -80,6 +80,63 @@ function initBookmarkForms(): void {
       openModal("bookmark-modal");
     });
 
+  // Fetch Metadata button
+  document
+    .getElementById("fetch-metadata-btn")
+    ?.addEventListener("click", async () => {
+      const urlInput = document.getElementById(
+        "bookmark-url",
+      ) as HTMLInputElement;
+      const titleInput = document.getElementById(
+        "bookmark-title",
+      ) as HTMLInputElement;
+      const descInput = document.getElementById(
+        "bookmark-description",
+      ) as HTMLTextAreaElement;
+      const btn = document.getElementById(
+        "fetch-metadata-btn",
+      ) as HTMLButtonElement;
+
+      const url = urlInput?.value;
+      if (!url) {
+        showToast("Please enter a URL first", "error");
+        return;
+      }
+
+      try {
+        btn.disabled = true;
+        btn.innerHTML =
+          '<svg class="animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Fetching...';
+
+        const metadata = await api<{ title?: string; description?: string }>(
+          "/bookmarks/fetch-metadata",
+          {
+            method: "POST",
+            body: JSON.stringify({ url }),
+          },
+        );
+
+        if (metadata.title && titleInput) titleInput.value = metadata.title;
+        if (metadata.description && descInput)
+          descInput.value = metadata.description;
+
+        showToast("Info fetched successfully", "success");
+      } catch (err: any) {
+        showToast("Failed to fetch info: " + err.message, "error");
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px">
+              <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path d="M9 12l2 2 4-4" />
+            </svg>
+            Fetch Info
+          `;
+        }
+      }
+    });
+
   // Bookmark form submission
   document
     .getElementById("bookmark-form")
@@ -99,6 +156,9 @@ function initBookmarkForms(): void {
       const descEl = document.getElementById(
         "bookmark-description",
       ) as HTMLTextAreaElement;
+      const tagsEl = document.getElementById(
+        "bookmark-tags",
+      ) as HTMLInputElement;
 
       const id = idEl?.value;
       const data = {
@@ -107,7 +167,7 @@ function initBookmarkForms(): void {
         folder_id: folderEl?.value || undefined,
         color: colorEl?.value,
         description: descEl?.value,
-        tags: "", // Tags are handled separately by tag-input.ts
+        tags: tagsEl?.value || "", // Read from hidden input populated by tag-input.ts
       };
 
       const bookmarksModule = await import("@features/bookmarks/bookmarks.ts");
@@ -115,6 +175,43 @@ function initBookmarkForms(): void {
         await bookmarksModule.updateBookmark(id, data);
       } else {
         await bookmarksModule.createBookmark(data);
+      }
+    });
+
+  // New Folder button inside bookmark modal
+  document
+    .getElementById("bookmark-new-folder-btn")
+    ?.addEventListener("click", async () => {
+      const { promptDialog } = await import("@features/ui/confirm-dialog.ts");
+      const folderName = await promptDialog("Enter folder name:", {
+        title: "New Folder",
+        confirmText: "Create",
+        placeholder: "Folder Name",
+      });
+
+      if (!folderName || !folderName.trim()) return;
+
+      try {
+        const { createFolder } = await import("@features/bookmarks/folders.ts");
+
+        // Create the folder - this already updates the state and UI (sidebar + dropdowns)
+        const newFolder = await createFolder(
+          { name: folderName.trim(), color: "#6366f1" },
+          { closeModal: false }, // Don't close any modals (we're in bookmark modal)
+        );
+
+        if (newFolder && newFolder.id) {
+          // Select the newly created folder
+          const folderSelect = document.getElementById(
+            "bookmark-folder",
+          ) as HTMLSelectElement;
+          if (folderSelect) {
+            folderSelect.value = newFolder.id;
+          }
+          showToast(`Folder "${folderName}" created!`, "success");
+        }
+      } catch (err: any) {
+        showToast(err.message || "Failed to create folder", "error");
       }
     });
 

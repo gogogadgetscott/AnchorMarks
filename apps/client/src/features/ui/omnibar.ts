@@ -10,11 +10,6 @@ import {
   renderOmnibarPanel,
 } from "@features/bookmarks/omnibar.ts";
 import { updateFilterButtonText } from "@features/bookmarks/filters.ts";
-import {
-  renderCommandPaletteList,
-  updateCommandPaletteActive,
-  runActiveCommand,
-} from "@features/bookmarks/commands.ts";
 import * as state from "@features/state.ts";
 
 /**
@@ -91,6 +86,9 @@ export function initOmnibarListeners(): void {
       }
     } else if (e.key === "Escape") {
       e.preventDefault();
+      // Clear the input and close the omnibar
+      searchInput.value = "";
+      renderOmnibarPanel("");
       closeOmnibar();
       searchInput.blur();
     }
@@ -121,42 +119,4 @@ export function initOmnibarListeners(): void {
         await import("@features/bookmarks/search.ts");
       renderActiveFilters();
     });
-
-  // Command Palette input
-  const commandPaletteInput = document.getElementById(
-    "quick-launch-input",
-  ) as HTMLInputElement;
-  commandPaletteInput?.addEventListener("input", () => {
-    renderCommandPaletteList(commandPaletteInput.value || "");
-  });
-
-  // Command Palette keyboard
-  commandPaletteInput?.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      updateCommandPaletteActive(1);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      updateCommandPaletteActive(-1);
-    } else if (e.key === "PageDown") {
-      e.preventDefault();
-      updateCommandPaletteActive(5);
-    } else if (e.key === "PageUp") {
-      e.preventDefault();
-      updateCommandPaletteActive(-5);
-    } else if (e.key === "Home") {
-      e.preventDefault();
-      updateCommandPaletteActive(-state.commandPaletteActiveIndex);
-    } else if (e.key === "End") {
-      e.preventDefault();
-      updateCommandPaletteActive(
-        state.commandPaletteEntries.length -
-          1 -
-          state.commandPaletteActiveIndex,
-      );
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      runActiveCommand();
-    }
-  });
 }

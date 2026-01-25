@@ -469,7 +469,7 @@ export async function loadTagStats(): Promise<void> {
   if (!tagStatsList) return;
 
   try {
-    const tags = await api("/tags");
+    const tags = await api<any[]>("/tags");
     if (!tags || tags.length === 0) {
       tagStatsList.innerHTML =
         '<div class="text-tertiary" style="font-size:0.9rem;">No tags yet</div>';
@@ -477,6 +477,9 @@ export async function loadTagStats(): Promise<void> {
       return;
     }
 
+    const tagStatsListElement = tagStatsList as HTMLElement & {
+      _allTags: any[];
+    };
     // Sort tags based on user preference
     const sortMode = state.filterConfig.tagSort || "count_desc";
     tags.sort((a: any, b: any) => {
@@ -494,7 +497,7 @@ export async function loadTagStats(): Promise<void> {
     });
 
     // Store tags for filtering
-    tagStatsList._allTags = tags;
+    tagStatsListElement._allTags = tags;
 
     renderTagStatsList(tags);
     updateTagRenameUndoButton();

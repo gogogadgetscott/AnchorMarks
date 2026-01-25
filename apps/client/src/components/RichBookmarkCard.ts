@@ -11,6 +11,7 @@ interface Bookmark {
   description?: string;
   favicon?: string;
   og_image?: string;
+  thumbnail_local?: string;
   tags?: string;
   tags_detailed?: Array<{
     name: string;
@@ -73,9 +74,11 @@ export function RichBookmarkCard(bookmark: Bookmark, index: number): string {
 
   const delayClass = `delay-${index % 10}`;
 
-  const imageHtml = bookmark.og_image
+  // Determine which image to show: og_image > thumbnail_local > placeholder
+  const imageSrc = bookmark.og_image || bookmark.thumbnail_local;
+  const imageHtml = imageSrc
     ? `<div class="rich-card-image">
-         <img src="${bookmark.og_image}" alt="" loading="lazy">
+         <img src="${imageSrc}" alt="" loading="lazy">
        </div>`
     : `<div class="rich-card-image-placeholder" data-bookmark-id="${bookmark.id}" data-bookmark-url="${escapeHtml(bookmark.url)}">
          ${Icon("image", { size: 48 })}

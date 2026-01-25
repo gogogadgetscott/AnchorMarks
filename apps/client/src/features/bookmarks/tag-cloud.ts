@@ -8,6 +8,7 @@ import { api } from "@services/api.ts";
 import { logger } from "@utils/logger.ts";
 import { escapeHtml } from "@utils/index.ts";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
+import { dom, showToast } from "@utils/ui-helpers.ts";
 
 // Gradient stops used for count → color mapping (low → high)
 // Designed to resemble the rainbow look in the mock
@@ -92,10 +93,11 @@ function getContrastText(bgHex: string): string {
 function getBaseFontSizes(containerHeight: number): number[] {
   // Scale font sizes based on available height
   const scale = Math.min(1, containerHeight / 600); // 600px is baseline
-  const baseSizes = [14, 18, 24, 32, 40, 48, 56];
+  // Reduced base sizes to fit more tags
+  const baseSizes = [12, 16, 20, 26, 32, 36, 44];
 
-  return baseSizes.map((size) => Math.max(12, size * scale));
-}
+  return baseSizes.map((size) => Math.max(11, size * scale));
+} 
 
 // Map tag count to font size index using linear scale
 function getFontSizeForCount(
@@ -148,13 +150,29 @@ async function buildTagData(): Promise<{ name: string; count: number }[]> {
     allBookmarks = state.bookmarks;
   }
 
-  allBookmarks.forEach((b) => {
-    if (b.tags) {
-      b.tags.split(",").forEach((t: string) => {
-        const tag = t.trim();
-        if (tag) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-      });
+  // Helper to extract normalized tags from bookmark (handles string or array)
+  const extractTags = (bookmark: any): string[] => {
+    if (!bookmark.tags) return [];
+    if (Array.isArray(bookmark.tags)) return bookmark.tags.map((t: any) => String(t).trim()).filter(Boolean);
+    if (typeof bookmark.tags === "object") {
+      try {
+        return Object.values(bookmark.tags).map((v: any) => String(v).trim()).filter(Boolean);
+      } catch (e) {
+        return [];
+      }
     }
+    return String(bookmark.tags)
+      .split(",")
+      .map((t: string) => t.trim())
+      .filter(Boolean);
+  };
+
+  allBookmarks.forEach((b) => {
+    const tags = extractTags(b);
+    tags.forEach((t: string) => {
+      const tag = t;
+      if (tag) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+    });
   });
 
   const tags = Object.keys(tagCounts)
@@ -179,9 +197,11 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 // Render the tag cloud
 export async function renderTagCloud(): Promise<void> {
+  if (state.currentView !== "tag-cloud") return;
   updateFilterButtonVisibility();
 
-  const container = document.getElementById("bookmarks-container");
+  const container =
+    dom.mainViewOutlet || document.getElementById("main-view-outlet");
   const emptyState = document.getElementById("empty-state");
   const bulkBar = document.getElementById("bulk-bar");
 
@@ -234,8 +254,12 @@ export async function renderTagCloud(): Promise<void> {
   // Shuffle top tags for organic cloud appearance
   const shuffledTags = shuffleArray(topTags);
 
-  // Get container dimensions
-  const canvasHeight = window.innerHeight - 300; // Account for header, legend, etc.
+  // Get container dimensions - compute available height using the sticky header
+  const headerEl = document.querySelector('.content-header') as HTMLElement;
+  const headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 64;
+  // Reserve space for top padding / overlay + legend area so nothing is clipped
+  const legendReserve = 88; // px
+  const canvasHeight = Math.max(300, window.innerHeight - headerHeight - legendReserve);
 
   // Get scaled font sizes based on container
   const fontSizes = getBaseFontSizes(canvasHeight);
@@ -326,6 +350,13 @@ export async function renderTagCloud(): Promise<void> {
   container.className = "tag-cloud-container";
   container.innerHTML = tagCloudHtml;
 
+  // Ensure the canvas has a min-height based on the computed canvasHeight
+  const canvasEl = container.querySelector('.tag-cloud-canvas') as HTMLElement | null;
+  if (canvasEl) {
+    canvasEl.style.minHeight = `${canvasHeight}px`;
+    canvasEl.style.setProperty('--tag-cloud-canvas-height', `${canvasHeight}px`);
+  }
+
   // Toggle button handler
   const toggleBtn = document.getElementById("tag-cloud-toggle");
   if (toggleBtn) {
@@ -340,34 +371,89 @@ export async function renderTagCloud(): Promise<void> {
   container.querySelectorAll(".tag-cloud-tag").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.preventDefault();
-      const tagName = (btn as HTMLElement).dataset.tag;
-      if (!tagName) return;
+      const rawTagName = (btn as HTMLElement).dataset.tag;
+      if (!rawTagName) return;
+      // Defensive decode of HTML entities (dataset may already be decoded in most browsers)
+      let tagName = rawTagName;
+      try {
+        const tmp = document.createElement("textarea");
+        tmp.innerHTML = tagName;
+        tagName = tmp.value;
+      } catch (e) {
+        // ignore and use raw value
+      }
 
       // Navigate to bookmarks filtered by this tag
       state.setCurrentView("all");
       state.setCurrentFolder(null);
-      state.filterConfig.tags = [tagName];
+      // Use setter to replace filter config (avoids mutation edge cases)
+      state.setFilterConfig({ ...state.filterConfig, tags: [tagName] });
 
       const searchInput = document.getElementById(
         "search-input",
       ) as HTMLInputElement;
       if (searchInput) searchInput.value = "";
 
+      // Refresh header to match the Bookmarks view
+      const { updateHeaderContent } = await import("@/App.ts");
+      await updateHeaderContent();
+
       const viewTitle = document.getElementById("view-title");
       if (viewTitle) viewTitle.textContent = `Tag: ${tagName}`;
 
-      // Import and update UI
-      const [{ renderActiveFilters, renderSidebarTags }, { loadBookmarks }] =
-        await Promise.all([
+      // Import and update UI (robust: handle import failures with graceful fallback)
+      let renderActiveFilters: any = null;
+      let renderSidebarTags: any = null;
+      let loadBookmarks: any = null;
+
+      try {
+        const [searchMod, bookmarksMod] = await Promise.all([
           import("@features/bookmarks/search.ts"),
           import("@features/bookmarks/bookmarks.ts"),
         ]);
+        renderActiveFilters = searchMod.renderActiveFilters;
+        renderSidebarTags = searchMod.renderSidebarTags;
+        loadBookmarks = bookmarksMod.loadBookmarks;
+      } catch (err) {
+        logger.error(
+          "Failed to dynamically import bookmark modules from Tag Cloud click handler",
+          err,
+        );
+        // Fallback: try to at least import bookmarks module so we can call loadBookmarks
+        try {
+          const bookmarksMod = await import("@features/bookmarks/bookmarks.ts");
+          loadBookmarks = bookmarksMod.loadBookmarks;
+        } catch (err2) {
+          logger.error("Fallback import for bookmarks failed", err2);
+        }
+      }
 
       const { updateActiveNav } = await import("@utils/ui-helpers.ts");
       updateActiveNav();
-      renderActiveFilters();
-      renderSidebarTags();
-      loadBookmarks();
+
+      if (renderActiveFilters) renderActiveFilters();
+      if (renderSidebarTags) renderSidebarTags();
+
+      if (typeof loadBookmarks === "function") {
+        logger.info(`Tag Cloud: invoking loadBookmarks for tag "${tagName}"`);
+        try {
+          await loadBookmarks();
+        } catch (err) {
+          logger.error("loadBookmarks failed after Tag Cloud click", err);
+          try {
+            showToast("Failed to load bookmarks", "error");
+          } catch (_) {
+            // ignore toast errors in environments where UI isn't attached
+          }
+        }
+      } else {
+        logger.error("loadBookmarks not available after Tag Cloud click imports");
+        try {
+          showToast("Could not load bookmarks", "error");
+        } catch (_) {
+          // ignore
+        }
+      }
     });
   });
 

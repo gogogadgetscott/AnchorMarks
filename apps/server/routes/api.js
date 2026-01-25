@@ -8,13 +8,14 @@ function setupApiRoutes(app, db, helpers) {
     validateCsrfTokenMiddleware,
     fetchFaviconWrapper,
     config,
+    version,
   } = helpers;
 
   // Health
   app.get("/api/health", (req, res) => {
     res.json({
       status: "ok",
-      version: "1.0.0",
+      version: version || "1.0.0",
       environment: config.NODE_ENV,
       timestamp: new Date().toISOString(),
     });
@@ -119,6 +120,10 @@ function setupApiRoutes(app, db, helpers) {
     setupMaintenanceRoutes(db, authenticateTokenMiddleware),
   );
 
+  // Import/Export Routes
+  const setupImportExportRoutes = require("./importExport");
+  setupImportExportRoutes(app, db, { authenticateTokenMiddleware });
+
   // Settings API
   app.get("/api/settings", authenticateTokenMiddleware, (req, res) => {
     try {
@@ -131,7 +136,7 @@ function setupApiRoutes(app, db, helpers) {
           hide_favicons: false,
           hide_sidebar: false,
           ai_suggestions_enabled: true,
-          rich_link_previews_enabled: false,
+          rich_link_previews_enabled: true, // Enable by default
           theme: "dark",
           dashboard_mode: "folder",
           dashboard_tags: [],
@@ -186,6 +191,11 @@ function setupApiRoutes(app, db, helpers) {
   });
 
   // Reset bookmarks - delete all and create example bookmarks
+  const {
+    EXAMPLE_BOOKMARKS,
+    STARTER_FOLDER,
+  } = require("../helpers/example-bookmarks");
+
   app.post(
     "/api/settings/reset-bookmarks",
     authenticateTokenMiddleware,
@@ -209,133 +219,17 @@ function setupApiRoutes(app, db, helpers) {
         // Delete all tags for this user
         db.prepare("DELETE FROM tags WHERE user_id = ?").run(userId);
 
-        // Create example folder
+        // Create starter folder using shared config
         const folderId = uuidv4();
         db.prepare(
-          "INSERT INTO folders (id, user_id, name, color) VALUES (?, ?, ?, ?)",
-        ).run(folderId, userId, "Getting Started", "#10b981");
-
-        // Create example bookmarks
-        const exampleBookmarks = [
-          // Getting Started
-          {
-            title: "AnchorMarks Documentation",
-            url: "https://github.com/gogogadgetscott/AnchorMarks",
-            description:
-              "Official documentation and source code for AnchorMarks",
-            tags: "docs,anchormarks",
-            folder_id: folderId,
-          },
-          // Productivity
-          {
-            title: "Google",
-            url: "https://www.google.com",
-            description: "Search the web",
-            tags: "search,productivity",
-            folder_id: null,
-          },
-          {
-            title: "Gmail",
-            url: "https://mail.google.com",
-            description: "Google email service",
-            tags: "email,productivity",
-            folder_id: null,
-          },
-          {
-            title: "Google Calendar",
-            url: "https://calendar.google.com",
-            description: "Manage your schedule",
-            tags: "calendar,productivity",
-            folder_id: null,
-          },
-          {
-            title: "Google Drive",
-            url: "https://drive.google.com",
-            description: "Cloud storage and collaboration",
-            tags: "storage,productivity",
-            folder_id: null,
-          },
-          {
-            title: "Notion",
-            url: "https://www.notion.so",
-            description: "All-in-one workspace",
-            tags: "notes,productivity",
-            folder_id: null,
-          },
-          // Development
-          {
-            title: "GitHub",
-            url: "https://github.com",
-            description: "Code hosting and collaboration",
-            tags: "development,git",
-            folder_id: null,
-          },
-          {
-            title: "Stack Overflow",
-            url: "https://stackoverflow.com",
-            description: "Programming Q&A community",
-            tags: "development,help",
-            folder_id: null,
-          },
-          {
-            title: "MDN Web Docs",
-            url: "https://developer.mozilla.org",
-            description: "Web development documentation",
-            tags: "development,docs",
-            folder_id: null,
-          },
-          {
-            title: "CodePen",
-            url: "https://codepen.io",
-            description: "Frontend code playground",
-            tags: "development,sandbox",
-            folder_id: null,
-          },
-          // Learning
-          {
-            title: "Wikipedia",
-            url: "https://www.wikipedia.org",
-            description: "Free encyclopedia",
-            tags: "learning,reference",
-            folder_id: null,
-          },
-          {
-            title: "YouTube",
-            url: "https://www.youtube.com",
-            description: "Video streaming platform",
-            tags: "learning,entertainment",
-            folder_id: null,
-          },
-          {
-            title: "Coursera",
-            url: "https://www.coursera.org",
-            description: "Online courses and degrees",
-            tags: "learning,education",
-            folder_id: null,
-          },
-          // News & Social
-          {
-            title: "Reddit",
-            url: "https://www.reddit.com",
-            description: "Social news and discussion",
-            tags: "social,news",
-            folder_id: null,
-          },
-          {
-            title: "Hacker News",
-            url: "https://news.ycombinator.com",
-            description: "Tech news and discussion",
-            tags: "news,tech",
-            folder_id: null,
-          },
-          {
-            title: "Twitter / X",
-            url: "https://twitter.com",
-            description: "Social microblogging",
-            tags: "social,news",
-            folder_id: null,
-          },
-        ];
+          "INSERT INTO folders (id, user_id, name, color, icon) VALUES (?, ?, ?, ?, ?)",
+        ).run(
+          folderId,
+          userId,
+          STARTER_FOLDER.name,
+          STARTER_FOLDER.color,
+          STARTER_FOLDER.icon || "folder",
+        );
 
         // Tag helper functions
         const {
@@ -344,12 +238,15 @@ function setupApiRoutes(app, db, helpers) {
         } = require("../helpers/tag-helpers");
 
         let bookmarksCreated = 0;
-        for (const bm of exampleBookmarks) {
+        for (const bm of EXAMPLE_BOOKMARKS) {
           const id = uuidv4();
+          // Place bookmarks marked with inStarterFolder in the starter folder
+          const bookmarkFolderId = bm.inStarterFolder ? folderId : null;
+
           db.prepare(
             `INSERT INTO bookmarks (id, user_id, folder_id, title, url, description) 
              VALUES (?, ?, ?, ?, ?, ?)`,
-          ).run(id, userId, bm.folder_id, bm.title, bm.url, bm.description);
+          ).run(id, userId, bookmarkFolderId, bm.title, bm.url, bm.description);
 
           // Add tags if present
           if (bm.tags) {

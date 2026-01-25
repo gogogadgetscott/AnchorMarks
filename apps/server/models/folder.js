@@ -5,7 +5,7 @@ function listFolders(db, userId) {
       `
     SELECT f.*, COUNT(b.id) AS bookmark_count
     FROM folders f
-    LEFT JOIN bookmarks b ON b.folder_id = f.id AND b.user_id = f.user_id
+    LEFT JOIN bookmarks b ON b.folder_id = f.id AND b.user_id = f.user_id AND b.is_archived = 0
     WHERE f.user_id = ?
     GROUP BY f.id
     ORDER BY f.position
@@ -54,12 +54,21 @@ function deleteAllForUser(db, userId) {
   return db.prepare("DELETE FROM folders WHERE user_id = ?").run(userId);
 }
 
-function createFolder(db, id, userId, name, color, icon, position) {
+function createFolder(
+  db,
+  id,
+  userId,
+  name,
+  color,
+  icon,
+  position,
+  parentId = null,
+) {
   return db
     .prepare(
-      "INSERT INTO folders (id, user_id, name, color, icon, position) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT INTO folders (id, user_id, parent_id, name, color, icon, position) VALUES (?, ?, ?, ?, ?, ?, ?)",
     )
-    .run(id, userId, name, color, icon, position);
+    .run(id, userId, parentId, name, color, icon, position);
 }
 
 function findFolderByNameAndParent(db, userId, name, parentId) {

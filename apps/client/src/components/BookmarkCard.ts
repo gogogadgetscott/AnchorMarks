@@ -35,7 +35,7 @@ export function BookmarkCard(bookmark: Bookmark, index: number): string {
         .filter((t) => t)
     : [];
 
-  const tagEntries = Array.isArray(bookmark.tags_detailed)
+  const tagEntries = Array.isArray(bookmark.tags_detailed) && bookmark.tags_detailed.length
     ? bookmark.tags_detailed.map((t) => ({
         name: t.name,
         color: t.color,
@@ -94,6 +94,22 @@ export function BookmarkCard(bookmark: Bookmark, index: number): string {
       <label class="bookmark-select">
         <input type="checkbox" ${isSelected ? "checked" : ""}>
       </label>
+
+      ${state.viewMode === "list"
+        ? `
+      <div class="bookmark-col bookmark-favicon">
+        ${faviconHtml}
+      </div>
+      <div class="bookmark-col bookmark-title-tags">
+        <div class="bookmark-title">${escapeHtml(bookmark.title)}</div>
+        ${tagsHtml}
+      </div>
+      <div class="bookmark-col bookmark-desc-url">
+        ${bookmark.description ? `<div class="bookmark-description">${escapeHtml(bookmark.description)}</div>` : `<div class="bookmark-description empty"></div>`}
+        <div class="bookmark-url" data-full-url="${escapeHtml(bookmark.url)}">${escapeHtml(displayUrl)}</div>
+      </div>
+      `
+        : `
       <div class="bookmark-header">
         <div class="bookmark-favicon">
           ${faviconHtml}
@@ -105,6 +121,8 @@ export function BookmarkCard(bookmark: Bookmark, index: number): string {
       </div>
       ${bookmark.description ? `<div class="bookmark-description">${escapeHtml(bookmark.description)}</div>` : ""}
       ${tagsHtml}
+      `}
+
       <div class="bookmark-actions">
         ${Button("Open", {
           variant: "primary",

@@ -12,6 +12,7 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
         search,
         favorites,
         tags,
+        tagMode,
         sort,
         limit,
         offset,
@@ -24,6 +25,7 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
         favorites,
         search,
         tags,
+        tagMode,
         sort,
         limit,
         offset,
@@ -260,6 +262,71 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
       } catch (err) {
         console.error("Error unarchiving bookmark:", err);
         res.status(500).json({ error: "Failed to unarchive bookmark" });
+      }
+    },
+  );
+
+  // Generate thumbnail screenshot for a bookmark
+  app.post(
+    "/api/bookmarks/:id/thumbnail",
+    authenticateTokenMiddleware,
+    async (req, res) => {
+      try {
+        const bookmark = bookmarkModel.getBookmarkById(
+          db,
+          req.user.id,
+          req.params.id,
+        );
+
+        if (!bookmark) {
+          return res.status(404).json({ error: "Bookmark not found" });
+        }
+
+        // Check if thumbnail already exists
+        if (bookmark.thumbnail_local) {
+          return res.json({
+            success: true,
+            thumbnail_local: bookmark.thumbnail_local,
+            cached: true,
+          });
+        }
+
+        // Check for private addresses in production
+        if (
+          config &&
+          config.NODE_ENV === "production" &&
+          (await isPrivateAddress(bookmark.url))
+        ) {
+          return res.status(403).json({
+            error: "Cannot generate thumbnail for private addresses",
+          });
+        }
+
+        // Capture screenshot
+        const thumbnailService = require("../helpers/thumbnail");
+        const result = await thumbnailService.captureScreenshot(
+          bookmark.url,
+          bookmark.id,
+        );
+
+        if (result.success) {
+          // Update bookmark with thumbnail path
+          bookmarkModel.setThumbnailLocal(db, bookmark.id, result.path);
+
+          return res.json({
+            success: true,
+            thumbnail_local: result.path,
+            cached: result.cached || false,
+          });
+        } else {
+          return res.status(500).json({
+            success: false,
+            error: result.error || "Failed to capture screenshot",
+          });
+        }
+      } catch (err) {
+        console.error("Error generating thumbnail:", err);
+        res.status(500).json({ error: "Failed to generate thumbnail" });
       }
     },
   );

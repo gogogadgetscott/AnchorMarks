@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require("uuid");
+const cheerio = require("cheerio");
 const { parseTags, stringifyTags } = require("./tags");
 
 async function parseBookmarkHtml(html) {
@@ -17,91 +18,167 @@ async function parseBookmarkHtml(html) {
     return id;
   }
 
-  function findClosingTag(str, start, tagName) {
-    let depth = 1;
-    let pos = start + tagName.length + 2;
-    const openTag = `<${tagName}`;
-    const closeTag = `</${tagName}>`;
+  const $ = cheerio.load(html);
 
-    while (depth > 0 && pos < str.length) {
-      const nextOpen = str.indexOf(openTag, pos);
-      const nextClose = str.indexOf(closeTag, pos);
+  function processList(dlElement, parentId) {
+    // Netscape format: <DL> contains <DT> items which contain either <H3> (folder) or <A> (link)
+    // <H3> is followed by another <DL> for the folder contents
 
-      if (nextClose === -1) return -1;
+    // We iterate over all children to handle malformed HTML where DT might be missing
+    const children = $(dlElement).children();
 
-      if (nextOpen !== -1 && nextOpen < nextClose) {
-        depth++;
-        pos = nextOpen + openTag.length;
-      } else {
-        depth--;
-        pos = nextClose + closeTag.length;
+    children.each((_, el) => {
+      const element = $(el);
+      const tagName = element.prop("tagName");
+
+      // Handle <DT> wrapper (standard format)
+      if (tagName === "DT") {
+        processItem(element, parentId);
       }
-      if (depth === 0) return nextClose;
-    }
-    return -1;
+      // Handle direct <A> or <H3> (loose format)
+      else if (tagName === "A" || tagName === "H3") {
+        // If it's a direct child, we process it directly.
+        // Note: processItem expects the container (DT) or the item itself if checking children.
+        // Let's make a specific handler for the node type.
+        if (tagName === "A") processBookmark(element, parentId);
+        if (tagName === "H3") processFolder(element, parentId);
+      }
+    });
   }
 
-  function parseBlock(blockHtml, currentParentId) {
-    let i = 0;
-    const len = blockHtml.length;
+  function processItem(dtElement, parentId) {
+    // Check for Folder Header <H3>
+    const h3 = dtElement.children("h3").first();
+    if (h3.length > 0) {
+      processFolder(h3, parentId);
+      return;
+    }
 
-    while (i < len) {
-      const dtIndex = blockHtml.indexOf("<DT>", i);
-      if (dtIndex === -1) break;
-
-      i = dtIndex + 4;
-
-      if (blockHtml.startsWith("<H3", i)) {
-        const h3End = blockHtml.indexOf("</H3>", i);
-        const h3Start = blockHtml.indexOf(">", i) + 1;
-        const folderName = blockHtml.substring(h3Start, h3End);
-
-        const dlStart = blockHtml.indexOf("<DL>", h3End);
-        const dlEnd = findClosingTag(blockHtml, dlStart, "DL");
-
-        if (dlStart !== -1 && dlEnd !== -1) {
-          const folderId = createFolder(folderName, currentParentId);
-          const innerHtml = blockHtml.substring(dlStart + 4, dlEnd);
-          parseBlock(innerHtml, folderId);
-          i = dlEnd + 5;
-        } else {
-          i = h3End + 5;
-        }
-      } else if (blockHtml.startsWith("<A", i)) {
-        const aEnd = blockHtml.indexOf("</A>", i);
-        const aTagEnd = blockHtml.indexOf(">", i);
-        const title = blockHtml.substring(aTagEnd + 1, aEnd);
-        const attributes = blockHtml.substring(i, aTagEnd);
-
-        const hrefMatch = attributes.match(/HREF="([^"]+)"/i);
-        if (hrefMatch) {
-          const url = hrefMatch[1];
-          const tagsMatch = attributes.match(/TAGS=["']([^"']+)["']/i);
-          const tags = tagsMatch ? tagsMatch[1] : null;
-          const colorMatch = attributes.match(/COLOR=["']([^"']+)["']/i);
-          const color = colorMatch ? colorMatch[1] : null;
-
-          if (!url.startsWith("javascript:") && !url.startsWith("place:")) {
-            const tagsString = tags ? stringifyTags(parseTags(tags)) : null;
-
-            bookmarks.push({
-              title,
-              url,
-              folder_id: currentParentId,
-              tags: tagsString,
-              color,
-            });
-          }
-        }
-        i = aEnd + 4;
-      } else {
-        i++;
-      }
+    // Check for Bookmark Link <A>
+    const a = dtElement.children("a").first();
+    if (a.length > 0) {
+      processBookmark(a, parentId);
     }
   }
 
-  parseBlock(html, null);
+  function processFolder(h3Element, parentId) {
+    const folderName = h3Element.text().trim();
+    const folderId = createFolder(folderName, parentId);
 
+    // The folder contents <DL> usually follows the <H3>
+    // In standard structure: <DT><H3>...</H3><DL>...</DL></DT>
+    // So we look for a sibling DL of the H3, or a child DL of the parent DT
+
+    let dl = h3Element.next("dl");
+
+    // Sometimes it's nested differently or H3 matches the DT parent's next sibling
+    if (dl.length === 0) {
+      // Try next sibling of parent DT
+      dl = h3Element.parent("dt").next("dd").children("dl");
+    }
+    // Try standard netscape: DT -> H3, DL (DL is sibling of H3 inside DT? No, usually DT contains H3, and DL follows DT... or DL is inside DD?)
+    // Actually standard is: <DT><H3>...</H3><DL>...</DL></DT> (some browsers)
+    // Or: <DT><H3>...</H3></DT><DD><DL>...</DL></DD> (IE style)
+
+    if (dl.length === 0) {
+      // Look for DL as sibling of H3
+      dl = h3Element.siblings("dl");
+    }
+
+    if (dl.length === 0) {
+      // Look for DL as immediate sibling of parent DT (some formats)
+      dl = h3Element.parent().next("dl");
+    }
+
+    if (dl.length === 0) {
+      // Look for DL in the next DD (definition description)
+      dl = h3Element.parent().next("dd").children("dl");
+    }
+
+    if (dl.length > 0) {
+      processList(dl, folderId);
+    } else {
+      // Fallback: Try looking for the next DL in siblings even if not immediate
+      const nextDL = h3Element.nextAll("dl").first();
+      const nextH3 = h3Element.nextAll("h3").first();
+
+      if (nextDL.length > 0) {
+        if (nextH3.length === 0 || nextDL.index() < nextH3.index()) {
+          console.log(
+            `[Import] Found detached sibling DL for folder "${folderName}"`,
+          );
+          processList(nextDL, folderId);
+        }
+      } else {
+        console.warn(`[Import] No content DL found for folder "${folderName}"`);
+      }
+    }
+  }
+
+  function processBookmark(aElement, parentId) {
+    const url = aElement.attr("href");
+    const title = aElement.text().trim() || url;
+
+    if (!url || url.startsWith("javascript:") || url.startsWith("place:")) {
+      return;
+    }
+
+    // Extract attributes
+    const tagsAttr = aElement.attr("tags");
+    const colorAttr = aElement.attr("color");
+
+    const tagsString = tagsAttr ? stringifyTags(parseTags(tagsAttr)) : null;
+
+    bookmarks.push({
+      title,
+      url,
+      folder_id: parentId,
+      tags: tagsString,
+      color: colorAttr,
+    });
+  }
+
+  // Start parsing from the root DL
+  const rootDl = $("dl").first();
+  if (rootDl.length > 0) {
+    console.log("[Import] Processing root DL");
+    processList(rootDl, null);
+  } else {
+    console.warn("[Import] No root DL found");
+  }
+
+  // FALLBACK: If structured parsing found nothing, try distinct strategies
+  if (bookmarks.length === 0) {
+    console.log(
+      "[Import] Structured parsing yielded 0 bookmarks. Attempting flat DOM scan...",
+    );
+
+    const links = $("a");
+    links.each((_, el) => {
+      const element = $(el);
+      const url = element.attr("href");
+      if (!url || url.startsWith("javascript:") || url.startsWith("place:"))
+        return;
+
+      const title = element.text().trim() || url;
+      const tagsAttr = element.attr("tags");
+      const tagsString = tagsAttr ? stringifyTags(parseTags(tagsAttr)) : null;
+
+      bookmarks.push({
+        title,
+        url,
+        folder_id: null,
+        tags: tagsString,
+        color: element.attr("color"),
+      });
+    });
+
+    console.log(`[Import] Flat DOM scan found ${bookmarks.length} bookmarks.`);
+  }
+
+  console.log(
+    `[Import] Completed. Found ${bookmarks.length} bookmarks, ${folders.length} folders.`,
+  );
   return { bookmarks, folders };
 }
 

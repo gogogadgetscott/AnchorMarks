@@ -1,21 +1,18 @@
 function loadConfigWithEnv(env) {
-  jest.resetModules();
-
-  // Restore process.env to a clean baseline for each load
-  process.env = { ...process.env, ...env };
-
+  vi.resetModules();
+  vi.unstubAllEnvs();
+  for (const [key, value] of Object.entries(env)) {
+    vi.stubEnv(key, value);
+  }
+  vi.doMock("dotenv", () => ({
+    config: vi.fn(),
+  }));
   return require("../config");
 }
 
 describe("server/config", () => {
-  const originalEnv = process.env;
-
-  beforeEach(() => {
-    process.env = { ...originalEnv };
-  });
-
-  afterAll(() => {
-    process.env = originalEnv;
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("validateSecurityConfig does nothing outside production", () => {

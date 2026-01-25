@@ -41,9 +41,9 @@ echo "📚 Installing dependencies..."
 npm ci --only=production
 
 echo "🔐 Setting up environment..."
-if [ ! -f $ROOT_DIR/apps/.env ]; then
+if [ ! -f $ROOT_DIR/.env ]; then
   JWT_SECRET=$(openssl rand -base64 32)
-  cat > $ROOT_DIR/apps/.env << EOF
+  cat > $ROOT_DIR/.env << EOF
 NODE_ENV=production
 PORT=3000
 HOST=127.0.0.1
@@ -68,12 +68,12 @@ if [ ! -f "$SSL_KEY_PATH" ] || [ ! -f "$SSL_CERT_PATH" ]; then
 fi
 
 # Append SSL paths to .env if they are not already present
-if [ -f "$ROOT_DIR/apps/.env" ]; then
-  if ! grep -q '^SSL_KEY=' "$ROOT_DIR/apps/.env" 2>/dev/null; then
-    echo "SSL_KEY=$SSL_KEY_PATH" >> "$ROOT_DIR/apps/.env"
+if [ -f "$ROOT_DIR/.env" ]; then
+  if ! grep -q '^SSL_KEY=' "$ROOT_DIR/.env" 2>/dev/null; then
+    echo "SSL_KEY=$SSL_KEY_PATH" >> "$ROOT_DIR/.env"
   fi
-  if ! grep -q '^SSL_CERT=' "$ROOT_DIR/apps/.env" 2>/dev/null; then
-    echo "SSL_CERT=$SSL_CERT_PATH" >> "$ROOT_DIR/apps/.env"
+  if ! grep -q '^SSL_CERT=' "$ROOT_DIR/.env" 2>/dev/null; then
+    echo "SSL_CERT=$SSL_CERT_PATH" >> "$ROOT_DIR/.env"
   fi
 fi
 
@@ -81,8 +81,8 @@ echo "👤 Setting permissions on application directories..."
 # Ensure data and server directories are owned by UID 1001 so container's node user can write
 chown -R 1001:1001 $ROOT_DIR/apps || chown -R $APP_USER:$APP_USER $ROOT_DIR/apps || true
 chown -R 1001:1001 $ROOT_DIR/apps/database || true
-if [ -f $ROOT_DIR/apps/.env ]; then
-  chmod 600 $ROOT_DIR/apps/.env
+if [ -f $ROOT_DIR/.env ]; then
+  chmod 600 $ROOT_DIR/.env
 fi
 if [ -d "$ROOT_DIR/apps/ssl" ]; then
   chown -R 1001:1001 "$ROOT_DIR/apps/ssl" || true

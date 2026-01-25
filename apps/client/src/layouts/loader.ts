@@ -10,7 +10,6 @@ import folderModal from "./fragments/folder-modal.html?raw";
 import filterSidebar from "./fragments/filter-sidebar.html?raw";
 import settingsModal from "./fragments/settings-modal.html?raw";
 import shortcutsPopup from "./fragments/shortcuts-popup.html?raw";
-import commandPalette from "./fragments/quick-launch.html?raw";
 import onboardingTour from "./fragments/onboarding-tour.html?raw";
 import toast from "./fragments/toast.html?raw";
 
@@ -65,12 +64,8 @@ export function loadComponents(): void {
         className: "main-header",
         countId: "bookmarks-view-count",
         countSuffix: "bookmarks",
-        rightContent: `
+        centerContent: `
           ${Omnibar({ id: "search-input" })}
-          <button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
-            ${Icon("filter", { size: 16 })}
-            <span class="filter-btn-text">Filters</span>
-          </button>
         `,
         bulkActions: ["archive", "move", "tag", "delete"],
       });
@@ -108,7 +103,6 @@ export function loadComponents(): void {
     filterSidebar,
     settingsModal,
     shortcutsPopup,
-    commandPalette,
     onboardingTour,
     toast,
   ].join("\n");

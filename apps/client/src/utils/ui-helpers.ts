@@ -94,7 +94,7 @@ export const dom: {
   loginForm: HTMLFormElement | null;
   registerForm: HTMLFormElement | null;
   authTabs: NodeListOf<HTMLElement> | null;
-  bookmarksContainer: HTMLElement | null;
+  mainViewOutlet: HTMLElement | null;
   emptyState: HTMLElement | null;
   searchInput: HTMLInputElement | null;
   viewTitle: HTMLElement | null;
@@ -102,9 +102,6 @@ export const dom: {
   bulkBar: HTMLElement | null;
   bulkMoveSelect: HTMLSelectElement | null;
   bulkCount: HTMLElement | null;
-  commandPalette: HTMLElement | null;
-  commandPaletteInput: HTMLInputElement | null;
-  commandPaletteList: HTMLElement | null;
   bookmarkUrlInput: HTMLInputElement | null;
   bookmarkTagsInput: HTMLInputElement | null;
   tagSuggestions: HTMLElement | null;
@@ -119,7 +116,7 @@ export const dom: {
   loginForm: null,
   registerForm: null,
   authTabs: null,
-  bookmarksContainer: null,
+  mainViewOutlet: null,
   emptyState: null,
   searchInput: null,
   viewTitle: null,
@@ -127,9 +124,6 @@ export const dom: {
   bulkBar: null,
   bulkMoveSelect: null,
   bulkCount: null,
-  commandPalette: null,
-  commandPaletteInput: null,
-  commandPaletteList: null,
   bookmarkUrlInput: null,
   bookmarkTagsInput: null,
   tagSuggestions: null,
@@ -149,7 +143,7 @@ export function initDom(): void {
     "register-form",
   ) as HTMLFormElement;
   dom.authTabs = document.querySelectorAll(".auth-tab");
-  dom.bookmarksContainer = document.getElementById("bookmarks-container");
+  dom.mainViewOutlet = document.getElementById("main-view-outlet");
   dom.emptyState = document.getElementById("empty-state");
   dom.searchInput = document.getElementById("search-input") as HTMLInputElement;
   dom.viewTitle = document.getElementById("view-title");
@@ -159,11 +153,6 @@ export function initDom(): void {
     "bulk-move-select",
   ) as HTMLSelectElement;
   dom.bulkCount = document.getElementById("bulk-count");
-  dom.commandPalette = document.getElementById("quick-launch");
-  dom.commandPaletteInput = document.getElementById(
-    "quick-launch-input",
-  ) as HTMLInputElement;
-  dom.commandPaletteList = document.getElementById("quick-launch-list");
   dom.bookmarkUrlInput = document.getElementById(
     "bookmark-url",
   ) as HTMLInputElement;
@@ -280,6 +269,9 @@ export function openModal(id: string): void {
 
     // Attach modal close listeners only once per modal instance
     const closeBtn = modal.querySelector(".modal-close") as HTMLElement | null;
+    const cancelBtn = modal.querySelector(
+      ".modal-cancel",
+    ) as HTMLElement | null;
     const backdrop = modal.querySelector(
       ".modal-backdrop",
     ) as HTMLElement | null;
@@ -287,6 +279,7 @@ export function openModal(id: string): void {
     const closeHandler = (e: Event) => {
       e.preventDefault();
       modal.classList.add("hidden");
+      resetForms();
     };
 
     // Remove existing listeners to avoid duplicates
@@ -297,6 +290,17 @@ export function openModal(id: string): void {
       ) as HTMLElement | null;
       if (newCloseBtn) {
         newCloseBtn.addEventListener("click", closeHandler);
+      }
+    }
+
+    // Handle Cancel button
+    if (cancelBtn) {
+      cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+      const newCancelBtn = modal.querySelector(
+        ".modal-cancel",
+      ) as HTMLElement | null;
+      if (newCancelBtn) {
+        newCancelBtn.addEventListener("click", closeHandler);
       }
     }
 
@@ -315,6 +319,13 @@ export function openModal(id: string): void {
       injectProfileForms(); // Inject profile forms before attaching listeners
       attachSettingsTabListeners();
       attachSettingsModalLogout();
+    }
+
+    // Re-initialize tag input if opening bookmark modal
+    if (id === "bookmark-modal") {
+      import("@features/bookmarks/tag-input.ts").then(({ initTagInput }) => {
+        initTagInput();
+      });
     }
   }
 }
@@ -451,6 +462,13 @@ function attachSettingsTabListeners(): void {
       renderBookmarks();
     });
   }
+
+  // Bookmark shortcut (drag-to-bookmarks-bar)
+  import("@features/bookmarks/settings.ts").then(
+    ({ installBookmarkShortcut }) => {
+      installBookmarkShortcut();
+    },
+  );
 }
 
 // Attach settings modal logout button listener
@@ -494,7 +512,7 @@ export function closeModals(): void {
 }
 
 // Reset forms
-export function resetForms(): void {
+export async function resetForms(): Promise<void> {
   const bookmarkForm = document.getElementById(
     "bookmark-form",
   ) as HTMLFormElement;
@@ -534,6 +552,14 @@ export function resetForms(): void {
   if (bookmarkColor) bookmarkColor.value = "";
 
   if (dom.tagSuggestions) dom.tagSuggestions.innerHTML = "";
+
+  // Clear the badge-based tag input
+  try {
+    const { clearTags } = await import("@features/bookmarks/tag-input.ts");
+    clearTags();
+  } catch {
+    // Tag input module may not be available
+  }
 }
 
 // Add tag to input field
@@ -586,7 +612,7 @@ export function updateActiveNav(): void {
 export async function updateCounts(): Promise<void> {
   try {
     // Fetch counts from server to avoid issues with filtered state.bookmarks
-    const counts = await api("/bookmarks/counts");
+    const counts = await api<any>("/bookmarks/counts");
 
     // Validate API response
     if (!counts || typeof counts !== "object") {
@@ -607,7 +633,6 @@ export async function updateCounts(): Promise<void> {
     const bookmarkCountEl = document.getElementById("bookmark-count");
     const favCountEl = document.getElementById("fav-count");
     const recentCountEl = document.getElementById("count-recent");
-    const dashboardCountEl = document.getElementById("dashboard-count");
     const archivedCountEl = document.getElementById("count-archived");
 
     // Helper function to update badge with count
@@ -664,8 +689,7 @@ export async function updateCounts(): Promise<void> {
       dashboardVal = displayedIds.size;
     }
 
-    // Update dashboard badge
-    updateBadge(dashboardCountEl, dashboardVal);
+    // Dashboard badge removed as requested
 
     // Update View Count Label on specific headers
     const bookmarksViewCount = document.getElementById("bookmarks-view-count");

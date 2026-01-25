@@ -194,6 +194,33 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
       expect(githubResult?.favicon).toBe("/favicons/github.png");
     });
 
+    it("should mark view bookmarks with category 'view'", () => {
+      // Add view bookmarks
+      // @ts-ignore
+      state.bookmarks = [
+        {
+          id: "v1",
+          title: "Dashboard View",
+          url: "view:dash1",
+          favicon: "",
+          tags: "",
+        },
+        {
+          id: "v2",
+          title: "Bookmark View",
+          url: "bookmark-view:bmv1",
+          favicon: "",
+          tags: "",
+        },
+      ];
+
+      const results = getCommandPaletteCommands("dash1");
+      expect(results.some((r) => r.category === "view")).toBe(true);
+
+      const results2 = getCommandPaletteCommands("bmv1");
+      expect(results2.some((r) => r.category === "view")).toBe(true);
+    });
+
     it("should limit bookmark results to 10", () => {
       // Add more bookmarks temporarily
       // @ts-ignore

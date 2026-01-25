@@ -10,10 +10,13 @@ import { showToast, dom, updateCounts } from "@utils/ui-helpers.ts";
 import { api } from "@services/api.ts";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
 import { logger } from "@utils/logger.ts";
-import { confirmDialog } from "@features/ui/confirm-dialog.ts";
+import { confirmDialog, promptDialog } from "@features/ui/confirm-dialog.ts";
 
 // Grid size for snap-to-grid feature
 const GRID_SIZE = 20;
+
+// Track widgets currently being fetched to avoid duplicate requests
+const widgetsLoading = new Set<string>();
 
 // Snap value to grid
 function snapToGrid(value: number): number {
@@ -296,7 +299,11 @@ function closeViewsDropdown(e: MouseEvent): void {
 
 // Save View
 export async function saveCurrentView(): Promise<void> {
-  const name = prompt("Enter a name for this view:");
+  const name = await promptDialog("Enter a name for this view:", {
+    title: "Save View",
+    confirmText: "Save",
+    placeholder: "e.g., Work Dashboard",
+  });
   if (!name) return;
 
   try {
@@ -403,6 +410,8 @@ export async function restoreView(
 
     // Ensure current view is set to dashboard and persist view info
     state.setCurrentView("dashboard");
+    const { updateActiveNav } = await import("@utils/ui-helpers.ts");
+    updateActiveNav();
     await saveSettings({
       current_view: "dashboard",
       current_dashboard_view_id: id,
@@ -488,10 +497,11 @@ function sortBookmarks(list: any[], widgetSort?: string): any[] {
 
 // Render dashboard
 export function renderDashboard(): void {
+  if (state.currentView !== "dashboard") return;
   updateFilterButtonVisibility();
 
   const container =
-    dom.bookmarksContainer || document.getElementById("bookmarks-container");
+    dom.mainViewOutlet || document.getElementById("main-view-outlet");
   const emptyState = dom.emptyState || document.getElementById("empty-state");
   const bulkBar = dom.bulkBar || document.getElementById("bulk-bar");
 
@@ -529,10 +539,58 @@ export function renderDashboard(): void {
     `;
 
   container.innerHTML = dashboardHtml;
-  container.innerHTML = dashboardHtml;
   initDashboardDragDrop();
   initTagAnalyticsWidgets();
   setupWidgetLazyLoading();
+
+  // Async: Ensure all widgets have data, re-render if needed
+  ensureWidgetsData();
+}
+
+/**
+ * Fetch data for all widgets that don't have it in cache
+ */
+async function ensureWidgetsData() {
+  const missingData = state.dashboardWidgets.filter(
+    (w) =>
+      (w.type === "folder" || w.type === "tag") &&
+      !state.widgetDataCache[w.id] &&
+      !widgetsLoading.has(w.id),
+  );
+
+  if (missingData.length === 0) return;
+
+  // Add to loading tracker
+  missingData.forEach((w) => widgetsLoading.add(w.id));
+
+  try {
+    await Promise.all(
+      missingData.map(async (widget) => {
+        let endpoint = "";
+        if (widget.type === "folder") {
+          endpoint = `/bookmarks?folder_id=${widget.id}&limit=500`;
+          if (state.includeChildBookmarks) endpoint += "&include_children=true";
+        } else if (widget.type === "tag") {
+          endpoint = `/bookmarks?tags=${widget.id}&limit=500`;
+        }
+
+        try {
+          const res = await api<any>(endpoint);
+          const bookmarks = Array.isArray(res) ? res : res.bookmarks || [];
+          state.setWidgetDataCache(widget.id, bookmarks);
+        } catch (err) {
+          logger.error(`Failed to fetch widget data for ${widget.id}`, err);
+        } finally {
+          widgetsLoading.delete(widget.id);
+        }
+      }),
+    );
+
+    // Re-render once all pending requests for this batch are done
+    renderDashboard();
+  } catch (err) {
+    logger.error("Error in ensureWidgetsData", err);
+  }
 }
 
 // Setup widget lazy loading
@@ -909,7 +967,13 @@ function renderFreeformWidgets(): string {
     const widgetData = getWidgetData(widget);
     if (!widgetData) return;
 
-    const { name, color, bookmarks: widgetBookmarks, count } = widgetData;
+    const {
+      name,
+      color,
+      bookmarks: widgetBookmarks,
+      count,
+      isLoading,
+    } = widgetData;
     const sortedBookmarks = sortBookmarks(widgetBookmarks, widget.sort);
     const widgetColor = widget.color || color;
 
@@ -1064,13 +1128,29 @@ function renderFreeformWidgets(): string {
                 </div>
                 `
                   : `
-                <div class="compact-list">
-                    ${sortedBookmarks
-                      .slice(0, 20)
-                      .map((b) => renderCompactBookmarkItem(b))
-                      .join("")}
+                 <div class="compact-list">
                     ${
-                      sortedBookmarks.length > 20
+                      isLoading
+                        ? Array(5)
+                            .fill(null)
+                            .map(
+                              () => `
+                        <div class="compact-item">
+                            <div class="skeleton skeleton-favicon"></div>
+                            <div class="skeleton" style="width: 80%; height: 14px;"></div>
+                        </div>
+                    `,
+                            )
+                            .join("")
+                        : sortedBookmarks.length === 0
+                          ? `<p style="padding:1rem;color:var(--text-tertiary);text-align:center;font-size:0.875rem;">No bookmarks found</p>`
+                          : sortedBookmarks
+                              .slice(0, 20)
+                              .map((b) => renderCompactBookmarkItem(b))
+                              .join("")
+                    }
+                    ${
+                      !isLoading && sortedBookmarks.length > 20
                         ? `
                     <div class="widget-load-more" data-widget-index="${index}" style="padding:0.5rem;text-align:center;color:var(--text-tertiary);">
                         <div class="loading-spinner small"></div>
@@ -1091,50 +1171,33 @@ function renderFreeformWidgets(): string {
 
 // Get widget data
 function getWidgetData(widget: any): any {
+  const cached = state.widgetDataCache[widget.id];
+
   if (widget.type === "folder") {
     const folder = state.folders.find((f) => f.id === widget.id);
     if (!folder) return null;
 
-    let folderBookmarks;
-    if (state.includeChildBookmarks) {
-      const getAllIds = (fid: string): string[] => {
-        const ids = [fid];
-        state.folders
-          .filter((f) => f.parent_id === fid)
-          .forEach((c) => ids.push(...getAllIds(c.id)));
-        return ids;
-      };
-      const allIds = getAllIds(folder.id);
-      folderBookmarks = state.bookmarks.filter(
-        (b) => b.folder_id && allIds.includes(b.folder_id) && !b.is_archived,
-      );
-    } else {
-      folderBookmarks = state.bookmarks.filter(
-        (b) => b.folder_id === folder.id && !b.is_archived,
-      );
-    }
+    const folderBookmarks = cached || [];
+    const count = folder.bookmark_count || folderBookmarks.length;
 
     return {
       name: folder.name,
       color: folder.color || "#6366f1",
       bookmarks: folderBookmarks,
-      count: folderBookmarks.length,
+      count: count,
+      isLoading: !cached,
     };
   } else if (widget.type === "tag") {
-    const tagBookmarks = state.bookmarks.filter(
-      (b) =>
-        !b.is_archived &&
-        b.tags &&
-        b.tags
-          .split(",")
-          .map((t) => t.trim())
-          .includes(widget.id),
-    );
+    const tagBookmarks = cached || [];
+    const meta = state.tagMetadata[widget.id];
+    const count = meta?.count || tagBookmarks.length;
+
     return {
       name: widget.id,
-      color: "#10b981",
+      color: meta?.color || "#10b981",
       bookmarks: tagBookmarks,
-      count: tagBookmarks.length,
+      count: count,
+      isLoading: !cached,
     };
   } else if (widget.type === "tag-analytics") {
     return {

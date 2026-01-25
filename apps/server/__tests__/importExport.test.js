@@ -3,12 +3,12 @@ const { importJson } = require("../models/importExport");
 // Mock specific database responses
 const mockDb = () => {
   const db = {
-    prepare: jest.fn(() => {
+    prepare: vi.fn(() => {
       // Return a mock statement
       return {
-        run: jest.fn(),
-        get: jest.fn(),
-        all: jest.fn(),
+        run: vi.fn(),
+        get: vi.fn(),
+        all: vi.fn(),
       };
     }),
   };
@@ -32,7 +32,7 @@ describe("importJson", () => {
     ];
 
     // Mock "existing" check to return undefined (not found)
-    const getMock = jest.fn();
+    const getMock = vi.fn();
     getMock.mockReturnValueOnce(undefined); // First check: no tag check in snippet, but existing bookmark check
 
     // We need to carefully mock prepare() to distinguish calls if possible,
@@ -42,8 +42,8 @@ describe("importJson", () => {
 
     // Simplest way is to define default behaviors for the statement object
     const stmt = {
-      get: jest.fn(),
-      run: jest.fn(),
+      get: vi.fn(),
+      run: vi.fn(),
     };
     db.prepare.mockReturnValue(stmt);
 
@@ -67,8 +67,8 @@ describe("importJson", () => {
     ];
 
     const stmt = {
-      get: jest.fn(),
-      run: jest.fn(),
+      get: vi.fn(),
+      run: vi.fn(),
     };
     db.prepare.mockReturnValue(stmt);
 

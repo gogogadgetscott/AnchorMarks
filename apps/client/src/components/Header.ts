@@ -1,5 +1,6 @@
 import { Icon } from "./Icon.ts";
 import { ViewToggle, ViewMode } from "./ViewToggle.ts";
+import * as state from "@features/state.ts";
 import { UserProfile } from "./UserProfile.ts";
 import { SelectionUI, BulkAction } from "./SelectionUI.ts";
 
@@ -10,6 +11,7 @@ interface HeaderOptions {
   countSuffix?: string;
   className?: string;
   rightContent?: string;
+  centerContent?: string; // content to render centered in header (e.g., Omnibar)
   showFilterButton?: boolean;
   showViewToggle?: boolean;
   viewModes?: ViewMode[];
@@ -39,10 +41,13 @@ export function Header(options: HeaderOptions): string {
     showFilterButton = false,
   } = options;
 
-  const toggleHtml = showViewToggle ? ViewToggle({ modes: viewModes }) : "";
+  const toggleHtml = showViewToggle ? ViewToggle({ modes: viewModes, activeMode: state.viewMode }) : "";
   const profileHtml = showUserProfile ? UserProfile() : "";
   const filterBtnHtml = showFilterButton
-    ? `<button class="btn-icon" id="filter-btn" title="Filter">${Icon("filter")}</button>`
+    ? `<button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
+            ${Icon("filter", { size: 16 })}
+            <span class="filter-btn-text">Filters</span>
+          </button>`
     : "";
 
   return `
@@ -54,6 +59,11 @@ export function Header(options: HeaderOptions): string {
           </button>
           <h1>${title}</h1>
         </div>
+
+        <div class="header-center">
+          ${options.centerContent || ""}
+        </div>
+
         <div class="header-right">
           ${filterBtnHtml}
           ${rightContent}

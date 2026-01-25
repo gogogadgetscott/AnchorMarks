@@ -29,8 +29,8 @@ jobs:
       - name: Lint (check)
         run: npm run lint-check
 
-      - name: Server tests (Jest)
-        run: npm test
+      - name: Server tests
+        run: npm run test:server
 
       - name: Client tests (Vitest)
         run: npm run test:client
@@ -38,8 +38,14 @@ jobs:
       - name: Build client (Vite)
         run: npm run build --workspace=anchormarks-client
 
+      - name: Build shared helpers
+        run: npm run build:shared --workspace=anchormarks-client
+
+      - name: Ensure shared helper exists
+        run: test -f apps/server/public/js/folders-utils.js
+
       - name: Server coverage (non-blocking)
-        run: npm run test:coverage
+        run: npm run test:server -- --coverage
         continue-on-error: true
 
       - name: Client coverage (non-blocking)

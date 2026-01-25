@@ -87,7 +87,7 @@
             </button>
           </div>
         </div>
-        <div class="form-group">
+        <div class="form-group" style="position: relative">
           <label for="bookmark-tags-input">Tags</label>
           <div class="tags-input-container" id="tags-input-container">
             <div class="selected-tags" id="selected-tags"></div>
@@ -99,6 +99,11 @@
             />
             <input type="hidden" id="bookmark-tags" />
           </div>
+          <div
+            class="tag-autocomplete"
+            id="tag-autocomplete"
+            style="display: none"
+          ></div>
         </div>
       </div>
       <div class="form-group">
@@ -190,11 +195,6 @@
         <input type="hidden" id="bookmark-color" value="" />
       </div>
       <div class="form-group">
-        <div
-          class="tag-autocomplete"
-          id="tag-autocomplete"
-          style="display: none"
-        ></div>
         <div
           class="smart-suggestions"
           id="smart-collections-suggestions"

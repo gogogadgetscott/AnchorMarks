@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js >=18](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](INSTALL.md#system-requirements)
 [![Docker Compose](https://img.shields.io/badge/docker-compose-blue.svg)](tooling/docker/docker-compose.yml)
-[![Tests: Jest](https://img.shields.io/badge/tests-jest-%23C21325.svg)](tooling/jest.config.js)
+[![Tests: Vitest](https://img.shields.io/badge/tests-Vitest-%2344a833.svg)](apps/server/vitest.config.ts)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![CI](https://github.com/gogogadgetscott/AnchorMarks/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gogogadgetscott/AnchorMarks/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/gogogadgetscott/AnchorMarks/branch/main/graph/badge.svg)](https://codecov.io/gh/gogogadgetscott/AnchorMarks)
@@ -97,7 +97,7 @@ npm run docker:logs
 npm run docker:shell
 ```
 
-Compose file: tooling/docker/docker-compose.yml. The stack reads variables from apps/.env.
+Compose file: tooling/docker/docker-compose.yml. The stack reads variables from .env.
 
 ### Production Hardening
 
@@ -119,7 +119,7 @@ CORS_ORIGIN=https://yourdomain.tld
 
 # Optional
 PORT=3000
-DB_PATH=anchormarks.db
+DB_PATH=apps/database/anchormarks.db
 ENABLE_RATE_LIMIT=true
 VITE_PORT=5173
 ```
@@ -141,12 +141,17 @@ See [INSTALL.md](INSTALL.md) for advanced deployment options.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development guidelines
 - **Auth & CSRF Flow** - Developer reference: [help.html#developer-auth-csrf](help.html#developer-auth-csrf)
 
-## 🧪 Testing
+### Testing
+
+The project uses [Vitest](https://vitest.dev/) for testing across both client and server workspaces.
 
 ```bash
-npm test              # Run all tests
-npm run test:watch    # Watch mode
-npm run test:coverage # Coverage report
+# Run all tests
+npm test
+
+# Run tests for a specific workspace
+npm run test:server
+npm run test:client
 ```
 
 ## 🔐 Security
@@ -199,7 +204,7 @@ MIT License - use, modify, and distribute freely.
 ## 🛳️ Deployment Notes
 
 - Docker compose file: `tooling/docker/docker-compose.yml` (use from project root)
-- Environment file: `apps/.env` — `docker:up` parses `PORT` from this file and the compose stack uses `env_file` to inject runtime variables.
+- Environment file: `.env` — `docker:up` parses `PORT` from this file and the compose stack uses `env_file` to inject runtime variables.
 - If host bind-mounted `data/` directory lacks correct permissions, run the helper before starting:
 
 ```bash
@@ -222,3 +227,37 @@ docker compose -f tooling/docker/docker-compose.yml run --rm anchormarks sh -c "
 - AnchorMarks now stores flexible user preferences in a JSON column `settings_json` within the `user_settings` table. This avoids schema changes for each new setting.
 - On startup, the server auto-migrates existing databases by adding the `settings_json` column if it does not exist. No manual action is required.
 - Known settings continue using dedicated columns for backward compatibility. New settings are saved under `settings_json` and merged into `/api/settings` responses transparently.
+
+### Next Steps
+Make server tag matching exact (avoid substring matches)
+
+Replace GROUP_CONCAT + LIKE approach with a proper JOIN + GROUP BY + HAVING implementation. This avoids false positives when tags are substrings of other tags.
+Files to change: bookmark.js (+ controller tests).
+Add unit tests covering edge cases (e.g., tags a, ab, multiple tags with AND mode).
+Add an E2E Playwright test for Tag Cloud → Bookmarks flow
+
+Verify clicking a tag updates header and renders bookmark cards in the Bookmarks view (real DOM/visual check).
+Files to add: e2e/tag-cloud.spec.ts (Playwright config/update if not present).
+Make legend height/reserve dynamic
+
+Measure the legend element at runtime instead of using a hard-coded legendReserve (88px). Improves robustness across UIs and zoom levels.
+Files: tag-cloud.ts.
+Silence/resolve test noise about relative API URLs
+
+Observed warnings (ERR_INVALID_URL) from tests calling /api/... in Node environment. Options:
+Mock those endpoints in tests, or
+Make api() tolerate relative paths in test env by using a safe base (e.g., http://localhost) when globalThis.location is undefined.
+This is low-risk cleanup to improve test output clarity.
+📋 Implementation Plan (if you want me to implement)
+Create branch: feature/bookmark-tag-matching (server fix) or feature/tag-cloud-e2e (E2E) depending on priority.
+Implement server-side JOIN + GROUP BY + HAVING in bookmark.js.
+Add/adjust unit tests in __tests__ to verify exact matches and AND/OR behaviors.
+Add Playwright E2E test and CI job (if you want E2E in CI).
+Update PROGRESS.md and run:
+npm --workspace=apps/server test
+npm --workspace=apps/client test
+npm run lint
+Open a PR with summary, changes, tests, and screenshots (if UI affected).
+Would you like me to start with (A) the server tag-matching fix, (B) adding E2E tests, or (C) the dynamic legend measurement (or all of them)? 🔧💡
+
+Note: I can implement and run the tests locally and push a feature branch + PR per the repo workflow if you say “Go ahead — implement X”.
