@@ -2,6 +2,8 @@
 
 Thanks for your interest in improving AnchorMarks!
 
+> **About this project**: AnchorMarks was built with AI-assisted development using GitHub Copilot. All contributions are welcome—whether human or AI-assisted!
+
 ## Quick Start
 
 - Fork and clone the repo

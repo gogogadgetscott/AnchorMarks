@@ -10,6 +10,8 @@
 
 A modern, self-hosted bookmark manager with browser sync, Flow Launcher integration, REST API, and SQLite backend.
 
+> **Note**: This project was built with AI-assisted development using GitHub Copilot.
+
 <p>
 	<img src="apps/client/public/images/anchormarks_demo.gif" alt="Quick demo" width="720">
 </p>
