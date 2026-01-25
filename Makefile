@@ -1,9 +1,10 @@
 # AnchorMarks Makefile - Build, Test, Run & Debug Helper
 
 .PHONY: help build build-backend build-frontend run run-dev run-backend run-frontend run-docker \
-	test test-backend test-frontend lint lint-check fmt clean clean-backend clean-frontend \
+	test test-backend test-frontend test-backend-watch test-frontend-watch test-coverage test-all lint lint-check fmt clean clean-backend clean-frontend \
 	docker-build docker-rebuild docker-up docker-down docker-restart docker-logs docker-shell \
-	install dev dev-full restart stop prod deploy-install demo-gif screenshots
+	install dev dev-full dev-vite restart stop prod deploy-install demo-gif screenshots \
+	backend-start backend-dev backend-lint frontend-build frontend-preview frontend-lint frontend-test
 
 # Variables
 BACKEND_DIR := apps/server
@@ -51,12 +52,9 @@ help: ## Display this help screen
 # ============================================================================
 # BUILD TARGETS
 # ============================================================================
-build: build-frontend ## Build frontend for production
+build: frontend-build ## Build frontend for production
 
-build-frontend: ## Build Vite frontend
-	@echo "$(BLUE)Building frontend...$(NC)"
-	@cd $(FRONTEND_DIR) && npm run build
-	@echo "$(GREEN)✓ Frontend built successfully$(NC)"
+build-frontend: frontend-build ## Build Vite frontend (alias)
 
 # ============================================================================
 # RUN TARGETS
@@ -85,9 +83,39 @@ dev-full: ## Start both backend and frontend concurrently
 	@echo "$(BLUE)Starting development environment...$(NC)"
 	@npx concurrently "make dev" "make dev-vite"
 
+frontend-build: ## Build frontend for production
+	@echo "$(BLUE)Building frontend for production...$(NC)"
+	@cd $(FRONTEND_DIR) && npx vite build && npx esbuild src/shared/folders-utils-browser.ts --bundle --platform=browser --format=iife --global-name=foldersUtils --outfile=../server/public/js/folders-utils.js --minify
+	@echo "$(GREEN)✓ Frontend built successfully$(NC)"
+
+frontend-preview: ## Preview production build
+	@echo "$(BLUE)Previewing production build...$(NC)"
+	@cd $(FRONTEND_DIR) && npx vite preview
+
+frontend-lint: ## Lint frontend code
+	@echo "$(BLUE)Linting frontend code...$(NC)"
+	@cd $(FRONTEND_DIR) && npm run lint || true
+	@echo "$(GREEN)✓ Frontend linting completed$(NC)"
+
+frontend-test: ## Run frontend tests
+	@echo "$(BLUE)Running frontend tests...$(NC)"
+	@cd $(FRONTEND_DIR) && npx vitest run
+	@echo "$(GREEN)✓ Frontend tests completed$(NC)"
+
 prod: ## Start server in production mode
 	@echo "$(BLUE)Starting production server...$(NC)"
 	NODE_ENV=production node $(BACKEND_DIR)
+
+backend-start: ## Start backend server (alias for dev)
+	@echo "$(BLUE)Starting backend server...$(NC)"
+	NODE_ENV=development node $(BACKEND_DIR)
+
+backend-dev: dev ## Start backend in development mode
+
+backend-lint: ## Lint backend code
+	@echo "$(BLUE)Linting backend code...$(NC)"
+	@cd $(BACKEND_DIR) && npx eslint . --fix
+	@echo "$(GREEN)✓ Backend linting completed$(NC)"
 
 start: dev-full ## Alias for dev-full
 
@@ -110,13 +138,26 @@ test: test-all ## Run all tests
 
 test-backend: ## Run backend tests
 	@echo "$(BLUE)Running backend tests...$(NC)"
-	@cd $(BACKEND_DIR) && npm test
+	@cd $(BACKEND_DIR) && npx vitest run
 	@echo "$(GREEN)✓ Backend tests completed$(NC)"
+
+test-backend-watch: ## Run backend tests in watch mode
+	@echo "$(BLUE)Running backend tests in watch mode...$(NC)"
+	@cd $(BACKEND_DIR) && npx vitest
 
 test-frontend: ## Run frontend tests
 	@echo "$(BLUE)Running frontend tests...$(NC)"
-	@cd $(FRONTEND_DIR) && npm test
+	@cd $(FRONTEND_DIR) && npx vitest run
 	@echo "$(GREEN)✓ Frontend tests completed$(NC)"
+
+test-frontend-watch: ## Run frontend tests in watch mode
+	@echo "$(BLUE)Running frontend tests in watch mode...$(NC)"
+	@cd $(FRONTEND_DIR) && npx vitest
+
+test-coverage: ## Generate test coverage reports
+	@echo "$(BLUE)Generating test coverage...$(NC)"
+	@cd $(FRONTEND_DIR) && npx vitest run --coverage
+	@echo "$(GREEN)✓ Coverage report generated$(NC)"
 
 test-all: test-backend test-frontend ## Run all tests
 

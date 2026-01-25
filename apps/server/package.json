@@ -5,9 +5,6 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "NODE_ENV=development node index.js",
-    "test": "vitest run",
     "lint": "eslint . --fix"
   },
   "dependencies": {
