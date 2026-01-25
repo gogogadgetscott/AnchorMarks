@@ -15,8 +15,8 @@ Provide simple steps or commands to verify.
 
 ```bash
 npm install
-npm test
-npm run dev # if manual UI verification is needed
+make test # run all tests
+make dev-full # if manual UI verification is needed
 ```
 
 ## Checklist

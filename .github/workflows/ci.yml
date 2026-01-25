@@ -27,29 +27,29 @@ jobs:
         run: npm install
 
       - name: Lint (check)
-        run: npm run lint-check
+        run: make lint-check
 
       - name: Server tests
-        run: npm run test:server
+        run: make test-backend
 
       - name: Client tests (Vitest)
-        run: npm run test:client
+        run: make test-frontend
 
       - name: Build client (Vite)
-        run: npm run build --workspace=anchormarks-client
+        run: make build
 
       - name: Build shared helpers
-        run: npm run build:shared --workspace=anchormarks-client
+        run: make build-shared
 
       - name: Ensure shared helper exists
         run: test -f apps/server/public/js/folders-utils.js
 
       - name: Server coverage (non-blocking)
-        run: npm run test:server -- --coverage
+        run: make test-backend-coverage
         continue-on-error: true
 
       - name: Client coverage (non-blocking)
-        run: npm run test:coverage --workspace=anchormarks-client
+        run: make test-frontend-coverage
         continue-on-error: true
 
       - name: Upload coverage (server)

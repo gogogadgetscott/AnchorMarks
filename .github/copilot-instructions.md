@@ -84,25 +84,25 @@
 
 ```bash
 npm install                # Install deps at project root (or run in subfolders as needed)
-npm run dev                # Start dev server(s) (see root and apps/client package scripts)
-npm run prod               # Production build (requires JWT_SECRET, CORS_ORIGIN env vars)
+make dev-full              # Start both dev servers (see Makefile)
+make prod                  # Production build (requires JWT_SECRET, CORS_ORIGIN env vars)
 ```
 
 **Development Options**:
 
-- `npm run dev` - Backend only (serves built frontend from `apps/server/public/`)
-- `npm run dev:vite` - Frontend only with Vite HMR (requires backend running on port 3000)
-- `npm run dev:full` - Both backend and frontend with HMR (uses concurrently)
-- `npm run build` - Build frontend for production (outputs to `apps/server/public/`)
+- `make dev` - Backend only (serves built frontend from `apps/server/public/`)
+- `make dev-vite` - Frontend only with Vite HMR (requires backend running on port 3000)
+- `make dev-full` - Both backend and frontend with HMR (uses concurrently)
+- `make build` - Build frontend for production (outputs to `apps/server/public/`)
 
 If you need to run only the server or client, use the `package.json` in `apps/server/` or `apps/client/` respectively.
 
 ### Testing
 
 ```bash
-npm test                   # Run test suite (server/__tests__)
-npm run test:watch         # Watch mode
-npm run test:coverage      # Coverage report
+make test                  # Run test suite (server/__tests__)
+make test-watch            # Watch mode
+make test-coverage         # Coverage report
 ```
 
 **Test patterns**:
@@ -115,7 +115,7 @@ npm run test:coverage      # Coverage report
 ### Syntax Validation & Linting
 
 ```bash
-npm run lint               # Run ESLint to check code style
+make lint                  # Run ESLint to check code style
 node --check apps/server/app.js
 node --check apps/client/src/main.ts
 ```
@@ -123,8 +123,8 @@ node --check apps/client/src/main.ts
 ### Docker
 
 ```bash
-npm run docker:build       # Build image (uses tooling/docker config)
-npm run docker:up          # Start containers (docker/docker-compose.yml)
+make docker-build          # Build image (uses tooling/docker config)
+make docker-up             # Start containers (docker/docker-compose.yml)
 ```
 
 ## Project-Specific Conventions
@@ -255,11 +255,11 @@ You must act as a Senior Developer who strictly follows the Feature Branch Workf
 1. **Git Workflow Policy** - Follow the Feature Branch Workflow.
 2. **Read ROADMAP.md** – Understand planned features and blocked tasks
 3. **Read CONTRIBUTING.md** – Code style, commit conventions
-4. **Run `npm test`** – Verify existing tests pass
+4. **Run `make test`** – Verify existing tests pass
 5. **Plan changes** – List files to touch, functions to add/modify
 6. **Update PROGRESS.md** – Document task, files, and summary after completion
-7. **Test thoroughly** – Add tests for new endpoints; run `npm test` + `npm run dev` + manual UI testing
-8. **Run `npm run lint`** – Validate code style before committing
+7. **Test thoroughly** – Add tests for new endpoints; run `make test` + `make dev-full` + manual UI testing
+8. **Run `make lint`** – Validate code style before committing
 9. **Update help documentation** – After adding new features or making changes, update [apps/client/public/help.html](apps/client/public/help.html) to reflect the changes
 
 ## Common Pitfalls
