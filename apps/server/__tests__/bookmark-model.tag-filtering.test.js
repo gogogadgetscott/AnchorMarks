@@ -28,9 +28,11 @@ beforeAll(() => {
 
   // Create test user
   userId = uuidv4();
-  db.prepare(
-    "INSERT INTO users (id, email, password) VALUES (?, ?, ?)",
-  ).run(userId, "test@example.com", "hashed_password");
+  db.prepare("INSERT INTO users (id, email, password) VALUES (?, ?, ?)").run(
+    userId,
+    "test@example.com",
+    "hashed_password",
+  );
 
   // Create test tags
   const tags = [

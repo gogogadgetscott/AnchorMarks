@@ -40,7 +40,7 @@ export function initOmnibarListeners(): void {
   searchInput.addEventListener("input", (e) => {
     const query = (e.target as HTMLInputElement).value;
     renderOmnibarPanel(query);
-    
+
     // Don't automatically filter bookmarks while typing in omnibar
     // Only the omnibar dropdown should show results
     // Actual filtering happens when user selects "Apply filter" command

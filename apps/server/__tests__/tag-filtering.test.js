@@ -207,7 +207,9 @@ describe("Tag Filtering - Independent Tag Namespace", () => {
 
     // Should NOT match bookmarks without "dev" tag
     expect(titles).not.toContain("A Tag Only");
-    expect(titles).not.toContain("Dev and Development Tags".replace("Dev", "Development")); // Would need to adjust based on actual bookmark
+    expect(titles).not.toContain(
+      "Dev and Development Tags".replace("Dev", "Development"),
+    ); // Would need to adjust based on actual bookmark
   });
 
   it("should correctly filter for 'development' tag", async () => {

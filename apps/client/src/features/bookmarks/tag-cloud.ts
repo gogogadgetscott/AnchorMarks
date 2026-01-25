@@ -260,8 +260,39 @@ export async function renderTagCloud(): Promise<void> {
   // Get container dimensions - compute available height using the sticky header
   const headerEl = document.querySelector(".content-header") as HTMLElement;
   const headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 64;
-  // Reserve space for top padding / overlay + legend area so nothing is clipped
-  const legendReserve = 88; // px
+
+  // Temporarily render to measure legend height dynamically
+  const tempContainerId = `__temp-tag-cloud-${Date.now()}`;
+  const tempDiv = document.createElement("div");
+  tempDiv.id = tempContainerId;
+  tempDiv.style.visibility = "hidden";
+  tempDiv.style.position = "absolute";
+  tempDiv.style.top = "0";
+  tempDiv.style.width = "100%";
+  document.body.appendChild(tempDiv);
+
+  // Render legend in temp container to measure its height
+  tempDiv.innerHTML = `
+    <div class="tag-cloud-legend">
+      <div class="legend-item">
+        <span class="legend-size legend-small">A</span>
+        <span>Less used</span>
+      </div>
+      <div class="legend-gradient"></div>
+      <div class="legend-item">
+        <span class="legend-size legend-large">A</span>
+        <span>Most used</span>
+      </div>
+    </div>
+  `;
+
+  const legendEl = tempDiv.querySelector(".tag-cloud-legend") as HTMLElement;
+  const legendHeight = legendEl ? legendEl.getBoundingClientRect().height : 50;
+  document.body.removeChild(tempDiv);
+
+  // Reserve space for header reserve (tag-cloud-header, padding, etc.) + measured legend
+  const headerReserve = 100; // px for tag-cloud-header + padding
+  const legendReserve = legendHeight + headerReserve;
   const canvasHeight = Math.max(
     300,
     window.innerHeight - headerHeight - legendReserve,

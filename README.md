@@ -73,7 +73,7 @@ Compared to Linkwarden/Linkding/Shaarli, AnchorMarks emphasizes minimal setup, r
 
 ```bash
 # From repo root
-npm install
+make install
 
 # Option A: Full stack (backend + Vite frontend) using Makefile
 make dev-full
@@ -86,6 +86,11 @@ make dev
 # Option C: Frontend-only HMR during UI work
 make dev-vite
 # Visit http://localhost:5173 (API must be running: make dev)
+
+# Option D: Run E2E tests (requires backend + frontend running)
+make e2e
+# Or in UI mode: make e2e-ui
+# Or in debug mode: make e2e-debug
 
 # For a complete list of commands:
 make help
@@ -133,7 +138,7 @@ VITE_PORT=5173
 Then run:
 
 ```bash
-npm run prod
+make prod
 ```
 
 See [INSTALL.md](INSTALL.md) for advanced deployment options.
@@ -149,16 +154,29 @@ See [INSTALL.md](INSTALL.md) for advanced deployment options.
 
 ### Testing
 
-The project uses [Vitest](https://vitest.dev/) for testing across both client and server workspaces.
+The project uses [Vitest](https://vitest.dev/) for unit/integration tests and [Playwright](https://playwright.dev/) for E2E tests.
 
 ```bash
-# Run all tests
-npm test
+# Run unit/integration tests
+make test              # Run all tests
+make test-backend      # Backend only
+make test-frontend     # Frontend only
+make test-coverage     # Coverage report
 
-# Run tests for a specific workspace
-npm run test:server
-npm run test:client
+# Run E2E tests
+make e2e               # Headless mode
+make e2e-ui            # Interactive UI mode
+make e2e-headed        # Visible browser
+make e2e-debug         # Debug mode with Inspector
 ```
+
+E2E tests verify:
+
+- Tag cloud rendering and interaction
+- Tag filtering updates header and bookmarks
+- Bookmark cards display correctly
+- Dynamic legend height calculation
+- Responsive layout on resize
 
 ## 🔐 Security
 
@@ -187,12 +205,13 @@ See [SECURITY.md](SECURITY.md) for details.
 
 ## 🛠️ Developer Workflows
 
-- Start backend only: `npm run dev`
-- Start frontend HMR: `npm run dev:vite` (requires backend)
-- Full stack dev: `npm run dev:full`
-- Run tests: `npm test`, coverage: `npm run test:coverage`
-- Lint & format: `npm run lint` (or `npm run lint-check`)
-- Docker during local dev: `npm run docker:up` then `npm run docker:logs`
+- Start backend only: `make dev`
+- Start frontend HMR: `make dev-vite` (requires backend running)
+- Full stack dev: `make dev-full`
+- Run unit tests: `make test`, coverage: `make test-coverage`
+- Run E2E tests: `make e2e` (requires backend running on port 3000)
+- Lint & format: `make lint` or `make lint-check`
+- Docker during local dev: `make docker-up` then `make docker-logs`
 
 ## 🙋 Support / Questions
 
@@ -211,11 +230,11 @@ MIT License - use, modify, and distribute freely.
 
 - Docker compose file: `tooling/docker/docker-compose.yml` (use from project root)
 - Environment file: `.env` — `docker:up` parses `PORT` from this file and the compose stack uses `env_file` to inject runtime variables.
-- If host bind-mounted `data/` directory lacks correct permissions, run the helper before starting:
+- If host bind-mounted `data/` directory lacks correct permissions, fix ownership before starting:
 
 ```bash
-npm run docker:fix-perms   # requires sudo
-npm run docker:up
+sudo chown -R 1001:1001 data/   # adjust path/user to your environment
+make docker-up
 ```
 
 - For production servers, prefer fixing host permissions (chown to UID 1001) and removing the need for sudo in automation.
@@ -225,7 +244,7 @@ npm run docker:up
 To run the test suite inside a container (installs dev dependencies temporarily):
 
 ```bash
-docker compose -f tooling/docker/docker-compose.yml run --rm anchormarks sh -c "npm install && npm test"
+docker compose -f tooling/docker/docker-compose.yml run --rm anchormarks make test
 ```
 
 ### Database settings_json (auto-migrated)
@@ -233,31 +252,3 @@ docker compose -f tooling/docker/docker-compose.yml run --rm anchormarks sh -c "
 - AnchorMarks now stores flexible user preferences in a JSON column `settings_json` within the `user_settings` table. This avoids schema changes for each new setting.
 - On startup, the server auto-migrates existing databases by adding the `settings_json` column if it does not exist. No manual action is required.
 - Known settings continue using dedicated columns for backward compatibility. New settings are saved under `settings_json` and merged into `/api/settings` responses transparently.
-
-### Next Steps
-
-Verify clicking a tag updates header and renders bookmark cards in the Bookmarks view (real DOM/visual check).
-Files to add: e2e/tag-cloud.spec.ts (Playwright config/update if not present).
-Make legend height/reserve dynamic
-
-Measure the legend element at runtime instead of using a hard-coded legendReserve (88px). Improves robustness across UIs and zoom levels.
-Files: tag-cloud.ts.
-Silence/resolve test noise about relative API URLs
-
-Observed warnings (ERR_INVALID_URL) from tests calling /api/... in Node environment. Options:
-Mock those endpoints in tests, or
-Make api() tolerate relative paths in test env by using a safe base (e.g., http://localhost) when globalThis.location is undefined.
-This is low-risk cleanup to improve test output clarity.
-📋 Implementation Plan (if you want me to implement)
-Create branch: feature/bookmark-tag-matching (server fix) or feature/tag-cloud-e2e (E2E) depending on priority.
-Implement server-side JOIN + GROUP BY + HAVING in bookmark.js.
-Add/adjust unit tests in **tests** to verify exact matches and AND/OR behaviors.
-Add Playwright E2E test and CI job (if you want E2E in CI).
-Update PROGRESS.md and run:
-npm --workspace=apps/server test
-npm --workspace=apps/client test
-npm run lint
-Open a PR with summary, changes, tests, and screenshots (if UI affected).
-Would you like me to start with (A) the server tag-matching fix, (B) adding E2E tests, or (C) the dynamic legend measurement (or all of them)? 🔧💡
-
-Note: I can implement and run the tests locally and push a feature branch + PR per the repo workflow if you say “Go ahead — implement X”.

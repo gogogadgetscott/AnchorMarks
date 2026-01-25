@@ -2,6 +2,7 @@
 
 .PHONY: help build build-backend build-frontend run run-dev run-backend run-frontend run-docker \
 	test test-backend test-frontend test-backend-watch test-frontend-watch test-coverage test-all lint lint-check fmt clean clean-backend clean-frontend \
+	e2e e2e-ui e2e-debug e2e-headed \
 	docker-build docker-rebuild docker-up docker-down docker-restart docker-logs docker-shell \
 	install dev dev-full dev-vite restart stop prod deploy-install demo-gif screenshots \
 	backend-start backend-dev backend-lint frontend-build frontend-preview frontend-lint frontend-test
@@ -160,6 +161,26 @@ test-coverage: ## Generate test coverage reports
 	@echo "$(GREEN)✓ Coverage report generated$(NC)"
 
 test-all: test-backend test-frontend ## Run all tests
+
+# ============================================================================
+# E2E TEST TARGETS
+# ============================================================================
+e2e: ## Run E2E tests with Playwright
+	@echo "$(BLUE)Running E2E tests...$(NC)"
+	@npx playwright test
+	@echo "$(GREEN)✓ E2E tests completed$(NC)"
+
+e2e-ui: ## Run E2E tests with Playwright UI mode
+	@echo "$(BLUE)Running E2E tests in UI mode...$(NC)"
+	@npx playwright test --ui
+
+e2e-debug: ## Run E2E tests in debug mode
+	@echo "$(BLUE)Running E2E tests in debug mode...$(NC)"
+	@npx playwright test --debug
+
+e2e-headed: ## Run E2E tests in headed mode (visible browser)
+	@echo "$(BLUE)Running E2E tests in headed mode...$(NC)"
+	@npx playwright test --headed
 
 # ============================================================================
 # LINT & FORMAT TARGETS
