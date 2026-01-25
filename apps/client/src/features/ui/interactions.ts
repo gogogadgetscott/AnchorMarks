@@ -308,6 +308,15 @@ function initGlobalDelegation(): void {
           );
         }
         break;
+      case "clear-persistent-search":
+        state.filterConfig.search = undefined;
+        import("@features/bookmarks/bookmarks.ts").then(({ renderBookmarks }) =>
+          renderBookmarks(),
+        );
+        import("@features/bookmarks/filters.ts").then(
+          ({ updateFilterButtonText }) => updateFilterButtonText(),
+        );
+        break;
       case "toggle-widget-picker":
         e.stopPropagation();
         import("@features/bookmarks/widget-picker.ts").then(

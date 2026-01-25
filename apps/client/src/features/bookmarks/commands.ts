@@ -272,12 +272,42 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
       cmd.label.toLowerCase().includes(searchTerm),
     );
 
-    // Show bookmarks first (main launcher use case), then folders, then commands
-    results = [
+    const applySearchCommand: Command = {
+      label: `Apply "${searchTerm}" to filter`,
+      action: () => {
+        state.filterConfig.search = searchTerm;
+        const searchInput = document.getElementById(
+          "search-input",
+        ) as HTMLInputElement;
+        if (searchInput) searchInput.value = "";
+        import("@features/bookmarks/bookmarks.ts").then(({ renderBookmarks }) =>
+          renderBookmarks(),
+        );
+        import("@features/bookmarks/filters.ts").then(
+          ({ updateFilterButtonText }) => updateFilterButtonText(),
+        );
+        import("@features/bookmarks/omnibar.ts").then(({ closeOmnibar }) =>
+          closeOmnibar(),
+        );
+      },
+      icon: "🔍",
+      category: "command" as const,
+      description: "Apply the current search term as a persistent filter",
+    };
+
+    // Show apply command first, then bookmarks, then folders, then commands
+    const resultsArray = [
       ...matchingBookmarks.slice(0, 10),
       ...matchingFolders,
       ...matchingCommands,
     ];
+
+    // Only add apply command if there are results to apply to
+    if (resultsArray.length > 0) {
+      resultsArray.unshift(applySearchCommand);
+    }
+
+    results = resultsArray;
   } else {
     // No search term - show commands and folders first, then some recent bookmarks
     const recentBookmarks = bookmarkCommands.slice(0, 5);
