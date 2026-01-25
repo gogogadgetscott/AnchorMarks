@@ -280,11 +280,24 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
           "search-input",
         ) as HTMLInputElement;
         if (searchInput) searchInput.value = "";
+        
+        // Switch to bookmarks view if not already there
+        if (state.currentView !== "bookmarks" && state.currentView !== "folder") {
+          state.setCurrentView("bookmarks");
+          state.setCurrentFolder(null);
+          const viewTitle = document.getElementById("view-title");
+          if (viewTitle) viewTitle.textContent = "Bookmarks";
+          updateActiveNav();
+        }
+        
         import("@features/bookmarks/bookmarks.ts").then(({ renderBookmarks }) =>
           renderBookmarks(),
         );
         import("@features/bookmarks/filters.ts").then(
           ({ updateFilterButtonText }) => updateFilterButtonText(),
+        );
+        import("@features/bookmarks/search.ts").then(
+          ({ renderActiveFilters }) => renderActiveFilters(),
         );
         import("@features/bookmarks/omnibar.ts").then(({ closeOmnibar }) =>
           closeOmnibar(),
