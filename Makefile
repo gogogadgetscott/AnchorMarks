@@ -31,7 +31,7 @@ help: ## Display this help screen
 	@echo "$(BLUE)╚════════════════════════════════════════════════════════════════════╝$(NC)"
 	@echo ""
 	@echo "$(GREEN)BUILD TARGETS:$(NC)"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '^build|^clean' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-25s$(NC) %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '^build' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-25s$(NC) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(GREEN)RUN TARGETS:$(NC)"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '^run|^dev|^prod|^start|^stop|^restart' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-25s$(NC) %s\n", $$1, $$2}'
@@ -77,7 +77,7 @@ dev: ## Start backend server in development mode
 
 dev-vite: ## Start Vite dev server for frontend
 	@echo "$(BLUE)Starting Vite dev server...$(NC)"
-	@cd $(FRONTEND_DIR) && npm run dev
+	@cd $(FRONTEND_DIR) && npx vite
 
 dev-full: ## Start both backend and frontend concurrently
 	@echo "$(BLUE)Starting development environment...$(NC)"
