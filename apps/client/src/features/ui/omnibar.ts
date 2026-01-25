@@ -21,7 +21,6 @@ export function initOmnibarListeners(): void {
   ) as HTMLInputElement;
   if (!searchInput) return;
 
-  let searchTimeout: ReturnType<typeof setTimeout> | undefined;
   let omnibarCloseTimeout: ReturnType<typeof setTimeout> | undefined;
 
   // Focus - open omnibar
@@ -41,15 +40,10 @@ export function initOmnibarListeners(): void {
   searchInput.addEventListener("input", (e) => {
     const query = (e.target as HTMLInputElement).value;
     renderOmnibarPanel(query);
-
-    if (searchTimeout) clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(async () => {
-      state.setDisplayedCount(state.BOOKMARKS_PER_PAGE);
-      const { renderBookmarks } =
-        await import("@features/bookmarks/bookmarks.ts");
-      renderBookmarks();
-      updateFilterButtonText();
-    }, 300);
+    
+    // Don't automatically filter bookmarks while typing in omnibar
+    // Only the omnibar dropdown should show results
+    // Actual filtering happens when user selects "Apply filter" command
   });
 
   // Keyboard navigation in omnibar

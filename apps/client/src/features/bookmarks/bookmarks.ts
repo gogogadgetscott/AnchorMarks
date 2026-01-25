@@ -143,6 +143,13 @@ export async function loadBookmarks(): Promise<void> {
       // Continue without tag metadata
     }
 
+    // Refresh omnibar bookmarks cache in background (for unfiltered search)
+    import("@features/bookmarks/commands.ts").then(
+      ({ refreshOmnibarBookmarks }) => {
+        refreshOmnibarBookmarks();
+      },
+    );
+
     if (state.currentView === "dashboard") {
       const { renderDashboard } =
         await import("@features/bookmarks/dashboard.ts");

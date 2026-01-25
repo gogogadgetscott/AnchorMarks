@@ -1925,7 +1925,9 @@ body.sidebar-collapsed .nav-section-header {
 .header-right {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.5rem;
+  margin-left: auto;
 }
 
 /* Responsive: stack center content into flow on small screens */
@@ -1953,8 +1955,26 @@ body.sidebar-collapsed .nav-section-header {
     max-width: none;
   }
 
+  .omnibar-panel {
+    max-width: 90vw;
+    min-width: 280px;
+  }
+
   .header-normal-ui {
     gap: 0.5rem;
+  }
+}
+
+/* Medium screens: reduce omnibar width */
+@media (max-width: 900px) {
+  .omnibar-panel {
+    max-width: 420px;
+  }
+}
+
+@media (max-width: 768px) {
+  .omnibar-panel {
+    max-width: 380px;
   }
 }
 

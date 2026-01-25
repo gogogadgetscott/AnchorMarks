@@ -6,6 +6,37 @@
 import * as state from "@features/state.ts";
 import { openModal, updateActiveNav } from "@utils/ui-helpers.ts";
 import type { Command } from "../../types/index";
+import type { Bookmark } from "../../types/index";
+
+// Cache for all bookmarks (unfiltered)
+let allBookmarksCache: Bookmark[] = [];
+let lastBookmarksFetch: number = 0;
+const CACHE_DURATION = 30000; // 30 seconds
+
+// Refresh all bookmarks cache in background
+export async function refreshOmnibarBookmarks(): Promise<void> {
+  try {
+    const { api } = await import("@services/api.ts");
+    const response = await api<Bookmark[]>("/bookmarks?limit=1000");
+    allBookmarksCache = Array.isArray(response) ? response : [];
+    lastBookmarksFetch = Date.now();
+  } catch (err) {
+    console.error("Failed to fetch bookmarks for omnibar:", err);
+  }
+}
+
+// Get all bookmarks (from cache, refresh if stale)
+function getAllBookmarks(): Bookmark[] {
+  const now = Date.now();
+  
+  // Refresh in background if cache is stale
+  if (now - lastBookmarksFetch > CACHE_DURATION) {
+    refreshOmnibarBookmarks(); // Don't await, let it update in background
+  }
+  
+  // Return cache (or state.bookmarks as fallback if cache empty)
+  return allBookmarksCache.length > 0 ? allBookmarksCache : state.bookmarks;
+}
 
 // Get command palette commands
 export function getCommandPaletteCommands(filterText: string = ""): Command[] {
@@ -198,7 +229,9 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
     }));
 
   // Create bookmark commands (for launcher functionality)
-  const bookmarkCommands: Command[] = state.bookmarks
+  // Use getAllBookmarks() to search all bookmarks, not just filtered ones
+  const allBookmarks = getAllBookmarks();
+  const bookmarkCommands: Command[] = allBookmarks
     .slice(0, 100) // Limit to first 100 for performance
     .map((b) => {
       // Determine category: view bookmarks use 'view' category
@@ -255,7 +288,7 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
   } else if (isTagSearch) {
     // Filter by tag - show bookmarks with matching tags
     results = bookmarkCommands.filter((cmd) => {
-      const bookmark = state.bookmarks.find((b) => b.url === cmd.url);
+      const bookmark = allBookmarks.find((b) => b.url === cmd.url);
       return bookmark?.tags?.toLowerCase().includes(searchTerm);
     });
   } else if (isBookmarkOnly && searchTerm.length >= 1) {
@@ -345,6 +378,7 @@ export function closeShortcutsPopup(): void {
 
 export default {
   getCommandPaletteCommands,
+  refreshOmnibarBookmarks,
   openShortcutsPopup,
   closeShortcutsPopup,
 };
