@@ -30,22 +30,22 @@ Compared to Linkwarden/Linkding/Shaarli, AnchorMarks emphasizes minimal setup, r
 
 ## ✨ Features at a Glance
 
-| Capability            | Details                                                                     |
-| --------------------- | --------------------------------------------------------------------------- |
-| 🔄 Browser Sync       | Chrome / Edge / Firefox extension included                                  |
-| 🚀 Flow Launcher      | Plugin integration for quick search                                         |
-| 🔌 REST API           | Read/write endpoints with JWT + CSRF                                        |
-| 🗃️ SQLite DB          | better-sqlite3 with WAL                                                     |
-| 🐳 Docker             | Compose setup, helper scripts provided                                      |
-| 🔒 SSL                | Reverse proxy ready (sample nginx.conf)                                     |
-| 📥 Import/Export      | Netscape HTML + JSON                                                        |
-| 🏷️ Tags & Folders     | Nested folders, tag analytics & suggestions                                 |
-| 🖼️ Favicons           | Automatic fetching and local caching                                        |
-| 🌙 Dark Mode          | Beautiful light and dark themes                                             |
-| 📱 Responsive         | Works on desktop, tablet, and mobile                                        |
-| ⭐ Favorites          | Quick access to important bookmarks                                         |
+| Capability            | Details                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| 🔄 Browser Sync       | Chrome / Edge / Firefox extension included                                                                                |
+| 🚀 Flow Launcher      | Plugin integration for quick search                                                                                       |
+| 🔌 REST API           | Read/write endpoints with JWT + CSRF                                                                                      |
+| 🗃️ SQLite DB          | better-sqlite3 with WAL                                                                                                   |
+| 🐳 Docker             | Compose setup, helper scripts provided                                                                                    |
+| 🔒 SSL                | Reverse proxy ready (sample nginx.conf)                                                                                   |
+| 📥 Import/Export      | Netscape HTML + JSON                                                                                                      |
+| 🏷️ Tags & Folders     | Nested folders, tag analytics & suggestions                                                                               |
+| 🖼️ Favicons           | Automatic fetching and local caching                                                                                      |
+| 🌙 Dark Mode          | Beautiful light and dark themes                                                                                           |
+| 📱 Responsive         | Works on desktop, tablet, and mobile                                                                                      |
+| ⭐ Favorites          | Quick access to important bookmarks                                                                                       |
 | 🎯 Advanced Filtering | Full-width filter bar with folder/tag counts, persistent search filters, & tag mode toggle (see [Help](help.html#search)) |
-| 💬 Smart Omnibar      | Unified search + command palette with recent searches, tag suggestions, & filter application |
+| 💬 Smart Omnibar      | Unified search + command palette with recent searches, tag suggestions, & filter application                              |
 
 ## 🎥 Live Tour
 
@@ -233,6 +233,7 @@ docker compose -f tooling/docker/docker-compose.yml run --rm anchormarks sh -c "
 - Known settings continue using dedicated columns for backward compatibility. New settings are saved under `settings_json` and merged into `/api/settings` responses transparently.
 
 ### Next Steps
+
 Make server tag matching exact (avoid substring matches)
 
 Replace GROUP_CONCAT + LIKE approach with a proper JOIN + GROUP BY + HAVING implementation. This avoids false positives when tags are substrings of other tags.
@@ -255,7 +256,7 @@ This is low-risk cleanup to improve test output clarity.
 📋 Implementation Plan (if you want me to implement)
 Create branch: feature/bookmark-tag-matching (server fix) or feature/tag-cloud-e2e (E2E) depending on priority.
 Implement server-side JOIN + GROUP BY + HAVING in bookmark.js.
-Add/adjust unit tests in __tests__ to verify exact matches and AND/OR behaviors.
+Add/adjust unit tests in **tests** to verify exact matches and AND/OR behaviors.
 Add Playwright E2E test and CI job (if you want E2E in CI).
 Update PROGRESS.md and run:
 npm --workspace=apps/server test

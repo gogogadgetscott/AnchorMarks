@@ -18,7 +18,8 @@ vi.mock("@features/bookmarks/bookmarks.ts", () => ({
 vi.mock("@services/api.ts", () => ({
   api: (endpoint: string) => {
     // Return state.bookmarks for bookmark list requests
-    if (endpoint.startsWith("/bookmarks")) return Promise.resolve(state.bookmarks);
+    if (endpoint.startsWith("/bookmarks"))
+      return Promise.resolve(state.bookmarks);
     return Promise.resolve([]);
   },
 }));
@@ -60,7 +61,9 @@ describe("Tag Cloud - clicking a tag", () => {
 
     await renderTagCloud();
 
-    const tagBtn = document.querySelector(".tag-cloud-tag[data-tag=\"foo\"]") as HTMLElement | null;
+    const tagBtn = document.querySelector(
+      '.tag-cloud-tag[data-tag="foo"]',
+    ) as HTMLElement | null;
     expect(tagBtn).toBeTruthy();
 
     // Click it

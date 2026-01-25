@@ -41,7 +41,9 @@ export function Header(options: HeaderOptions): string {
     showFilterButton = false,
   } = options;
 
-  const toggleHtml = showViewToggle ? ViewToggle({ modes: viewModes, activeMode: state.viewMode }) : "";
+  const toggleHtml = showViewToggle
+    ? ViewToggle({ modes: viewModes, activeMode: state.viewMode })
+    : "";
   const profileHtml = showUserProfile ? UserProfile() : "";
   const filterBtnHtml = showFilterButton
     ? `<button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">

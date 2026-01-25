@@ -72,7 +72,10 @@ server.listen(config.PORT, config.HOST, () => {
   const lines = [];
 
   const protocol = usingSsl ? "https" : "http";
-  const hostDisplay = (config.HOST === "0.0.0.0" || config.HOST === "::") ? "localhost" : config.HOST;
+  const hostDisplay =
+    config.HOST === "0.0.0.0" || config.HOST === "::"
+      ? "localhost"
+      : config.HOST;
   const apiUrl = `${protocol}://${hostDisplay}:${config.PORT}/api`;
   const serverUrl = `${protocol}://${hostDisplay}:${config.PORT}`;
 

@@ -58,8 +58,8 @@ describe("BookmarkCard", () => {
     expect(urlIndex).toBeGreaterThan(descIndex);
 
     // wrappers should exist
-    expect(html).toContain('bookmark-title-tags');
-    expect(html).toContain('bookmark-desc-url');
+    expect(html).toContain("bookmark-title-tags");
+    expect(html).toContain("bookmark-desc-url");
 
     // restore viewMode for other tests
     setViewMode("grid");

@@ -95,6 +95,7 @@ npm install
 Choose one of the following options:
 
 **Using Makefile (recommended):**
+
 ```bash
 make dev-full      # Full stack (backend + frontend with HMR)
 make dev           # Backend only (serves classic UI)
@@ -102,6 +103,7 @@ make dev-vite      # Frontend only with HMR (requires separate backend)
 ```
 
 **Or use make help to see all available commands:**
+
 ```bash
 make help          # Display all available Makefile targets
 ```
@@ -111,6 +113,7 @@ make help          # Display all available Makefile targets
 Open http://localhost:3000 in your browser and create an account!
 
 If using `make dev-full` or `make dev-vite`, you can also access:
+
 - Vite dev frontend: http://localhost:5173 (with hot reload)
 
 ---

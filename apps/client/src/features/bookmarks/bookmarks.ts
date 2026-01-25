@@ -54,7 +54,9 @@ export function renderSkeletons(): void {
 // Load bookmarks from server
 export async function loadBookmarks(): Promise<void> {
   try {
-    logger.info(`loadBookmarks invoked; currentView=${state.currentView} filterTags=${JSON.stringify(state.filterConfig.tags)}`);
+    logger.info(
+      `loadBookmarks invoked; currentView=${state.currentView} filterTags=${JSON.stringify(state.filterConfig.tags)}`,
+    );
     state.setIsLoading(true);
     state.resetPagination();
     // Show skeletons immediately
@@ -110,11 +112,15 @@ export async function loadBookmarks(): Promise<void> {
     if (response && typeof response === "object" && "bookmarks" in response) {
       state.setBookmarks(response.bookmarks);
       state.setTotalCount(response.total);
-      logger.info(`loadBookmarks fetched ${Array.isArray(response.bookmarks) ? response.bookmarks.length : 0} bookmarks (server response)`);
+      logger.info(
+        `loadBookmarks fetched ${Array.isArray(response.bookmarks) ? response.bookmarks.length : 0} bookmarks (server response)`,
+      );
     } else {
       state.setBookmarks(Array.isArray(response) ? response : []);
       state.setTotalCount(state.bookmarks.length);
-      logger.info(`loadBookmarks fetched ${state.bookmarks.length} bookmarks (array response)`);
+      logger.info(
+        `loadBookmarks fetched ${state.bookmarks.length} bookmarks (array response)`,
+      );
     }
 
     // Load tags metadata for color/icon rendering
@@ -245,7 +251,9 @@ export function renderBookmarks(): void {
   } else {
     if (state.filterConfig.tags.length > 0) {
       // Normalize tags for robust comparison (trim & case-insensitive)
-      const filterTags = state.filterConfig.tags.map((t) => t.trim().toLowerCase());
+      const filterTags = state.filterConfig.tags.map((t) =>
+        t.trim().toLowerCase(),
+      );
 
       // Helper: extract normalized tags from bookmark (support string or array)
       const getNormalizedTags = (bookmark: any): string[] => {
@@ -279,9 +287,10 @@ export function renderBookmarks(): void {
 
       filtered = filtered.filter((b, idx) => {
         const bTags = getNormalizedTags(b);
-        const matches = state.filterConfig.tagMode === "AND"
-          ? filterTags.every((t) => bTags.includes(t))
-          : filterTags.some((t) => bTags.includes(t));
+        const matches =
+          state.filterConfig.tagMode === "AND"
+            ? filterTags.every((t) => bTags.includes(t))
+            : filterTags.some((t) => bTags.includes(t));
 
         if (idx < 10) {
           sampleDetails.push({ idx, bTags, matches, raw: b.tags });
@@ -290,7 +299,9 @@ export function renderBookmarks(): void {
         return matches;
       });
 
-      logger.info(`Tag filter debug: filterTags=${JSON.stringify(filterTags)} matched=${matchedCount}/${state.bookmarks.length} samples=${JSON.stringify(sampleDetails)}`);
+      logger.info(
+        `Tag filter debug: filterTags=${JSON.stringify(filterTags)} matched=${matchedCount}/${state.bookmarks.length} samples=${JSON.stringify(sampleDetails)}`,
+      );
     }
     const sort = state.filterConfig.sort;
     filtered.sort((a, b) => {
@@ -320,7 +331,9 @@ export function renderBookmarks(): void {
   }
 
   state.setRenderedBookmarks(filtered);
-  logger.info(`renderBookmarks: currentView=${state.currentView} filterTags=${JSON.stringify(state.filterConfig.tags)} rendered=${filtered.length}`);
+  logger.info(
+    `renderBookmarks: currentView=${state.currentView} filterTags=${JSON.stringify(state.filterConfig.tags)} rendered=${filtered.length}`,
+  );
 
   if (filtered.length === 0) {
     container.innerHTML = "";

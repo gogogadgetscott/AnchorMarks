@@ -35,17 +35,18 @@ export function BookmarkCard(bookmark: Bookmark, index: number): string {
         .filter((t) => t)
     : [];
 
-  const tagEntries = Array.isArray(bookmark.tags_detailed) && bookmark.tags_detailed.length
-    ? bookmark.tags_detailed.map((t) => ({
-        name: t.name,
-        color: t.color,
-        color_override: t.color_override,
-      }))
-    : tagsFromString.map((name) => ({
-        name,
-        color: undefined,
-        color_override: undefined,
-      }));
+  const tagEntries =
+    Array.isArray(bookmark.tags_detailed) && bookmark.tags_detailed.length
+      ? bookmark.tags_detailed.map((t) => ({
+          name: t.name,
+          color: t.color,
+          color_override: t.color_override,
+        }))
+      : tagsFromString.map((name) => ({
+          name,
+          color: undefined,
+          color_override: undefined,
+        }));
 
   const hostname = getHostname(bookmark.url);
   const baseUrl = getBaseUrl(bookmark.url);
@@ -95,8 +96,9 @@ export function BookmarkCard(bookmark: Bookmark, index: number): string {
         <input type="checkbox" ${isSelected ? "checked" : ""}>
       </label>
 
-      ${state.viewMode === "list"
-        ? `
+      ${
+        state.viewMode === "list"
+          ? `
       <div class="bookmark-col bookmark-favicon">
         ${faviconHtml}
       </div>
@@ -109,7 +111,7 @@ export function BookmarkCard(bookmark: Bookmark, index: number): string {
         <div class="bookmark-url" data-full-url="${escapeHtml(bookmark.url)}">${escapeHtml(displayUrl)}</div>
       </div>
       `
-        : `
+          : `
       <div class="bookmark-header">
         <div class="bookmark-favicon">
           ${faviconHtml}
@@ -121,7 +123,8 @@ export function BookmarkCard(bookmark: Bookmark, index: number): string {
       </div>
       ${bookmark.description ? `<div class="bookmark-description">${escapeHtml(bookmark.description)}</div>` : ""}
       ${tagsHtml}
-      `}
+      `
+      }
 
       <div class="bookmark-actions">
         ${Button("Open", {

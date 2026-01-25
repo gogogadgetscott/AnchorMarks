@@ -35,7 +35,11 @@ describe("loadBookmarks - tag query", () => {
   });
 
   it("includes comma-separated tags when filterConfig.tags has multiple tags", async () => {
-    state.setFilterConfig({ ...state.filterConfig, tags: ["foo", "bar"], tagMode: "OR" });
+    state.setFilterConfig({
+      ...state.filterConfig,
+      tags: ["foo", "bar"],
+      tagMode: "OR",
+    });
 
     await loadBookmarks();
 
@@ -48,7 +52,11 @@ describe("loadBookmarks - tag query", () => {
   });
 
   it("includes tagMode=AND when set to AND", async () => {
-    state.setFilterConfig({ ...state.filterConfig, tags: ["a","b"], tagMode: "AND" });
+    state.setFilterConfig({
+      ...state.filterConfig,
+      tags: ["a", "b"],
+      tagMode: "AND",
+    });
 
     await loadBookmarks();
 

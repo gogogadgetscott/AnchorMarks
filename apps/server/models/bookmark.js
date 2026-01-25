@@ -100,7 +100,9 @@ function listBookmarks(db, userId, opts = {}) {
         });
       } else {
         // Default: OR semantics (any tag)
-        const likeClauses = tagArr.map(() => "tg.tags_joined LIKE ?").join(" OR ");
+        const likeClauses = tagArr
+          .map(() => "tg.tags_joined LIKE ?")
+          .join(" OR ");
         query += ` AND (${likeClauses})`;
         countQuery += ` AND (${likeClauses})`;
         tagArr.forEach((t) => params.push(`%${t}%`));

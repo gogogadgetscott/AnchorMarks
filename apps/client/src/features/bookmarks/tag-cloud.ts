@@ -97,7 +97,7 @@ function getBaseFontSizes(containerHeight: number): number[] {
   const baseSizes = [12, 16, 20, 26, 32, 36, 44];
 
   return baseSizes.map((size) => Math.max(11, size * scale));
-} 
+}
 
 // Map tag count to font size index using linear scale
 function getFontSizeForCount(
@@ -153,10 +153,13 @@ async function buildTagData(): Promise<{ name: string; count: number }[]> {
   // Helper to extract normalized tags from bookmark (handles string or array)
   const extractTags = (bookmark: any): string[] => {
     if (!bookmark.tags) return [];
-    if (Array.isArray(bookmark.tags)) return bookmark.tags.map((t: any) => String(t).trim()).filter(Boolean);
+    if (Array.isArray(bookmark.tags))
+      return bookmark.tags.map((t: any) => String(t).trim()).filter(Boolean);
     if (typeof bookmark.tags === "object") {
       try {
-        return Object.values(bookmark.tags).map((v: any) => String(v).trim()).filter(Boolean);
+        return Object.values(bookmark.tags)
+          .map((v: any) => String(v).trim())
+          .filter(Boolean);
       } catch (e) {
         return [];
       }
@@ -255,11 +258,14 @@ export async function renderTagCloud(): Promise<void> {
   const shuffledTags = shuffleArray(topTags);
 
   // Get container dimensions - compute available height using the sticky header
-  const headerEl = document.querySelector('.content-header') as HTMLElement;
+  const headerEl = document.querySelector(".content-header") as HTMLElement;
   const headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 64;
   // Reserve space for top padding / overlay + legend area so nothing is clipped
   const legendReserve = 88; // px
-  const canvasHeight = Math.max(300, window.innerHeight - headerHeight - legendReserve);
+  const canvasHeight = Math.max(
+    300,
+    window.innerHeight - headerHeight - legendReserve,
+  );
 
   // Get scaled font sizes based on container
   const fontSizes = getBaseFontSizes(canvasHeight);
@@ -351,10 +357,15 @@ export async function renderTagCloud(): Promise<void> {
   container.innerHTML = tagCloudHtml;
 
   // Ensure the canvas has a min-height based on the computed canvasHeight
-  const canvasEl = container.querySelector('.tag-cloud-canvas') as HTMLElement | null;
+  const canvasEl = container.querySelector(
+    ".tag-cloud-canvas",
+  ) as HTMLElement | null;
   if (canvasEl) {
     canvasEl.style.minHeight = `${canvasHeight}px`;
-    canvasEl.style.setProperty('--tag-cloud-canvas-height', `${canvasHeight}px`);
+    canvasEl.style.setProperty(
+      "--tag-cloud-canvas-height",
+      `${canvasHeight}px`,
+    );
   }
 
   // Toggle button handler
@@ -447,7 +458,9 @@ export async function renderTagCloud(): Promise<void> {
           }
         }
       } else {
-        logger.error("loadBookmarks not available after Tag Cloud click imports");
+        logger.error(
+          "loadBookmarks not available after Tag Cloud click imports",
+        );
         try {
           showToast("Could not load bookmarks", "error");
         } catch (_) {

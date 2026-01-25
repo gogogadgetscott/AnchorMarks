@@ -1013,9 +1013,10 @@ body.sidebar-collapsed .nav-section-header {
 .omnibar-panel {
   position: absolute;
   top: calc(100% + 0.5rem);
-  left: 0;
-  right: 0;
-  min-width: 400px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100vw - 200px);
+  max-width: 600px;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -2889,7 +2890,7 @@ body.tag-cloud-active .content-body {
 
 .bookmarks-list .bookmark-actions {
   grid-column: 5;
-} 
+}
 .bookmarks-list .bookmark-card:hover .bookmark-actions {
   opacity: 1;
 }
@@ -7420,7 +7421,7 @@ body.tag-cloud-active #empty-state-container {
 /* Slightly increase bottom padding of content-body so tag-cloud legend doesn't overlay edge */
 body.tag-cloud-active .content-body {
   padding-bottom: 1.5rem;
-} 
+}
 
 .tag-cloud-view {
   flex: 1;
@@ -7440,7 +7441,7 @@ body.tag-cloud-active .content-body {
   position: relative;
   overflow: hidden;
   max-height: calc(100vh - 90px); /* tightened max height */
-} 
+}
 
 .tag-cloud-view::before {
   content: "";
@@ -7455,7 +7456,7 @@ body.tag-cloud-active .content-body {
     transparent 100%
   );
   pointer-events: none;
-} 
+}
 
 .tag-cloud-header {
   display: flex;
@@ -7564,7 +7565,7 @@ body.tag-cloud-active .content-body {
   -webkit-overflow-scrolling: touch;
   container-type: inline-size;
   /* Enable container queries */
-}   
+}
 
 .tag-cloud-canvas::-webkit-scrollbar {
   display: none;
@@ -7604,7 +7605,7 @@ body.tag-cloud-active .content-body {
   overflow: hidden;
   text-overflow: ellipsis;
   flex-shrink: 1;
-} 
+}
 
 @keyframes tagCloudFadeIn {
   from {
@@ -7672,13 +7673,13 @@ body.tag-cloud-active .content-body {
   z-index: 5;
   background: linear-gradient(
     to bottom,
-    rgba(0,0,0,0.0) 0%,
-    rgba(3,37,58,0.6) 100%
+    rgba(0, 0, 0, 0) 0%,
+    rgba(3, 37, 58, 0.6) 100%
   );
   backdrop-filter: blur(6px);
   color: var(--text-primary);
   flex-shrink: 0;
-} 
+}
 
 .legend-item {
   display: flex;
