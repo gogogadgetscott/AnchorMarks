@@ -166,12 +166,12 @@ test-all: test-backend test-frontend ## Run all tests
 # ============================================================================
 lint: ## Lint and format code
 	@echo "$(BLUE)Linting and formatting code...$(NC)"
-	eslint "**/*.js" --config tooling/eslint.config.cjs --fix && prettier . --write
+	npx eslint "**/*.js" --config tooling/eslint.config.cjs --fix && npx prettier . --write
 	@echo "$(GREEN)✓ Code linted and formatted$(NC)"
 
 lint-check: ## Check linting without fixing
 	@echo "$(BLUE)Checking code linting...$(NC)"
-	eslint "**/*.js" --config tooling/eslint.config.cjs && prettier . --check
+	npx eslint "**/*.js" --config tooling/eslint.config.cjs && npx prettier . --check
 	@echo "$(GREEN)✓ Linting check passed$(NC)"
 
 fmt: lint ## Alias for lint
