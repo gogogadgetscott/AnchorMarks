@@ -170,7 +170,7 @@ e2e: ## Run E2E tests with Playwright
 	@echo "$(BLUE)Waiting for services to be ready...$(NC)"
 	@timeout 30 sh -c 'until curl -s http://localhost:3000/api/health > /dev/null 2>&1; do sleep 1; done' || (echo "$(RED)Service failed to start. Container logs:$(NC)"; $(DOCKER_CMD) logs anchormarks; $(DOCKER_CMD) down; exit 1)
 	@echo "$(BLUE)Installing Playwright browsers...$(NC)"
-	@npx playwright install --with-deps chromium || true
+	@npx playwright install --with-deps || true
 	@echo "$(BLUE)Running tests...$(NC)"
 	@USE_DOCKER=1 npx playwright test --config=tooling/e2e/playwright.config.ts || (echo "$(RED)Tests failed$(NC)"; $(DOCKER_CMD) down; exit 1)
 	@echo "$(BLUE)Stopping services...$(NC)"
@@ -184,7 +184,7 @@ e2e-ui: ## Run E2E tests with Playwright UI mode
 	@echo "$(BLUE)Waiting for services to be ready...$(NC)"
 	@timeout 30 sh -c 'until curl -s http://localhost:3000/api/health > /dev/null 2>&1; do sleep 1; done' || (echo "$(RED)Service failed to start$(NC)"; $(DOCKER_CMD) down; exit 1)
 	@echo "$(BLUE)Installing Playwright browsers...$(NC)"
-	@npx playwright install --with-deps chromium || true
+	@npx playwright install --with-deps || true
 	@echo "$(BLUE)Opening Playwright UI...$(NC)"
 	@USE_DOCKER=1 npx playwright test --config=tooling/e2e/playwright.config.ts --ui || (echo "$(RED)Tests failed$(NC)"; $(DOCKER_CMD) down; exit 1)
 	@echo "$(BLUE)Stopping services...$(NC)"
@@ -198,7 +198,7 @@ e2e-debug: ## Run E2E tests in debug mode
 	@echo "$(BLUE)Waiting for services to be ready...$(NC)"
 	@timeout 30 sh -c 'until curl -s http://localhost:3000/api/health > /dev/null 2>&1; do sleep 1; done' || (echo "$(RED)Service failed to start$(NC)"; $(DOCKER_CMD) down; exit 1)
 	@echo "$(BLUE)Installing Playwright browsers...$(NC)"
-	@npx playwright install --with-deps chromium || true
+	@npx playwright install --with-deps || true
 	@echo "$(BLUE)Running tests in debug mode...$(NC)"
 	@USE_DOCKER=1 npx playwright test --config=tooling/e2e/playwright.config.ts --debug || (echo "$(RED)Tests failed$(NC)"; $(DOCKER_CMD) down; exit 1)
 	@echo "$(BLUE)Stopping services...$(NC)"
@@ -212,7 +212,7 @@ e2e-headed: ## Run E2E tests in headed mode (visible browser)
 	@echo "$(BLUE)Waiting for services to be ready...$(NC)"
 	@timeout 30 sh -c 'until curl -s http://localhost:3000/api/health > /dev/null 2>&1; do sleep 1; done' || (echo "$(RED)Service failed to start$(NC)"; $(DOCKER_CMD) down; exit 1)
 	@echo "$(BLUE)Installing Playwright browsers...$(NC)"
-	@npx playwright install --with-deps chromium || true
+	@npx playwright install --with-deps || true
 	@echo "$(BLUE)Running tests in headed mode...$(NC)"
 	@USE_DOCKER=1 npx playwright test --config=tooling/e2e/playwright.config.ts --headed || (echo "$(RED)Tests failed$(NC)"; $(DOCKER_CMD) down; exit 1)
 	@echo "$(BLUE)Stopping services...$(NC)"
