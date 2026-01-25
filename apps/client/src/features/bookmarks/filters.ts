@@ -27,6 +27,11 @@ function getActiveFilterCount(): number {
     count += 1;
   }
 
+  // Count persistent search
+  if (state.filterConfig.search) {
+    count += 1;
+  }
+
   // Count folder filter (only if in 'folder' view and a folder is selected)
   if (state.currentView === "folder" && state.currentFolder) {
     count += 1;
@@ -210,6 +215,10 @@ export async function showFilterDropdown(): Promise<void> {
                                 <option value="AND">All tags (AND)</option>
                             </select>
                         </div>
+                        <div class="filter-control-group">
+                            <label for="filter-search-input">Search:</label>
+                            <input type="text" id="filter-search-input" class="filter-input" placeholder="Search bookmarks..." />
+                        </div>
                         <button class="btn btn-outline btn-sm btn-full" id="filter-clear-all">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;margin-right:4px">
                                 <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
@@ -262,6 +271,11 @@ export async function showFilterDropdown(): Promise<void> {
       "filter-tag-mode",
     ) as HTMLSelectElement;
     if (tagModeSelect) tagModeSelect.value = state.filterConfig.tagMode || "OR";
+
+    const searchInput = document.getElementById(
+      "filter-search-input",
+    ) as HTMLInputElement;
+    if (searchInput) searchInput.value = state.filterConfig.search || "";
 
     attachFilterDropdownListeners();
 
@@ -718,6 +732,21 @@ function attachFilterDropdownListeners(): void {
     });
   }
 
+  const searchInput = document.getElementById(
+    "filter-search-input",
+  ) as HTMLInputElement;
+  if (searchInput) {
+    searchInput.addEventListener("input", async (e: any) => {
+      state.setFilterConfig({
+        ...state.filterConfig,
+        search: e.target.value.trim() || undefined,
+      });
+      await applyFilters();
+      renderDropdownActiveFilters();
+      updateFilterButtonText();
+    });
+  }
+
   const clearBtn = document.getElementById("filter-clear-all");
   if (clearBtn) {
     clearBtn.addEventListener("click", () => {
@@ -767,6 +796,7 @@ async function clearAllFilters(): Promise<void> {
     tags: [],
     tagSort: "count_desc",
     tagMode: "OR",
+    search: undefined,
   });
 
   state.setCurrentFolder(null);
@@ -777,6 +807,11 @@ async function clearAllFilters(): Promise<void> {
     "search-input",
   ) as HTMLInputElement;
   if (searchInput) searchInput.value = "";
+
+  const filterSearchInput = document.getElementById(
+    "filter-search-input",
+  ) as HTMLInputElement;
+  if (filterSearchInput) filterSearchInput.value = "";
 
   const sortSelect = document.getElementById(
     "filter-sort-select",
@@ -844,6 +879,14 @@ function renderDropdownActiveFilters(): void {
     });
   }
 
+  if (state.filterConfig.search) {
+    activeItems.push({
+      type: "persistent-search",
+      label: `Search: ${state.filterConfig.search}`,
+      id: "persistent-search",
+    });
+  }
+
   if (activeItems.length === 0) {
     container.innerHTML =
       '<span class="filter-no-active" id="filter-no-active">No filters active</span>';
@@ -900,6 +943,12 @@ function renderDropdownActiveFilters(): void {
           "search-input",
         ) as HTMLInputElement;
         if (searchInput) searchInput.value = "";
+      } else if (type === "persistent-search") {
+        state.setFilterConfig({ ...state.filterConfig, search: undefined });
+        const filterSearchInput = document.getElementById(
+          "filter-search-input",
+        ) as HTMLInputElement;
+        if (filterSearchInput) filterSearchInput.value = "";
       }
 
       await applyFilters();

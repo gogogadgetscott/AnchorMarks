@@ -432,6 +432,12 @@ function renderResultsList(commands: any[]): void {
     })
     .join("");
 
+  const items = list.querySelectorAll(".omnibar-item:not(.empty)");
+  if (omnibarState.activeIndex >= items.length) {
+    omnibarState.activeIndex = Math.max(0, items.length - 1);
+  }
+  updateActiveItem();
+
   // Add click handlers
   list.querySelectorAll(".omnibar-item").forEach((item, index) => {
     item.addEventListener("click", () => {

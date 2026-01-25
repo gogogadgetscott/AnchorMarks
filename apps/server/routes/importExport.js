@@ -4,11 +4,7 @@ const { parseTagsDetailed } = require("../helpers/tags");
 const { generateBookmarkHtml } = require("../helpers/html");
 const { queueMetadataFetch } = require("../helpers/metadata-queue");
 
-function setupImportExportRoutes(
-  app,
-  db,
-  { authenticateTokenMiddleware },
-) {
+function setupImportExportRoutes(app, db, { authenticateTokenMiddleware }) {
   app.post(
     "/api/import/html",
     authenticateTokenMiddleware,

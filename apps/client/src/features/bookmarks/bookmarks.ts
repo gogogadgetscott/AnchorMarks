@@ -97,7 +97,7 @@ export async function loadBookmarks(): Promise<void> {
     if (query) endpoint += `?${query}`;
 
     const response = await api<any>(endpoint);
-    
+
     if (response && typeof response === "object" && "bookmarks" in response) {
       state.setBookmarks(response.bookmarks);
       state.setTotalCount(response.total);
@@ -221,26 +221,45 @@ export function renderBookmarks(): void {
 
   if (state.currentView === "recent") {
     filtered = filtered
-      .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.created_at || 0).getTime() -
+          new Date(a.created_at || 0).getTime(),
+      )
       .slice(0, 20);
   } else {
     if (state.filterConfig.tags.length > 0) {
       filtered = filtered.filter((b) => {
         if (!b.tags) return false;
         const bTags = b.tags.split(",").map((t) => t.trim());
-        return state.filterConfig.tagMode === "AND" 
-          ? state.filterConfig.tags.every(t => bTags.includes(t))
-          : state.filterConfig.tags.some(t => bTags.includes(t));
+        return state.filterConfig.tagMode === "AND"
+          ? state.filterConfig.tags.every((t) => bTags.includes(t))
+          : state.filterConfig.tags.some((t) => bTags.includes(t));
       });
     }
     const sort = state.filterConfig.sort;
     filtered.sort((a, b) => {
       switch (sort) {
-        case "a_z": case "a-z": case "alpha": return a.title.localeCompare(b.title);
-        case "z_a": case "z-a": return b.title.localeCompare(a.title);
-        case "most_visited": return (b.click_count || 0) - (a.click_count || 0);
-        case "oldest_first": case "created_asc": return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
-        default: return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+        case "a_z":
+        case "a-z":
+        case "alpha":
+          return a.title.localeCompare(b.title);
+        case "z_a":
+        case "z-a":
+          return b.title.localeCompare(a.title);
+        case "most_visited":
+          return (b.click_count || 0) - (a.click_count || 0);
+        case "oldest_first":
+        case "created_asc":
+          return (
+            new Date(a.created_at || 0).getTime() -
+            new Date(b.created_at || 0).getTime()
+          );
+        default:
+          return (
+            new Date(b.created_at || 0).getTime() -
+            new Date(a.created_at || 0).getTime()
+          );
       }
     });
   }
@@ -260,7 +279,8 @@ export function renderBookmarks(): void {
 
   // --- Virtualization logic ---
   const containerWidth = container.clientWidth || 1000;
-  const scrollContainer = (container.closest(".main-content") || container) as HTMLElement;
+  const scrollContainer = (container.closest(".main-content") ||
+    container) as HTMLElement;
 
   let itemsPerRow = 1;
   let rowHeight = 120;
@@ -282,20 +302,23 @@ export function renderBookmarks(): void {
   const containerOffsetTop = containerRect.top - scrollRect.top + scrollTop;
   const relativeScrollTop = Math.max(0, scrollTop - containerOffsetTop);
 
-  const visibleRows = Math.ceil(viewportHeight / rowHeight) + (BUFFER_ROWS * 2);
-  const startRow = Math.max(0, Math.floor(relativeScrollTop / rowHeight) - BUFFER_ROWS);
+  const visibleRows = Math.ceil(viewportHeight / rowHeight) + BUFFER_ROWS * 2;
+  const startRow = Math.max(
+    0,
+    Math.floor(relativeScrollTop / rowHeight) - BUFFER_ROWS,
+  );
   const endRow = Math.min(totalRows, startRow + visibleRows);
 
   const startIndex = startRow * itemsPerRow;
   const endIndex = Math.min(filtered.length, endRow * itemsPerRow);
 
   const targetBookmarks = filtered.slice(startIndex, endIndex);
-  const targetIdSet = new Set(targetBookmarks.map(b => b.id));
+  const targetIdSet = new Set(targetBookmarks.map((b) => b.id));
 
   // Sync DOM nodes
   const children = Array.from(container.children) as HTMLElement[];
   const existingNodesMap = new Map<string, HTMLElement>();
-  children.forEach(child => {
+  children.forEach((child) => {
     const id = child.dataset.bookmarkId;
     if (id && targetIdSet.has(id)) {
       existingNodesMap.set(id, child);
@@ -304,12 +327,17 @@ export function renderBookmarks(): void {
     }
   });
 
-  const cardRenderer = (state.richLinkPreviewsEnabled && state.viewMode === "grid") ? RichBookmarkCard : createBookmarkCard;
+  const cardRenderer =
+    state.richLinkPreviewsEnabled && state.viewMode === "grid"
+      ? RichBookmarkCard
+      : createBookmarkCard;
 
   targetBookmarks.forEach((b, i) => {
     let el = existingNodesMap.get(b.id);
     const html = cardRenderer(b, startIndex + i);
-    const stableHTML = el ? html.replace(/entrance-animation|delay-\d+/g, "") : html;
+    const stableHTML = el
+      ? html.replace(/entrance-animation|delay-\d+/g, "")
+      : html;
 
     if (!el) {
       el = document.createElement("div");
@@ -318,7 +346,8 @@ export function renderBookmarks(): void {
       el.innerHTML = stableHTML;
       container.insertBefore(el, container.children[i] || null);
     } else {
-      if (container.children[i] !== el) container.insertBefore(el, container.children[i]);
+      if (container.children[i] !== el)
+        container.insertBefore(el, container.children[i]);
       if (el.innerHTML !== stableHTML) el.innerHTML = stableHTML;
     }
   });
@@ -327,10 +356,14 @@ export function renderBookmarks(): void {
   container.style.paddingBottom = `${Math.max(0, (totalRows - endRow) * rowHeight)}px`;
 
   // Attach listeners once
-  const scrollHandlerMap = (window as any)._bookmarkScrollHandlerMap || new WeakMap();
+  const scrollHandlerMap =
+    (window as any)._bookmarkScrollHandlerMap || new WeakMap();
   (window as any)._bookmarkScrollHandlerMap = scrollHandlerMap;
 
-  const debounce = <T extends (...args: any[]) => void>(fn: T, delay: number): T => {
+  const debounce = <T extends (...args: any[]) => void>(
+    fn: T,
+    delay: number,
+  ): T => {
     let timeoutId: any;
     return ((...args: any[]) => {
       clearTimeout(timeoutId);
@@ -342,10 +375,12 @@ export function renderBookmarks(): void {
     renderBookmarks();
 
     // Infinite scroll detection: check if near bottom
-    const scrollBottom = scrollContainer.scrollTop + scrollContainer.clientHeight;
+    const scrollBottom =
+      scrollContainer.scrollTop + scrollContainer.clientHeight;
     // Lower threshold for grid view to account for larger cards
-    const threshold = scrollContainer.scrollHeight - (state.viewMode === "grid" ? 1000 : 500);
-    
+    const threshold =
+      scrollContainer.scrollHeight - (state.viewMode === "grid" ? 1000 : 500);
+
     if (scrollBottom > threshold) {
       loadMoreBookmarks();
     }
@@ -370,7 +405,12 @@ export function renderBookmarks(): void {
 // Load more bookmarks for infinite scroll
 export async function loadMoreBookmarks(): Promise<void> {
   // Don't load if already loading, or if we've reached the total count
-  if (state.isLoadingMore || state.isLoading || state.bookmarks.length >= state.totalCount) return;
+  if (
+    state.isLoadingMore ||
+    state.isLoading ||
+    state.bookmarks.length >= state.totalCount
+  )
+    return;
 
   try {
     state.setIsLoadingMore(true);
@@ -414,7 +454,7 @@ export async function loadMoreBookmarks(): Promise<void> {
 
     const response = await api<any>(endpoint);
     let newBookmarks: Bookmark[] = [];
-    
+
     if (response && typeof response === "object" && "bookmarks" in response) {
       newBookmarks = response.bookmarks;
       state.setTotalCount(response.total);
@@ -439,51 +479,67 @@ async function lazyLoadOGImages(): Promise<void> {
   const container = document.getElementById("bookmarks-container");
   if (!container) return;
 
-  const placeholders = Array.from(container.querySelectorAll(".rich-card-image-placeholder[data-bookmark-id]")) as HTMLElement[];
+  const placeholders = Array.from(
+    container.querySelectorAll(
+      ".rich-card-image-placeholder[data-bookmark-id]",
+    ),
+  ) as HTMLElement[];
   if (placeholders.length === 0) return;
 
   // Initialize IntersectionObserver if not already present
   if (!ogImageObserver) {
-    ogImageObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const el = entry.target as HTMLElement;
-          const id = el.dataset.bookmarkId;
-          const url = el.dataset.bookmarkUrl;
-          if (id && url) processOGImageFetch(id, url);
-          ogImageObserver?.unobserve(el);
-        }
-      });
-    }, { rootMargin: "200px" });
+    ogImageObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const el = entry.target as HTMLElement;
+            const id = el.dataset.bookmarkId;
+            const url = el.dataset.bookmarkUrl;
+            if (id && url) processOGImageFetch(id, url);
+            ogImageObserver?.unobserve(el);
+          }
+        });
+      },
+      { rootMargin: "200px" },
+    );
   }
 
   // Observe all placeholders in the current DOM
-  placeholders.forEach(p => ogImageObserver?.observe(p));
+  placeholders.forEach((p) => ogImageObserver?.observe(p));
 }
 
-async function processOGImageFetch(bookmarkId: string, bookmarkUrl: string): Promise<void> {
+async function processOGImageFetch(
+  bookmarkId: string,
+  bookmarkUrl: string,
+): Promise<void> {
   if (pendingMetadataFetches.has(bookmarkId)) return;
   pendingMetadataFetches.add(bookmarkId);
 
   try {
-    const bookmark = state.bookmarks.find(b => b.id === bookmarkId);
+    const bookmark = state.bookmarks.find((b) => b.id === bookmarkId);
     if (bookmark && (bookmark.og_image || bookmark.thumbnail_local)) {
-      updateRichCardImage(bookmarkId, bookmark.og_image || bookmark.thumbnail_local!);
+      updateRichCardImage(
+        bookmarkId,
+        bookmark.og_image || bookmark.thumbnail_local!,
+      );
       return;
     }
 
-    const metadata = await api<{ og_image?: string }>("/bookmarks/fetch-metadata", {
-      method: "POST",
-      body: JSON.stringify({ url: bookmarkUrl })
-    });
+    const metadata = await api<{ og_image?: string }>(
+      "/bookmarks/fetch-metadata",
+      {
+        method: "POST",
+        body: JSON.stringify({ url: bookmarkUrl }),
+      },
+    );
 
     if (metadata?.og_image) {
-      const idx = state.bookmarks.findIndex(b => b.id === bookmarkId);
+      const idx = state.bookmarks.findIndex((b) => b.id === bookmarkId);
       if (idx !== -1) {
         state.bookmarks[idx].og_image = metadata.og_image;
         await api(`/bookmarks/${bookmarkId}`, {
           method: "PUT",
-          body: JSON.stringify({ og_image: metadata.og_image })
+          body: JSON.stringify({ og_image: metadata.og_image }),
         });
         updateRichCardImage(bookmarkId, metadata.og_image);
       }
@@ -496,7 +552,9 @@ async function processOGImageFetch(bookmarkId: string, bookmarkUrl: string): Pro
 }
 
 function updateRichCardImage(bookmarkId: string, ogImage: string): void {
-  const card = document.querySelector(`.rich-bookmark-card[data-id="${bookmarkId}"]`);
+  const card = document.querySelector(
+    `.rich-bookmark-card[data-id="${bookmarkId}"]`,
+  );
   const placeholder = card?.querySelector(".rich-card-image-placeholder");
   if (placeholder) {
     placeholder.outerHTML = `<div class="rich-card-image"><img src="${escapeHtml(ogImage)}" alt="" loading="lazy"></div>`;
@@ -512,23 +570,36 @@ export function attachBookmarkCardListeners(): void {
   attachedContainers.add(container);
 
   container.addEventListener("click", (e) => {
-    const card = (e.target as HTMLElement).closest(".bookmark-card, .rich-bookmark-card") as HTMLElement | null;
+    const card = (e.target as HTMLElement).closest(
+      ".bookmark-card, .rich-bookmark-card",
+    ) as HTMLElement | null;
     if (!card) return;
 
     if ((e.target as HTMLElement).classList.contains("bookmark-select")) {
       e.stopPropagation();
-      toggleBookmarkSelection(card.dataset.id || "", parseInt(card.dataset.index || "0", 10), (e as MouseEvent).shiftKey, true);
+      toggleBookmarkSelection(
+        card.dataset.id || "",
+        parseInt(card.dataset.index || "0", 10),
+        (e as MouseEvent).shiftKey,
+        true,
+      );
       return;
     }
 
-    if ((e.target as HTMLElement).closest(".bookmark-actions, .bookmark-tags")) return;
+    if ((e.target as HTMLElement).closest(".bookmark-actions, .bookmark-tags"))
+      return;
 
     const id = card.dataset.id || "";
-    const bookmark = state.bookmarks.find(b => b.id === id);
+    const bookmark = state.bookmarks.find((b) => b.id === id);
     if (!bookmark) return;
 
     if (state.bulkMode) {
-      toggleBookmarkSelection(id, parseInt(card.dataset.index || "0", 10), (e as MouseEvent).shiftKey, true);
+      toggleBookmarkSelection(
+        id,
+        parseInt(card.dataset.index || "0", 10),
+        (e as MouseEvent).shiftKey,
+        true,
+      );
       return;
     }
 
@@ -536,7 +607,9 @@ export function attachBookmarkCardListeners(): void {
     if (url.startsWith("view:")) {
       const viewId = url.substring(5);
       if (state.currentView === "dashboard") {
-        import("@features/bookmarks/dashboard.ts").then(({ restoreView }) => restoreView(viewId));
+        import("@features/bookmarks/dashboard.ts").then(({ restoreView }) =>
+          restoreView(viewId),
+        );
       }
     } else if (url.startsWith("bookmark-view:")) {
       restoreBookmarkView(url.substring(14));
@@ -548,15 +621,23 @@ export function attachBookmarkCardListeners(): void {
 
   // Favicon error handler using delegation (simulated via bubbling since error doesn't bubble)
   // We use a capture listener or just wrap the existing logic for clarity
-  container.addEventListener("error", (e) => {
-    const target = e.target as HTMLElement;
-    if (target.classList.contains("bookmark-favicon-img") && target.dataset.fallback === "true") {
-      const parent = target.parentElement;
-      if (parent) {
-        parent.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+  container.addEventListener(
+    "error",
+    (e) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.classList.contains("bookmark-favicon-img") &&
+        target.dataset.fallback === "true"
+      ) {
+        const parent = target.parentElement;
+        if (parent) {
+          parent.innerHTML =
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+        }
       }
-    }
-  }, true); // Use capture to "simulate" delegation for non-bubbling 'error' event
+    },
+    true,
+  ); // Use capture to "simulate" delegation for non-bubbling 'error' event
 }
 
 // Toggle bookmark selection

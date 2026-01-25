@@ -248,7 +248,6 @@ export function toggleSidebar(): void {
   }
 }
 
-
 // Set view mode
 export function setViewMode(mode: "grid" | "list" | "compact"): void {
   state.setViewMode(mode);

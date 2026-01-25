@@ -220,7 +220,12 @@ describe("smart-organization.js - Integration Tests (DB-backed)", () => {
           const bmId = uuidv4();
           db.prepare(
             "INSERT INTO bookmarks (id, user_id, url, title) VALUES (?, ?, ?, ?)",
-          ).run(bmId, userId, `https://github.com/python/repo${i}`, `Repo ${i}`);
+          ).run(
+            bmId,
+            userId,
+            `https://github.com/python/repo${i}`,
+            `Repo ${i}`,
+          );
           db.prepare(
             "INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)",
           ).run(bmId, tag1);

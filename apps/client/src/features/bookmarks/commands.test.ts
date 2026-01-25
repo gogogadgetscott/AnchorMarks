@@ -188,8 +188,9 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
     it("should include bookmark favicons", () => {
       const results = getCommandPaletteCommands("github");
 
-      const githubResult = results.find((r) =>
-        r.label.toLowerCase().includes("github"),
+      const githubResult = results.find(
+        (r) =>
+          r.category === "bookmark" && r.label.toLowerCase().includes("github"),
       );
       expect(githubResult?.favicon).toBe("/favicons/github.png");
     });

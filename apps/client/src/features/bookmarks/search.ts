@@ -259,7 +259,8 @@ export function renderActiveFilters(): void {
     state.filterConfig.tags.length > 0 ||
     (searchInput && searchInput.value.trim()) ||
     currentFolder ||
-    currentCollection;
+    currentCollection ||
+    state.filterConfig.search;
 
   if (!hasFilters) {
     section.classList.add("hidden");
@@ -336,6 +337,21 @@ export function renderActiveFilters(): void {
             <div class="filter-chip tag-chip">
                 <span>Search: ${escapeHtml(searchInput.value)}</span>
                 <button data-action="clear-search" title="Remove">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+  }
+
+  // Persistent search chip
+  if (state.filterConfig.search) {
+    html += `
+            <div class="filter-chip search-chip">
+                ${Icon("search", { size: 12 })}
+                <span>Search: ${escapeHtml(state.filterConfig.search)}</span>
+                <button data-action="clear-persistent-search" title="Remove">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                     </svg>
