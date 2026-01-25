@@ -1,0 +1,32 @@
+# =============================================================================
+# Dockerfile for Test Environment
+# =============================================================================
+FROM node:20-alpine
+WORKDIR /
+
+# Install system dependencies
+RUN apk add --no-cache python3 g++ make
+
+# Copy root package.json
+COPY package.json /package.json
+
+# Create workspace structure
+RUN mkdir -p /apps/server /apps/client
+COPY apps/server/package*.json /apps/server/
+COPY apps/client/package*.json /apps/client/
+
+# Install all dependencies (including dev)
+RUN npm install --include=dev --no-audit --no-fund && \
+    cd /apps/server && npm install --include=dev --no-audit --no-fund && \
+    cd /apps/client && npm install --include=dev --no-audit --no-fund && \
+    npm rebuild
+
+# Copy application code
+COPY apps/server /apps/server
+COPY apps/client /apps/client
+
+# Set test environment
+ENV NODE_ENV=test
+
+# Run tests by default
+CMD ["npm", "test"]

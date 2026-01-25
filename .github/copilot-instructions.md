@@ -123,8 +123,8 @@ node --check apps/client/src/main.ts
 ### Docker
 
 ```bash
-make docker-build          # Build image (uses tooling/docker config)
-make docker-up             # Start containers (docker/docker-compose.yml)
+make build-docker          # Build image (uses tooling/docker config)
+make run-docker            # Start containers (docker/docker-compose.yml)
 ```
 
 ## Project-Specific Conventions

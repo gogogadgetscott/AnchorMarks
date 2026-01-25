@@ -1,41 +1,57 @@
-
-# --- Stage 1: Build frontend ---
+# =============================================================================
+# Stage 1: Build Frontend
+# =============================================================================
 FROM node:20-alpine AS client-build
 WORKDIR /client
+
+# Install frontend dependencies
 COPY apps/client/package*.json ./
 RUN npm install --no-audit --no-fund
-COPY apps/client .
-RUN npx vite build && npx esbuild src/shared/folders-utils-browser.ts --bundle --platform=browser --format=iife --global-name=foldersUtils --outfile=public/js/folders-utils.js --minify
 
-# --- Stage 2: Main app ---
-FROM node:20-alpine
+# Build frontend
+COPY apps/client .
+RUN npx vite build && \
+    npx esbuild src/shared/folders-utils-browser.ts \
+    --bundle \
+    --platform=browser \
+    --format=iife \
+    --global-name=foldersUtils \
+    --outfile=public/js/folders-utils.js \
+    --minify
+
+# =============================================================================
+# Stage 2: Production Application
+# =============================================================================
+FROM node:20-alpine AS production
 WORKDIR /
+
+# Install system dependencies
 RUN apk add --no-cache python3 g++ make su-exec
 
-# Set up workspace structure
+# Copy root package.json
 COPY package.json /package.json
 
-# Create workspace directories and copy package.json files
-RUN mkdir -p /apps/server /apps/client
+# Create workspace structure
+RUN mkdir -p /apps/server /apps/client /apps/public/favicons
 COPY apps/server/package*.json /apps/server/
 COPY apps/client/package*.json /apps/client/
 
-# Install all dependencies
-RUN npm install --no-audit --no-fund
+# Install production dependencies
+RUN npm install --no-audit --no-fund && \
+    npm rebuild
 
 # Copy application code
 COPY apps/server /apps/server
 COPY apps/client /apps/client
 
-# Copy built frontend from previous stage (fallback for first run)
+# Copy built frontend from build stage
 COPY --from=client-build /client/dist /apps/client/dist
 
-# Copy entrypoint script
+# Setup entrypoint
 COPY tooling/docker/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
-RUN mkdir -p /apps/public/favicons
-# Build-time ARGs for environment variables
+# Environment variables
 ARG NODE_ENV=production
 ARG PORT=3000
 ARG HOST=0.0.0.0
@@ -45,20 +61,20 @@ ARG CORS_ORIGIN=*
 ARG SSL_KEY=/apps/ssl/privkey.pem
 ARG SSL_CERT=/apps/ssl/fullchain.pem
 
-# Set ENV from ARG for runtime
-ENV NODE_ENV=$NODE_ENV
-ENV PORT=$PORT
-ENV HOST=$HOST
-ENV DB_PATH=$DB_PATH
-ENV JWT_SECRET=$JWT_SECRET
-ENV CORS_ORIGIN=$CORS_ORIGIN
-ENV SSL_KEY=$SSL_KEY
-ENV SSL_CERT=$SSL_CERT
+ENV NODE_ENV=$NODE_ENV \
+    PORT=$PORT \
+    HOST=$HOST \
+    DB_PATH=$DB_PATH \
+    JWT_SECRET=$JWT_SECRET \
+    CORS_ORIGIN=$CORS_ORIGIN \
+    SSL_KEY=$SSL_KEY \
+    SSL_CERT=$SSL_CERT
 
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://${HOST}:${PORT}/api/health || exit 1
 
-# Ensure proper ownership of all app directories and node_modules
+# Set permissions
 RUN chown -R node:node /apps /node_modules /docker-entrypoint.sh
-# Don't switch to node user yet - entrypoint needs root to write to mounted volumes
+
 ENTRYPOINT ["/docker-entrypoint.sh"]

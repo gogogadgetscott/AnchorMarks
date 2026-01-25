@@ -34,7 +34,7 @@ make dev-full
 
 ```bash
 # Start with Docker Compose using Makefile
-make docker-up
+make run-docker
 
 # Or use docker compose directly
 docker compose -f tooling/docker/docker-compose.yml up -d

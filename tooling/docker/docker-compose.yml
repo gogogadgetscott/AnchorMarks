@@ -3,6 +3,7 @@ services:
     build:
       context: ../..
       dockerfile: ./tooling/docker/Dockerfile
+      target: production
       args:
         NODE_ENV: ${NODE_ENV}
         PORT: ${PORT}
@@ -37,3 +38,17 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  test:
+    build:
+      context: ../..
+      dockerfile: ./tooling/docker/Dockerfile.test
+    volumes:
+      - ../../apps/server:/apps/server
+      - ../../apps/client:/apps/client
+      - ../../.env:/apps/.env
+    environment:
+      NODE_ENV: test
+      DB_PATH: ":memory:"
+    profiles:
+      - test

@@ -5,6 +5,9 @@
   "private": true,
   "main": "index.js",
   "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint . --fix"
   },
   "dependencies": {

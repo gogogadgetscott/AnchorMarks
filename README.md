@@ -73,24 +73,24 @@ Compared to Linkwarden/Linkding/Shaarli, AnchorMarks emphasizes minimal setup, r
 
 ```bash
 # From repo root
-make install
+make install-deps
 
 # Option A: Full stack (backend + Vite frontend) using Makefile
-make dev-full
+make run-all
 # Backend on http://localhost:3000, Frontend on http://localhost:5173
 
 # Option B: Backend only (serve classic UI)
-make dev
+make run-backend
 # Visit http://localhost:3000
 
 # Option C: Frontend-only HMR during UI work
-make dev-vite
-# Visit http://localhost:5173 (API must be running: make dev)
+make run-frontend
+# Visit http://localhost:5173 (API must be running: make run-backend)
 
 # Option D: Run E2E tests (requires backend + frontend running)
-make e2e
-# Or in UI mode: make e2e-ui
-# Or in debug mode: make e2e-debug
+make test-e2e
+# Or in UI mode: make test-e2e-ui
+# Or in debug mode: make test-e2e-debug
 
 # For a complete list of commands:
 make help
@@ -100,12 +100,12 @@ make help
 
 ```bash
 # Build and start the stack
-make docker-build
-make docker-up
+make build-docker
+make run-docker
 
 # Logs and shell
-make docker-logs
-make docker-shell
+make logs-docker
+make shell-docker
 ```
 
 Compose file: tooling/docker/docker-compose.yml. The stack reads variables from .env.
@@ -138,7 +138,7 @@ VITE_PORT=5173
 Then run:
 
 ```bash
-make prod
+make run-prod
 ```
 
 See [INSTALL.md](INSTALL.md) for advanced deployment options.
@@ -158,16 +158,16 @@ The project uses [Vitest](https://vitest.dev/) for unit/integration tests and [P
 
 ```bash
 # Run unit/integration tests
-make test              # Run all tests
+make test-all          # Run all tests
 make test-backend      # Backend only
 make test-frontend     # Frontend only
 make test-coverage     # Coverage report
 
 # Run E2E tests
-make e2e               # Headless mode
-make e2e-ui            # Interactive UI mode
-make e2e-headed        # Visible browser
-make e2e-debug         # Debug mode with Inspector
+make test-e2e          # Headless mode
+make test-e2e-ui       # Interactive UI mode
+make test-e2e-headed   # Visible browser
+make test-e2e-debug    # Debug mode with Inspector
 ```
 
 E2E tests verify:
@@ -205,14 +205,17 @@ See [SECURITY.md](SECURITY.md) for details.
 
 ## 🛠️ Developer Workflows
 
-- Start backend only: `make dev`
-- Start frontend HMR: `make dev-vite` (requires backend running)
-- Full stack dev: `make dev-full`
-- Run unit tests: `make test`, coverage: `make test-coverage`
-- Run E2E tests: `make e2e` (requires backend running on port 3000)
-- Lint & format: `make lint` or `make lint-check`
-- Docker during local dev: `make docker-up` then `make docker-logs`
+- Start backend only: `make run-backend`
+- Start frontend HMR: `make run-frontend` (requires backend running)
+- Full stack dev: `make run-all`
+- Run unit tests: `make test-all`, coverage: `make test-coverage`
+- Run E2E tests: `make test-e2e` (requires backend running on port 3000)
+- Lint & format: `make lint-code` or `make lint-check`
+- Docker during local dev: `make run-docker` then `make logs-docker`
 
+> Note: Makefile target aliases (e.g., `dev`, `docker-up`, `e2e`, `lint`) were removed
+> to standardize on the Verb-Noun pattern. Please update scripts and CI to use the
+> new target names (for example: `run-backend`, `run-docker`, `test-e2e`).
 ## 🙋 Support / Questions
 
 - Open an issue: https://github.com/gogogadgetscott/AnchorMarks/issues
@@ -234,7 +237,7 @@ MIT License - use, modify, and distribute freely.
 
 ```bash
 sudo chown -R 1001:1001 data/   # adjust path/user to your environment
-make docker-up
+make run-docker
 ```
 
 - For production servers, prefer fixing host permissions (chown to UID 1001) and removing the need for sudo in automation.
@@ -244,7 +247,7 @@ make docker-up
 To run the test suite inside a container (installs dev dependencies temporarily):
 
 ```bash
-docker compose -f tooling/docker/docker-compose.yml run --rm anchormarks make test
+docker compose -f tooling/docker/docker-compose.yml run --rm anchormarks make test-all
 ```
 
 ### Database settings_json (auto-migrated)
