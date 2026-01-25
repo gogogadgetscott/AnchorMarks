@@ -1,0 +1,62 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - img "AnchorMarks Logo" [ref=e8]
+        - generic [ref=e9]: AnchorMarks
+      - paragraph [ref=e10]: Your bookmarks, beautifully organized
+    - generic [ref=e11]:
+      - button "Login" [ref=e12] [cursor=pointer]
+      - button "Register" [ref=e13] [cursor=pointer]
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e17]: Email
+        - textbox "Email" [ref=e18]:
+          - /placeholder: you@example.com
+      - generic [ref=e19]:
+        - generic [ref=e20]: Password
+        - textbox "Password" [ref=e21]:
+          - /placeholder: ••••••••
+      - button "Sign In" [ref=e22] [cursor=pointer]:
+        - generic [ref=e23]: Sign In
+        - img [ref=e24]
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - img [ref=e28]
+        - generic [ref=e30]: Secure & Private
+      - generic [ref=e31]:
+        - img [ref=e32]
+        - generic [ref=e34]: Browser Sync
+      - generic [ref=e35]:
+        - img [ref=e36]
+        - generic [ref=e38]: API Access
+  - generic [ref=e42]:
+    - generic [ref=e43]:
+      - heading "Filters & Sort" [level=3] [ref=e44]
+      - button [ref=e45] [cursor=pointer]:
+        - img [ref=e46]
+    - generic [ref=e49]:
+      - generic [ref=e50]:
+        - heading "Sort bookmarks" [level=4] [ref=e51]
+        - combobox [ref=e52]:
+          - option "Recently added" [selected]
+          - option "Oldest first"
+          - option "Most visited"
+          - option "A – Z"
+          - option "Z – A"
+      - generic [ref=e53]:
+        - heading "Sort tags" [level=4] [ref=e54]
+        - combobox "Sort tags by how often they're used" [ref=e55]:
+          - option "Most used first" [selected]
+          - option "Least used first"
+          - option "A → Z"
+      - generic [ref=e56]:
+        - heading "Active filters" [level=4] [ref=e57]
+        - generic [ref=e59]: No filters active
+      - generic [ref=e60]:
+        - heading "Filter by tag" [level=4] [ref=e61]
+        - textbox "Search tags..." [ref=e62]
+```

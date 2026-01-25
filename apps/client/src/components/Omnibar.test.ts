@@ -14,7 +14,11 @@ describe("Omnibar", () => {
   });
 
   it("omits dropdown when disabled", () => {
-    const html = Omnibar({ id: "cmdk", showDropdown: false, shortcut: "Ctrl+P" });
+    const html = Omnibar({
+      id: "cmdk",
+      showDropdown: false,
+      shortcut: "Ctrl+P",
+    });
 
     expect(html).toContain('id="cmdk"');
     expect(html).toContain("Ctrl+P");

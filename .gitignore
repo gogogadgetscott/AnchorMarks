@@ -17,6 +17,7 @@ Thumbs.db
 *.log
 *.lcov
 coverage/
+playwright-report/
 
 # Application directories that should not be committed
 database/

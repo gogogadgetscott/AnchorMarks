@@ -5,7 +5,7 @@ WORKDIR /client
 COPY apps/client/package*.json ./
 RUN npm install --no-audit --no-fund
 COPY apps/client .
-RUN npm run build
+RUN npx vite build && npx esbuild src/shared/folders-utils-browser.ts --bundle --platform=browser --format=iife --global-name=foldersUtils --outfile=public/js/folders-utils.js --minify
 
 # --- Stage 2: Main app ---
 FROM node:20-alpine
@@ -16,7 +16,7 @@ RUN apk add --no-cache python3 g++ make su-exec
 COPY package.json /package.json
 
 # Create workspace directories and copy package.json files
-RUN mkdir -p /apps/server /apps/client /apps/public
+RUN mkdir -p /apps/server /apps/client
 COPY apps/server/package*.json /apps/server/
 COPY apps/client/package*.json /apps/client/
 
@@ -26,7 +26,6 @@ RUN npm install --no-audit --no-fund
 # Copy application code
 COPY apps/server /apps/server
 COPY apps/client /apps/client
-COPY apps/public /apps/public
 
 # Copy built frontend from previous stage (fallback for first run)
 COPY --from=client-build /client/dist /apps/client/dist

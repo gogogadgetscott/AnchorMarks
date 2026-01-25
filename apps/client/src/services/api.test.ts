@@ -56,8 +56,7 @@ describe("api helper", () => {
     }));
     global.fetch = fetchMock as any;
 
-    await expect(api("/bad"))
-      .rejects.toThrow("Invalid response format");
+    await expect(api("/bad")).rejects.toThrow("Invalid response format");
   });
 
   it("surfaces API error messages from JSON responses", async () => {
@@ -70,8 +69,7 @@ describe("api helper", () => {
     }));
     global.fetch = fetchMock as any;
 
-    await expect(api("/error"))
-      .rejects.toThrow("Invalid request");
+    await expect(api("/error")).rejects.toThrow("Invalid request");
   });
 
   it("deduplicates concurrent GET requests", async () => {

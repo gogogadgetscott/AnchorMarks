@@ -10,6 +10,28 @@ import { test, expect } from "@playwright/test";
  */
 
 test.describe("Tag Cloud", () => {
+  // Helper function to navigate to tag cloud
+  async function navigateToTagCloud(page: any) {
+    // Wait for page to fully load
+    await page.waitForLoadState("networkidle");
+
+    // Try multiple possible selectors for tag cloud link
+    const tagCloudLink = page
+      .locator(
+        'a[href*="tag-cloud"], button:has-text("Tag Cloud"), [data-view="tag-cloud"], .sidebar-item:has-text("Tag Cloud")',
+      )
+      .first();
+
+    // Wait for element to be visible before clicking
+    await tagCloudLink.waitFor({ state: "visible", timeout: 10000 });
+    await tagCloudLink.click();
+
+    // Wait for tag cloud view to render
+    await page.waitForSelector(".tag-cloud-view, .tag-cloud-container", {
+      timeout: 10000,
+    });
+  }
+
   test.beforeEach(async ({ page }) => {
     // Login first
     await page.goto("/");
@@ -40,7 +62,7 @@ test.describe("Tag Cloud", () => {
 
   test("should render tag cloud view", async ({ page }) => {
     // Navigate to tag cloud view
-    await page.click('a[href*="tag-cloud"], button:has-text("Tag Cloud")');
+    await navigateToTagCloud(page);
 
     // Wait for tag cloud to render
     const tagCloudContainer = page.locator(".tag-cloud-container");
@@ -57,7 +79,7 @@ test.describe("Tag Cloud", () => {
 
   test("should display tags in tag cloud", async ({ page }) => {
     // Navigate to tag cloud
-    await page.click('a[href*="tag-cloud"], button:has-text("Tag Cloud")');
+    await navigateToTagCloud(page);
 
     // Wait for tag cloud canvas
     const tagCloudCanvas = page.locator(".tag-cloud-canvas");
@@ -85,7 +107,7 @@ test.describe("Tag Cloud", () => {
 
   test("should filter bookmarks when clicking a tag", async ({ page }) => {
     // Navigate to tag cloud
-    await page.click('a[href*="tag-cloud"], button:has-text("Tag Cloud")');
+    await navigateToTagCloud(page);
 
     // Wait for tag cloud to render
     const tagCloudCanvas = page.locator(".tag-cloud-canvas");
@@ -130,7 +152,7 @@ test.describe("Tag Cloud", () => {
 
   test("should update header when tag is selected", async ({ page }) => {
     // Navigate to tag cloud
-    await page.click('a[href*="tag-cloud"], button:has-text("Tag Cloud")');
+    await navigateToTagCloud(page);
 
     // Wait for tag cloud
     const tagCloudCanvas = page.locator(".tag-cloud-canvas");
@@ -166,7 +188,7 @@ test.describe("Tag Cloud", () => {
 
   test("should render bookmark cards in grid/list format", async ({ page }) => {
     // Navigate to tag cloud
-    await page.click('a[href*="tag-cloud"], button:has-text("Tag Cloud")');
+    await navigateToTagCloud(page);
 
     // Wait for tag cloud
     const tagCloudCanvas = page.locator(".tag-cloud-canvas");
@@ -208,7 +230,7 @@ test.describe("Tag Cloud", () => {
 
   test("should show legend on tag cloud", async ({ page }) => {
     // Navigate to tag cloud
-    await page.click('a[href*="tag-cloud"], button:has-text("Tag Cloud")');
+    await navigateToTagCloud(page);
 
     // Wait for tag cloud
     const tagCloudView = page.locator(".tag-cloud-view");
@@ -230,7 +252,7 @@ test.describe("Tag Cloud", () => {
 
   test("should handle dynamic legend height calculation", async ({ page }) => {
     // Navigate to tag cloud
-    await page.click('a[href*="tag-cloud"], button:has-text("Tag Cloud")');
+    await navigateToTagCloud(page);
 
     // Wait for tag cloud
     const tagCloudView = page.locator(".tag-cloud-view");
@@ -259,7 +281,7 @@ test.describe("Tag Cloud", () => {
     page,
   }) => {
     // Navigate to tag cloud
-    await page.click('a[href*="tag-cloud"], button:has-text("Tag Cloud")');
+    await navigateToTagCloud(page);
 
     // Wait for tag cloud
     const tagCloudCanvas = page.locator(".tag-cloud-canvas");
@@ -297,7 +319,7 @@ test.describe("Tag Cloud", () => {
     await page.setViewportSize({ width: 1200, height: 800 });
 
     // Navigate to tag cloud
-    await page.click('a[href*="tag-cloud"], button:has-text("Tag Cloud")');
+    await navigateToTagCloud(page);
 
     // Wait for render
     const canvas = page.locator(".tag-cloud-canvas");

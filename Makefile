@@ -164,21 +164,60 @@ test-all: test-backend test-frontend ## Run all tests
 # E2E TEST TARGETS
 # ============================================================================
 e2e: ## Run E2E tests with Playwright
-	@echo "$(BLUE)Running E2E tests...$(NC)"
-	@npx playwright test
+	@echo "$(BLUE)Running E2E tests with Docker Compose...$(NC)"
+	@echo "$(BLUE)Starting services...$(NC)"
+	@NODE_ENV=development $(DOCKER_CMD) up -d
+	@echo "$(BLUE)Waiting for services to be ready...$(NC)"
+	@timeout 30 sh -c 'until curl -s http://localhost:3000/api/health > /dev/null 2>&1; do sleep 1; done' || (echo "$(RED)Service failed to start. Container logs:$(NC)"; $(DOCKER_CMD) logs anchormarks; $(DOCKER_CMD) down; exit 1)
+	@echo "$(BLUE)Installing Playwright browsers...$(NC)"
+	@npx playwright install --with-deps chromium || true
+	@echo "$(BLUE)Running tests...$(NC)"
+	@USE_DOCKER=1 npx playwright test --config=tooling/e2e/playwright.config.ts || (echo "$(RED)Tests failed$(NC)"; $(DOCKER_CMD) down; exit 1)
+	@echo "$(BLUE)Stopping services...$(NC)"
+	@$(DOCKER_CMD) down
 	@echo "$(GREEN)✓ E2E tests completed$(NC)"
 
 e2e-ui: ## Run E2E tests with Playwright UI mode
-	@echo "$(BLUE)Running E2E tests in UI mode...$(NC)"
-	@npx playwright test --ui
+	@echo "$(BLUE)Running E2E tests in UI mode with Docker Compose...$(NC)"
+	@echo "$(BLUE)Starting services...$(NC)"
+	@NODE_ENV=development $(DOCKER_CMD) up -d
+	@echo "$(BLUE)Waiting for services to be ready...$(NC)"
+	@timeout 30 sh -c 'until curl -s http://localhost:3000/api/health > /dev/null 2>&1; do sleep 1; done' || (echo "$(RED)Service failed to start$(NC)"; $(DOCKER_CMD) down; exit 1)
+	@echo "$(BLUE)Installing Playwright browsers...$(NC)"
+	@npx playwright install --with-deps chromium || true
+	@echo "$(BLUE)Opening Playwright UI...$(NC)"
+	@USE_DOCKER=1 npx playwright test --config=tooling/e2e/playwright.config.ts --ui || (echo "$(RED)Tests failed$(NC)"; $(DOCKER_CMD) down; exit 1)
+	@echo "$(BLUE)Stopping services...$(NC)"
+	@$(DOCKER_CMD) down
+	@echo "$(GREEN)✓ E2E tests completed$(NC)"
 
 e2e-debug: ## Run E2E tests in debug mode
-	@echo "$(BLUE)Running E2E tests in debug mode...$(NC)"
-	@npx playwright test --debug
+	@echo "$(BLUE)Running E2E tests in debug mode with Docker Compose...$(NC)"
+	@echo "$(BLUE)Starting services...$(NC)"
+	@NODE_ENV=development $(DOCKER_CMD) up -d
+	@echo "$(BLUE)Waiting for services to be ready...$(NC)"
+	@timeout 30 sh -c 'until curl -s http://localhost:3000/api/health > /dev/null 2>&1; do sleep 1; done' || (echo "$(RED)Service failed to start$(NC)"; $(DOCKER_CMD) down; exit 1)
+	@echo "$(BLUE)Installing Playwright browsers...$(NC)"
+	@npx playwright install --with-deps chromium || true
+	@echo "$(BLUE)Running tests in debug mode...$(NC)"
+	@USE_DOCKER=1 npx playwright test --config=tooling/e2e/playwright.config.ts --debug || (echo "$(RED)Tests failed$(NC)"; $(DOCKER_CMD) down; exit 1)
+	@echo "$(BLUE)Stopping services...$(NC)"
+	@$(DOCKER_CMD) down
+	@echo "$(GREEN)✓ E2E tests completed$(NC)"
 
 e2e-headed: ## Run E2E tests in headed mode (visible browser)
-	@echo "$(BLUE)Running E2E tests in headed mode...$(NC)"
-	@npx playwright test --headed
+	@echo "$(BLUE)Running E2E tests in headed mode with Docker Compose...$(NC)"
+	@echo "$(BLUE)Starting services...$(NC)"
+	@NODE_ENV=development $(DOCKER_CMD) up -d
+	@echo "$(BLUE)Waiting for services to be ready...$(NC)"
+	@timeout 30 sh -c 'until curl -s http://localhost:3000/api/health > /dev/null 2>&1; do sleep 1; done' || (echo "$(RED)Service failed to start$(NC)"; $(DOCKER_CMD) down; exit 1)
+	@echo "$(BLUE)Installing Playwright browsers...$(NC)"
+	@npx playwright install --with-deps chromium || true
+	@echo "$(BLUE)Running tests in headed mode...$(NC)"
+	@USE_DOCKER=1 npx playwright test --config=tooling/e2e/playwright.config.ts --headed || (echo "$(RED)Tests failed$(NC)"; $(DOCKER_CMD) down; exit 1)
+	@echo "$(BLUE)Stopping services...$(NC)"
+	@$(DOCKER_CMD) down
+	@echo "$(GREEN)✓ E2E tests completed$(NC)"
 
 # ============================================================================
 # LINT & FORMAT TARGETS
