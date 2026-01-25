@@ -244,13 +244,53 @@ export function renderBookmarks(): void {
       .slice(0, 20);
   } else {
     if (state.filterConfig.tags.length > 0) {
-      filtered = filtered.filter((b) => {
-        if (!b.tags) return false;
-        const bTags = b.tags.split(",").map((t) => t.trim());
-        return state.filterConfig.tagMode === "AND" 
-          ? state.filterConfig.tags.every(t => bTags.includes(t))
-          : state.filterConfig.tags.some(t => bTags.includes(t));
+      // Normalize tags for robust comparison (trim & case-insensitive)
+      const filterTags = state.filterConfig.tags.map((t) => t.trim().toLowerCase());
+
+      // Helper: extract normalized tags from bookmark (support string or array)
+      const getNormalizedTags = (bookmark: any): string[] => {
+        const raw = bookmark.tags;
+        if (!raw) return [];
+        if (Array.isArray(raw)) {
+          return raw.map((t) => String(t).trim().toLowerCase()).filter(Boolean);
+        }
+        // If object with 'name' fields (edge case), try to extract
+        if (typeof raw === "object") {
+          try {
+            return Object.values(raw)
+              .map((v) => String(v))
+              .join(",")
+              .split(",")
+              .map((t) => t.trim().toLowerCase())
+              .filter(Boolean);
+          } catch (e) {
+            return [];
+          }
+        }
+        return String(raw)
+          .split(",")
+          .map((t) => t.trim().toLowerCase())
+          .filter(Boolean);
+      };
+
+      // Debugging: examine why filtering might remove all bookmarks
+      let matchedCount = 0;
+      const sampleDetails: Array<any> = [];
+
+      filtered = filtered.filter((b, idx) => {
+        const bTags = getNormalizedTags(b);
+        const matches = state.filterConfig.tagMode === "AND"
+          ? filterTags.every((t) => bTags.includes(t))
+          : filterTags.some((t) => bTags.includes(t));
+
+        if (idx < 10) {
+          sampleDetails.push({ idx, bTags, matches, raw: b.tags });
+        }
+        if (matches) matchedCount++;
+        return matches;
       });
+
+      logger.info(`Tag filter debug: filterTags=${JSON.stringify(filterTags)} matched=${matchedCount}/${state.bookmarks.length} samples=${JSON.stringify(sampleDetails)}`);
     }
     const sort = state.filterConfig.sort;
     filtered.sort((a, b) => {
@@ -635,9 +675,9 @@ export function attachBookmarkCardListeners(): void {
     const url = bookmark.url;
     if (url.startsWith("view:")) {
       const viewId = url.substring(5);
-      if (state.currentView === "dashboard") {
-        import("@features/bookmarks/dashboard.ts").then(({ restoreView }) => restoreView(viewId));
-      }
+      import("@features/bookmarks/dashboard.ts").then(({ restoreView }) =>
+        restoreView(viewId, bookmark.title),
+      );
     } else if (url.startsWith("bookmark-view:")) {
       restoreBookmarkView(url.substring(14));
     } else {
