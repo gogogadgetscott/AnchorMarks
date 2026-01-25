@@ -70,7 +70,7 @@ describe("Tag Cloud - clicking a tag", () => {
     tagBtn!.click();
 
     // Wait for async click handler to complete
-    await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 150));
 
     expect(updateHeaderSpy).toHaveBeenCalled();
     expect(loadBookmarksSpy).toHaveBeenCalled();

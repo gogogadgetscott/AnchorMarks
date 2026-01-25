@@ -296,7 +296,9 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
     const matchingBookmarks = bookmarkCommands.filter((cmd) => {
       const label = cmd.label?.toLowerCase() || "";
       const description = cmd.description?.toLowerCase() || "";
-      const url = (cmd as any).url ? String((cmd as any).url).toLowerCase() : "";
+      const url = (cmd as any).url
+        ? String((cmd as any).url).toLowerCase()
+        : "";
 
       return (
         label.includes(searchTerm) ||

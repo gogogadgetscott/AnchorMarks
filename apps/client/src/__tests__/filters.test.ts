@@ -14,6 +14,16 @@ import {
   updateFilterButtonVisibility,
 } from "@features/bookmarks/filters.ts";
 
+vi.mock("@services/api.ts", () => ({
+  api: vi.fn(async (endpoint: string) => {
+    if (endpoint === "/bookmarks/counts") return { all: 0 };
+    if (endpoint === "/collections") return [];
+    return {};
+  }),
+  cancelRequest: vi.fn(),
+  createAbortController: vi.fn(() => new AbortController()),
+}));
+
 describe("Filter Dropdown Module", () => {
   let headersContainer: HTMLElement;
 

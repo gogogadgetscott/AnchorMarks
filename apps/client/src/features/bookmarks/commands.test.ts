@@ -13,6 +13,7 @@ vi.mock("@features/state.ts", () => ({
   setCommandPaletteOpen: vi.fn(),
   setCommandPaletteEntries: vi.fn(),
   setCommandPaletteActiveIndex: vi.fn(),
+  API_BASE: "http://localhost:3000",
 }));
 
 // Mock UI helpers
