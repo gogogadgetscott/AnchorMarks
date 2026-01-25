@@ -1961,7 +1961,7 @@
             </div>
 
             <h4>Manual Linux/macOS install</h4>
-            <div class="code-block">npm ci --omit=dev && npm run prod</div>
+            <div class="code-block">npm ci --omit=dev && make prod</div>
 
             <h4>Nginx reverse proxy</h4>
             <p>
@@ -2152,14 +2152,16 @@
             </ul>
 
             <h4>Available Scripts</h4>
+            <p><strong>Note:</strong> AnchorMarks uses a Makefile for command management. All scripts are run via <code>make</code> targets.</p>
             <div class="code-block">
-              # Install dependencies npm install # Start both dev servers
-              (recommended for development) npm start # or explicitly: npm run
-              dev:full # Start only the backend npm run dev # Start only Vite
-              dev server npm run dev:vite # Stop both servers npm run stop #
-              Restart both servers npm run restart # Build for production npm
-              run build # Run in production mode npm run prod # Run tests npm
-              test # Run screenshot pipeline npm run screenshots
+              # Install dependencies npm install # See all available commands
+              make help # Start both dev servers (recommended) make dev-full #
+              Start only the backend make dev # Start only Vite dev server make
+              dev-vite # Stop servers make stop # Restart servers make restart #
+              Build for production make frontend-build # Run in production mode
+              make prod # Run all tests make test # Run backend tests make
+              test-backend # Run frontend tests make test-frontend # Lint and
+              format code make lint # Check linting without fixing make lint-check
             </div>
 
             <h3 class="help-anchor" id="screenshots">
@@ -2185,12 +2187,12 @@
 
             <h4>Running the Pipeline</h4>
             <p>
-              Ensure your development servers are running (<code>npm start</code
+              Ensure your development servers are running (<code>make dev-full</code
               >), then run the following in a separate terminal:
             </p>
             <div class="code-block">
-              # Generate all screenshots npm run screenshots # Generate a
-              limited set (e.g., 5) npm run screenshots -- 5
+              # Generate all screenshots make screenshots # Generate a limited
+              set (e.g., 5) make screenshots 5
             </div>
 
             <p>
@@ -2218,9 +2220,9 @@
             <div class="tip-box">
               <span class="callout-icon" aria-hidden="true">💡</span
               ><strong>Production Mode:</strong> Run
-              <code>npm run build</code> to compile the frontend into
+              <code>make build</code> to compile the frontend into
               <code>apps/client/dist</code>. Then
-              <code>npm run prod</code> serves everything from the Express
+              <code>make prod</code> serves everything from the Express
               server on a single port (3000 by default). No Vite dev server
               needed in production.
             </div>
