@@ -5,16 +5,21 @@ services:
       dockerfile: ./tooling/docker/Dockerfile
       target: production
       args:
-        NODE_ENV: ${NODE_ENV}
-        PORT: ${PORT}
-        HOST: ${HOST}
-        DB_PATH: ${DB_PATH}
-        JWT_SECRET: ${JWT_SECRET}
-        CORS_ORIGIN: ${CORS_ORIGIN}
+        NODE_ENV: ${NODE_ENV:-production}
+        PORT: ${PORT:-3000}
+        HOST: ${HOST:-0.0.0.0}
+        DB_PATH: ${DB_PATH:-./apps/database/anchormarks.db}
+        JWT_SECRET: ${JWT_SECRET:-akkAAz6yWmP7kAakpIqJ8iFErDErgyAgtZEyvknv8YI=}
+        CORS_ORIGIN: ${CORS_ORIGIN:-https://yourdomain.com}
         SSL_KEY: ${SSL_KEY}
         SSL_CERT: ${SSL_CERT}
-    env_file:
-      - ../../.env
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-3000}
+      HOST: ${HOST:-0.0.0.0}
+      DB_PATH: ${DB_PATH:-./apps/database/anchormarks.db}
+      JWT_SECRET: ${JWT_SECRET:-akkAAz6yWmP7kAakpIqJ8iFErDErgyAgtZEyvknv8YI=}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://yourdomain.com}
     container_name: anchormarks
     restart: unless-stopped
     ports:

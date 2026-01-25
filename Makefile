@@ -19,7 +19,7 @@
 	test-e2e test-e2e-ui test-e2e-debug test-e2e-headed \
 	lint-code lint-check lint-backend lint-frontend \
 	clean-frontend clean-all reinstall-deps \
-	install-deps deploy-install \
+	install-deps install-deploy \
 	run-docker stop-docker restart-docker logs-docker shell-docker rebuild-docker \
 	create-demo-gif capture-screenshots
 
@@ -266,11 +266,14 @@ lint-frontend: ## Lint frontend code only
 # ============================================================================
 clean-frontend: ## Clean frontend build artifacts
 	@echo "$(BLUE)Cleaning frontend...$(NC)"
+	@cd $(BACKEND_DIR) && rm -rf node_modules
 	@cd $(FRONTEND_DIR) && rm -rf dist
 	@echo "$(GREEN)✓ Frontend cleaned$(NC)"
 
 clean-all: clean-frontend ## Clean all build artifacts
 	@echo "$(BLUE)Cleaning all build artifacts...$(NC)"
+	@cd $(BACKEND_DIR) && rm -rf dist
+	@cd $(FRONTEND_DIR) && rm -rf node_modules
 	@echo "$(GREEN)✓ All artifacts cleaned$(NC)"
 
 reinstall-deps: clean-all ## Clean and reinstall dependencies
@@ -287,7 +290,7 @@ install-deps: ## Install all dependencies
 	@npm install
 	@echo "$(GREEN)✓ Dependencies installed$(NC)"
 
-deploy-install: ## Install for deployment
+install-deploy: ## Install for deployment
 	@echo "$(BLUE)Installing for deployment...$(NC)"
 	@sudo bash tooling/deploy/install.sh
 	@echo "$(GREEN)✓ Deployment installation completed$(NC)"

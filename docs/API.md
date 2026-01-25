@@ -1204,7 +1204,8 @@ Check API health status.
   "status": "ok",
   "version": "1.0.0",
   "environment": "production",
-  "timestamp": "2024-01-01T00:00:00.000Z"
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "database_location": "<absolute_database_path>"
 }
 ```
 
