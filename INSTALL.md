@@ -24,16 +24,19 @@ Get AnchorMarks running in 5 minutes!
 # 1. Install dependencies
 npm install
 
-# 2. Start server
-npm run dev
+# 2. Start the full development stack
+make dev-full
 
-# 3. Open http://localhost:3000
+# 3. Open http://localhost:3000 (or http://localhost:5173 for frontend)
 ```
 
 ### Docker (Easiest for Production)
 
 ```bash
-# Start with Docker Compose (compose file is in `tooling/docker`)
+# Start with Docker Compose using Makefile
+make docker-up
+
+# Or use docker compose directly
 docker compose -f tooling/docker/docker-compose.yml up -d
 
 # Open http://localhost:3000
@@ -94,21 +97,20 @@ Choose one of the following options:
 **Using Makefile (recommended):**
 ```bash
 make dev-full      # Full stack (backend + frontend with HMR)
-# or
 make dev           # Backend only (serves classic UI)
+make dev-vite      # Frontend only with HMR (requires separate backend)
 ```
 
-**Using npm scripts directly:**
+**Or use make help to see all available commands:**
 ```bash
-npm run dev        # Backend only
-npm run dev:vite   # Frontend Vite dev server (requires separate backend)
+make help          # Display all available Makefile targets
 ```
 
 ### Step 5: Access the Application
 
 Open http://localhost:3000 in your browser and create an account!
 
-If using `make dev-full` or Vite frontend, you can also access:
+If using `make dev-full` or `make dev-vite`, you can also access:
 - Vite dev frontend: http://localhost:5173 (with hot reload)
 
 ---

@@ -6,10 +6,11 @@ Thanks for your interest in improving AnchorMarks!
 
 - Fork and clone the repo
 - `npm install`
-- `make dev-full` to start development environment (or `npm run dev:full`)
-- `make test` to run the test suite (or `npm test`)
+- `make dev-full` to start development environment
+- `make test` to run the test suite
 - Make changes in a feature branch and add tests when possible
-- Use `make lint` to format and lint code (or `npm run lint`)
+- Use `make lint` to format and lint code
+- Run `make help` to see all available commands
 
 ## Code Style
 
@@ -19,7 +20,8 @@ Thanks for your interest in improving AnchorMarks!
 ## Testing
 
 - Add or update tests for new behaviors.
-- Ensure `npm test` passes before opening a PR.
+- Ensure `make test` passes before opening a PR.
+- Use `make test-backend-watch` or `make test-frontend-watch` for development.
 
 ## Security
 
@@ -44,23 +46,27 @@ We label beginner-friendly tasks with `good first issue`. If you're new:
 Use the Makefile for all development tasks:
 
 ```bash
-make dev-full      # Start full dev stack (backend + Vite frontend with HMR)
-make dev           # Start backend only
-make dev-vite      # Start Vite frontend only (requires separate backend)
-make test          # Run all tests
-make lint          # Format and lint all code
-make clean         # Clean build artifacts
-make help          # Show all available commands
+make dev-full           # Start full dev stack (backend + Vite frontend with HMR)
+make dev                # Start backend only
+make dev-vite           # Start Vite frontend only (requires separate backend)
+make test               # Run all tests
+make test-backend-watch # Run backend tests in watch mode
+make test-frontend-watch # Run frontend tests in watch mode
+make test-coverage      # Generate test coverage reports
+make lint               # Format and lint all code
+make clean              # Clean build artifacts
+make help               # Show all available commands
 ```
 
-Alternatively, use npm scripts directly if you prefer.
+All build, test, and development tasks are now centralized in the Makefile. See `make help` for complete list of targets.
 
 ## PR Checklist
 
 - **Branch**: Create a feature branch (`feature/description`), bugfix branch (`bugfix/description`), or chore branch (`chore/description`)
-- **Tests**: add/adjust unit tests for new behavior (`make test` or `npm test`)
-- **Lint/format**: run `make lint` or `npm run lint` and keep diffs focused
+- **Tests**: add/adjust unit tests for new behavior (run `make test`)
+- **Lint/format**: run `make lint` and keep diffs focused
 - **Docs**: update README/help where user-facing changes occur
 - **Help HTML**: If adding UI features, update [apps/client/public/help.html](apps/client/public/help.html) with documentation
 - **Security**: avoid secrets, follow JWT/CSRF patterns
+- **Scope**: keep changes minimal and targeted to the problem
 - **Scope**: keep changes minimal and targeted to the problem

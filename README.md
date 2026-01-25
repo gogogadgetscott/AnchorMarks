@@ -85,21 +85,20 @@ make dev
 make dev-vite
 # Visit http://localhost:5173 (API must be running: make dev)
 
-# Alternative: Using npm scripts directly
-npm run dev          # Backend only
-npm run dev:vite     # Frontend Vite dev server
+# For a complete list of commands:
+make help
 ```
 
 ### Docker Deploy
 
 ```bash
 # Build and start the stack
-npm run docker:build
-npm run docker:up
+make docker-build
+make docker-up
 
 # Logs and shell
-npm run docker:logs
-npm run docker:shell
+make docker-logs
+make docker-shell
 ```
 
 Compose file: tooling/docker/docker-compose.yml. The stack reads variables from .env.
