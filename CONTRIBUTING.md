@@ -6,8 +6,10 @@ Thanks for your interest in improving AnchorMarks!
 
 - Fork and clone the repo
 - `npm install`
-- `npm test` to run the suite
+- `make dev-full` to start development environment (or `npm run dev:full`)
+- `make test` to run the test suite (or `npm test`)
 - Make changes in a feature branch and add tests when possible
+- Use `make lint` to format and lint code (or `npm run lint`)
 
 ## Code Style
 
@@ -37,10 +39,28 @@ We label beginner-friendly tasks with `good first issue`. If you're new:
 - Ask clarifying questions — maintainers are happy to help.
 - Start small: docs, tests, or focused bug fixes are perfect.
 
+## Development Commands
+
+Use the Makefile for all development tasks:
+
+```bash
+make dev-full      # Start full dev stack (backend + Vite frontend with HMR)
+make dev           # Start backend only
+make dev-vite      # Start Vite frontend only (requires separate backend)
+make test          # Run all tests
+make lint          # Format and lint all code
+make clean         # Clean build artifacts
+make help          # Show all available commands
+```
+
+Alternatively, use npm scripts directly if you prefer.
+
 ## PR Checklist
 
-- Tests: add/adjust unit tests for new behavior (`npm test`).
-- Lint/format: run `npm run lint` and keep diffs focused.
-- Docs: update README/help where user-facing changes occur.
-- Security: avoid secrets, follow JWT/CSRF patterns.
-- Scope: keep changes minimal and targeted to the problem.
+- **Branch**: Create a feature branch (`feature/description`), bugfix branch (`bugfix/description`), or chore branch (`chore/description`)
+- **Tests**: add/adjust unit tests for new behavior (`make test` or `npm test`)
+- **Lint/format**: run `make lint` or `npm run lint` and keep diffs focused
+- **Docs**: update README/help where user-facing changes occur
+- **Help HTML**: If adding UI features, update [apps/client/public/help.html](apps/client/public/help.html) with documentation
+- **Security**: avoid secrets, follow JWT/CSRF patterns
+- **Scope**: keep changes minimal and targeted to the problem

@@ -44,7 +44,8 @@ Compared to Linkwarden/Linkding/Shaarli, AnchorMarks emphasizes minimal setup, r
 | 🌙 Dark Mode          | Beautiful light and dark themes                                             |
 | 📱 Responsive         | Works on desktop, tablet, and mobile                                        |
 | ⭐ Favorites          | Quick access to important bookmarks                                         |
-| 🎯 Advanced Filtering | Full-width filter bar with folder/tag counts (see [Help](help.html#search)) |
+| 🎯 Advanced Filtering | Full-width filter bar with folder/tag counts, persistent search filters, & tag mode toggle (see [Help](help.html#search)) |
+| 💬 Smart Omnibar      | Unified search + command palette with recent searches, tag suggestions, & filter application |
 
 ## 🎥 Live Tour
 
@@ -72,17 +73,21 @@ Compared to Linkwarden/Linkding/Shaarli, AnchorMarks emphasizes minimal setup, r
 # From repo root
 npm install
 
-# Option A: Full stack (backend + Vite frontend)
-npm run dev:full
+# Option A: Full stack (backend + Vite frontend) using Makefile
+make dev-full
 # Backend on http://localhost:3000, Frontend on http://localhost:5173
 
 # Option B: Backend only (serve classic UI)
-npm run dev
+make dev
 # Visit http://localhost:3000
 
 # Option C: Frontend-only HMR during UI work
-npm run dev:vite
-# Visit http://localhost:5173 (API must be running: npm run dev)
+make dev-vite
+# Visit http://localhost:5173 (API must be running: make dev)
+
+# Alternative: Using npm scripts directly
+npm run dev          # Backend only
+npm run dev:vite     # Frontend Vite dev server
 ```
 
 ### Docker Deploy

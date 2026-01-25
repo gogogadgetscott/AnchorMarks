@@ -60,7 +60,9 @@ sudo bash tooling/deploy/install.sh
 
 ## Quick Start (Development)
 
-The fastest way to get AnchorMarks running for development:
+The fastest way to get AnchorMarks running for development.
+
+**All development commands use the Makefile for ease of use. See `make help` for all available targets.**
 
 ### Step 1: Prerequisites
 
@@ -87,13 +89,27 @@ npm install
 
 ### Step 4: Start Development Server
 
+Choose one of the following options:
+
+**Using Makefile (recommended):**
 ```bash
-npm run dev
+make dev-full      # Full stack (backend + frontend with HMR)
+# or
+make dev           # Backend only (serves classic UI)
+```
+
+**Using npm scripts directly:**
+```bash
+npm run dev        # Backend only
+npm run dev:vite   # Frontend Vite dev server (requires separate backend)
 ```
 
 ### Step 5: Access the Application
 
 Open http://localhost:3000 in your browser and create an account!
+
+If using `make dev-full` or Vite frontend, you can also access:
+- Vite dev frontend: http://localhost:5173 (with hot reload)
 
 ---
 
