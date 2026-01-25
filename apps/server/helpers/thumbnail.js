@@ -109,7 +109,7 @@ async function captureScreenshot(url, bookmarkId) {
     page.on("request", (request) => {
       const resourceType = request.resourceType();
       const blockedTypes = ["media", "font"];
-      const url = request.url();
+      const reqUrl = request.url();
 
       // Block tracking/analytics scripts
       const blockedPatterns = [
@@ -125,7 +125,7 @@ async function captureScreenshot(url, bookmarkId) {
 
       if (blockedTypes.includes(resourceType)) {
         request.abort();
-      } else if (blockedPatterns.some((pattern) => url.includes(pattern))) {
+      } else if (blockedPatterns.some((pattern) => reqUrl.includes(pattern))) {
         request.abort();
       } else {
         request.continue();

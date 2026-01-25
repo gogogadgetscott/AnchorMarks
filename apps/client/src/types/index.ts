@@ -1,3 +1,16 @@
+export interface UserSettings {
+  theme:
+    | "light"
+    | "dark"
+    | "system"
+    | "ocean"
+    | "sunset"
+    | "midnight"
+    | "high-contrast";
+  view_mode?: string;
+  hide_favicons?: boolean;
+}
+
 export interface User {
   id: string;
   username: string;
@@ -22,6 +35,8 @@ export interface Bookmark {
   updated_at?: string;
   color?: string;
   is_archived?: number;
+  og_image?: string;
+  thumbnail_local?: string;
 }
 
 export interface Folder {
@@ -73,7 +88,7 @@ export interface Command {
   label: string;
   action: () => void;
   icon?: string;
-  category?: "command" | "folder" | "bookmark" | "tag";
+  category?: "command" | "folder" | "bookmark" | "tag" | "view";
   description?: string;
   url?: string;
   favicon?: string;

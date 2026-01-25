@@ -7,6 +7,7 @@ import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { escapeHtml } from "@utils/index.ts";
 import { showToast } from "@utils/ui-helpers.ts";
+import { getRecursiveBookmarkCount } from "@features/bookmarks/folders.ts";
 
 let filterDropdownPinned = false;
 
@@ -313,7 +314,6 @@ function filterFoldersInDropdown(searchTerm: string): void {
 
   let html = "";
   filtered.forEach((folder: any) => {
-    const count = getFolderBookmarkCount(folder.id);
     const isActive = state.currentFolder === folder.id;
     const color = folder.color || "#6366f1";
 
@@ -323,7 +323,7 @@ function filterFoldersInDropdown(searchTerm: string): void {
               <span class="folder-color" style="background:${color}"></span>
               <span class="filter-item-name">${escapeHtml(folder.name)}</span>
           </div>
-          <span class="filter-item-count">${count}</span>
+          <span class="filter-item-count">${folder.count}</span>
       </div>
     `;
   });
@@ -435,37 +435,37 @@ function attachTagClickHandlers(): void {
   });
 }
 
-function getAllDescendantFolderIds(folderId: string): string[] {
-  const descendants: string[] = [];
-  const children = state.folders.filter((f) => f.parent_id === folderId);
-
-  children.forEach((child) => {
-    descendants.push(child.id);
-    descendants.push(...getAllDescendantFolderIds(child.id));
-  });
-
-  return descendants;
-}
-
-function getFolderBookmarkCount(folderId: string | null): number {
-  if (!folderId || folderId === "null" || folderId === "all") {
-    return state.bookmarks.filter((b) => !b.folder_id).length;
-  }
-
-  const descendantIds = getAllDescendantFolderIds(folderId);
-  descendantIds.push(folderId);
-
-  return state.bookmarks.filter(
-    (b) => b.folder_id && descendantIds.includes(b.folder_id),
-  ).length;
-}
+// Obsolete helper functions removed
 
 async function renderFoldersInDropdown(): Promise<void> {
   const container = document.getElementById("filter-folders-container") as any;
   if (!container) return;
 
-  const allCount = state.bookmarks.length;
-  const noFolderCount = getFolderBookmarkCount(null);
+  // Initialize array to store folder data with counts for search filtering
+  const folderDataForSearch: Array<{
+    id: string;
+    name: string;
+    count: number;
+    color?: string;
+  }> = [];
+
+  let allCount = 0;
+  try {
+    const counts = await api<any>("/bookmarks/counts");
+    allCount = Number(counts.all) || 0;
+  } catch (e) {
+    console.error("Failed to fetch counts for filter", e);
+    // Fallback?
+    allCount = state.bookmarks.length; // Better than nothing
+  }
+
+  // Calculate sum of recursive counts of all root folders
+  const rootFolders = state.folders.filter((f) => !f.parent_id);
+  const totalInFolders = rootFolders.reduce((sum, folder) => {
+    return sum + getRecursiveBookmarkCount(folder.id);
+  }, 0);
+
+  const noFolderCount = Math.max(0, allCount - totalInFolders);
 
   let html = "";
 
@@ -476,6 +476,11 @@ async function renderFoldersInDropdown(): Promise<void> {
             <span class="filter-item-count">${allCount}</span>
         </div>
     `;
+  folderDataForSearch.push({
+    id: "all",
+    name: "All Bookmarks",
+    count: allCount,
+  });
 
   if (noFolderCount > 0) {
     const isNoFolderActive =
@@ -486,15 +491,27 @@ async function renderFoldersInDropdown(): Promise<void> {
                 <span class="filter-item-count">${noFolderCount}</span>
             </div>
         `;
+    folderDataForSearch.push({
+      id: "null",
+      name: "No Folder",
+      count: noFolderCount,
+    });
   }
 
   const renderFolderTree = (parentId: string | null = null, depth = 0) => {
     const folderList = state.folders.filter((f) => f.parent_id === parentId);
     // TODO: Implement folder.position sort if/when available in interface
-    // Currently, folders are not sorted by position due to missing property.
 
     folderList.forEach((folder) => {
-      const count = getFolderBookmarkCount(folder.id);
+      const count = getRecursiveBookmarkCount(folder.id);
+
+      // Add to search data
+      folderDataForSearch.push({
+        id: folder.id,
+        name: folder.name,
+        count: count,
+        color: folder.color,
+      });
 
       if (count === 0 && !state.folders.some((f) => f.parent_id === folder.id))
         return;
@@ -523,11 +540,7 @@ async function renderFoldersInDropdown(): Promise<void> {
     html ||
     '<p style="color:var(--text-tertiary);font-size:0.875rem;padding:1rem;">No folders</p>';
 
-  container._allFolders = [
-    { id: "all", name: "All Bookmarks" },
-    ...(noFolderCount > 0 ? [{ id: "null", name: "No Folder" }] : []),
-    ...state.folders,
-  ];
+  container._allFolders = folderDataForSearch;
   container._originalHTML = container.innerHTML;
 
   attachFolderClickHandlers();

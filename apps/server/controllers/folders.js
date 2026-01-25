@@ -35,6 +35,7 @@ function setupFoldersRoutes(app, db, helpers = {}) {
         color || "#6366f1",
         icon || "folder",
         position,
+        parent_id || null, // Added parent_id
       );
       const folder = folderModel.getFolderById(db, id);
       res.json(folder);

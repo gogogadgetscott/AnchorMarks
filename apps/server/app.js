@@ -1,8 +1,8 @@
 const path = require("path");
 
-// Load environment from repository `apps/.env` explicitly so running from
+// Load environment from repository `.env` explicitly so running from
 // project root still picks up the correct file.
-const _envPath = path.join(__dirname, "..", ".env");
+const _envPath = path.join(__dirname, "..", "..", ".env");
 require("dotenv").config({ path: _envPath, quiet: true });
 
 const express = require("express");
@@ -10,6 +10,15 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const fs = require("fs");
 const helmet = require("helmet");
+
+// Read app version from root package.json
+let APP_VERSION = "unknown";
+try {
+  const pkg = require(path.join(__dirname, "..", "..", "package.json"));
+  APP_VERSION = (pkg && pkg.version) || "unknown";
+} catch {
+  console.warn("package.json not found, version unknown");
+}
 
 const config = require("./config");
 const { initializeDatabase, ensureDirectories } = require("./models/database");
@@ -62,8 +71,14 @@ createBackgroundJobs({
   config,
 });
 
-// Initialize metadata queue for deferred favicon fetching during import
-metadataQueue.initialize(db, fetchFaviconWrapper);
+// Initialize metadata queue for deferred favicon/thumbnail fetching during import
+const { captureScreenshot } = require("./helpers/thumbnail");
+
+metadataQueue.initialize(
+  db,
+  fetchFaviconWrapper,
+  config.THUMBNAIL_ENABLED ? captureScreenshot : null,
+);
 if (config.NODE_ENV !== "test") {
   metadataQueue.startProcessor();
 }
@@ -98,7 +113,7 @@ if (config.NODE_ENV === "development") {
   // If external CDN scripts are added, use the SRI helper: helpers/sri.js
 }
 
-// Enhanced security headers
+// Enhanced security headers (default CSP)
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -107,11 +122,34 @@ app.use(
     hsts: config.SSL_ENABLED
       ? { maxAge: 31536000, includeSubDomains: true, preload: true }
       : false,
+    crossOriginOpenerPolicy: config.SSL_ENABLED
+      ? { policy: "same-origin" }
+      : false,
+    originAgentCluster: config.SSL_ENABLED,
     crossOriginEmbedderPolicy: false, // Required for favicon loading from external sources
     xContentTypeOptions: true, // Prevent MIME type sniffing
     xXssProtection: true, // Legacy XSS protection header
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
     frameguard: { action: "deny" },
+  }),
+);
+
+// Relax CSP for inline-script bookmark pages (/addbookmark, /m-addbookmark)
+// These static pages are self-hosted but require inline JS to prefill fields.
+const relaxedCspDirectives = {
+  ...cspDirectives,
+  scriptSrc: [...(cspDirectives.scriptSrc || ["'self'"]), "'unsafe-inline'"],
+};
+
+app.use(
+  ["/addbookmark", "/m-addbookmark"],
+  helmet({
+    contentSecurityPolicy: { directives: relaxedCspDirectives },
+    hsts: false,
+    crossOriginOpenerPolicy: config.SSL_ENABLED
+      ? { policy: "same-origin" }
+      : false,
+    originAgentCluster: config.SSL_ENABLED,
   }),
 );
 // Additional manual headers for redundancy
@@ -185,6 +223,7 @@ setupApiRoutes(app, db, {
   validateCsrfTokenMiddleware,
   fetchFaviconWrapper,
   config,
+  version: APP_VERSION,
 });
 
 // Helper functions are imported in route modules as needed
@@ -232,7 +271,7 @@ app.use(
   express.static(path.join(__dirname, "public", "thumbnails"), {
     setHeaders: (res, _filePath) => {
       // Force image content types for thumbnails directory
-      res.setHeader("Content-Type", "image/webp");
+      res.setHeader("Content-Type", "image/jpeg");
       res.setHeader("X-Content-Type-Options", "nosniff");
     },
   }),
@@ -246,14 +285,20 @@ const setupStaticRoutes = require("./routes/static");
 setupStaticRoutes(app);
 
 // Graceful shutdown
-process.on("SIGINT", () => {
-  console.log("\nClosing database connection...");
+const { closeBrowser } = require("./helpers/thumbnail");
+
+process.on("SIGINT", async () => {
+  console.log("\nShutting down gracefully...");
+  metadataQueue.stopProcessor();
+  await closeBrowser();
   db.close();
   process.exit(0);
 });
 
-process.on("SIGTERM", () => {
-  console.log("\nClosing database connection...");
+process.on("SIGTERM", async () => {
+  console.log("\nShutting down gracefully...");
+  metadataQueue.stopProcessor();
+  await closeBrowser();
   db.close();
   process.exit(0);
 });

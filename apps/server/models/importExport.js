@@ -51,21 +51,36 @@ function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
   // Insert folders in dependency-safe order
   const pending = [...folders];
   let guard = 0;
+  console.log(
+    `[Import] Starting folder insertion for ${pending.length} folders`,
+  );
   while (pending.length && guard < 1000) {
     const next = pending.shift();
     const parentMapped = next.parent_id
       ? folderIdMap.get(next.parent_id)
       : null;
+
     if (
       next.parent_id &&
       next.parent_id !== null &&
       parentMapped === undefined
     ) {
+      console.log(
+        `[Import] Re-queueing folder "${next.name}" (waiting for parent ${next.parent_id})`,
+      );
       pending.push(next);
     } else {
-      ensureFolder(next);
+      const newId = ensureFolder(next);
+      console.log(
+        `[Import] Inserted folder "${next.name}" (Original ID: ${next.id}, New ID: ${newId}, Parent: ${parentMapped})`,
+      );
     }
     guard++;
+  }
+  if (pending.length > 0) {
+    console.warn(
+      `[Import] Failed to insert ${pending.length} folders due to missing parents after 1000 attempts.`,
+    );
   }
 
   const today = new Date();

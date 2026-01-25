@@ -156,6 +156,9 @@ function initBookmarkForms(): void {
       const descEl = document.getElementById(
         "bookmark-description",
       ) as HTMLTextAreaElement;
+      const tagsEl = document.getElementById(
+        "bookmark-tags",
+      ) as HTMLInputElement;
 
       const id = idEl?.value;
       const data = {
@@ -164,7 +167,7 @@ function initBookmarkForms(): void {
         folder_id: folderEl?.value || undefined,
         color: colorEl?.value,
         description: descEl?.value,
-        tags: "", // Tags are handled separately by tag-input.ts
+        tags: tagsEl?.value || "", // Read from hidden input populated by tag-input.ts
       };
 
       const bookmarksModule = await import("@features/bookmarks/bookmarks.ts");
@@ -172,6 +175,43 @@ function initBookmarkForms(): void {
         await bookmarksModule.updateBookmark(id, data);
       } else {
         await bookmarksModule.createBookmark(data);
+      }
+    });
+
+  // New Folder button inside bookmark modal
+  document
+    .getElementById("bookmark-new-folder-btn")
+    ?.addEventListener("click", async () => {
+      const { promptDialog } = await import("@features/ui/confirm-dialog.ts");
+      const folderName = await promptDialog("Enter folder name:", {
+        title: "New Folder",
+        confirmText: "Create",
+        placeholder: "Folder Name",
+      });
+
+      if (!folderName || !folderName.trim()) return;
+
+      try {
+        const { createFolder } = await import("@features/bookmarks/folders.ts");
+
+        // Create the folder - this already updates the state and UI (sidebar + dropdowns)
+        const newFolder = await createFolder(
+          { name: folderName.trim(), color: "#6366f1" },
+          { closeModal: false }, // Don't close any modals (we're in bookmark modal)
+        );
+
+        if (newFolder && newFolder.id) {
+          // Select the newly created folder
+          const folderSelect = document.getElementById(
+            "bookmark-folder",
+          ) as HTMLSelectElement;
+          if (folderSelect) {
+            folderSelect.value = newFolder.id;
+          }
+          showToast(`Folder "${folderName}" created!`, "success");
+        }
+      } catch (err: any) {
+        showToast(err.message || "Failed to create folder", "error");
       }
     });
 

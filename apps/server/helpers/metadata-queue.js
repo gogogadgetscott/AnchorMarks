@@ -1,5 +1,5 @@
 /**
- * Metadata Queue - Background processing for bookmark metadata (favicons)
+ * Metadata Queue - Background processing for bookmark metadata (favicons & thumbnails)
  *
  * This module provides a queue system for deferred metadata fetching.
  * Instead of fetching metadata immediately during import (which blocks),
@@ -16,6 +16,7 @@ let intervalId = null;
 // Dependencies (set via initialize)
 let db = null;
 let fetchFaviconFn = null;
+let captureScreenshotFn = null;
 
 // Configuration
 const BATCH_SIZE = 5; // Process 5 bookmarks at a time
@@ -26,10 +27,12 @@ const FETCH_DELAY_MS = 500; // Delay between fetches to avoid rate limiting
  * Initialize the metadata queue with dependencies
  * @param {Object} database - The database instance
  * @param {Function} fetchFavicon - The favicon fetch wrapper function
+ * @param {Function} [captureScreenshot] - Optional thumbnail capture function
  */
-function initialize(database, fetchFavicon) {
+function initialize(database, fetchFavicon, captureScreenshot = null) {
   db = database;
   fetchFaviconFn = fetchFavicon;
+  captureScreenshotFn = captureScreenshot;
 }
 
 /**
@@ -83,7 +86,33 @@ async function processBatch() {
         .get(bookmarkId);
 
       if (bookmark && bookmark.url) {
+        // Fetch favicon
         await fetchFaviconFn(bookmark.url, bookmark.id);
+
+        // Capture thumbnail if enabled
+        if (captureScreenshotFn) {
+          try {
+            const result = await captureScreenshotFn(bookmark.url, bookmark.id);
+            if (result.success) {
+              console.log(
+                `[MetadataQueue] Thumbnail captured for ${bookmarkId}`,
+              );
+            } else if (
+              result.error &&
+              result.error !== "Thumbnail generation is disabled"
+            ) {
+              console.warn(
+                `[MetadataQueue] Thumbnail failed for ${bookmarkId}: ${result.error}`,
+              );
+            }
+          } catch (thumbnailErr) {
+            console.error(
+              `[MetadataQueue] Thumbnail error for ${bookmarkId}:`,
+              thumbnailErr.message,
+            );
+          }
+        }
+
         // Small delay between fetches to be nice to external services
         await sleep(FETCH_DELAY_MS);
       }
@@ -130,6 +159,7 @@ function getStatus() {
     queueLength: metadataQueue.length,
     isProcessing,
     isRunning: intervalId !== null,
+    thumbnailsEnabled: captureScreenshotFn !== null,
   };
 }
 

@@ -16,8 +16,13 @@ function setupImportExportRoutes(app, db, { authenticateTokenMiddleware }) {
           bookmarks,
           folders,
         });
-        // Queue metadata fetching for background processing (non-blocking)
-        queueMetadataFetch(result.imported.map((b) => b.id));
+
+        // Queue imported bookmarks for background metadata processing (favicons + thumbnails)
+        const bookmarkIds = result.imported.map((b) => b.id);
+        if (bookmarkIds.length > 0) {
+          queueMetadataFetch(bookmarkIds);
+        }
+
         res.json({
           imported: result.imported.length,
           skipped: result.skipped || 0,
@@ -38,8 +43,13 @@ function setupImportExportRoutes(app, db, { authenticateTokenMiddleware }) {
         bookmarks,
         folders,
       });
-      // Queue metadata fetching for background processing (non-blocking)
-      queueMetadataFetch(result.imported.map((b) => b.id));
+
+      // Queue imported bookmarks for background metadata processing (favicons + thumbnails)
+      const bookmarkIds = result.imported.map((b) => b.id);
+      if (bookmarkIds.length > 0) {
+        queueMetadataFetch(bookmarkIds);
+      }
+
       res.json({
         imported: result.imported.length,
         skipped: result.skipped || 0,

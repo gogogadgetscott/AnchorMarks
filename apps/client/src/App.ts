@@ -52,6 +52,7 @@ import { initOmnibarListeners } from "@features/ui/omnibar.ts";
 import { initInteractions } from "@features/ui/interactions.ts";
 import { initTagListeners } from "@features/ui/tags.ts";
 import { confirmDialog } from "@features/ui/confirm-dialog.ts";
+import { initMaintenance } from "@features/maintenance.ts";
 
 /**
  * Set view mode (grid / list / compact)
@@ -98,7 +99,8 @@ export function attachViewToggleListeners(): void {
  * This dynamically renders the header without fully re-rendering
  */
 export async function updateHeaderContent(): Promise<void> {
-  const { Omnibar, Icon, Button } = await import("@components/index.ts");
+  const { Omnibar, Button, Header } =
+    await import("@components/index.ts");
   const headersContainer = document.getElementById("headers-container");
   if (!headersContainer) return;
 
@@ -113,6 +115,7 @@ export async function updateHeaderContent(): Promise<void> {
     case "dashboard":
       headerConfig.title = "Dashboard";
       headerConfig.countId = "dashboard-view-name";
+      headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
       headerConfig.rightContent = `
         ${Button("Add Widget", { id: "dashboard-add-widget-btn", variant: "secondary", icon: "plus", data: { action: "toggle-widget-picker" } })}
         ${Button("", { id: "dashboard-layout-btn", variant: "icon", icon: "grid", title: "Layout Settings", data: { action: "toggle-layout-settings" } })}
@@ -124,6 +127,7 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.title = "Favorites";
       headerConfig.countId = "favorites-view-count";
       headerConfig.countSuffix = "favorites";
+      headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
       headerConfig.rightContent = `
           <div class="sort-controls">
             <label for="favorites-sort">Sort by</label>
@@ -142,6 +146,7 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.title = "Recent";
       headerConfig.countId = "recents-view-count";
       headerConfig.countSuffix = "recent";
+      headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
       headerConfig.rightContent = `
           <div class="time-range-controls">
             <label for="recents-range">Time Range</label>
@@ -159,13 +164,7 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.title = "Archived";
       headerConfig.countId = "archived-view-count";
       headerConfig.countSuffix = "bookmarks";
-      headerConfig.rightContent = `
-          <div class="header-search-bar">
-            ${Icon("search", { size: 18 })}
-            <input type="text" id="archived-search-input" placeholder="Search archived bookmarks..." />
-            <kbd>Ctrl+K</kbd>
-          </div>
-        `;
+      headerConfig.centerContent = `${Omnibar({ id: "search-input", placeholder: "Search archived bookmarks..." })}`;
       headerConfig.bulkActions = ["unarchive", "delete"];
       break;
 
@@ -173,18 +172,13 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.title = `Collection: ${state.currentCollection}`;
       headerConfig.countId = "collection-view-count";
       headerConfig.countSuffix = "bookmarks";
-      headerConfig.rightContent = `
-          ${Omnibar({ id: "search-input" })}
-          <button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
-            ${Icon("filter", { size: 16 })}
-            <span class="filter-btn-text">Filters</span>
-          </button>
-        `;
+      headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
       headerConfig.showFilterButton = true;
       break;
 
     case "tag-cloud":
       headerConfig.title = "Tag Cloud";
+      headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
       break;
 
     case "all":
@@ -193,16 +187,13 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.title = "Bookmarks";
       headerConfig.countId = "bookmarks-view-count";
       headerConfig.countSuffix = "bookmarks";
-      headerConfig.rightContent = `
-          ${Omnibar({ id: "search-input" })}
-          <button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
-            ${Icon("filter", { size: 16 })}
-            <span class="filter-btn-text">Filters</span>
-          </button>
-        `;
+      headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
       headerConfig.showFilterButton = true;
       break;
   }
+
+  // Render the header with the configured options
+  headersContainer.innerHTML = Header(headerConfig);
 
   // Ensure user profile reflects the logged-in user after re-render
   if (state.currentUser) {
@@ -216,8 +207,13 @@ export async function updateHeaderContent(): Promise<void> {
   updateFilterButtonVisibility();
 
   // Re-attach sidebar toggle listener
+  // Re-attach sidebar toggle listener
   const { attachSidebarToggle } = await import("@features/ui/navigation.ts");
   attachSidebarToggle();
+
+  // Re-attach Omnibar listeners since header was replaced
+  const { initOmnibarListeners } = await import("@features/ui/omnibar.ts");
+  initOmnibarListeners();
 }
 
 /**
@@ -290,6 +286,21 @@ export async function resetBookmarks(): Promise<void> {
 }
 
 /**
+ * Fetch and display app version
+ */
+async function updateAppVersion(): Promise<void> {
+  try {
+    const response = await api<{ version: string }>("/health");
+    const versionEl = document.getElementById("app-version");
+    if (versionEl && response.version) {
+      versionEl.textContent = `v${response.version}`;
+    }
+  } catch (error) {
+    console.warn("Failed to fetch app version:", error);
+  }
+}
+
+/**
  * Initialize application state and UI
  */
 export async function initializeApp(): Promise<void> {
@@ -298,7 +309,7 @@ export async function initializeApp(): Promise<void> {
   const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
 
   updateUserInfo();
-  await Promise.all([loadFolders(), loadBookmarks()]);
+  await Promise.all([loadFolders(), loadBookmarks(), updateAppVersion()]);
 
   // Update header based on current view before rendering
   await updateHeaderContent();
@@ -368,9 +379,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Initialize modular listeners
   initNavigationListeners();
   initFormListeners();
-  initOmnibarListeners();
+  // Only call initOmnibarListeners here if NOT authenticated, since
+  // updateHeaderContent() already attaches listeners when authenticated
+  if (!isAuthed) {
+    initOmnibarListeners();
+  }
   initInteractions();
   initTagListeners();
+  initMaintenance();
 
   // Global keyboard shortcuts
   document.addEventListener("keydown", handleKeyboard);

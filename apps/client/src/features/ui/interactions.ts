@@ -5,13 +5,7 @@
 
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
-import {
-  showToast,
-  openModal,
-  closeModals,
-  updateActiveNav,
-} from "@utils/ui-helpers.ts";
-import { escapeHtml, getHostname, parseTagInput } from "@utils/index.ts";
+import { showToast, openModal, updateActiveNav } from "@utils/ui-helpers.ts";
 
 /**
  * Initialize interaction-related listeners
@@ -116,6 +110,23 @@ function initImportExportListeners(): void {
       }
     });
 
+  // Import JSON
+  document.getElementById("import-json-btn")?.addEventListener("click", () => {
+    document.getElementById("import-json-file")?.click();
+  });
+  document
+    .getElementById("import-json-file")
+    ?.addEventListener("change", (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files && target.files[0]) {
+        const file = target.files[0];
+        import("@features/bookmarks/import-export.ts").then(({ importJson }) =>
+          importJson(file),
+        );
+        target.value = "";
+      }
+    });
+
   // Export Buttons
   document.getElementById("export-json-btn")?.addEventListener("click", () => {
     import("@features/bookmarks/import-export.ts").then(({ exportJson }) =>
@@ -129,25 +140,21 @@ function initImportExportListeners(): void {
   });
 
   // Dashboard Export/Import
+  document.getElementById("export-views-btn")?.addEventListener("click", () => {
+    import("@features/bookmarks/import-export.ts").then(({ exportViews }) =>
+      exportViews(),
+    );
+  });
+  document.getElementById("import-views-btn")?.addEventListener("click", () => {
+    document.getElementById("import-views-file")?.click();
+  });
   document
-    .getElementById("export-dashboard-views-btn")
-    ?.addEventListener("click", () => {
-      import("@features/bookmarks/import-export.ts").then(
-        ({ exportDashboardViews }) => exportDashboardViews(),
-      );
-    });
-  document
-    .getElementById("import-dashboard-views-btn")
-    ?.addEventListener("click", () => {
-      document.getElementById("import-dashboard-views-file")?.click();
-    });
-  document
-    .getElementById("import-dashboard-views-file")
+    .getElementById("import-views-file")
     ?.addEventListener("change", (e: Event) => {
       const target = e.target as HTMLInputElement;
       if (target.files && target.files[0]) {
-        import("@features/bookmarks/import-export.ts").then(
-          ({ importDashboardViews }) => importDashboardViews(target.files![0]),
+        import("@features/bookmarks/import-export.ts").then(({ importViews }) =>
+          importViews(target.files![0]),
         );
       }
     });
@@ -570,7 +577,7 @@ function initFaviconErrorHandling(): void {
 }
 
 /**
- * Initialize API Settings listeners (Regenerate/Copy Key)
+ * Initialize Settings listeners (API keys, Reset Bookmarks, Tour, etc.)
  */
 function initApiSettingsListeners(): void {
   // Since these buttons might be inside a modal that is created/destroyed or hidden,
@@ -587,6 +594,12 @@ function initApiSettingsListeners(): void {
       );
     } else if (target.id === "copy-api-key") {
       import("@features/auth/auth.ts").then(({ copyApiKey }) => copyApiKey());
+    } else if (target.id === "reset-bookmarks-btn") {
+      import("@/App.ts").then(({ resetBookmarks }) => resetBookmarks());
+    } else if (target.id === "restart-tour-btn") {
+      import("@features/bookmarks/tour.ts").then(({ startTour }) =>
+        startTour(),
+      );
     }
   });
 }

@@ -1,4 +1,4 @@
-import type { UserSettings } from "@/types";
+import type { UserSettings } from "../types/index";
 
 export function applyTheme(settings: UserSettings) {
   if (settings.theme === "system") {
@@ -6,10 +6,6 @@ export function applyTheme(settings: UserSettings) {
   } else {
     document.body.setAttribute("data-theme", settings.theme);
   }
-  document.body.setAttribute(
-    "data-high-contrast",
-    String(settings.highContrast),
-  );
 }
 /**
  * AnchorMarks - Global State Module
@@ -22,9 +18,8 @@ import {
   Folder,
   DashboardWidget,
   FilterConfig,
-  Tag,
   TourStep,
-} from "@types";
+} from "../types/index";
 
 // API Configuration
 export const API_BASE = "/api";
@@ -41,6 +36,7 @@ export let folders: Folder[] = [];
 export let renderedBookmarks: Bookmark[] = [];
 export let collections: any[] = [];
 export let totalCount: number = 0;
+export let widgetDataCache: Record<string, Bookmark[]> = {};
 
 // UI State
 export let currentDashboardTab: string | null = null;
@@ -86,8 +82,11 @@ export let filterConfig: FilterConfig = {
   tagMode: "OR",
 };
 
-// Tag metadata (colors, icons) loaded from database
-export let tagMetadata: Record<string, { color?: string; icon?: string }> = {};
+// Tag metadata (colors, icons, counts) loaded from database
+export let tagMetadata: Record<
+  string,
+  { color?: string; icon?: string; id?: string; count?: number }
+> = {};
 
 // Selection State
 export let selectedBookmarks = new Set<string>();
@@ -246,6 +245,12 @@ export function setRenderedBookmarks(val: Bookmark[]) {
 export function setTotalCount(val: number) {
   totalCount = val;
 }
+export function setWidgetDataCache(id: string, val: Bookmark[]) {
+  widgetDataCache[id] = val;
+}
+export function clearWidgetDataCache() {
+  widgetDataCache = {};
+}
 export function resetPagination() {
   displayedCount = BOOKMARKS_PER_PAGE;
   totalCount = 0;
@@ -261,6 +266,10 @@ export function setCurrentView(val: string) {
       (window as any).__tagCloudResizeCleanup = undefined;
     }
   }
+  // Body classes for view-specific layout overrides
+  document.body.classList.toggle("dashboard-active", val === "dashboard");
+  document.body.classList.toggle("tag-cloud-active", val === "tag-cloud");
+
   currentView = val;
 }
 export function setCurrentFolder(val: string | null) {
@@ -285,6 +294,9 @@ export function setAiSuggestionsEnabled(val: boolean) {
   aiSuggestionsEnabled = val;
 }
 export function setIncludeChildBookmarks(val: boolean) {
+  if (includeChildBookmarks !== val) {
+    widgetDataCache = {};
+  }
   includeChildBookmarks = val;
 }
 export function setSnapToGrid(val: boolean) {

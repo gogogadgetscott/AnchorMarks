@@ -24,6 +24,7 @@ interface OmnibarItem {
   icon?: string;
   favicon?: string;
   action: () => void;
+  category?: string; // e.g., "bookmark", "folder", "view" etc.
 }
 
 let omnibarState: OmnibarState = {
@@ -190,10 +191,9 @@ export function openOmnibar(): void {
 export function closeOmnibar(): void {
   const panel = document.getElementById("omnibar-panel");
 
-  if (!panel) return;
-
+  // Always update state so tests and non-DOM environments behave consistently
   omnibarState.isOpen = false;
-  panel.classList.add("hidden");
+  if (panel) panel.classList.add("hidden");
   omnibarState.activeIndex = 0;
   omnibarState.currentItems = [];
 }
@@ -239,6 +239,7 @@ export function renderOmnibarPanel(query: string): void {
       icon: cmd.icon,
       favicon: cmd.favicon,
       action: cmd.action,
+      category: cmd.category,
     }));
 
     renderResultsList(commands);
@@ -412,10 +413,22 @@ function renderResultsList(commands: any[]): void {
         iconHtml = `<span class="command-icon">${cmd.icon}</span>`;
       }
 
-      const categoryBadge =
-        cmd.category && cmd.category !== "command"
-          ? `<span class="command-category ${cmd.category}">${cmd.category}</span>`
-          : "";
+      let categoryBadge = "";
+      if (cmd.category && cmd.category !== "command") {
+        // Provide an icon for all category badges
+        const cat = cmd.category;
+        const label = `${cat.charAt(0).toUpperCase()}${cat.slice(1)}`;
+        const iconMap: Record<string, string> = {
+          view: "eye",
+          bookmark: "bookmark",
+          folder: "folder",
+          tag: "tag",
+          action: "bolt",
+        };
+        const iconName = iconMap[cat] || "dot";
+
+        categoryBadge = `<span class="command-category ${escapeHtml(cat)}">${Icon(iconName, { size: 12 })} ${escapeHtml(label)}</span>`;
+      }
 
       return `
         <div class="omnibar-item ${cmd.category || ""} ${idx === omnibarState.activeIndex ? "active" : ""}" data-index="${idx}">
@@ -504,15 +517,49 @@ export function navigateOmnibar(direction: "up" | "down"): void {
 export function executeActiveItem(): void {
   if (!omnibarState.isOpen) return;
 
-  const list = document.getElementById("omnibar-results-list");
-  if (!list) return;
+  // Prefer direct invocation for keyboard actions so we can special-case views
+  const cmd = omnibarState.currentItems[omnibarState.activeIndex];
+  if (!cmd) return;
 
-  const items = list.querySelectorAll(".omnibar-item:not(.empty)");
-  const activeItem = items[omnibarState.activeIndex];
-
-  if (activeItem) {
-    (activeItem as HTMLElement).click();
+  try {
+    cmd.action();
+  } catch (err) {
+    console.error("Error executing command action:", err);
   }
+
+  // For 'view' category, keep the omnibar open so user can try other views quickly
+  if (cmd.category !== "view") {
+    closeOmnibar();
+
+    // Add to recent searches if it's a search query
+    const input = document.getElementById("search-input") as HTMLInputElement;
+    if (
+      input &&
+      input.value.trim() &&
+      !input.value.startsWith(">") &&
+      !input.value.startsWith("@") &&
+      !input.value.startsWith("#")
+    ) {
+      addRecentSearch(input.value.trim());
+    }
+  }
+}
+
+// Test helpers (internal state manipulation for unit tests)
+export function _testSetCurrentItems(items: OmnibarItem[]): void {
+  omnibarState.currentItems = items;
+}
+
+export function _testSetActiveIndex(idx: number): void {
+  omnibarState.activeIndex = idx;
+}
+
+export function _testSetOpen(open: boolean): void {
+  omnibarState.isOpen = open;
+}
+
+export function _testGetState() {
+  return { ...omnibarState };
 }
 
 export default {

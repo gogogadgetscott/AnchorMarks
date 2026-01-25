@@ -17,7 +17,7 @@ import {
   updateBulkUI,
   updateActiveNav,
 } from "@utils/ui-helpers.ts";
-import { Bookmark } from "@/types";
+import { Bookmark } from "../../types/index";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
 import {
   BookmarkCard as createBookmarkCard,
@@ -26,14 +26,14 @@ import {
 } from "@components/index.ts";
 export { createBookmarkCard };
 
-import { confirmDialog } from "@features/ui/confirm-dialog.ts";
+import { confirmDialog, promptDialog } from "@features/ui/confirm-dialog.ts";
 
 /**
  * Render skeletons while loading
  */
 export function renderSkeletons(): void {
   const container =
-    dom.bookmarksContainer || document.getElementById("bookmarks-container");
+    dom.mainViewOutlet || document.getElementById("main-view-outlet");
   if (!container) return;
 
   // Set container class based on view mode
@@ -54,6 +54,7 @@ export function renderSkeletons(): void {
 // Load bookmarks from server
 export async function loadBookmarks(): Promise<void> {
   try {
+    logger.info(`loadBookmarks invoked; currentView=${state.currentView} filterTags=${JSON.stringify(state.filterConfig.tags)}`);
     state.setIsLoading(true);
     state.resetPagination();
     // Show skeletons immediately
@@ -87,6 +88,14 @@ export async function loadBookmarks(): Promise<void> {
         state.dashboardConfig.bookmarkSort ||
         "recently_added";
       params.append("sort", sortOption);
+
+      // If client-side filters contain tags, include them in the server request
+      if (state.filterConfig.tags && state.filterConfig.tags.length > 0) {
+        // Use comma-separated tags; server performs a LIKE match on tg.tags_joined
+        params.append("tags", state.filterConfig.tags.join(","));
+        // Pass tagMode so server can apply AND/OR semantics
+        params.append("tagMode", state.filterConfig.tagMode || "OR");
+      }
     }
 
     // Add pagination params
@@ -101,9 +110,11 @@ export async function loadBookmarks(): Promise<void> {
     if (response && typeof response === "object" && "bookmarks" in response) {
       state.setBookmarks(response.bookmarks);
       state.setTotalCount(response.total);
+      logger.info(`loadBookmarks fetched ${Array.isArray(response.bookmarks) ? response.bookmarks.length : 0} bookmarks (server response)`);
     } else {
       state.setBookmarks(Array.isArray(response) ? response : []);
       state.setTotalCount(state.bookmarks.length);
+      logger.info(`loadBookmarks fetched ${state.bookmarks.length} bookmarks (array response)`);
     }
 
     // Load tags metadata for color/icon rendering
@@ -170,15 +181,19 @@ export async function loadBookmarks(): Promise<void> {
 
 // Render bookmarks list
 // --- Virtualization State & Constants ---
-let isLazyLoadingInProgress = false;
 const pendingMetadataFetches = new Set<string>();
 let ogImageObserver: IntersectionObserver | null = null;
 
 export function renderBookmarks(): void {
+  // Only render if we're in a bookmark-rendering view
+  if (state.currentView === "dashboard" || state.currentView === "tag-cloud") {
+    return;
+  }
+
   updateFilterButtonVisibility();
 
   const container =
-    dom.bookmarksContainer || document.getElementById("bookmarks-container");
+    dom.mainViewOutlet || document.getElementById("main-view-outlet");
   const emptyState = dom.emptyState || document.getElementById("empty-state");
   const searchInput =
     dom.searchInput || document.getElementById("search-input");
@@ -232,9 +247,9 @@ export function renderBookmarks(): void {
       filtered = filtered.filter((b) => {
         if (!b.tags) return false;
         const bTags = b.tags.split(",").map((t) => t.trim());
-        return state.filterConfig.tagMode === "AND"
-          ? state.filterConfig.tags.every((t) => bTags.includes(t))
-          : state.filterConfig.tags.some((t) => bTags.includes(t));
+        return state.filterConfig.tagMode === "AND" 
+          ? state.filterConfig.tags.every(t => bTags.includes(t))
+          : state.filterConfig.tags.some(t => bTags.includes(t));
       });
     }
     const sort = state.filterConfig.sort;
@@ -265,6 +280,7 @@ export function renderBookmarks(): void {
   }
 
   state.setRenderedBookmarks(filtered);
+  logger.info(`renderBookmarks: currentView=${state.currentView} filterTags=${JSON.stringify(state.filterConfig.tags)} rendered=${filtered.length}`);
 
   if (filtered.length === 0) {
     container.innerHTML = "";
@@ -372,6 +388,13 @@ export function renderBookmarks(): void {
   };
 
   const syncLayout = debounce(() => {
+    // Double check view mode before re-rendering
+    if (
+      state.currentView === "dashboard" ||
+      state.currentView === "tag-cloud"
+    ) {
+      return;
+    }
     renderBookmarks();
 
     // Infinite scroll detection: check if near bottom
@@ -404,6 +427,10 @@ export function renderBookmarks(): void {
 
 // Load more bookmarks for infinite scroll
 export async function loadMoreBookmarks(): Promise<void> {
+  // Only load more if we're in a bookmark-rendering view (not dashboard/tag-cloud)
+  if (state.currentView === "dashboard" || state.currentView === "tag-cloud") {
+    return;
+  }
   // Don't load if already loading, or if we've reached the total count
   if (
     state.isLoadingMore ||
@@ -476,7 +503,8 @@ export async function loadMoreBookmarks(): Promise<void> {
 
 // Adaptive Lazy Loading for Rich Cards
 async function lazyLoadOGImages(): Promise<void> {
-  const container = document.getElementById("bookmarks-container");
+  const container =
+    dom.mainViewOutlet || document.getElementById("main-view-outlet");
   if (!container) return;
 
   const placeholders = Array.from(
@@ -565,7 +593,8 @@ function updateRichCardImage(bookmarkId: string, ogImage: string): void {
 const attachedContainers = new WeakSet<HTMLElement>();
 
 export function attachBookmarkCardListeners(): void {
-  const container = document.getElementById("bookmarks-container");
+  const container =
+    dom.mainViewOutlet || document.getElementById("main-view-outlet");
   if (!container || attachedContainers.has(container)) return;
   attachedContainers.add(container);
 
@@ -607,9 +636,7 @@ export function attachBookmarkCardListeners(): void {
     if (url.startsWith("view:")) {
       const viewId = url.substring(5);
       if (state.currentView === "dashboard") {
-        import("@features/bookmarks/dashboard.ts").then(({ restoreView }) =>
-          restoreView(viewId),
-        );
+        import("@features/bookmarks/dashboard.ts").then(({ restoreView }) => restoreView(viewId));
       }
     } else if (url.startsWith("bookmark-view:")) {
       restoreBookmarkView(url.substring(14));
@@ -723,6 +750,7 @@ export async function updateBookmark(
 
     // Re-render the appropriate view based on current state
     if (state.currentView === "dashboard") {
+      state.clearWidgetDataCache();
       // Dynamically import and render dashboard
       const { renderDashboard } =
         await import("@features/bookmarks/dashboard.ts");
@@ -1103,7 +1131,11 @@ function closeBookmarkViewsDropdown(e: Event) {
 // Save current bookmark view
 async function saveCurrentBookmarkView() {
   try {
-    const name = prompt("Enter a name for this view:");
+    const name = await promptDialog("Enter a name for this view:", {
+      title: "Save Bookmark View",
+      confirmText: "Save",
+      placeholder: "e.g., My Collection",
+    });
     if (!name) return;
 
     // Capture current state
@@ -1178,7 +1210,8 @@ async function deleteBookmarkView(id: string) {
 }
 
 // Restore bookmark view
-async function restoreBookmarkView(id: string) {
+// Restore bookmark view
+export async function restoreBookmarkView(id: string) {
   try {
     logger.debug("Restoring bookmark view", { viewId: id });
 

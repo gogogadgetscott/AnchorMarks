@@ -86,6 +86,9 @@ export function initOmnibarListeners(): void {
       }
     } else if (e.key === "Escape") {
       e.preventDefault();
+      // Clear the input and close the omnibar
+      searchInput.value = "";
+      renderOmnibarPanel("");
       closeOmnibar();
       searchInput.blur();
     }

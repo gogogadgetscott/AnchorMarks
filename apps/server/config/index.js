@@ -56,18 +56,18 @@ const DB_PATH =
 const ENABLE_BACKGROUND_JOBS = NODE_ENV !== "test";
 const ENABLE_FAVICON_BACKGROUND_JOBS = false; // Only fetch favicons on import/save
 
-// Optional AI tag suggestion configuration
-const AI_PROVIDER = (process.env.AI_PROVIDER || "none").toLowerCase();
-const AI_MODEL = process.env.AI_MODEL || null;
-const AI_API_URL = process.env.AI_API_URL || null; // e.g., https://api.openai.com/v1
-const AI_API_KEY = process.env.AI_API_KEY || null;
-
 // Thumbnail screenshot configuration
 const THUMBNAIL_ENABLED = process.env.THUMBNAIL_ENABLED === "true";
 const THUMBNAIL_WIDTH = parseInt(process.env.THUMBNAIL_WIDTH) || 1280;
 const THUMBNAIL_HEIGHT = parseInt(process.env.THUMBNAIL_HEIGHT) || 800;
 const THUMBNAIL_QUALITY = parseInt(process.env.THUMBNAIL_QUALITY) || 80;
 const THUMBNAIL_TIMEOUT = parseInt(process.env.THUMBNAIL_TIMEOUT) || 15000;
+
+// Optional AI tag suggestion configuration
+const AI_PROVIDER = (process.env.AI_PROVIDER || "none").toLowerCase();
+const AI_MODEL = process.env.AI_MODEL || null;
+const AI_API_URL = process.env.AI_API_URL || null; // e.g., https://api.openai.com/v1
+const AI_API_KEY = process.env.AI_API_KEY || null;
 
 // API key scope whitelist (method + path regex)
 const API_KEY_WHITELIST = [

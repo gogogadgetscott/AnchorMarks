@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Load environment variables from .env file
-dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
+dotenv.config({ path: path.resolve(__dirname, "..", "..", ".env") });
 
 // Get backend port from environment or default to 3000
 const BACKEND_PORT = process.env.PORT || 3000;

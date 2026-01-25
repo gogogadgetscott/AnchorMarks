@@ -42,4 +42,26 @@ describe("BookmarkCard", () => {
     const html = BookmarkCard(mockBookmark, 0);
     expect(html).toContain("background-color: #ff0000");
   });
+
+  it("in list view: columns and order (title -> tags -> description -> url)", () => {
+    setViewMode("list");
+    const html = BookmarkCard(mockBookmark, 0);
+
+    const titleIndex = html.indexOf('<div class=\"bookmark-title\">');
+    const tagsIndex = html.indexOf('<div class=\"bookmark-tags\">');
+    const descIndex = html.indexOf('<div class=\"bookmark-description\">');
+    const urlIndex = html.indexOf('<div class=\"bookmark-url\"');
+
+    expect(titleIndex).toBeGreaterThan(-1);
+    expect(tagsIndex).toBeGreaterThan(titleIndex);
+    expect(descIndex).toBeGreaterThan(tagsIndex);
+    expect(urlIndex).toBeGreaterThan(descIndex);
+
+    // wrappers should exist
+    expect(html).toContain('bookmark-title-tags');
+    expect(html).toContain('bookmark-desc-url');
+
+    // restore viewMode for other tests
+    setViewMode("grid");
+  });
 });

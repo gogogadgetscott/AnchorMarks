@@ -5,7 +5,7 @@
 
 import * as state from "@features/state.ts";
 import { openModal, updateActiveNav } from "@utils/ui-helpers.ts";
-import type { Command } from "@/types";
+import type { Command } from "../../types/index";
 
 // Get command palette commands
 export function getCommandPaletteCommands(filterText: string = ""): Command[] {
@@ -200,22 +200,44 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
   // Create bookmark commands (for launcher functionality)
   const bookmarkCommands: Command[] = state.bookmarks
     .slice(0, 100) // Limit to first 100 for performance
-    .map((b) => ({
-      label: b.title || b.url,
-      action: () => {
-        // Open the bookmark URL
-        window.open(b.url, "_blank");
-        // Increment click count
-        import("@services/api.ts").then(({ api }) => {
-          api(`/bookmarks/${b.id}/click`, { method: "POST" }).catch(() => {});
-        });
-      },
-      icon: "",
-      category: "bookmark" as const,
-      description: b.url,
-      url: b.url,
-      favicon: b.favicon || "",
-    }));
+    .map((b) => {
+      // Determine category: view bookmarks use 'view' category
+      const isView =
+        b.url &&
+        (b.url.startsWith("view:") || b.url.startsWith("bookmark-view:"));
+      const category = isView ? ("view" as const) : ("bookmark" as const);
+
+      return {
+        label: b.title || b.url,
+        action: () => {
+          if (b.url.startsWith("view:")) {
+            const viewId = b.url.substring(5);
+            import("@features/bookmarks/dashboard.ts").then(({ restoreView }) =>
+              restoreView(viewId, b.title),
+            );
+          } else if (b.url.startsWith("bookmark-view:")) {
+            const viewId = b.url.substring(14);
+            import("@features/bookmarks/bookmarks.ts").then(
+              ({ restoreBookmarkView }) => restoreBookmarkView(viewId),
+            );
+          } else {
+            // Open the bookmark URL
+            window.open(b.url, "_blank");
+            // Increment click count
+            import("@services/api.ts").then(({ api }) => {
+              api(`/bookmarks/${b.id}/click`, { method: "POST" }).catch(
+                () => {},
+              );
+            });
+          }
+        },
+        icon: "",
+        category,
+        description: b.url,
+        url: b.url,
+        favicon: b.favicon || "",
+      };
+    });
 
   // Filter based on search mode
   let results: Command[] = [];
