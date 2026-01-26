@@ -68,7 +68,8 @@ ENV NODE_ENV=$NODE_ENV \
     JWT_SECRET=$JWT_SECRET \
     CORS_ORIGIN=$CORS_ORIGIN \
     SSL_KEY=$SSL_KEY \
-    SSL_CERT=$SSL_CERT
+    SSL_CERT=$SSL_CERT \
+    WORKDIR=/apps/server
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
