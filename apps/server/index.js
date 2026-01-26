@@ -90,12 +90,10 @@ server.listen(config.PORT, config.HOST, () => {
   lines.push(`Mode:                     ${config.NODE_ENV}`);
 
   // Confirm .env file location
-  const envPath = path.join(__dirname, "..", "..", ".env");
+  const envPath = path.join(__dirname, "../.env");
   const envExists = fs.existsSync(envPath);
-  lines.push(
-    `ENV file:                 ${envPath} ${envExists ? "✓" : "✗ (not found)"}`,
-  );
-
+  lines.push(`ENV file:                 ${envPath} ${envExists ? "✓" : "✗ (not found)"}`);
+  
   lines.push(`SSL Enabled:              ${config.SSL_ENABLED ? "✓" : "✗"}`);
 
   // SSL configuration
@@ -112,7 +110,7 @@ server.listen(config.PORT, config.HOST, () => {
 
   const dbExists = config.DB_PATH && fs.existsSync(config.DB_PATH);
   lines.push(
-    `Database:                 ${config.DB_PATH || "(not set)"} ${dbExists ? "✓" : "✗"}`,
+    `Database:                 ${path.resolve(config.DB_PATH) || "(not set)"} ${dbExists ? "✓" : "✗"}`,
   );
   lines.push(
     `Background jobs:          ${config.ENABLE_BACKGROUND_JOBS ? "enabled" : "disabled"}`,

@@ -312,4 +312,3 @@ logs-docker: ## Follow Docker container logs
 shell-docker: ## Open shell in Docker container
 	@$(DOCKER_CMD) exec -it anchormarks /bin/sh
 
-

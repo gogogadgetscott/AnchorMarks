@@ -18,7 +18,6 @@ function setupApiRoutes(app, db, helpers) {
       status: "ok",
       version: version || "1.0.0",
       environment: config.NODE_ENV,
-      database_location: path.resolve(config.DB_PATH),
       timestamp: new Date().toISOString(),
     });
   });

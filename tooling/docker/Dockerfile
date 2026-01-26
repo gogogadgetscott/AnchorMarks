@@ -58,6 +58,7 @@ ARG HOST=0.0.0.0
 ARG DB_PATH=/apps/database/anchormarks.db
 ARG JWT_SECRET=your-super-secret-jwt-key-change-this-to-a-random-string
 ARG CORS_ORIGIN=*
+ARG SSL_ENABLED=false
 ARG SSL_KEY=/apps/ssl/privkey.pem
 ARG SSL_CERT=/apps/ssl/fullchain.pem
 
@@ -67,7 +68,7 @@ ENV NODE_ENV=$NODE_ENV \
     DB_PATH=$DB_PATH \
     JWT_SECRET=$JWT_SECRET \
     CORS_ORIGIN=$CORS_ORIGIN \
-    SSL_KEY=$SSL_KEY \
+    SSL_ENABLED=$SSL_ENABLED \
     SSL_CERT=$SSL_CERT \
     WORKDIR=/apps/server
 
