@@ -90,7 +90,7 @@ server.listen(config.PORT, config.HOST, () => {
   lines.push(`Mode:                     ${config.NODE_ENV}`);
 
   // Confirm .env file location
-  const envPath = path.join(__dirname, "../.env");
+  const envPath = path.join(__dirname, "..", "..", ".env");
   const envExists = fs.existsSync(envPath);
   lines.push(`ENV file:                 ${envPath} ${envExists ? "✓" : "✗ (not found)"}`);
   

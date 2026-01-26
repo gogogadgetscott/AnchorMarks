@@ -1,7 +1,7 @@
 # =============================================================================
 # Stage 1: Build Frontend
 # =============================================================================
-FROM node:20-alpine AS client-build
+FROM node:22-alpine AS client-build
 WORKDIR /client
 
 # Install frontend dependencies
@@ -22,7 +22,7 @@ RUN npx vite build && \
 # =============================================================================
 # Stage 2: Production Application
 # =============================================================================
-FROM node:20-alpine AS production
+FROM node:22-alpine AS production
 WORKDIR /
 
 # Install system dependencies

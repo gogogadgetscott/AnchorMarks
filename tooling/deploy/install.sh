@@ -78,14 +78,11 @@ if [ -f "$ROOT_DIR/.env" ]; then
 fi
 
 echo "👤 Setting permissions on application directories..."
-# Ensure data and server directories are owned by UID 1001 so container's node user can write
-chown -R 1001:1001 $ROOT_DIR/apps || chown -R $APP_USER:$APP_USER $ROOT_DIR/apps || true
-chown -R 1001:1001 $ROOT_DIR/apps/database || true
+chown -R user:user $ROOT_DIR || true
 if [ -f $ROOT_DIR/.env ]; then
   chmod 600 $ROOT_DIR/.env
 fi
 if [ -d "$ROOT_DIR/apps/ssl" ]; then
-  chown -R 1001:1001 "$ROOT_DIR/apps/ssl" || true
   chmod 644 "$ROOT_DIR/apps/ssl/fullchain.pem" 2>/dev/null || true
   chmod 600 "$ROOT_DIR/apps/ssl/privkey.pem" 2>/dev/null || true
 fi

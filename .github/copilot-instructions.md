@@ -6,7 +6,7 @@
 
 ### Technology Stack
 
-- **Backend**: Node.js 18+ / Express.js on SQLite (better-sqlite3)
+- **Backend**: Node.js 22+ / Express.js on SQLite (better-sqlite3)
 - **Frontend**: TypeScript + Vite (apps/client) producing a static `public/` bundle
 - **Security**: bcryptjs (passwords), JWT (auth tokens), CSRF tokens (state mutations), SSRF guards
 - **Extensions**: Chrome/Edge/Firefox browser extension, Flow Launcher plugin

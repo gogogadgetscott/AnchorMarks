@@ -24,8 +24,10 @@
 	create-demo-gif capture-screenshots
 
 # Variables
-BACKEND_DIR := apps/server
-FRONTEND_DIR := apps/client
+ROOT_DIR := $(CURDIR)
+APP_DIR := $(ROOT_DIR)/apps
+BACKEND_DIR := $(APP_DIR)/server
+FRONTEND_DIR := $(APP_DIR)/client
 DOCKER_COMPOSE := tooling/docker/docker-compose.yml
 ENV_FILE := $(CURDIR)/.env
 DOCKER_CMD := docker compose --env-file $(ENV_FILE) -f $(DOCKER_COMPOSE)
@@ -274,6 +276,7 @@ clean-all: clean-frontend ## Clean all build artifacts
 	@echo "$(BLUE)Cleaning all build artifacts...$(NC)"
 	@cd $(BACKEND_DIR) && rm -rf dist
 	@cd $(FRONTEND_DIR) && rm -rf node_modules
+	@cd $(ROOT_DIR) && rm -rf node_modules
 	@echo "$(GREEN)✓ All artifacts cleaned$(NC)"
 
 reinstall-deps: clean-all ## Clean and reinstall dependencies

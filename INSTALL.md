@@ -69,10 +69,10 @@ The fastest way to get AnchorMarks running for development.
 
 ### Step 1: Prerequisites
 
-Ensure you have Node.js 18+ installed:
+Ensure you have Node.js 22+ installed:
 
 ```bash
-node --version  # Should be v18.0.0 or higher
+node --version  # Should be v22.0.0 or higher
 npm --version   # Should be 8.0.0 or higher
 ```
 
@@ -464,7 +464,7 @@ sudo systemctl disable anchormarks
 ### Prerequisites
 
 - Windows 10/11 or Windows Server 2019+
-- Node.js 18+ (64-bit)
+- Node.js 22+ (64-bit)
 - npm
 - Text editor (Notepad++, VS Code, or similar)
 - Optional: Docker Desktop for Windows
