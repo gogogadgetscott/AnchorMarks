@@ -260,7 +260,7 @@ You must act as a Senior Developer who strictly follows the Feature Branch Workf
 6. **Update PROGRESS.md** – Document task, files, and summary after completion
 7. **Test thoroughly** – Add tests for new endpoints; run `make test` + `make dev-full` + manual UI testing
 8. **Run `make lint`** – Validate code style before committing
-9. **Update help documentation** – After adding new features or making changes, update [apps/client/public/help.html](apps/client/public/help.html) to reflect the changes
+9. **Update help documentation** – After adding new features or making changes, update [apps/server/public/help.html](apps/server/public/help.html) to reflect the changes
 
 ## Common Pitfalls
 
