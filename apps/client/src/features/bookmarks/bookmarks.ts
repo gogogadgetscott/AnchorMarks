@@ -16,6 +16,7 @@ import {
   getEmptyStateMessage,
   updateBulkUI,
   updateActiveNav,
+  updateStats,
 } from "@utils/ui-helpers.ts";
 import { Bookmark } from "../../types/index";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
@@ -494,6 +495,9 @@ export function renderBookmarks(): void {
       lazyLoadOGImages();
     }
   }, 50);
+
+  // Update stats to show the current filtered count
+  updateStats();
 }
 
 // Load more bookmarks for infinite scroll

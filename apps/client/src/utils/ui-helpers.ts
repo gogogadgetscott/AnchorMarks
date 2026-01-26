@@ -757,8 +757,8 @@ export function updateStats(): void {
   const statTags = document.getElementById("stat-tags");
   const foldersCount = document.getElementById("folders-count");
 
-  // Default to total system counts
-  let bCount = state.renderedBookmarks.length;
+  // Use totalCount which reflects all matching bookmarks (not just what's loaded)
+  let bCount = state.totalCount;
   let fCount = state.folders.length;
   let tCount = 0;
 

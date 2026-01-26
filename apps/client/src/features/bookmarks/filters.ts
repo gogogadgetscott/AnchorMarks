@@ -441,6 +441,25 @@ async function renderFoldersInDropdown(): Promise<void> {
   const container = document.getElementById("filter-folders-container") as any;
   if (!container) return;
 
+  // Fetch ALL unfiltered bookmarks to calculate folder counts
+  const allBookmarks = await api<any>("/bookmarks?limit=10000&offset=0");
+  const bookmarksToProcess = Array.isArray(allBookmarks) 
+    ? allBookmarks 
+    : (allBookmarks?.bookmarks || []);
+
+  // Helper to calculate unfiltered recursive bookmark count for a folder
+  const getUnfilteredRecursiveCount = (folderId: string): number => {
+    // Count bookmarks that belong to this folder
+    let total = bookmarksToProcess.filter(b => b.folder_id === folderId).length;
+    
+    // Add counts from child folders
+    const children = state.folders.filter((f) => f.parent_id === folderId);
+    children.forEach((child) => {
+      total += getUnfilteredRecursiveCount(child.id);
+    });
+    return total;
+  };
+
   // Initialize array to store folder data with counts for search filtering
   const folderDataForSearch: Array<{
     id: string;
@@ -449,20 +468,12 @@ async function renderFoldersInDropdown(): Promise<void> {
     color?: string;
   }> = [];
 
-  let allCount = 0;
-  try {
-    const counts = await api<any>("/bookmarks/counts");
-    allCount = Number(counts.all) || 0;
-  } catch (e) {
-    console.error("Failed to fetch counts for filter", e);
-    // Fallback?
-    allCount = state.bookmarks.length; // Better than nothing
-  }
+  const allCount = bookmarksToProcess.length;
 
   // Calculate sum of recursive counts of all root folders
   const rootFolders = state.folders.filter((f) => !f.parent_id);
   const totalInFolders = rootFolders.reduce((sum, folder) => {
-    return sum + getRecursiveBookmarkCount(folder.id);
+    return sum + getUnfilteredRecursiveCount(folder.id);
   }, 0);
 
   const noFolderCount = Math.max(0, allCount - totalInFolders);
@@ -503,7 +514,7 @@ async function renderFoldersInDropdown(): Promise<void> {
     // TODO: Implement folder.position sort if/when available in interface
 
     folderList.forEach((folder) => {
-      const count = getRecursiveBookmarkCount(folder.id);
+      const count = getUnfilteredRecursiveCount(folder.id);
 
       // Add to search data
       folderDataForSearch.push({
@@ -610,10 +621,16 @@ async function renderTagsInDropdown(): Promise<void> {
   const container = document.getElementById("filter-tags-container") as any;
   if (!container) return;
 
+  // Fetch ALL unfiltered bookmarks to calculate tag counts based on the complete library
+  const allBookmarks = await api<any>("/bookmarks?limit=10000&offset=0");
+  const bookmarksToProcess = Array.isArray(allBookmarks) 
+    ? allBookmarks 
+    : (allBookmarks?.bookmarks || []);
+
   const tagMap = new Map<string, number>();
-  state.bookmarks.forEach((b) => {
+  bookmarksToProcess.forEach((b: any) => {
     if (b.tags) {
-      b.tags.split(",").forEach((t) => {
+      b.tags.split(",").forEach((t: string) => {
         const tag = t.trim();
         if (tag) {
           tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
