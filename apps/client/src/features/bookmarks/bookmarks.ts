@@ -1022,7 +1022,7 @@ export function sortBookmarks(list: Bookmark[]): Bookmark[] {
 // ============== BOOKMARK VIEWS ==============
 
 // Initialize bookmark views UI
-export function initBookmarkViews() {
+export function initBookmarkViews(): void {
   const headerRight = document.querySelector(".content-header .header-right");
   if (!headerRight) return;
 
@@ -1286,7 +1286,7 @@ async function deleteBookmarkView(id: string) {
 
 // Restore bookmark view
 // Restore bookmark view
-export async function restoreBookmarkView(id: string) {
+export async function restoreBookmarkView(id: string): Promise<void> {
   try {
     logger.debug("Restoring bookmark view", { viewId: id });
 
