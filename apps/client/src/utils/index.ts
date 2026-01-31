@@ -12,6 +12,99 @@ export function escapeHtml(text: string): string {
   return div.innerHTML;
 }
 
+/**
+ * Sanitize HTML - removes all tags except a safe allowlist
+ * Use this when you need to allow some HTML formatting (e.g., links, bold)
+ * For user-generated content that should have NO HTML, use escapeHtml instead.
+ */
+export function sanitizeHtml(
+  html: string,
+  options: {
+    allowedTags?: string[];
+    allowedAttributes?: string[];
+  } = {},
+): string {
+  const {
+    allowedTags = ["b", "i", "em", "strong", "a", "br", "p", "span"],
+    allowedAttributes = ["href", "title", "target", "rel"],
+  } = options;
+
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const walker = document.createTreeWalker(
+    doc.body,
+    NodeFilter.SHOW_ELEMENT,
+    null,
+  );
+
+  const nodesToRemove: Node[] = [];
+
+  while (walker.nextNode()) {
+    const node = walker.currentNode as Element;
+    const tagName = node.tagName.toLowerCase();
+
+    // Remove disallowed tags
+    if (!allowedTags.includes(tagName)) {
+      nodesToRemove.push(node);
+      continue;
+    }
+
+    // Remove disallowed attributes
+    Array.from(node.attributes).forEach((attr) => {
+      if (!allowedAttributes.includes(attr.name.toLowerCase())) {
+        node.removeAttribute(attr.name);
+      }
+    });
+
+    // Extra security for links
+    if (tagName === "a") {
+      const href = node.getAttribute("href");
+      if (href && href.match(/^javascript:/i)) {
+        node.removeAttribute("href");
+      }
+      // Force external links to open in new tab safely
+      if (href && !href.startsWith("#")) {
+        node.setAttribute("target", "_blank");
+        node.setAttribute("rel", "noopener noreferrer");
+      }
+    }
+  }
+
+  // Remove disallowed nodes
+  nodesToRemove.forEach((node) => {
+    const parent = node.parentNode;
+    if (parent) {
+      // Move children up before removing node
+      while (node.firstChild) {
+        parent.insertBefore(node.firstChild, node);
+      }
+      parent.removeChild(node);
+    }
+  });
+
+  return doc.body.innerHTML;
+}
+
+/**
+ * Safely render HTML into a container element
+ * Always escapes user content unless explicitly told to sanitize HTML
+ */
+export function safeRender(
+  container: HTMLElement,
+  content: string,
+  options: { allowHtml?: boolean; sanitizeOptions?: any } = {},
+): void {
+  if (!container) {
+    logger.warn("safeRender called with null/undefined container");
+    return;
+  }
+
+  if (options.allowHtml) {
+    container.innerHTML = sanitizeHtml(content, options.sanitizeOptions);
+  } else {
+    container.textContent = content;
+  }
+}
+
 // Extract hostname from URL
 export function getHostname(url: string): string {
   try {
@@ -123,6 +216,8 @@ export function asyncHandler(
 
 export default {
   escapeHtml,
+  sanitizeHtml,
+  safeRender,
   getHostname,
   getBaseUrl,
   parseTagInput,
