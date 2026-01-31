@@ -793,6 +793,18 @@ export function selectAllBookmarks(): void {
   renderBookmarks();
 }
 
+// Helper to find bookmark in main list or widget cache
+function findBookmarkById(id: string): Bookmark | undefined {
+  const inMain = state.bookmarks.find((b) => b.id === id);
+  if (inMain) return inMain;
+
+  for (const widgetId in state.widgetDataCache) {
+    const found = state.widgetDataCache[widgetId].find((b) => b.id === id);
+    if (found) return found;
+  }
+  return undefined;
+}
+
 // Create bookmark
 export async function createBookmark(data: Partial<Bookmark>): Promise<void> {
   try {
@@ -847,10 +859,17 @@ export async function updateBookmark(
 export async function archiveBookmark(id: string): Promise<void> {
   try {
     await api(`/bookmarks/${id}/archive`, { method: "POST" });
-    const bm = state.bookmarks.find((b) => b.id === id);
+    const bm = findBookmarkById(id);
     if (bm) bm.is_archived = 1;
 
-    renderBookmarks();
+    if (state.currentView === "dashboard") {
+      state.clearWidgetDataCache();
+      const { renderDashboard } =
+        await import("@features/bookmarks/dashboard.ts");
+      renderDashboard();
+    } else {
+      renderBookmarks();
+    }
     await updateCounts();
     showToast("Bookmark archived", "success");
   } catch (err) {
@@ -863,10 +882,17 @@ export async function archiveBookmark(id: string): Promise<void> {
 export async function unarchiveBookmark(id: string): Promise<void> {
   try {
     await api(`/bookmarks/${id}/unarchive`, { method: "POST" });
-    const bm = state.bookmarks.find((b) => b.id === id);
+    const bm = findBookmarkById(id);
     if (bm) bm.is_archived = 0;
 
-    renderBookmarks();
+    if (state.currentView === "dashboard") {
+      state.clearWidgetDataCache();
+      const { renderDashboard } =
+        await import("@features/bookmarks/dashboard.ts");
+      renderDashboard();
+    } else {
+      renderBookmarks();
+    }
     await updateCounts();
     showToast("Bookmark unarchived", "success");
   } catch (err) {
@@ -891,6 +917,7 @@ export async function deleteBookmark(id: string): Promise<void> {
 
     // Re-render the appropriate view based on current state
     if (state.currentView === "dashboard") {
+      state.clearWidgetDataCache();
       const { renderDashboard } =
         await import("@features/bookmarks/dashboard.ts");
       renderDashboard();
@@ -907,7 +934,7 @@ export async function deleteBookmark(id: string): Promise<void> {
 
 // Toggle favorite
 export async function toggleFavorite(id: string): Promise<void> {
-  const bookmark = state.bookmarks.find((b) => b.id === id);
+  const bookmark = findBookmarkById(id);
   if (!bookmark) return;
 
   try {
@@ -916,7 +943,15 @@ export async function toggleFavorite(id: string): Promise<void> {
       body: JSON.stringify({ is_favorite: bookmark.is_favorite ? 0 : 1 }),
     });
     bookmark.is_favorite = !bookmark.is_favorite;
-    renderBookmarks();
+    
+    if (state.currentView === "dashboard") {
+      state.clearWidgetDataCache();
+      const { renderDashboard } =
+        await import("@features/bookmarks/dashboard.ts");
+      renderDashboard();
+    } else {
+      renderBookmarks();
+    }
     await updateCounts();
   } catch (err: any) {
     showToast(err.message, "error");
@@ -934,7 +969,7 @@ export async function trackClick(id: string): Promise<void> {
 
 // Edit bookmark (populate form)
 export async function editBookmark(id: string): Promise<void> {
-  const bookmark = state.bookmarks.find((b) => b.id === id);
+  const bookmark = findBookmarkById(id);
   if (!bookmark) return;
 
   document.getElementById("bookmark-modal-title")!.textContent =
