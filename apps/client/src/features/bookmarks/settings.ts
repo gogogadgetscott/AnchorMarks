@@ -8,7 +8,7 @@ export async function saveSettings(
       body: JSON.stringify(updates),
     });
   } catch (err) {
-    console.error("Failed to save settings:", err);
+    logger.error("Failed to save settings", err);
   }
 }
 import { applyTheme } from "@features/state.ts";
@@ -120,7 +120,7 @@ export async function loadSettings(): Promise<void> {
       if (section) section.classList.add("collapsed");
     });
   } catch (err) {
-    console.error("Failed to load settings:", err);
+    logger.error("Failed to load settings", err);
     // removed erroneous call
   }
 
@@ -383,7 +383,7 @@ export function installBookmarkShortcut(): void {
         );
       }
     } catch (err) {
-      console.warn("Clipboard copy failed", err);
+      logger.warn("Clipboard copy failed", err);
       const fallback = document.createElement("textarea");
       fallback.value = bookmarkletCode;
       document.body.appendChild(fallback);

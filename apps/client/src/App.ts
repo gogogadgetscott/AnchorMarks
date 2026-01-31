@@ -19,6 +19,7 @@ import { api } from "@services/api.ts";
 
 // Import utilities
 import { escapeHtml, getHostname, parseTagInput, safeLocalStorage } from "@utils/index.ts";
+import { logger } from "@utils/logger.ts";
 
 // Import UI helpers
 import {
@@ -295,7 +296,7 @@ async function updateAppVersion(): Promise<void> {
       versionEl.textContent = `v${response.version}`;
     }
   } catch (error) {
-    console.warn("Failed to fetch app version:", error);
+    logger.warn("Failed to fetch app version", error);
   }
 }
 

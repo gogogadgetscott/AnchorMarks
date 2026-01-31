@@ -6,6 +6,7 @@
 import * as state from "@features/state.ts";
 import { escapeHtml, parseTagInput, safeLocalStorage } from "@utils/index.ts";
 import { api } from "@services/api.ts";
+import { logger } from "@utils/logger.ts";
 
 // Profile settings form HTML template (injected dynamically to avoid password manager detection)
 const PROFILE_FORM_HTML = `
@@ -616,7 +617,7 @@ export async function updateCounts(): Promise<void> {
 
     // Validate API response
     if (!counts || typeof counts !== "object") {
-      console.warn("Invalid counts response from server", counts);
+      logger.warn("Invalid counts response from server", counts);
       // Don't return early - still try to show badges with default values
     }
 
@@ -638,7 +639,7 @@ export async function updateCounts(): Promise<void> {
     // Helper function to update badge with count
     const updateBadge = (el: HTMLElement | null, count: number): void => {
       if (!el) {
-        console.warn("Badge element not found");
+        logger.warn("Badge element not found");
         return;
       }
       // Always show the badge with the count
@@ -728,7 +729,7 @@ export async function updateCounts(): Promise<void> {
 
     updateStats();
   } catch (err) {
-    console.error("Error updating counts:", err);
+    logger.error("Error updating counts", err);
     // On error, try to at least show that counts couldn't be loaded
     // Don't hide badges - let them show their last known value or "0"
     const badgeIds = [

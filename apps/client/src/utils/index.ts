@@ -3,6 +3,8 @@
  * Common utility functions
  */
 
+import { logger } from "./logger.ts";
+
 // Escape HTML to prevent XSS
 export function escapeHtml(text: string): string {
   const div = document.createElement("div");
@@ -56,7 +58,7 @@ export const safeLocalStorage = {
     try {
       return localStorage.getItem(key);
     } catch (error) {
-      console.warn(`localStorage.getItem failed for key "${key}":`, error);
+      logger.warn(`localStorage.getItem failed for key "${key}"`, error);
       return null;
     }
   },
@@ -66,7 +68,7 @@ export const safeLocalStorage = {
       localStorage.setItem(key, value);
       return true;
     } catch (error) {
-      console.warn(`localStorage.setItem failed for key "${key}":`, error);
+      logger.warn(`localStorage.setItem failed for key "${key}"`, error);
       return false;
     }
   },
@@ -76,7 +78,7 @@ export const safeLocalStorage = {
       localStorage.removeItem(key);
       return true;
     } catch (error) {
-      console.warn(`localStorage.removeItem failed for key "${key}":`, error);
+      logger.warn(`localStorage.removeItem failed for key "${key}"`, error);
       return false;
     }
   },
@@ -109,7 +111,7 @@ export function asyncHandler(
 ): (event: Event) => void {
   return (event: Event) => {
     handler(event).catch((error) => {
-      console.error("Async handler error:", error);
+      logger.error("Async handler error", error);
       // Try to show toast if available
       const showToast = (window as any).showToast;
       if (typeof showToast === "function") {

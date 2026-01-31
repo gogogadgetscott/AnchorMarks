@@ -8,6 +8,26 @@ import * as state from "@features/state.ts";
 // Request deduplication: cache pending requests to prevent duplicate API calls
 const pendingRequests = new Map<string, Promise<any>>();
 
+// Request metadata for cleanup
+const requestMetadata = new Map<string, { timestamp: number }>();
+
+// Default timeout for requests (30 seconds)
+const DEFAULT_TIMEOUT_MS = 30000;
+
+// Cleanup interval (5 minutes)
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+
+// Cleanup stale pending requests periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, metadata] of requestMetadata.entries()) {
+    if (now - metadata.timestamp > CLEANUP_INTERVAL_MS) {
+      pendingRequests.delete(key);
+      requestMetadata.delete(key);
+    }
+  }
+}, CLEANUP_INTERVAL_MS);
+
 /**
  * Generate a cache key for request deduplication
  */
@@ -21,11 +41,13 @@ function getRequestKey(endpoint: string, options: RequestInit): string {
  * API Helper with request deduplication and cancellation support
  * @param {string} endpoint - The API endpoint to call.
  * @param {RequestInit} options - Standard fetch options. Can include signal for cancellation.
+ * @param {number} timeout - Request timeout in milliseconds (default: 30000)
  * @returns {Promise<T>} - The response data with type safety.
  */
 export async function api<T = unknown>(
   endpoint: string,
   options: RequestInit = {},
+  timeout: number = DEFAULT_TIMEOUT_MS,
 ): Promise<T> {
   // For GET requests, check if there's already a pending request
   const isGet = !options.method || options.method === "GET";
@@ -38,6 +60,7 @@ export async function api<T = unknown>(
     if (options.signal && options.signal.aborted) {
       // Create new request if previous was cancelled
       pendingRequests.delete(requestKey);
+      requestMetadata.delete(requestKey);
     } else {
       return existingPromise;
     }
@@ -52,9 +75,14 @@ export async function api<T = unknown>(
     headers["X-CSRF-Token"] = state.csrfToken;
   }
 
-  // Create AbortController if signal provided or for cancellable requests
-  const abortController = options.signal ? undefined : new AbortController();
-  const signal = options.signal || abortController?.signal;
+  // Create AbortController for timeout and cancellation
+  const abortController = new AbortController();
+  const signal = options.signal || abortController.signal;
+  
+  // Set up timeout
+  const timeoutId = setTimeout(() => {
+    abortController.abort();
+  }, timeout);
 
   // Create the fetch promise
   const fetchPromise = (async (): Promise<T> => {
@@ -121,13 +149,16 @@ export async function api<T = unknown>(
     } catch (err) {
       // Handle AbortError gracefully
       if (err instanceof Error && err.name === "AbortError") {
-        throw new Error("Request cancelled");
+        throw new Error("Request timeout or cancelled");
       }
       throw err;
     } finally {
+      // Clear timeout
+      clearTimeout(timeoutId);
       // Remove from pending requests when done (success or failure)
       if (requestKey) {
         pendingRequests.delete(requestKey);
+        requestMetadata.delete(requestKey);
       }
     }
   })();
@@ -135,16 +166,18 @@ export async function api<T = unknown>(
   // Cache the promise for GET requests
   if (requestKey) {
     pendingRequests.set(requestKey, fetchPromise);
+    requestMetadata.set(requestKey, { timestamp: Date.now() });
   }
 
-  // Store abort controller for cancellation
-  if (abortController && requestKey) {
-    // Expose abort method on the promise for convenience
-    (fetchPromise as any).abort = () => {
-      abortController.abort();
+  // Expose abort method on the promise for convenience
+  (fetchPromise as any).abort = () => {
+    clearTimeout(timeoutId);
+    abortController.abort();
+    if (requestKey) {
       pendingRequests.delete(requestKey);
-    };
-  }
+      requestMetadata.delete(requestKey);
+    }
+  };
 
   return fetchPromise;
 }
@@ -172,6 +205,7 @@ export function cancelRequest(
       (promise as any).abort();
     }
     pendingRequests.delete(requestKey);
+    requestMetadata.delete(requestKey);
   }
 }
 
