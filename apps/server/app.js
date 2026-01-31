@@ -8,6 +8,7 @@ require("dotenv").config({ path: _envPath, quiet: true });
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const compression = require("compression");
 const fs = require("fs");
 const helmet = require("helmet");
 
@@ -86,6 +87,9 @@ if (config.NODE_ENV !== "test") {
 // Rate limiter
 const rateLimiter = require("./middleware/rateLimiter");
 
+// Performance monitoring
+const { performanceMiddleware, monitor } = require("./helpers/performance-monitor");
+
 // Middleware registration
 // Enhanced helmet configuration for security hardening
 // CSP is environment-aware: relaxed for development (Vite HMR), strict for production
@@ -161,9 +165,12 @@ app.use((req, res, next) => {
   next();
 });
 app.use(cors({ origin: true, credentials: true }));
+// Enable compression for all responses
+app.use(compression({ level: 6, threshold: 1024 }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(performanceMiddleware); // Track performance before rate limiting
 app.use(rateLimiter);
 
 // Models are imported in individual route modules as needed
@@ -276,6 +283,11 @@ app.use(
     },
   }),
 );
+// Serve favicon.ico (browsers automatically request this)
+app.get("/favicon.ico", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "icon.png"));
+});
+
 // Serve remaining public assets (if any)
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.static(staticDir));

@@ -31,7 +31,7 @@ export function initNavigationListeners(): void {
   document.querySelectorAll(".nav-item[data-view]").forEach((item) => {
     item.addEventListener("click", async () => {
       const view = (item as HTMLElement).dataset.view || "all";
-      state.setCurrentView(view);
+      await state.setCurrentView(view);
 
       // Update header content for the new view
       const { updateHeaderContent } = await import("@/App.ts");

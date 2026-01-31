@@ -670,67 +670,258 @@
       </div>
 
       <div class="settings-panel" id="settings-shortcuts">
-        <div class="shortcuts-section">
-          <h4>Navigation</h4>
-          <table class="shortcuts-table">
-            <tr>
-              <td><kbd>Ctrl+Shift+D</kbd> / <kbd>Cmd+Shift+D</kbd></td>
-              <td>Go to Dashboard</td>
-            </tr>
-            <tr>
-              <td><kbd>Ctrl+Shift+F</kbd> / <kbd>Cmd+Shift+F</kbd></td>
-              <td>Go to Favorites</td>
-            </tr>
-            <tr>
-              <td><kbd>Ctrl+Shift+A</kbd> / <kbd>Cmd+Shift+A</kbd></td>
-              <td>Go to All Bookmarks</td>
-            </tr>
-            <tr>
-              <td>
-                <kbd>Ctrl+1</kbd> to <kbd>Ctrl+9</kbd> / <kbd>Cmd+1</kbd> to
-                <kbd>Cmd+9</kbd>
-              </td>
-              <td>Jump to folder 1-9</td>
-            </tr>
-          </table>
+        <div class="shortcuts-header">
+          <h3>Keyboard Shortcuts</h3>
+          <p class="shortcuts-intro">
+            Master AnchorMarks with these keyboard shortcuts. On Mac, use
+            <kbd>Cmd</kbd> instead of <kbd>Ctrl</kbd>.
+          </p>
         </div>
-        <div class="shortcuts-section">
-          <h4>Bookmarks</h4>
-          <table class="shortcuts-table">
-            <tr>
-              <td><kbd>Ctrl+N</kbd> / <kbd>Cmd+N</kbd></td>
-              <td>Add new bookmark</td>
-            </tr>
-            <tr>
-              <td><kbd>Ctrl+F</kbd> / <kbd>Cmd+F</kbd></td>
-              <td>Focus search</td>
-            </tr>
-            <tr>
-              <td><kbd>Ctrl+K</kbd> / <kbd>Cmd+K</kbd></td>
-              <td>Focus search (alternative)</td>
-            </tr>
-            <tr>
-              <td><kbd>Ctrl+A</kbd> / <kbd>Cmd+A</kbd></td>
-              <td>Select all bookmarks</td>
-            </tr>
-          </table>
-        </div>
-        <div class="shortcuts-section">
-          <h4>General</h4>
-          <table class="shortcuts-table">
-            <tr>
-              <td><kbd>Ctrl+Shift+P</kbd> / <kbd>Cmd+Shift+P</kbd></td>
-              <td>Open command palette</td>
-            </tr>
-            <tr>
-              <td><kbd>Esc</kbd></td>
-              <td>Close modals and selections</td>
-            </tr>
-            <tr>
-              <td><kbd>↓</kbd> / <kbd>↑</kbd></td>
-              <td>Navigate command palette (when open)</td>
-            </tr>
-          </table>
+
+        <div class="shortcuts-grid">
+          <!-- Navigation -->
+          <div class="shortcuts-card">
+            <div class="shortcuts-card-header">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              <h4>Navigation</h4>
+            </div>
+            <div class="shortcuts-list">
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>D</kbd>
+                  <span class="shortcut-divider">/</span>
+                  <kbd>Cmd</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>D</kbd>
+                </div>
+                <div class="shortcut-desc">Go to Dashboard</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>g</kbd> <span>then</span> <kbd>d</kbd>
+                </div>
+                <div class="shortcut-desc">Go to Dashboard</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>F</kbd>
+                  <span class="shortcut-divider">/</span>
+                  <kbd>Cmd</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>F</kbd>
+                </div>
+                <div class="shortcut-desc">Go to Favorites</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>g</kbd> <span>then</span> <kbd>f</kbd>
+                </div>
+                <div class="shortcut-desc">Go to Favorites</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>A</kbd>
+                  <span class="shortcut-divider">/</span>
+                  <kbd>Cmd</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>A</kbd>
+                </div>
+                <div class="shortcut-desc">Go to All Bookmarks</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>g</kbd> <span>then</span> <kbd>a</kbd>
+                </div>
+                <div class="shortcut-desc">Go to All Bookmarks</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>T</kbd>
+                  <span class="shortcut-divider">/</span>
+                  <kbd>Cmd</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>T</kbd>
+                </div>
+                <div class="shortcut-desc">Go to Tag Cloud</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>Ctrl</kbd><span>+</span><kbd>1</kbd> <span>to</span> <kbd>9</kbd>
+                  <span class="shortcut-divider">/</span>
+                  <kbd>Cmd</kbd><span>+</span><kbd>1</kbd> <span>to</span> <kbd>9</kbd>
+                </div>
+                <div class="shortcut-desc">Jump to folder 1-9</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>k</kbd>
+                </div>
+                <div class="shortcut-desc">Focus search</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>b</kbd>
+                </div>
+                <div class="shortcut-desc">Toggle sidebar</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bookmarks & Actions -->
+          <div class="shortcuts-card">
+            <div class="shortcuts-card-header">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+              </svg>
+              <h4>Bookmarks & Actions</h4>
+            </div>
+            <div class="shortcuts-list">
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>Ctrl</kbd><span>+</span><kbd>N</kbd>
+                  <span class="shortcut-divider">/</span>
+                  <kbd>Cmd</kbd><span>+</span><kbd>N</kbd>
+                </div>
+                <div class="shortcut-desc">Add new bookmark</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>n</kbd>
+                </div>
+                <div class="shortcut-desc">Add new bookmark</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>Ctrl</kbd><span>+</span><kbd>F</kbd>
+                  <span class="shortcut-divider">/</span>
+                  <kbd>Cmd</kbd><span>+</span><kbd>F</kbd>
+                </div>
+                <div class="shortcut-desc">Focus search</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>Ctrl</kbd><span>+</span><kbd>K</kbd>
+                  <span class="shortcut-divider">/</span>
+                  <kbd>Cmd</kbd><span>+</span><kbd>K</kbd>
+                </div>
+                <div class="shortcut-desc">Focus search (alternative)</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>Ctrl</kbd><span>+</span><kbd>A</kbd>
+                  <span class="shortcut-divider">/</span>
+                  <kbd>Cmd</kbd><span>+</span><kbd>A</kbd>
+                </div>
+                <div class="shortcut-desc">Select all bookmarks</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>x</kbd>
+                </div>
+                <div class="shortcut-desc">Toggle bulk selection</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Views -->
+          <div class="shortcuts-card">
+            <div class="shortcuts-card-header">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+              </svg>
+              <h4>Views</h4>
+            </div>
+            <div class="shortcuts-list">
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>1</kbd>
+                </div>
+                <div class="shortcut-desc">Grid view</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>2</kbd>
+                </div>
+                <div class="shortcut-desc">List view</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>3</kbd>
+                </div>
+                <div class="shortcut-desc">Compact view</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- General -->
+          <div class="shortcuts-card">
+            <div class="shortcuts-card-header">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24" />
+              </svg>
+              <h4>General</h4>
+            </div>
+            <div class="shortcuts-list">
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>P</kbd>
+                  <span class="shortcut-divider">/</span>
+                  <kbd>Cmd</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>P</kbd>
+                </div>
+                <div class="shortcut-desc">Open command palette</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>Esc</kbd>
+                </div>
+                <div class="shortcut-desc">Close modals and selections</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>↓</kbd> <span>/</span> <kbd>↑</kbd>
+                </div>
+                <div class="shortcut-desc">Navigate command palette</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>?</kbd>
+                </div>
+                <div class="shortcut-desc">Show keyboard shortcuts</div>
+              </div>
+              <div class="shortcut-item">
+                <div class="shortcut-keys">
+                  <kbd>F11</kbd>
+                </div>
+                <div class="shortcut-desc">Toggle fullscreen (dashboard)</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

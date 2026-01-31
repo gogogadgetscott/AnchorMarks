@@ -86,10 +86,8 @@ export function updateFilterButtonVisibility(): void {
 export function initFilterDropdown(): void {
   const btn = document.getElementById("filter-dropdown-btn");
   if (!btn) {
-    // Button doesn't exist in this view - log a warning for test visibility
-    // This is expected for views like dashboard, favorites, recent, etc.
-    // eslint-disable-next-line no-console
-    console.warn("Filter button not found in DOM");
+    // Button doesn't exist in this view - this is expected for views like 
+    // dashboard, favorites, recent, etc. No need to log warnings.
     return;
   }
 
@@ -381,13 +379,13 @@ function attachFolderClickHandlers(): void {
       state.setCurrentCollection(null);
 
       if (folderId === "all") {
-        state.setCurrentView("all");
+        await state.setCurrentView("all");
         state.setCurrentFolder(null);
       } else if (folderId === "null") {
-        state.setCurrentView("folder");
+        await state.setCurrentView("folder");
         state.setCurrentFolder(null);
       } else {
-        state.setCurrentView("folder");
+        await state.setCurrentView("folder");
         state.setCurrentFolder(folderId);
       }
 

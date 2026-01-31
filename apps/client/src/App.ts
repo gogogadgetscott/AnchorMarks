@@ -264,7 +264,7 @@ export async function resetBookmarks(): Promise<void> {
       { method: "POST" },
     );
     state.setCurrentFolder(null);
-    state.setCurrentView("all");
+    await state.setCurrentView("all");
     const viewTitle = document.getElementById("view-title");
     if (viewTitle) viewTitle.textContent = "Bookmarks";
 

@@ -260,10 +260,10 @@ export function resetPagination() {
 export function setCurrentDashboardTab(val: string | null) {
   currentDashboardTab = val;
 }
-export function setCurrentView(val: string) {
+export async function setCurrentView(val: string) {
   // Clean up previous view's event listeners
   if (currentView && currentView !== val) {
-    const { cleanupView } = require("../utils/event-cleanup.ts");
+    const { cleanupView } = await import("../utils/event-cleanup.ts");
     cleanupView(currentView);
   }
 

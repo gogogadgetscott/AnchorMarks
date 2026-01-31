@@ -9,7 +9,6 @@ import tagModal from "./fragments/tag-modal.html?raw";
 import folderModal from "./fragments/folder-modal.html?raw";
 import filterSidebar from "./fragments/filter-sidebar.html?raw";
 import settingsModal from "./fragments/settings-modal.html?raw";
-import shortcutsPopup from "./fragments/shortcuts-popup.html?raw";
 import onboardingTour from "./fragments/onboarding-tour.html?raw";
 import toast from "./fragments/toast.html?raw";
 
@@ -102,7 +101,6 @@ export function loadComponents(): void {
     folderModal,
     filterSidebar,
     settingsModal,
-    shortcutsPopup,
     onboardingTour,
     toast,
   ].join("\n");

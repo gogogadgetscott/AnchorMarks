@@ -70,8 +70,8 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
     },
     {
       label: "Show dashboard",
-      action: () => {
-        state.setCurrentView("dashboard");
+      action: async () => {
+        await state.setCurrentView("dashboard");
         state.setCurrentFolder(null);
         updateActiveNav();
         const viewTitle = document.getElementById("view-title");
@@ -86,8 +86,8 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
     },
     {
       label: "View tag cloud",
-      action: () => {
-        state.setCurrentView("tag-cloud");
+      action: async () => {
+        await state.setCurrentView("tag-cloud");
         state.setCurrentFolder(null);
         updateActiveNav();
         const viewTitle = document.getElementById("view-title");
@@ -102,8 +102,8 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
     },
     {
       label: "View favorites",
-      action: () => {
-        state.setCurrentView("favorites");
+      action: async () => {
+        await state.setCurrentView("favorites");
         state.setCurrentFolder(null);
         updateActiveNav();
         const viewTitle = document.getElementById("view-title");
@@ -118,8 +118,8 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
     },
     {
       label: "View all bookmarks",
-      action: () => {
-        state.setCurrentView("all");
+      action: async () => {
+        await state.setCurrentView("all");
         state.setCurrentFolder(null);
         updateActiveNav();
         const viewTitle = document.getElementById("view-title");
@@ -374,22 +374,8 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
   return results;
 }
 
-// Shortcuts help popup
-export function openShortcutsPopup(): void {
-  const popup = document.getElementById("shortcuts-popup");
-  if (!popup) return;
-  popup.classList.remove("hidden");
-}
-
-export function closeShortcutsPopup(): void {
-  const popup = document.getElementById("shortcuts-popup");
-  if (!popup) return;
-  popup.classList.add("hidden");
-}
 
 export default {
   getCommandPaletteCommands,
   refreshOmnibarBookmarks,
-  openShortcutsPopup,
-  closeShortcutsPopup,
 };

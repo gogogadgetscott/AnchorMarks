@@ -54,6 +54,17 @@ function rateLimiter(req, res, next) {
       return next();
     }
 
+    // Skip rate limiting for health endpoints (monitoring, diagnostics)
+    if (req.path.startsWith("/api/health")) {
+      return next();
+    }
+
+    // Skip rate limiting for auth endpoints (login, register, me check)
+    // These need to be accessible for initial app load
+    if (req.path.startsWith("/api/auth/me") || req.path === "/api/auth/me") {
+      return next();
+    }
+
     // Skip rate limiting for bulk bookmark favicon updates (PUT with only favicon field)
     if (
       req.method === "PUT" &&

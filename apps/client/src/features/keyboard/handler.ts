@@ -4,27 +4,28 @@
  */
 
 import * as state from "@features/state.ts";
-import {
-  openShortcutsPopup,
-  closeShortcutsPopup,
-} from "@features/bookmarks/commands.ts";
 import { openOmnibar, closeOmnibar } from "@features/bookmarks/omnibar.ts";
 import { openModal, updateActiveNav } from "@utils/ui-helpers.ts";
 
 /**
  * Handle global keyboard events
+ * Unified handler that integrates both old and new keyboard shortcut systems
  */
 export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
+  // Try new keyboard shortcuts system first
+  const { keyboardShortcuts } = await import("@utils/keyboard-shortcuts.ts");
+  if (keyboardShortcuts.handleKeyPress(e)) {
+    // Shortcut was handled by new system, return early
+    return;
+  }
+
+  // Fall back to legacy keyboard handler for shortcuts not in new system
   const key = (e.key || "").toLowerCase();
   const modifier = e.ctrlKey || e.metaKey;
 
   // Escape key
   if (key === "escape") {
-    const shortcutsPopup = document.getElementById("shortcuts-popup");
-    if (shortcutsPopup && !shortcutsPopup.classList.contains("hidden")) {
-      e.preventDefault();
-      closeShortcutsPopup();
-    } else if (state.bulkMode) {
+    if (state.bulkMode) {
       const { clearSelections } =
         await import("@features/bookmarks/bookmarks.ts");
       clearSelections();
@@ -140,7 +141,7 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     const activeEl = document.activeElement;
     if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
-    state.setCurrentView("all");
+    await state.setCurrentView("all");
     state.setCurrentFolder(null);
     updateActiveNav();
     const viewTitle = document.getElementById("view-title");
@@ -157,12 +158,21 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     toggleFullscreen();
   }
 
-  // ?: Shortcuts help
+  // ?: Shortcuts help (handled by keyboard-shortcuts.ts, but kept here as fallback)
+  // This is now handled by the new keyboard shortcuts system, but we keep this
+  // as a fallback in case the new system doesn't handle it
   if (key === "?" || e.key === "?") {
     const activeEl = document.activeElement;
     if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
-    openShortcutsPopup();
+    // Open settings modal to keyboard shortcuts tab
+    openModal("settings-modal");
+    setTimeout(() => {
+      const shortcutsTab = document.querySelector('[data-settings-tab="shortcuts"]') as HTMLElement;
+      if (shortcutsTab) {
+        shortcutsTab.click();
+      }
+    }, 100);
   }
 }
 
@@ -170,7 +180,7 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
  * Shared view switching logic
  */
 async function switchView(view: string): Promise<void> {
-  state.setCurrentView(view);
+  await state.setCurrentView(view);
   updateActiveNav();
 
   // Update header content for the new view
