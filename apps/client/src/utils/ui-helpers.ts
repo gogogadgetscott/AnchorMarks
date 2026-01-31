@@ -7,6 +7,7 @@ import * as state from "@features/state.ts";
 import { escapeHtml, parseTagInput, safeLocalStorage } from "@utils/index.ts";
 import { api } from "@services/api.ts";
 import { logger } from "@utils/logger.ts";
+import { createFocusTrap, removeFocusTrap } from "@utils/focus-trap.ts";
 
 // Profile settings form HTML template (injected dynamically to avoid password manager detection)
 const PROFILE_FORM_HTML = `
@@ -267,6 +268,31 @@ export function openModal(id: string): void {
   const modal = document.getElementById(id);
   if (modal) {
     modal.classList.remove("hidden");
+    
+    // Add ARIA attributes for accessibility
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    
+    // Set aria-labelledby if modal has a title
+    const modalTitle = modal.querySelector(".modal-title, h2, h3");
+    if (modalTitle && modalTitle.id) {
+      modal.setAttribute("aria-labelledby", modalTitle.id);
+    } else if (modalTitle) {
+      // Generate an ID for the title if it doesn't have one
+      const titleId = `${id}-title`;
+      modalTitle.id = titleId;
+      modal.setAttribute("aria-labelledby", titleId);
+    }
+
+    // Create focus trap for the modal
+    try {
+      createFocusTrap(modal, {
+        initialFocus: true,
+        onEscape: () => closeModals(),
+      });
+    } catch (error) {
+      logger.warn("Failed to create focus trap for modal", error);
+    }
 
     // Attach modal close listeners only once per modal instance
     const closeBtn = modal.querySelector(".modal-close") as HTMLElement | null;
@@ -495,7 +521,19 @@ function attachSettingsModalLogout(): void {
 
 // Close all modals
 export function closeModals(): void {
-  document.querySelectorAll(".modal").forEach((m) => m.classList.add("hidden"));
+  document.querySelectorAll(".modal").forEach((modal) => {
+    modal.classList.add("hidden");
+    
+    // Remove focus trap when closing modal
+    if (modal.id) {
+      removeFocusTrap(modal.id);
+    }
+    
+    // Remove ARIA attributes
+    modal.removeAttribute("role");
+    modal.removeAttribute("aria-modal");
+    modal.removeAttribute("aria-labelledby");
+  });
   resetForms();
 
   // Clear import progress if settings modal was open

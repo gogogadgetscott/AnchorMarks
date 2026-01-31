@@ -46,17 +46,17 @@ export function Header(options: HeaderOptions): string {
     : "";
   const profileHtml = showUserProfile ? UserProfile() : "";
   const filterBtnHtml = showFilterButton
-    ? `<button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters">
+    ? `<button id="filter-dropdown-btn" class="btn btn-secondary" title="Filters" aria-label="Open filters" aria-haspopup="true">
             ${Icon("filter", { size: 16 })}
             <span class="filter-btn-text">Filters</span>
           </button>`
     : "";
 
   return `
-    <header class="content-header ${className}" id="${id}">
+    <header class="content-header ${className}" id="${id}" role="banner">
       <div class="header-normal-ui">
         <div class="header-left">
-          <button class="btn-icon" id="toggle-sidebar-btn-${id.replace("-header", "")}" title="Toggle Sidebar">
+          <button class="btn-icon" id="toggle-sidebar-btn-${id.replace("-header", "")}" title="Toggle Sidebar" aria-label="Toggle sidebar" aria-expanded="${!state.hideSidebar}">
             ${Icon("menu")}
           </button>
           <h1>${title}</h1>

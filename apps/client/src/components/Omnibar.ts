@@ -26,7 +26,7 @@ export function Omnibar(options: OmnibarOptions = {}): string {
 
   const dropdownHtml = showDropdown
     ? `
-    <div id="omnibar-panel" class="omnibar-panel hidden">
+    <div id="omnibar-panel" class="omnibar-panel hidden" role="listbox" aria-label="Search suggestions and quick actions">
       <!-- Recent Searches Section -->
       <div class="omnibar-section" id="omnibar-recent">
         <div class="omnibar-section-header">
@@ -70,7 +70,7 @@ export function Omnibar(options: OmnibarOptions = {}): string {
     : "";
 
   return `
-    <div class="omnibar-container">
+    <div class="omnibar-container" role="search">
       <div class="header-search-bar omnibar-input">
         ${Icon("search", { size: 18 })}
         <input
@@ -78,6 +78,11 @@ export function Omnibar(options: OmnibarOptions = {}): string {
           id="${id}"
           placeholder="${placeholder}"
           autocomplete="off"
+          role="combobox"
+          aria-label="Search bookmarks or enter commands"
+          aria-autocomplete="list"
+          aria-expanded="false"
+          aria-controls="omnibar-panel"
         />
         <kbd>${shortcut}</kbd>
       </div>

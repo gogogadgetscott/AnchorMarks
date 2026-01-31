@@ -182,6 +182,11 @@ export function openOmnibar(): void {
 
   omnibarState.isOpen = true;
   panel.classList.remove("hidden");
+  
+  // Update aria-expanded for accessibility
+  if (input) {
+    input.setAttribute("aria-expanded", "true");
+  }
 
   // Render initial content
   renderOmnibarPanel(input?.value || "");
@@ -190,12 +195,18 @@ export function openOmnibar(): void {
 // Close omnibar panel
 export function closeOmnibar(): void {
   const panel = document.getElementById("omnibar-panel");
+  const input = document.getElementById("search-input") as HTMLInputElement;
 
   // Always update state so tests and non-DOM environments behave consistently
   omnibarState.isOpen = false;
   if (panel) panel.classList.add("hidden");
   omnibarState.activeIndex = 0;
   omnibarState.currentItems = [];
+  
+  // Update aria-expanded for accessibility
+  if (input) {
+    input.setAttribute("aria-expanded", "false");
+  }
 }
 
 // Toggle omnibar
