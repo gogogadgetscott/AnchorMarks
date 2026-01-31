@@ -261,6 +261,12 @@ export function setCurrentDashboardTab(val: string | null) {
   currentDashboardTab = val;
 }
 export function setCurrentView(val: string) {
+  // Clean up previous view's event listeners
+  if (currentView && currentView !== val) {
+    const { cleanupView } = require("../utils/event-cleanup.ts");
+    cleanupView(currentView);
+  }
+
   // Clean up tag cloud resize listener if leaving tag cloud view
   if (currentView === "tag-cloud" && val !== "tag-cloud") {
     if (typeof (window as any).__tagCloudResizeCleanup === "function") {
