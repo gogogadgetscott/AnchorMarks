@@ -4,8 +4,10 @@
  */
 
 import * as state from "@features/state.ts";
-import { escapeHtml, parseTagInput } from "@utils/index.ts";
+import { escapeHtml, parseTagInput, safeLocalStorage } from "@utils/index.ts";
 import { api } from "@services/api.ts";
+import { logger } from "@utils/logger.ts";
+import { createFocusTrap, removeFocusTrap } from "@utils/focus-trap.ts";
 
 // Profile settings form HTML template (injected dynamically to avoid password manager detection)
 const PROFILE_FORM_HTML = `
@@ -266,6 +268,31 @@ export function openModal(id: string): void {
   const modal = document.getElementById(id);
   if (modal) {
     modal.classList.remove("hidden");
+    
+    // Add ARIA attributes for accessibility
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    
+    // Set aria-labelledby if modal has a title
+    const modalTitle = modal.querySelector(".modal-title, h2, h3");
+    if (modalTitle && modalTitle.id) {
+      modal.setAttribute("aria-labelledby", modalTitle.id);
+    } else if (modalTitle) {
+      // Generate an ID for the title if it doesn't have one
+      const titleId = `${id}-title`;
+      modalTitle.id = titleId;
+      modal.setAttribute("aria-labelledby", titleId);
+    }
+
+    // Create focus trap for the modal
+    try {
+      createFocusTrap(modal, {
+        initialFocus: true,
+        onEscape: () => closeModals(),
+      });
+    } catch (error) {
+      logger.warn("Failed to create focus trap for modal", error);
+    }
 
     // Attach modal close listeners only once per modal instance
     const closeBtn = modal.querySelector(".modal-close") as HTMLElement | null;
@@ -401,7 +428,7 @@ function attachSettingsTabListeners(): void {
       state.setTagCloudDefaultShowAll(val);
       await saveSettings({ tag_cloud_default_show_all: val ? 1 : 0 });
       // Also set local preference to match default immediately
-      localStorage.setItem("anchormarks_tag_cloud_show_all", String(val));
+      safeLocalStorage.setItem("anchormarks_tag_cloud_show_all", String(val));
       if (state.currentView === "tag-cloud") {
         const { renderTagCloud } =
           await import("@features/bookmarks/tag-cloud.ts");
@@ -494,7 +521,19 @@ function attachSettingsModalLogout(): void {
 
 // Close all modals
 export function closeModals(): void {
-  document.querySelectorAll(".modal").forEach((m) => m.classList.add("hidden"));
+  document.querySelectorAll(".modal").forEach((modal) => {
+    modal.classList.add("hidden");
+    
+    // Remove focus trap when closing modal
+    if (modal.id) {
+      removeFocusTrap(modal.id);
+    }
+    
+    // Remove ARIA attributes
+    modal.removeAttribute("role");
+    modal.removeAttribute("aria-modal");
+    modal.removeAttribute("aria-labelledby");
+  });
   resetForms();
 
   // Clear import progress if settings modal was open
@@ -616,7 +655,7 @@ export async function updateCounts(): Promise<void> {
 
     // Validate API response
     if (!counts || typeof counts !== "object") {
-      console.warn("Invalid counts response from server", counts);
+      logger.warn("Invalid counts response from server", counts);
       // Don't return early - still try to show badges with default values
     }
 
@@ -638,7 +677,7 @@ export async function updateCounts(): Promise<void> {
     // Helper function to update badge with count
     const updateBadge = (el: HTMLElement | null, count: number): void => {
       if (!el) {
-        console.warn("Badge element not found");
+        logger.warn("Badge element not found");
         return;
       }
       // Always show the badge with the count
@@ -728,7 +767,7 @@ export async function updateCounts(): Promise<void> {
 
     updateStats();
   } catch (err) {
-    console.error("Error updating counts:", err);
+    logger.error("Error updating counts", err);
     // On error, try to at least show that counts couldn't be loaded
     // Don't hide badges - let them show their last known value or "0"
     const badgeIds = [

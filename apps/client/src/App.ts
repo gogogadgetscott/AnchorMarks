@@ -18,7 +18,8 @@ declare global {
 import { api } from "@services/api.ts";
 
 // Import utilities
-import { escapeHtml, getHostname, parseTagInput } from "@utils/index.ts";
+import { escapeHtml, getHostname, parseTagInput, safeLocalStorage } from "@utils/index.ts";
+import { logger } from "@utils/logger.ts";
 
 // Import UI helpers
 import {
@@ -295,7 +296,7 @@ async function updateAppVersion(): Promise<void> {
       versionEl.textContent = `v${response.version}`;
     }
   } catch (error) {
-    console.warn("Failed to fetch app version:", error);
+    logger.warn("Failed to fetch app version", error);
   }
 }
 
@@ -341,7 +342,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initDom();
 
   // Load theme
-  const savedTheme = localStorage.getItem("anchormarks_theme");
+  const savedTheme = safeLocalStorage.getItem("anchormarks_theme");
   if (savedTheme) {
     document.documentElement.setAttribute("data-theme", savedTheme);
     const themeSelect = document.getElementById(
@@ -387,11 +388,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   initTagListeners();
   initMaintenance();
 
-  // Global keyboard shortcuts
-  document.addEventListener("keydown", handleKeyboard);
+  // Global keyboard shortcuts with cleanup support
+  const { registerGlobalCleanup } = await import("@utils/event-cleanup.ts");
+  const globalSignal = registerGlobalCleanup();
+
+  document.addEventListener("keydown", handleKeyboard, { signal: globalSignal.signal });
   window.addEventListener("focus", () => {
-    document.addEventListener("keydown", handleKeyboard);
-  });
+    document.addEventListener("keydown", handleKeyboard, { signal: globalSignal.signal });
+  }, { signal: globalSignal.signal });
 
   // Filter sort listener (kept here for now as it's simple)
   document.getElementById("filter-sort")?.addEventListener("change", (e) => {
@@ -399,7 +403,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     import("@features/bookmarks/bookmarks.ts").then(({ renderBookmarks }) =>
       renderBookmarks(),
     );
-  });
+  }, { signal: globalSignal.signal });
 });
 
 // ============================================================

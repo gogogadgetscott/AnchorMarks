@@ -8,11 +8,13 @@ export async function saveSettings(
       body: JSON.stringify(updates),
     });
   } catch (err) {
-    console.error("Failed to save settings:", err);
+    logger.error("Failed to save settings", err);
   }
 }
 import { applyTheme } from "@features/state.ts";
 import type { UserSettings } from "../../types/index";
+import { safeLocalStorage } from "@utils/index.ts";
+import { logger } from "@utils/logger.ts";
 // Import saveSettings at the top for use in all functions
 // (function is defined below)
 // Initialize theme and high contrast controls
@@ -99,7 +101,7 @@ export async function loadSettings(): Promise<void> {
     // Apply sidebar collapsed state - use server setting with localStorage fallback
     let sidebarCollapsed = settings.hide_sidebar
       ? true
-      : localStorage.getItem("anchormarks_sidebar_collapsed") === "true";
+      : safeLocalStorage.getItem("anchormarks_sidebar_collapsed") === "true";
     // Persist desktop collapsed state only; ignore on mobile
     // removed stray import
     if (sidebarCollapsed && window.innerWidth > 1024) {
@@ -107,7 +109,7 @@ export async function loadSettings(): Promise<void> {
     } else if (!sidebarCollapsed && window.innerWidth > 1024) {
       document.body.classList.remove("sidebar-collapsed");
     }
-    localStorage.setItem(
+    safeLocalStorage.setItem(
       "anchormarks_sidebar_collapsed",
       String(sidebarCollapsed),
     );
@@ -118,7 +120,7 @@ export async function loadSettings(): Promise<void> {
       if (section) section.classList.add("collapsed");
     });
   } catch (err) {
-    console.error("Failed to load settings:", err);
+    logger.error("Failed to load settings", err);
     // removed erroneous call
   }
 
@@ -134,7 +136,7 @@ export async function loadSettings(): Promise<void> {
 export function setTheme(themeName: string, save = true): void {
   if (!themeName) return;
   document.documentElement.setAttribute("data-theme", themeName);
-  localStorage.setItem("anchormarks_theme", themeName);
+  safeLocalStorage.setItem("anchormarks_theme", themeName);
 
   const themeSelect = document.getElementById(
     "theme-select",
@@ -195,7 +197,7 @@ export function toggleRichLinkPreviews(): void {
     "rich-link-previews-toggle",
   ) as HTMLInputElement;
   const newValue = toggle?.checked || false;
-  console.log("[Settings] Toggling rich link previews:", newValue);
+  logger.debug("[Settings] Toggling rich link previews:", newValue);
   state.setRichLinkPreviewsEnabled(newValue);
   saveSettings({ rich_link_previews_enabled: newValue ? 1 : 0 });
 
@@ -231,7 +233,7 @@ export function toggleSidebar(): void {
   } else {
     // On desktop, toggle the collapsed state
     const isCollapsed = document.body.classList.toggle("sidebar-collapsed");
-    localStorage.setItem("anchormarks_sidebar_collapsed", String(isCollapsed));
+    safeLocalStorage.setItem("anchormarks_sidebar_collapsed", String(isCollapsed));
     state.setHideSidebar(isCollapsed);
     // Also save to server settings for cross-device sync
     saveSettings({ hide_sidebar: isCollapsed ? 1 : 0 });
@@ -381,7 +383,7 @@ export function installBookmarkShortcut(): void {
         );
       }
     } catch (err) {
-      console.warn("Clipboard copy failed", err);
+      logger.warn("Clipboard copy failed", err);
       const fallback = document.createElement("textarea");
       fallback.value = bookmarkletCode;
       document.body.appendChild(fallback);

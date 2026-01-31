@@ -7,6 +7,7 @@ import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { Folder } from "../../types/index";
 import { escapeHtml } from "@utils/index.ts";
+import { logger } from "@utils/logger.ts";
 import { buildFolderOptionsHTML } from "./folders-utils";
 import {
   showToast,
@@ -63,7 +64,7 @@ export function renderFolders(): void {
   const sorter = folderSorter;
 
   const rootFolders = state.folders.filter((f) => !f.parent_id).sort(sorter);
-  console.log(
+  logger.debug(
     `[Folders] Rendering ${state.folders.length} total folders, found ${rootFolders.length} root folders`,
   );
 
