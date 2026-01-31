@@ -1,4 +1,5 @@
 import type { UserSettings } from "../types/index";
+import { safeLocalStorage } from "../utils/index.ts";
 
 export function applyTheme(settings: UserSettings) {
   if (settings.theme === "system") {
@@ -16,6 +17,7 @@ import {
   User,
   Bookmark,
   Folder,
+  Tag,
   DashboardWidget,
   FilterConfig,
   TourStep,
@@ -131,21 +133,21 @@ export let isLoadingMore: boolean = false;
 export let isLoading: boolean = false;
 
 // Drag and Drop State
-export let draggedWidget: any = null;
-export let draggedSidebarItem: any = null;
+export let draggedWidget: HTMLElement | null = null;
+export let draggedSidebarItem: Folder | Tag | null = null;
 export let isDraggingWidget: boolean = false;
 export let dragStartPos = { x: 0, y: 0 };
 export let widgetStartPos = { x: 0, y: 0 };
 export let isResizing: boolean = false;
-export let resizingWidget: any = null;
+export let resizingWidget: HTMLElement | null = null;
 export let resizeStartSize = { w: 0, h: 0 };
 
 // Sidebar Popout State
-export let sidebarPopout: any = null;
-export let popoutTimeout: any = null;
+export let sidebarPopout: HTMLElement | null = null;
+export let popoutTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Tag Suggestion State
-export let tagSuggestTimeout: any = null;
+export let tagSuggestTimeout: ReturnType<typeof setTimeout> | null = null;
 export let allSidebarTags: { name: string; count: number }[] = [];
 export let showingAllTags: boolean = false;
 
@@ -370,10 +372,10 @@ export function setIsLoadingMore(val: boolean) {
 export function setIsLoading(val: boolean) {
   isLoading = val;
 }
-export function setDraggedWidget(val: any) {
+export function setDraggedWidget(val: HTMLElement | null) {
   draggedWidget = val;
 }
-export function setDraggedSidebarItem(val: any) {
+export function setDraggedSidebarItem(val: Folder | Tag | null) {
   draggedSidebarItem = val;
 }
 export function setIsDraggingWidget(val: boolean) {
@@ -388,19 +390,19 @@ export function setWidgetStartPos(val: { x: number; y: number }) {
 export function setIsResizing(val: boolean) {
   isResizing = val;
 }
-export function setResizingWidget(val: any) {
+export function setResizingWidget(val: HTMLElement | null) {
   resizingWidget = val;
 }
 export function setResizeStartSize(val: { w: number; h: number }) {
   resizeStartSize = val;
 }
-export function setSidebarPopout(val: any) {
+export function setSidebarPopout(val: HTMLElement | null) {
   sidebarPopout = val;
 }
-export function setPopoutTimeout(val: any) {
+export function setPopoutTimeout(val: ReturnType<typeof setTimeout> | null) {
   popoutTimeout = val;
 }
-export function setTagSuggestTimeout(val: any) {
+export function setTagSuggestTimeout(val: ReturnType<typeof setTimeout> | null) {
   tagSuggestTimeout = val;
 }
 export function setAllSidebarTags(val: { name: string; count: number }[]) {
@@ -427,9 +429,11 @@ export function setViewToolbarConfig(view: string, config: any) {
   keysToMigrate.forEach((oldKey) => {
     const suffix = oldKey.slice(oldPrefix.length);
     const newKey = `${newPrefix}${suffix}`;
-    if (!localStorage.getItem(newKey)) {
-      localStorage.setItem(newKey, localStorage.getItem(oldKey) || "");
+    const oldValue = safeLocalStorage.getItem(oldKey);
+    const existingValue = safeLocalStorage.getItem(newKey);
+    if (!existingValue && oldValue) {
+      safeLocalStorage.setItem(newKey, oldValue);
     }
-    localStorage.removeItem(oldKey);
+    safeLocalStorage.removeItem(oldKey);
   });
 })();

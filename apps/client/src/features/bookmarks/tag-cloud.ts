@@ -6,7 +6,7 @@
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { logger } from "@utils/logger.ts";
-import { escapeHtml } from "@utils/index.ts";
+import { escapeHtml, safeLocalStorage } from "@utils/index.ts";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
 import { dom, showToast } from "@utils/ui-helpers.ts";
 
@@ -215,7 +215,7 @@ export async function renderTagCloud(): Promise<void> {
   bulkBar?.classList.add("hidden");
 
   const tags = await buildTagData();
-  const storedPref = localStorage.getItem("anchormarks_tag_cloud_show_all");
+  const storedPref = safeLocalStorage.getItem("anchormarks_tag_cloud_show_all");
   const showAllPref =
     storedPref !== null
       ? storedPref === "true"
@@ -404,7 +404,7 @@ export async function renderTagCloud(): Promise<void> {
   if (toggleBtn) {
     toggleBtn.addEventListener("click", async () => {
       const next = !showAllPref;
-      localStorage.setItem("anchormarks_tag_cloud_show_all", String(next));
+      safeLocalStorage.setItem("anchormarks_tag_cloud_show_all", String(next));
       await renderTagCloud();
     });
   }

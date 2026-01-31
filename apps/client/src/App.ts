@@ -18,7 +18,7 @@ declare global {
 import { api } from "@services/api.ts";
 
 // Import utilities
-import { escapeHtml, getHostname, parseTagInput } from "@utils/index.ts";
+import { escapeHtml, getHostname, parseTagInput, safeLocalStorage } from "@utils/index.ts";
 
 // Import UI helpers
 import {
@@ -341,7 +341,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initDom();
 
   // Load theme
-  const savedTheme = localStorage.getItem("anchormarks_theme");
+  const savedTheme = safeLocalStorage.getItem("anchormarks_theme");
   if (savedTheme) {
     document.documentElement.setAttribute("data-theme", savedTheme);
     const themeSelect = document.getElementById(

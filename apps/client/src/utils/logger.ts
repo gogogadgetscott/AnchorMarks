@@ -3,6 +3,8 @@
  * Centralized logging that respects environment and log levels
  */
 
+import { safeLocalStorage } from "./index.ts";
+
 type LogLevel = "debug" | "info" | "warn" | "error";
 
 class Logger {
@@ -10,7 +12,7 @@ class Logger {
     return (
       import.meta.env.DEV ||
       import.meta.env.MODE === "development" ||
-      localStorage.getItem("anchormarks_debug") === "true"
+      safeLocalStorage.getItem("anchormarks_debug") === "true"
     );
   }
 

@@ -5,7 +5,7 @@
 
 import * as state from "@features/state.ts";
 import { getCommandPaletteCommands } from "@features/bookmarks/commands.ts";
-import { escapeHtml } from "@utils/index.ts";
+import { escapeHtml, safeLocalStorage } from "@utils/index.ts";
 import { Icon } from "@components/index.ts";
 
 const RECENT_SEARCHES_KEY = "anchormarks_recent_searches";
@@ -36,7 +36,7 @@ let omnibarState: OmnibarState = {
 // Get recent searches from localStorage
 export function getRecentSearches(): string[] {
   try {
-    const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
+    const stored = safeLocalStorage.getItem(RECENT_SEARCHES_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
@@ -60,7 +60,7 @@ export function addRecentSearch(query: string): void {
   const limited = filtered.slice(0, MAX_RECENT_SEARCHES);
 
   try {
-    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(limited));
+    safeLocalStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(limited));
   } catch {
     // Ignore localStorage errors
   }
@@ -69,7 +69,7 @@ export function addRecentSearch(query: string): void {
 // Clear recent searches
 export function clearRecentSearches(): void {
   try {
-    localStorage.removeItem(RECENT_SEARCHES_KEY);
+    safeLocalStorage.removeItem(RECENT_SEARCHES_KEY);
   } catch {
     // Ignore localStorage errors
   }
@@ -82,7 +82,7 @@ export function removeRecentSearch(query: string): void {
   const filtered = recent.filter((s) => s !== query);
 
   try {
-    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(filtered));
+    safeLocalStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(filtered));
   } catch {
     // Ignore localStorage errors
   }

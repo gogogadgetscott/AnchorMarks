@@ -4,7 +4,7 @@
  */
 
 import * as state from "@features/state.ts";
-import { escapeHtml, parseTagInput } from "@utils/index.ts";
+import { escapeHtml, parseTagInput, safeLocalStorage } from "@utils/index.ts";
 import { api } from "@services/api.ts";
 
 // Profile settings form HTML template (injected dynamically to avoid password manager detection)
@@ -401,7 +401,7 @@ function attachSettingsTabListeners(): void {
       state.setTagCloudDefaultShowAll(val);
       await saveSettings({ tag_cloud_default_show_all: val ? 1 : 0 });
       // Also set local preference to match default immediately
-      localStorage.setItem("anchormarks_tag_cloud_show_all", String(val));
+      safeLocalStorage.setItem("anchormarks_tag_cloud_show_all", String(val));
       if (state.currentView === "tag-cloud") {
         const { renderTagCloud } =
           await import("@features/bookmarks/tag-cloud.ts");

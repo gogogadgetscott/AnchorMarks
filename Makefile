@@ -247,6 +247,8 @@ lint-code: ## Lint and format code
 	npx eslint "**/*.js" --config tooling/eslint.config.cjs --fix && npx prettier . --write
 	@echo "$(GREEN)✓ Code linted and formatted$(NC)"
 
+lint: lint-code ## Alias for lint-code (lint and format code)
+
 lint-check: ## Check linting without fixing
 	@echo "$(BLUE)Checking code linting...$(NC)"
 	npx eslint "**/*.js" --config tooling/eslint.config.cjs && npx prettier . --check

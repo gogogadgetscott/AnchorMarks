@@ -5,6 +5,7 @@
 
 import * as state from "@features/state.ts";
 import { showToast } from "@utils/ui-helpers.ts";
+import { safeLocalStorage } from "@utils/index.ts";
 
 // Save tour completed state to server
 async function saveTourCompleted(): Promise<void> {
@@ -25,7 +26,7 @@ export function checkWelcomeTour(): void {
   if (state.tourCompleted) return;
 
   // Also check localStorage for backward compatibility
-  const dismissed = localStorage.getItem("anchormarks_tour_dismissed");
+  const dismissed = safeLocalStorage.getItem("anchormarks_tour_dismissed");
   if (dismissed) {
     // Migrate localStorage setting to server
     saveTourCompleted();
@@ -167,7 +168,7 @@ export function endTour(): void {
 
   // Save to server (also keeps localStorage for backward compatibility)
   saveTourCompleted();
-  localStorage.setItem("anchormarks_tour_dismissed", "true");
+  safeLocalStorage.setItem("anchormarks_tour_dismissed", "true");
 
   showToast("🎉 Tour complete! Happy bookmarking!");
 }
@@ -190,7 +191,7 @@ export function skipTour(): void {
 
   // Save to server (also keeps localStorage for backward compatibility)
   saveTourCompleted();
-  localStorage.setItem("anchormarks_tour_dismissed", "true");
+  safeLocalStorage.setItem("anchormarks_tour_dismissed", "true");
 
   showToast("Tour skipped. You can restart it from Settings anytime!");
 }
