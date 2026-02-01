@@ -599,7 +599,7 @@ async function renderCollectionsInDropdown(): Promise<void> {
       const collection = state.collections.find((c) => c.id === collectionId);
 
       state.setCurrentFolder(null);
-      state.setCurrentView("collection");
+      await state.setCurrentView("collection");
       state.setCurrentCollection(collectionId);
 
       const viewTitle = document.getElementById("view-title");
@@ -847,7 +847,7 @@ async function clearAllFilters(): Promise<void> {
 
   state.setCurrentFolder(null);
   state.setCurrentCollection(null);
-  state.setCurrentView("all");
+  await state.setCurrentView("all");
 
   const searchInput = document.getElementById(
     "search-input",
@@ -975,10 +975,10 @@ function renderDropdownActiveFilters(): void {
 
       if (type === "folder") {
         state.setCurrentFolder(null);
-        state.setCurrentView("all");
+        await state.setCurrentView("all");
       } else if (type === "collection") {
         state.setCurrentCollection(null);
-        state.setCurrentView("all");
+        await state.setCurrentView("all");
         const viewTitle = document.getElementById("view-title");
         if (viewTitle) viewTitle.textContent = "Bookmarks";
       } else if (type === "tag") {
