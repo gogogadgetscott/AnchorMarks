@@ -72,7 +72,7 @@ export function Omnibar(options: OmnibarOptions = {}): string {
   return `
     <div class="omnibar-container" role="search">
       <div class="header-search-bar omnibar-input">
-        ${Icon("search", { size: 18 })}
+        ${Icon("search", { size: 20 })}
         <input
           type="text"
           id="${id}"
@@ -84,7 +84,7 @@ export function Omnibar(options: OmnibarOptions = {}): string {
           aria-expanded="false"
           aria-controls="omnibar-panel"
         />
-        <kbd>${shortcut}</kbd>
+        <kbd class="search-shortcut-hint">${shortcut}</kbd>
       </div>
       ${dropdownHtml}
     </div>

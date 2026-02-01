@@ -146,7 +146,7 @@ export function getOmnibarCommands(filterText: string = ""): Command[] {
         // Switch to import tab after modal opens
         setTimeout(() => {
           const importTab = document.querySelector(
-            '[data-settings-tab="import-export"]',
+            '[data-settings-tab="import"]',
           ) as HTMLElement;
           importTab?.click();
         }, 100);

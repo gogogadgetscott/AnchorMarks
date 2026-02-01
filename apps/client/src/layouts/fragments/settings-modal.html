@@ -25,28 +25,65 @@
       </div>
     </div>
     <div class="settings-content">
-      <div class="settings-tabs">
-        <button class="settings-tab" data-settings-tab="profile">
-          Profile
-        </button>
-        <button class="settings-tab active" data-settings-tab="general">
-          General
-        </button>
-        <button class="settings-tab" data-settings-tab="api">API Access</button>
-        <button class="settings-tab" data-settings-tab="sync">
-          Browser Helper
-        </button>
-        <button class="settings-tab" data-settings-tab="import">
-          Import/Export
-        </button>
-        <button class="settings-tab" data-settings-tab="tags">Tags</button>
-        <button class="settings-tab" data-settings-tab="maintenance">
-          Maintenance
-        </button>
-        <button class="settings-tab" data-settings-tab="shortcuts">
-          Keyboard Shortcuts
-        </button>
-      </div>
+      <nav class="settings-tabs" aria-label="Settings sections">
+        <div class="settings-tabs-inner">
+          <p class="settings-section-header" aria-hidden="true">Account</p>
+          <button class="settings-tab" data-settings-tab="profile" type="button">
+            <span class="settings-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </span>
+            <span class="settings-tab-label">Profile</span>
+          </button>
+
+          <p class="settings-section-header" aria-hidden="true">Customization</p>
+          <button class="settings-tab active" data-settings-tab="general" type="button">
+            <span class="settings-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            </span>
+            <span class="settings-tab-label">General</span>
+          </button>
+          <button class="settings-tab" data-settings-tab="tags" type="button">
+            <span class="settings-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            </span>
+            <span class="settings-tab-label">Tags</span>
+          </button>
+
+          <p class="settings-section-header" aria-hidden="true">Integrations</p>
+          <button class="settings-tab" data-settings-tab="api" type="button">
+            <span class="settings-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+            </span>
+            <span class="settings-tab-label">API Access</span>
+          </button>
+          <button class="settings-tab" data-settings-tab="sync" type="button">
+            <span class="settings-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/><circle cx="12" cy="12" r="4"/></svg>
+            </span>
+            <span class="settings-tab-label">Browser Helper</span>
+          </button>
+          <button class="settings-tab" data-settings-tab="import" type="button">
+            <span class="settings-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </span>
+            <span class="settings-tab-label">Import/Export</span>
+          </button>
+
+          <p class="settings-section-header" aria-hidden="true">System Tools</p>
+          <button class="settings-tab" data-settings-tab="maintenance" type="button">
+            <span class="settings-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            </span>
+            <span class="settings-tab-label">Maintenance</span>
+          </button>
+          <button class="settings-tab" data-settings-tab="shortcuts" type="button">
+            <span class="settings-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>
+            </span>
+            <span class="settings-tab-label">Keyboard Shortcuts</span>
+          </button>
+        </div>
+      </nav>
 
       <div class="settings-panel" id="settings-profile">
         <!-- Profile forms injected dynamically to avoid password manager conflicts -->
@@ -677,230 +714,143 @@
           </p>
         </div>
 
-        <div class="shortcuts-grid">
+        <div class="shortcuts-body">
           <!-- Navigation -->
-          <div class="shortcuts-card">
-            <div class="shortcuts-card-header">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-              <h4>Navigation</h4>
-            </div>
-            <div class="shortcuts-list">
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>D</kbd>
-                </div>
-                <div class="shortcut-desc">Go to Dashboard</div>
+          <section class="shortcuts-category" aria-labelledby="shortcuts-nav-heading">
+            <h4 class="shortcuts-category-title" id="shortcuts-nav-heading">Navigation</h4>
+            <div class="shortcuts-table-wrap" role="region" aria-label="Navigation shortcuts">
+              <div class="shortcuts-table-header">
+                <span class="shortcuts-col-action">Action</span>
+                <span class="shortcuts-col-shortcut">Shortcut</span>
               </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>g</kbd> <span>then</span> <kbd>d</kbd>
+              <div class="shortcuts-table-body">
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Go to Dashboard</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>D</kbd> or <kbd>g</kbd> <span>then</span> <kbd>d</kbd></span>
                 </div>
-                <div class="shortcut-desc">Go to Dashboard</div>
-              </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>F</kbd>
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Go to Favorites</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>F</kbd> or <kbd>g</kbd> <span>then</span> <kbd>f</kbd></span>
                 </div>
-                <div class="shortcut-desc">Go to Favorites</div>
-              </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>g</kbd> <span>then</span> <kbd>f</kbd>
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Go to All Bookmarks</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>A</kbd> or <kbd>g</kbd> <span>then</span> <kbd>a</kbd></span>
                 </div>
-                <div class="shortcut-desc">Go to Favorites</div>
-              </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>A</kbd>
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Go to Tag Cloud</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>T</kbd></span>
                 </div>
-                <div class="shortcut-desc">Go to All Bookmarks</div>
-              </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>g</kbd> <span>then</span> <kbd>a</kbd>
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Jump to folder 1–9</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>Ctrl</kbd><span>+</span><kbd>1</kbd> <span>to</span> <kbd>9</kbd></span>
                 </div>
-                <div class="shortcut-desc">Go to All Bookmarks</div>
-              </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>T</kbd>
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Toggle sidebar</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>b</kbd></span>
                 </div>
-                <div class="shortcut-desc">Go to Tag Cloud</div>
-              </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>Ctrl</kbd><span>+</span><kbd>1</kbd> <span>to</span> <kbd>9</kbd>
-                </div>
-                <div class="shortcut-desc">Jump to folder 1-9</div>
-              </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>k</kbd>
-                </div>
-                <div class="shortcut-desc">Focus search</div>
-              </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>b</kbd>
-                </div>
-                <div class="shortcut-desc">Toggle sidebar</div>
               </div>
             </div>
-          </div>
+          </section>
 
-          <!-- Bookmarks & Actions -->
-          <div class="shortcuts-card">
-            <div class="shortcuts-card-header">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
-              </svg>
-              <h4>Bookmarks & Actions</h4>
-            </div>
-            <div class="shortcuts-list">
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>Ctrl</kbd><span>+</span><kbd>N</kbd>
-                </div>
-                <div class="shortcut-desc">Add new bookmark</div>
+          <!-- Selection -->
+          <section class="shortcuts-category" aria-labelledby="shortcuts-selection-heading">
+            <h4 class="shortcuts-category-title" id="shortcuts-selection-heading">Selection</h4>
+            <div class="shortcuts-table-wrap" role="region" aria-label="Selection shortcuts">
+              <div class="shortcuts-table-header">
+                <span class="shortcuts-col-action">Action</span>
+                <span class="shortcuts-col-shortcut">Shortcut</span>
               </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>n</kbd>
+              <div class="shortcuts-table-body">
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Add new bookmark</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>Ctrl</kbd><span>+</span><kbd>N</kbd> or <kbd>n</kbd></span>
                 </div>
-                <div class="shortcut-desc">Add new bookmark</div>
-              </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>Ctrl</kbd><span>+</span><kbd>F</kbd>
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Select all bookmarks</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>Ctrl</kbd><span>+</span><kbd>A</kbd></span>
                 </div>
-                <div class="shortcut-desc">Focus search</div>
-              </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>Ctrl</kbd><span>+</span><kbd>K</kbd>
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Toggle bulk selection</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>x</kbd></span>
                 </div>
-                <div class="shortcut-desc">Focus search (alternative)</div>
-              </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>Ctrl</kbd><span>+</span><kbd>A</kbd>
-                </div>
-                <div class="shortcut-desc">Select all bookmarks</div>
-              </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>x</kbd>
-                </div>
-                <div class="shortcut-desc">Toggle bulk selection</div>
               </div>
             </div>
-          </div>
+          </section>
 
-          <!-- Views -->
-          <div class="shortcuts-card">
-            <div class="shortcuts-card-header">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <rect x="3" y="3" width="7" height="7" />
-                <rect x="14" y="3" width="7" height="7" />
-                <rect x="14" y="14" width="7" height="7" />
-                <rect x="3" y="14" width="7" height="7" />
-              </svg>
-              <h4>Views</h4>
-            </div>
-            <div class="shortcuts-list">
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>1</kbd>
-                </div>
-                <div class="shortcut-desc">Grid view</div>
+          <!-- Search -->
+          <section class="shortcuts-category" aria-labelledby="shortcuts-search-heading">
+            <h4 class="shortcuts-category-title" id="shortcuts-search-heading">Search</h4>
+            <div class="shortcuts-table-wrap" role="region" aria-label="Search shortcuts">
+              <div class="shortcuts-table-header">
+                <span class="shortcuts-col-action">Action</span>
+                <span class="shortcuts-col-shortcut">Shortcut</span>
               </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>2</kbd>
+              <div class="shortcuts-table-body">
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Focus search</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>k</kbd> or <kbd>Ctrl</kbd><span>+</span><kbd>F</kbd> or <kbd>Ctrl</kbd><span>+</span><kbd>K</kbd></span>
                 </div>
-                <div class="shortcut-desc">List view</div>
-              </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>3</kbd>
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Open search</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>P</kbd></span>
                 </div>
-                <div class="shortcut-desc">Compact view</div>
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Navigate search results</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>↓</kbd> <span>/</span> <kbd>↑</kbd></span>
+                </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          <!-- General -->
-          <div class="shortcuts-card">
-            <div class="shortcuts-card-header">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <circle cx="12" cy="12" r="3" />
-                <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24" />
-              </svg>
-              <h4>General</h4>
-            </div>
-            <div class="shortcuts-list">
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>P</kbd>
-                </div>
-                <div class="shortcut-desc">Open search</div>
+          <!-- View Modes -->
+          <section class="shortcuts-category" aria-labelledby="shortcuts-views-heading">
+            <h4 class="shortcuts-category-title" id="shortcuts-views-heading">View Modes</h4>
+            <div class="shortcuts-table-wrap" role="region" aria-label="View mode shortcuts">
+              <div class="shortcuts-table-header">
+                <span class="shortcuts-col-action">Action</span>
+                <span class="shortcuts-col-shortcut">Shortcut</span>
               </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>Esc</kbd>
+              <div class="shortcuts-table-body">
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Grid view</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>1</kbd></span>
                 </div>
-                <div class="shortcut-desc">Close modals and selections</div>
-              </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>↓</kbd> <span>/</span> <kbd>↑</kbd>
+                <div class="shortcut-row">
+                  <span class="shortcut-action">List view</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>2</kbd></span>
                 </div>
-                <div class="shortcut-desc">Navigate search results</div>
-              </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>?</kbd>
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Compact view</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>3</kbd></span>
                 </div>
-                <div class="shortcut-desc">Show keyboard shortcuts</div>
-              </div>
-              <div class="shortcut-item">
-                <div class="shortcut-keys">
-                  <kbd>F11</kbd>
-                </div>
-                <div class="shortcut-desc">Toggle fullscreen (dashboard)</div>
               </div>
             </div>
-          </div>
+          </section>
+
+          <!-- Modals -->
+          <section class="shortcuts-category" aria-labelledby="shortcuts-modals-heading">
+            <h4 class="shortcuts-category-title" id="shortcuts-modals-heading">Modals</h4>
+            <div class="shortcuts-table-wrap" role="region" aria-label="Modal shortcuts">
+              <div class="shortcuts-table-header">
+                <span class="shortcuts-col-action">Action</span>
+                <span class="shortcuts-col-shortcut">Shortcut</span>
+              </div>
+              <div class="shortcuts-table-body">
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Close modals and selections</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>Esc</kbd></span>
+                </div>
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Show keyboard shortcuts</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>?</kbd></span>
+                </div>
+                <div class="shortcut-row">
+                  <span class="shortcut-action">Toggle fullscreen (dashboard)</span>
+                  <span class="shortcut-keys shortcut-keys-monospace"><kbd>F11</kbd></span>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </div>
