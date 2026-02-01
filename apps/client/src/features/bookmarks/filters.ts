@@ -767,14 +767,8 @@ function attachFilterDropdownListeners(): void {
   ) as HTMLInputElement;
   if (searchInput) {
     searchInput.addEventListener("input", async (e: any) => {
-      // Don't apply filters to favorites or recent views - they show all items
+      // Don't apply filters in favorites or recent views; input is cleared when switching to those views
       if (state.currentView === "favorites" || state.currentView === "recent") {
-        // Clear the search input and filter config
-        e.target.value = "";
-        state.setFilterConfig({
-          ...state.filterConfig,
-          search: undefined,
-        });
         return;
       }
 

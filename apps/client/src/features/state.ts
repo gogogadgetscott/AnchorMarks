@@ -262,9 +262,8 @@ export function setCurrentDashboardTab(val: string | null) {
 }
 export async function setCurrentView(val: string) {
   const prevView = currentView;
-  currentView = val;
 
-  // Clean up previous view's event listeners
+  // Clean up previous view's event listeners before changing state
   if (prevView && prevView !== val) {
     const { cleanupView } = await import("../utils/event-cleanup.ts");
     cleanupView(prevView);
@@ -278,13 +277,19 @@ export async function setCurrentView(val: string) {
     }
   }
 
+  // Only update view after cleanup completes so state stays consistent on failure
+  currentView = val;
+
   // Clear filters when switching to favorites or recent views (they don't use filters)
   if (val === "favorites" || val === "recent") {
-    filterConfig.tags = [];
-    filterConfig.search = undefined;
+    setFilterConfig({
+      ...filterConfig,
+      tags: [],
+      search: undefined,
+    });
     // Keep sort preference but clear other filters
 
-    // Also clear the search input field in the UI
+    // Clear the search input field in the UI (once when entering these views)
     const searchInput = document.getElementById(
       "search-input",
     ) as HTMLInputElement;
