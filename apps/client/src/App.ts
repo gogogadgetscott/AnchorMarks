@@ -402,16 +402,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     capture: true,
     signal: globalSignal.signal,
   });
-  window.addEventListener(
-    "focus",
-    () => {
-      document.addEventListener("keydown", handleKeyboard, {
-        capture: true,
-        signal: globalSignal.signal,
-      });
-    },
-    { signal: globalSignal.signal },
-  );
 
   // Filter sort listener (kept here for now as it's simple)
   document.getElementById("filter-sort")?.addEventListener(
