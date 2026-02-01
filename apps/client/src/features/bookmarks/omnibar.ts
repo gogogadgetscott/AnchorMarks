@@ -357,14 +357,13 @@ function renderSuggestedTags(
 
   // Add click handlers
   list.querySelectorAll(".omnibar-tag-pill").forEach((pill) => {
-    pill.addEventListener("click", () => {
+    pill.addEventListener("click", async () => {
       const tagName = (pill as HTMLElement).dataset.tag;
       if (!tagName) return;
 
-      // Filter by tag
-      import("@features/bookmarks/search.ts").then(({ sidebarFilterTag }) => {
-        sidebarFilterTag(tagName);
-      });
+      const { sidebarFilterTag } =
+        await import("@features/bookmarks/search.ts");
+      await sidebarFilterTag(tagName);
       closeOmnibar();
     });
   });

@@ -71,8 +71,8 @@ export function renderSidebarTags(): void {
 }
 
 // Filter tag on sidebar click
-export function sidebarFilterTag(tag: string): void {
-  state.setCurrentView("all");
+export async function sidebarFilterTag(tag: string): Promise<void> {
+  await state.setCurrentView("all");
   state.setCurrentFolder(null);
 
   const searchInput = document.getElementById(
@@ -82,27 +82,26 @@ export function sidebarFilterTag(tag: string): void {
 
   // Toggle tag selection
   const idx = state.filterConfig.tags.indexOf(tag);
-  if (idx === -1) {
-    state.filterConfig.tags.push(tag);
-  } else {
-    state.filterConfig.tags.splice(idx, 1);
-  }
+  const newTags =
+    idx === -1
+      ? [...state.filterConfig.tags, tag]
+      : state.filterConfig.tags.filter((_, i) => i !== idx);
+  state.setFilterConfig({ ...state.filterConfig, tags: newTags });
 
   // Update view title
   const viewTitle = document.getElementById("view-title");
   if (viewTitle) {
-    if (state.filterConfig.tags.length === 0) {
+    if (newTags.length === 0) {
       viewTitle.textContent = "Bookmarks";
     } else {
-      viewTitle.textContent = `Tags: ${state.filterConfig.tags.join(", ")}`;
+      viewTitle.textContent = `Tags: ${newTags.join(", ")}`;
     }
   }
 
   updateActiveNav();
   renderActiveFilters();
-  import("@features/bookmarks/bookmarks.ts").then(({ renderBookmarks }) =>
-    renderBookmarks(),
-  );
+  const { renderBookmarks } = await import("@features/bookmarks/bookmarks.ts");
+  await renderBookmarks();
   renderSidebarTags();
 }
 
@@ -166,7 +165,7 @@ export function renderTagsList(tags: { name: string; count: number }[]): void {
             ${Badge(tag.count, { className: "tag-count" })}
         `;
 
-    div.addEventListener("click", (e) => {
+    div.addEventListener("click", async (e) => {
       if (e.defaultPrevented) return;
 
       // Feature: Add to dashboard if in dashboard mode
@@ -182,7 +181,7 @@ export function renderTagsList(tags: { name: string; count: number }[]): void {
         return;
       }
 
-      sidebarFilterTag(tag.name);
+      await sidebarFilterTag(tag.name);
     });
 
     // Setup drag for dashboard
