@@ -277,29 +277,25 @@ export async function setCurrentView(val: string) {
     }
   }
 
-  // Only update view after cleanup completes so state stays consistent on failure
-  currentView = val;
-
-  // Clear filters when switching to favorites or recent views (they don't use filters)
+  // Clear filters and search inputs before updating view so no handler sees new view + old input
   if (val === "favorites" || val === "recent") {
     setFilterConfig({
       ...filterConfig,
       tags: [],
       search: undefined,
     });
-    // Keep sort preference but clear other filters
-
-    // Clear the search input field in the UI (once when entering these views)
     const searchInput = document.getElementById(
       "search-input",
     ) as HTMLInputElement;
     if (searchInput) searchInput.value = "";
-
     const filterSearchInput = document.getElementById(
       "filter-search-input",
     ) as HTMLInputElement;
     if (filterSearchInput) filterSearchInput.value = "";
   }
+
+  // Only update view after cleanup and DOM/state prep so state stays consistent
+  currentView = val;
 
   // Body classes for view-specific layout overrides
   document.body.classList.toggle("dashboard-active", val === "dashboard");
