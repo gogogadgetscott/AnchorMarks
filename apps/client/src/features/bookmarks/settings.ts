@@ -233,7 +233,10 @@ export function toggleSidebar(): void {
   } else {
     // On desktop, toggle the collapsed state
     const isCollapsed = document.body.classList.toggle("sidebar-collapsed");
-    safeLocalStorage.setItem("anchormarks_sidebar_collapsed", String(isCollapsed));
+    safeLocalStorage.setItem(
+      "anchormarks_sidebar_collapsed",
+      String(isCollapsed),
+    );
     state.setHideSidebar(isCollapsed);
     // Also save to server settings for cross-device sync
     saveSettings({ hide_sidebar: isCollapsed ? 1 : 0 });

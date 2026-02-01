@@ -46,6 +46,7 @@ services:
       start_period: 10s
 
   test:
+    image: docker-test:latest
     build:
       context: ../..
       dockerfile: ./tooling/docker/Dockerfile.test

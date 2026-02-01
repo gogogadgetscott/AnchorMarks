@@ -78,10 +78,10 @@ export async function api<T = unknown>(
   // Create AbortController for timeout and cancellation
   const abortController = new AbortController();
   const signal = options.signal || abortController.signal;
-  
+
   // Set up timeout
   const timeoutId = setTimeout(() => {
-    abortController.abort();
+    abortController.abort(new Error("Request timeout or cancelled"));
   }, timeout);
 
   // Create the fetch promise
@@ -147,9 +147,17 @@ export async function api<T = unknown>(
 
       return data;
     } catch (err) {
-      // Handle AbortError gracefully
-      if (err instanceof Error && err.name === "AbortError") {
-        throw new Error("Request timeout or cancelled");
+      // Handle abort: rethrow our typed errors, or map AbortError to timeout message
+      if (err instanceof Error) {
+        if (
+          err.message === "Request cancelled" ||
+          err.message === "Request timeout or cancelled"
+        ) {
+          throw err;
+        }
+        if (err.name === "AbortError") {
+          throw new Error("Request timeout or cancelled");
+        }
       }
       throw err;
     } finally {
@@ -172,7 +180,7 @@ export async function api<T = unknown>(
   // Expose abort method on the promise for convenience
   (fetchPromise as any).abort = () => {
     clearTimeout(timeoutId);
-    abortController.abort();
+    abortController.abort(new Error("Request cancelled"));
     if (requestKey) {
       pendingRequests.delete(requestKey);
       requestMetadata.delete(requestKey);

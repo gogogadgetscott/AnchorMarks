@@ -1,14 +1,9 @@
 // Unit tests for bookmark.js model - Tag filtering implementation
-const Database = require("better-sqlite3");
 const path = require("path");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 const { initializeDatabase } = require("../models/database");
-const {
-  listBookmarks,
-  createBookmark,
-  getBookmarkById,
-} = require("../models/bookmark");
+const { listBookmarks, createBookmark } = require("../models/bookmark");
 const { createTag } = require("../models/tag");
 
 const TEST_DB_PATH = path.join(__dirname, "anchormarks-test-model.db");

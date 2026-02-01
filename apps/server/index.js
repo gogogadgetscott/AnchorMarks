@@ -92,8 +92,10 @@ server.listen(config.PORT, config.HOST, () => {
   // Confirm .env file location
   const envPath = path.join(__dirname, "..", "..", ".env");
   const envExists = fs.existsSync(envPath);
-  lines.push(`ENV file:                 ${envPath} ${envExists ? "✓" : "✗ (not found)"}`);
-  
+  lines.push(
+    `ENV file:                 ${envPath} ${envExists ? "✓" : "✗ (not found)"}`,
+  );
+
   lines.push(`SSL Enabled:              ${config.SSL_ENABLED ? "✓" : "✗"}`);
 
   // SSL configuration

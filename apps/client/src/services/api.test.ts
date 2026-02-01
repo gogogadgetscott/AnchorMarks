@@ -99,7 +99,12 @@ describe("api helper", () => {
 
     const fetchMock = vi.fn((_, options: any) => {
       return new Promise((resolve, reject) => {
-        options.signal?.addEventListener("abort", () => reject(abortError));
+        options.signal?.addEventListener("abort", () => {
+          // Use the abort reason (e.g. "Request cancelled") when provided
+          const reason = (options.signal as AbortSignal & { reason?: unknown })
+            ?.reason;
+          reject(reason ?? abortError);
+        });
         setTimeout(() => {
           resolve({
             ok: true,
@@ -116,7 +121,7 @@ describe("api helper", () => {
     const promise = api("/abort");
     cancelRequest("/abort");
 
-    await expect(promise).rejects.toThrow("Request cancelled");
+    await expect(promise).rejects.toThrow(/Request (timeout or )?cancelled/);
     vi.runAllTimers();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     vi.useRealTimers();

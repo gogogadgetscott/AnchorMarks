@@ -374,7 +374,6 @@ export function getOmnibarCommands(filterText: string = ""): Command[] {
   return results;
 }
 
-
 export default {
   getOmnibarCommands,
   refreshOmnibarBookmarks,

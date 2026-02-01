@@ -16,7 +16,7 @@ class RequestBatcher {
    */
   addRequest(req, res, next, handler) {
     const key = `${req.method}:${req.path}`;
-    
+
     if (!this.pendingRequests.has(key)) {
       this.pendingRequests.set(key, []);
     }
@@ -54,7 +54,7 @@ class RequestBatcher {
     // Group by handler
     const handlerGroups = new Map();
     batch.forEach((item) => {
-      const handlerKey = item.handler.name || 'default';
+      const handlerKey = item.handler.name || "default";
       if (!handlerGroups.has(handlerKey)) {
         handlerGroups.set(handlerKey, []);
       }
@@ -62,7 +62,7 @@ class RequestBatcher {
     });
 
     // Process each handler group
-    for (const [handlerKey, items] of handlerGroups) {
+    for (const [, items] of handlerGroups) {
       try {
         // If handler supports batch processing, use it
         if (items[0].handler.batch) {
@@ -74,14 +74,14 @@ class RequestBatcher {
           // Otherwise, process individually but in parallel
           await Promise.all(
             items.map((item) =>
-              Promise.resolve(item.handler(item.req, item.res, item.next)).catch(
-                (err) => {
-                  if (!item.res.headersSent) {
-                    item.res.status(500).json({ error: err.message });
-                  }
+              Promise.resolve(
+                item.handler(item.req, item.res, item.next),
+              ).catch((err) => {
+                if (!item.res.headersSent) {
+                  item.res.status(500).json({ error: err.message });
                 }
-              )
-            )
+              }),
+            ),
           );
         }
       } catch (error) {
@@ -117,12 +117,12 @@ const batcher = new RequestBatcher({
 function batchMiddleware(handler) {
   return (req, res, next) => {
     // Only batch GET requests
-    if (req.method !== 'GET') {
+    if (req.method !== "GET") {
       return handler(req, res, next);
     }
 
     // Check if batching is enabled via header
-    const enableBatching = req.headers['x-enable-batching'] === 'true';
+    const enableBatching = req.headers["x-enable-batching"] === "true";
     if (!enableBatching) {
       return handler(req, res, next);
     }

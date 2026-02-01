@@ -42,7 +42,11 @@ beforeAll(async () => {
     { title: "Favorite Archived", is_favorite: true, is_archived: true },
     { title: "Favorite Not Archived", is_favorite: true, is_archived: false },
     { title: "Not Favorite Archived", is_favorite: false, is_archived: true },
-    { title: "Not Favorite Not Archived", is_favorite: false, is_archived: false },
+    {
+      title: "Not Favorite Not Archived",
+      is_favorite: false,
+      is_archived: false,
+    },
     { title: "Another Favorite", is_favorite: true, is_archived: false },
     { title: "Another Archived", is_favorite: false, is_archived: true },
   ];
@@ -133,7 +137,6 @@ describe("Favorites Filtering - Server-Side Only", () => {
       .set("X-CSRF-Token", csrfToken)
       .send({ name: "test-tag" });
     expect(tagRes.status).toBe(200);
-    const tagId = tagRes.body.id;
 
     // Add tag to one favorite bookmark
     const favBookmarkId = bookmarkIds["Favorite Not Archived"];
@@ -287,7 +290,7 @@ describe("Favorites + Archived Combination", () => {
 
     const bookmarks = res.body.bookmarks || res.body;
     const titles = bookmarks.map((b) => b.title);
-    
+
     // Should not include "Favorite Archived"
     expect(titles).not.toContain("Favorite Archived");
 
@@ -308,7 +311,7 @@ describe("Server-Side Filtering Integration", () => {
     expect(res.status).toBe(200);
 
     const bookmarks = res.body.bookmarks || res.body;
-    
+
     // All returned bookmarks should be favorites and not archived
     bookmarks.forEach((bookmark) => {
       expect(bookmark.is_favorite).toBe(1); // SQLite stores booleans as 0/1
@@ -339,7 +342,7 @@ describe("Server-Side Filtering Integration", () => {
     // Should return ALL favorites, not filtered by search
     expect(titles).toContain("Favorite Not Archived");
     expect(titles).toContain("Another Favorite");
-    
+
     // Verify all returned are favorites
     bookmarks.forEach((bookmark) => {
       expect(bookmark.is_favorite).toBe(1);
@@ -355,7 +358,6 @@ describe("Server-Side Filtering Integration", () => {
       .set("X-CSRF-Token", csrfToken)
       .send({ name: "no-favorites-tag" });
     expect(tagRes.status).toBe(200);
-    const tagId = tagRes.body.id;
 
     // Query favorites with tag filter - should ignore tag filter
     const res = await agent
@@ -370,7 +372,7 @@ describe("Server-Side Filtering Integration", () => {
     // Should return ALL favorites, not filtered by tags
     expect(titles).toContain("Favorite Not Archived");
     expect(titles).toContain("Another Favorite");
-    
+
     // Verify all returned are favorites
     bookmarks.forEach((bookmark) => {
       expect(bookmark.is_favorite).toBe(1);
@@ -382,10 +384,10 @@ describe("Server-Side Filtering Integration", () => {
     // This test verifies that multiple filters are all ignored for favorites view
     const res = await agent
       .get("/api/bookmarks")
-      .query({ 
-        favorites: "true", 
+      .query({
+        favorites: "true",
         search: "NonExistentSearchTerm12345",
-        tags: "no-favorites-tag"
+        tags: "no-favorites-tag",
       })
       .set("X-CSRF-Token", csrfToken);
     expect(res.status).toBe(200);
@@ -396,7 +398,7 @@ describe("Server-Side Filtering Integration", () => {
     // Should return ALL favorites, ignoring both search and tag filters
     expect(titles).toContain("Favorite Not Archived");
     expect(titles).toContain("Another Favorite");
-    
+
     // Verify all returned are favorites
     bookmarks.forEach((bookmark) => {
       expect(bookmark.is_favorite).toBe(1);
@@ -412,7 +414,7 @@ describe("Server-Side Filtering Integration", () => {
     expect(res.status).toBe(200);
 
     const bookmarks = res.body.bookmarks || res.body;
-    
+
     // All returned bookmarks should be archived
     bookmarks.forEach((bookmark) => {
       expect(bookmark.is_archived).toBe(1);
@@ -432,42 +434,42 @@ describe("Server-Side Filtering Integration", () => {
     // 1. User sets a filter (search or tags) on another view
     // 2. User switches to favorites view
     // 3. All favorites should still be displayed, ignoring the filter
-    
+
     // First, verify that with a filter set, favorites are still returned
     // This simulates what happens when client sends filter params even though it shouldn't
     const res1 = await agent
       .get("/api/bookmarks")
-      .query({ 
+      .query({
         favorites: "true",
-        search: "Favorite" // This search term would match some favorites
+        search: "Favorite", // This search term would match some favorites
       })
       .set("X-CSRF-Token", csrfToken);
     expect(res1.status).toBe(200);
     const bookmarks1 = res1.body.bookmarks || res1.body;
     const titles1 = bookmarks1.map((b) => b.title);
-    
+
     // Should return ALL favorites, not just those matching "Favorite"
     expect(titles1).toContain("Favorite Not Archived");
     expect(titles1).toContain("Another Favorite");
     expect(bookmarks1.length).toBeGreaterThanOrEqual(2);
-    
+
     // Now test with a tag filter
     const res2 = await agent
       .get("/api/bookmarks")
-      .query({ 
+      .query({
         favorites: "true",
-        tags: "some-tag-that-does-not-exist"
+        tags: "some-tag-that-does-not-exist",
       })
       .set("X-CSRF-Token", csrfToken);
     expect(res2.status).toBe(200);
     const bookmarks2 = res2.body.bookmarks || res2.body;
     const titles2 = bookmarks2.map((b) => b.title);
-    
+
     // Should return ALL favorites, not filtered by non-existent tag
     expect(titles2).toContain("Favorite Not Archived");
     expect(titles2).toContain("Another Favorite");
     expect(bookmarks2.length).toBeGreaterThanOrEqual(2);
-    
+
     // Verify server is correctly ignoring filters
     expect(bookmarks1.length).toBe(bookmarks2.length);
   });
@@ -501,7 +503,7 @@ describe("Server-Side Filtering Integration", () => {
     // Should return ALL favorites, not just those in the specified folder
     expect(titles).toContain("Favorite Not Archived");
     expect(titles).toContain("Another Favorite");
-    
+
     // Verify all returned are favorites
     bookmarks.forEach((bookmark) => {
       expect(bookmark.is_favorite).toBe(1);

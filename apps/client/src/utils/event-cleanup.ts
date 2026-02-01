@@ -20,12 +20,16 @@ export function registerViewCleanup(viewName: string): AbortController {
   if (viewCleanupRegistry.has(viewName)) {
     const existing = viewCleanupRegistry.get(viewName);
     existing?.abort();
-    logger.debug(`[EventCleanup] Cleaned up existing listeners for view: ${viewName}`);
+    logger.debug(
+      `[EventCleanup] Cleaned up existing listeners for view: ${viewName}`,
+    );
   }
 
   const controller = new AbortController();
   viewCleanupRegistry.set(viewName, controller);
-  logger.debug(`[EventCleanup] Registered cleanup controller for view: ${viewName}`);
+  logger.debug(
+    `[EventCleanup] Registered cleanup controller for view: ${viewName}`,
+  );
   return controller;
 }
 
@@ -101,7 +105,10 @@ export function addManagedListener<K extends keyof HTMLElementEventMap>(
       signal,
     });
   } catch (error) {
-    logger.error(`[EventCleanup] Failed to add listener for event: ${event}`, error);
+    logger.error(
+      `[EventCleanup] Failed to add listener for event: ${event}`,
+      error,
+    );
   }
 }
 

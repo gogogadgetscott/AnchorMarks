@@ -261,39 +261,44 @@ export function setCurrentDashboardTab(val: string | null) {
   currentDashboardTab = val;
 }
 export async function setCurrentView(val: string) {
+  const prevView = currentView;
+  currentView = val;
+
   // Clean up previous view's event listeners
-  if (currentView && currentView !== val) {
+  if (prevView && prevView !== val) {
     const { cleanupView } = await import("../utils/event-cleanup.ts");
-    cleanupView(currentView);
+    cleanupView(prevView);
   }
 
   // Clean up tag cloud resize listener if leaving tag cloud view
-  if (currentView === "tag-cloud" && val !== "tag-cloud") {
+  if (prevView === "tag-cloud" && val !== "tag-cloud") {
     if (typeof (window as any).__tagCloudResizeCleanup === "function") {
       (window as any).__tagCloudResizeCleanup();
       (window as any).__tagCloudResizeCleanup = undefined;
     }
   }
-  
+
   // Clear filters when switching to favorites or recent views (they don't use filters)
   if (val === "favorites" || val === "recent") {
     filterConfig.tags = [];
     filterConfig.search = undefined;
     // Keep sort preference but clear other filters
-    
+
     // Also clear the search input field in the UI
-    const searchInput = document.getElementById("search-input") as HTMLInputElement;
+    const searchInput = document.getElementById(
+      "search-input",
+    ) as HTMLInputElement;
     if (searchInput) searchInput.value = "";
-    
-    const filterSearchInput = document.getElementById("filter-search-input") as HTMLInputElement;
+
+    const filterSearchInput = document.getElementById(
+      "filter-search-input",
+    ) as HTMLInputElement;
     if (filterSearchInput) filterSearchInput.value = "";
   }
-  
+
   // Body classes for view-specific layout overrides
   document.body.classList.toggle("dashboard-active", val === "dashboard");
   document.body.classList.toggle("tag-cloud-active", val === "tag-cloud");
-
-  currentView = val;
 }
 export function setCurrentFolder(val: string | null) {
   currentFolder = val;
@@ -423,7 +428,9 @@ export function setSidebarPopout(val: HTMLElement | null) {
 export function setPopoutTimeout(val: ReturnType<typeof setTimeout> | null) {
   popoutTimeout = val;
 }
-export function setTagSuggestTimeout(val: ReturnType<typeof setTimeout> | null) {
+export function setTagSuggestTimeout(
+  val: ReturnType<typeof setTimeout> | null,
+) {
   tagSuggestTimeout = val;
 }
 export function setAllSidebarTags(val: { name: string; count: number }[]) {

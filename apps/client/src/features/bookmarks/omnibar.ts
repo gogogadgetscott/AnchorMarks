@@ -182,7 +182,7 @@ export function openOmnibar(): void {
 
   omnibarState.isOpen = true;
   panel.classList.remove("hidden");
-  
+
   // Update aria-expanded for accessibility
   if (input) {
     input.setAttribute("aria-expanded", "true");
@@ -202,7 +202,7 @@ export function closeOmnibar(): void {
   if (panel) panel.classList.add("hidden");
   omnibarState.activeIndex = 0;
   omnibarState.currentItems = [];
-  
+
   // Update aria-expanded for accessibility
   if (input) {
     input.setAttribute("aria-expanded", "false");

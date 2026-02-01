@@ -18,7 +18,12 @@ declare global {
 import { api } from "@services/api.ts";
 
 // Import utilities
-import { escapeHtml, getHostname, parseTagInput, safeLocalStorage } from "@utils/index.ts";
+import {
+  escapeHtml,
+  getHostname,
+  parseTagInput,
+  safeLocalStorage,
+} from "@utils/index.ts";
 import { logger } from "@utils/logger.ts";
 
 // Import UI helpers
@@ -393,18 +398,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   const globalSignal = registerGlobalCleanup();
 
   // Use capture phase to intercept browser shortcuts (like Ctrl+K) before browser handles them
-  document.addEventListener("keydown", handleKeyboard, { capture: true, signal: globalSignal.signal });
-  window.addEventListener("focus", () => {
-    document.addEventListener("keydown", handleKeyboard, { capture: true, signal: globalSignal.signal });
-  }, { signal: globalSignal.signal });
+  document.addEventListener("keydown", handleKeyboard, {
+    capture: true,
+    signal: globalSignal.signal,
+  });
+  window.addEventListener(
+    "focus",
+    () => {
+      document.addEventListener("keydown", handleKeyboard, {
+        capture: true,
+        signal: globalSignal.signal,
+      });
+    },
+    { signal: globalSignal.signal },
+  );
 
   // Filter sort listener (kept here for now as it's simple)
-  document.getElementById("filter-sort")?.addEventListener("change", (e) => {
-    state.filterConfig.sort = (e.target as HTMLSelectElement).value;
-    import("@features/bookmarks/bookmarks.ts").then(({ renderBookmarks }) =>
-      renderBookmarks(),
-    );
-  }, { signal: globalSignal.signal });
+  document.getElementById("filter-sort")?.addEventListener(
+    "change",
+    (e) => {
+      state.filterConfig.sort = (e.target as HTMLSelectElement).value;
+      import("@features/bookmarks/bookmarks.ts").then(({ renderBookmarks }) =>
+        renderBookmarks(),
+      );
+    },
+    { signal: globalSignal.signal },
+  );
 });
 
 // ============================================================

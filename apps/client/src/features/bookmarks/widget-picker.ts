@@ -53,14 +53,14 @@ export function openWidgetPicker() {
         <!-- Folders Section -->
         <div class="filter-column">
           <h4>📁 Folders</h4>
-          <input type="text" id="widget-folders-search" placeholder="Search folders..." style="margin-bottom: 0.5rem; font-size: 0.875rem; padding: 0.4rem 0.6rem;" />
+          <input type="text" id="widget-folders-search" placeholder="Search folders…" style="margin-bottom: 0.5rem; font-size: 0.875rem; padding: 0.4rem 0.6rem;" />
           <div class="filter-grid" id="widget-folders-container"></div>
         </div>
         
         <!-- Tags Section -->
         <div class="filter-column">
           <h4>🏷️ Tags</h4>
-          <input type="text" id="widget-tags-search" placeholder="Search tags..." style="margin-bottom: 0.5rem; font-size: 0.875rem; padding: 0.4rem 0.6rem;" />
+          <input type="text" id="widget-tags-search" placeholder="Search tags…" style="margin-bottom: 0.5rem; font-size: 0.875rem; padding: 0.4rem 0.6rem;" />
           <div class="filter-grid" id="widget-tags-container"></div>
         </div>
       </div>

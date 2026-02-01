@@ -248,25 +248,29 @@ export function renderBookmarks(): void {
   // Server handles all filtering for these views - just render what server sends
   // Check this FIRST before calculating searchTerm to avoid any filter application
   let filtered: Bookmark[];
-  
-  if (state.currentView === "favorites" || state.currentView === "archived" || state.currentView === "recent") {
+
+  if (
+    state.currentView === "favorites" ||
+    state.currentView === "archived" ||
+    state.currentView === "recent"
+  ) {
     // These views: server handles ALL filtering and sorting
     // Just render what server sends - no client-side filtering needed
     filtered = [...state.bookmarks];
-    
+
     if (state.currentView === "recent") {
       // Recent view: server returns sorted by created_at DESC, limit 20
       filtered = filtered.slice(0, 20);
     }
     // For favorites and archived, use all bookmarks returned by server
-    
+
     // Skip all filtering logic below, go straight to rendering
     // (filtered is already set above, just continue to shared rendering logic)
   } else {
     // Apply filters for other views (all, folder, etc.)
     // Server already filters by is_archived=0 for non-archived views
     // Client-side filtering for search and tags (if not bypassed by server)
-    
+
     const searchSource =
       state.filterConfig.search ??
       ((searchInput as HTMLInputElement)?.value || "");
@@ -961,7 +965,7 @@ export async function toggleFavorite(id: string): Promise<void> {
       body: JSON.stringify({ is_favorite: bookmark.is_favorite ? 0 : 1 }),
     });
     bookmark.is_favorite = !bookmark.is_favorite;
-    
+
     if (state.currentView === "dashboard") {
       state.clearWidgetDataCache();
       const { renderDashboard } =

@@ -24,7 +24,7 @@ class PerformanceMonitor {
       duration,
       timestamp: Date.now(),
       statusCode: res.statusCode,
-      userId: req.user?.id || 'anonymous',
+      userId: req.user?.id || "anonymous",
     };
 
     this.metrics.apiRequests.push(metric);
@@ -36,7 +36,7 @@ class PerformanceMonitor {
     if (duration > 1000) {
       this.metrics.slowQueries.push({
         ...metric,
-        type: 'slow_request',
+        type: "slow_request",
       });
       if (this.metrics.slowQueries.length > 100) {
         this.metrics.slowQueries.shift();
@@ -64,7 +64,7 @@ class PerformanceMonitor {
     if (duration > 500) {
       this.metrics.slowQueries.push({
         ...metric,
-        type: 'slow_query',
+        type: "slow_query",
       });
       if (this.metrics.slowQueries.length > 100) {
         this.metrics.slowQueries.shift();
@@ -97,13 +97,13 @@ class PerformanceMonitor {
     const cutoff = Date.now() - timeWindow;
 
     const recentRequests = this.metrics.apiRequests.filter(
-      (m) => m.timestamp > cutoff
+      (m) => m.timestamp > cutoff,
     );
     const recentQueries = this.metrics.dbQueries.filter(
-      (m) => m.timestamp > cutoff
+      (m) => m.timestamp > cutoff,
     );
     const recentErrors = this.metrics.errors.filter(
-      (m) => m.timestamp > cutoff
+      (m) => m.timestamp > cutoff,
     );
 
     const avgRequestTime =
@@ -145,11 +145,11 @@ class PerformanceMonitor {
         avgDuration: avgRequestTime,
         p95: this.percentile(
           recentRequests.map((r) => r.duration),
-          95
+          95,
         ),
         p99: this.percentile(
           recentRequests.map((r) => r.duration),
-          99
+          99,
         ),
         byEndpoint: endpointStats,
       },
@@ -158,11 +158,11 @@ class PerformanceMonitor {
         avgDuration: avgQueryTime,
         p95: this.percentile(
           recentQueries.map((q) => q.duration),
-          95
+          95,
         ),
         p99: this.percentile(
           recentQueries.map((q) => q.duration),
-          99
+          99,
         ),
       },
       errors: {
@@ -190,13 +190,13 @@ class PerformanceMonitor {
     // 24 hours
     const cutoff = Date.now() - maxAge;
     this.metrics.apiRequests = this.metrics.apiRequests.filter(
-      (m) => m.timestamp > cutoff
+      (m) => m.timestamp > cutoff,
     );
     this.metrics.dbQueries = this.metrics.dbQueries.filter(
-      (m) => m.timestamp > cutoff
+      (m) => m.timestamp > cutoff,
     );
     this.metrics.errors = this.metrics.errors.filter(
-      (m) => m.timestamp > cutoff
+      (m) => m.timestamp > cutoff,
     );
   }
 }
@@ -215,7 +215,7 @@ setInterval(() => {
 function performanceMiddleware(req, res, next) {
   const start = Date.now();
 
-  res.on('finish', () => {
+  res.on("finish", () => {
     const duration = Date.now() - start;
     monitor.trackRequest(req, res, duration);
   });

@@ -88,16 +88,20 @@ function setupHealthRoutes(app, db, { authenticateTokenMiddleware }) {
   );
 
   // Performance stats endpoint
-  app.get("/api/health/performance", authenticateTokenMiddleware, (req, res) => {
-    try {
-      const timeWindow = parseInt(req.query.window) || 3600000; // 1 hour default
-      const stats = monitor.getStats(timeWindow);
-      res.json(stats);
-    } catch (err) {
-      console.error("Performance stats error:", err);
-      res.status(500).json({ error: "Failed to get performance stats" });
-    }
-  });
+  app.get(
+    "/api/health/performance",
+    authenticateTokenMiddleware,
+    (req, res) => {
+      try {
+        const timeWindow = parseInt(req.query.window) || 3600000; // 1 hour default
+        const stats = monitor.getStats(timeWindow);
+        res.json(stats);
+      } catch (err) {
+        console.error("Performance stats error:", err);
+        res.status(500).json({ error: "Failed to get performance stats" });
+      }
+    },
+  );
 }
 
 module.exports = setupHealthRoutes;

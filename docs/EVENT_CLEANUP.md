@@ -29,11 +29,11 @@ const globalController = registerGlobalCleanup();
 
 // Add listeners with signal
 document.addEventListener("keydown", handleKeyboard, {
-  signal: globalController.signal
+  signal: globalController.signal,
 });
 
 window.addEventListener("focus", handler, {
-  signal: globalController.signal
+  signal: globalController.signal,
 });
 ```
 
@@ -42,16 +42,20 @@ window.addEventListener("focus", handler, {
 Use for listeners that should be removed when leaving a view:
 
 ```typescript
-import { registerViewCleanup, addManagedListener } from "@utils/event-cleanup.ts";
+import {
+  registerViewCleanup,
+  addManagedListener,
+} from "@utils/event-cleanup.ts";
 
 function initDashboardView() {
   // Register cleanup for this view
   const controller = registerViewCleanup("dashboard");
 
   // Option A: Direct addEventListener with signal
-  document.getElementById("add-widget-btn")
+  document
+    .getElementById("add-widget-btn")
     ?.addEventListener("click", handleAddWidget, {
-      signal: controller.signal
+      signal: controller.signal,
     });
 
   // Option B: Use helper function
@@ -70,12 +74,12 @@ import { getViewSignal } from "@utils/event-cleanup.ts";
 function renderBookmarkCards() {
   const signal = getViewSignal("bookmarks");
 
-  bookmarks.forEach(bookmark => {
+  bookmarks.forEach((bookmark) => {
     const card = createBookmarkCard(bookmark);
 
     if (signal) {
       card.addEventListener("click", () => openBookmark(bookmark.id), {
-        signal
+        signal,
       });
     }
   });
@@ -108,18 +112,16 @@ function openSettingsModal() {
   const controller = registerViewCleanup("settings-modal");
 
   // All these listeners auto-cleanup when view changes
-  modal.querySelector(".close-btn")
-    ?.addEventListener("click", closeModal, {
-      signal: controller.signal
-    });
+  modal.querySelector(".close-btn")?.addEventListener("click", closeModal, {
+    signal: controller.signal,
+  });
 
-  modal.querySelector("form")
-    ?.addEventListener("submit", saveSettings, {
-      signal: controller.signal
-    });
+  modal.querySelector("form")?.addEventListener("submit", saveSettings, {
+    signal: controller.signal,
+  });
 
   document.addEventListener("keydown", handleModalKeyboard, {
-    signal: controller.signal
+    signal: controller.signal,
   });
 }
 ```
@@ -127,7 +129,10 @@ function openSettingsModal() {
 ### Example 2: Dashboard Widget Listeners
 
 ```typescript
-import { registerViewCleanup, addManagedListener } from "@utils/event-cleanup.ts";
+import {
+  registerViewCleanup,
+  addManagedListener,
+} from "@utils/event-cleanup.ts";
 
 export function initDashboardInteractions() {
   const controller = registerViewCleanup("dashboard");
@@ -155,12 +160,12 @@ function initBookmarkForm() {
 
   const urlInput = document.getElementById("bookmark-url");
   urlInput?.addEventListener("input", validateUrl, {
-    signal: controller.signal
+    signal: controller.signal,
   });
 
   const form = document.getElementById("bookmark-form");
   form?.addEventListener("submit", handleSubmit, {
-    signal: controller.signal
+    signal: controller.signal,
   });
 
   // Auto-cleanup when form closes or view changes
@@ -173,13 +178,13 @@ The cleanup system exposes debug utilities in development mode:
 
 ```javascript
 // In browser console (DEV mode only)
-__eventCleanupDebug.getStats()
+__eventCleanupDebug.getStats();
 // Returns: { registeredViews: ["dashboard", "bookmarks"], viewCount: 2, hasGlobal: true }
 
-__eventCleanupDebug.cleanupView("dashboard")
+__eventCleanupDebug.cleanupView("dashboard");
 // Manually cleanup a specific view
 
-__eventCleanupDebug.cleanupAllViews()
+__eventCleanupDebug.cleanupAllViews();
 // Clear all view cleanups
 ```
 
@@ -222,7 +227,7 @@ function initView() {
 
   const btn = document.getElementById("my-btn");
   btn?.addEventListener("click", handler, {
-    signal: controller.signal
+    signal: controller.signal,
   });
 
   // Auto-cleanup when leaving view!
@@ -235,17 +240,21 @@ To verify listeners are properly cleaned up:
 
 ```typescript
 // In your test
-import { getCleanupStats, registerViewCleanup, cleanupView } from "@utils/event-cleanup.ts";
+import {
+  getCleanupStats,
+  registerViewCleanup,
+  cleanupView,
+} from "@utils/event-cleanup.ts";
 
 test("view cleanup removes listeners", () => {
   registerViewCleanup("test-view");
-  
+
   const stats = getCleanupStats();
   expect(stats.viewCount).toBe(1);
   expect(stats.registeredViews).toContain("test-view");
 
   cleanupView("test-view");
-  
+
   const statsAfter = getCleanupStats();
   expect(statsAfter.viewCount).toBe(0);
 });

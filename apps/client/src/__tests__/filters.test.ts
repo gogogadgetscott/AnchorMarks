@@ -65,13 +65,14 @@ describe("Filter Dropdown Module", () => {
       expect(reinitializedBtn).not.toBeNull();
     });
 
-    it("should warn if button not found", () => {
+    it("should return without warning if button not found", () => {
       const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
       document.getElementById("filter-dropdown-btn")?.remove();
 
       initFilterDropdown();
 
-      expect(warnSpy).toHaveBeenCalledWith("Filter button not found in DOM");
+      // Button absence is expected in some views (dashboard, favorites, etc.)
+      expect(warnSpy).not.toHaveBeenCalled();
       warnSpy.mockRestore();
     });
 
@@ -83,8 +84,8 @@ describe("Filter Dropdown Module", () => {
       expect(btn?.style.display).not.toBe("none");
     });
 
-    it("should not display button for non-bookmarks views", () => {
-      state.setCurrentView("dashboard");
+    it("should not display button for non-bookmarks views", async () => {
+      await state.setCurrentView("dashboard");
       updateFilterButtonVisibility();
 
       const btn = document.getElementById("filter-dropdown-btn");
@@ -294,8 +295,8 @@ describe("Filter Dropdown Module", () => {
       expect(btn?.style.display).not.toBe("none");
     });
 
-    it("should hide button in dashboard view", () => {
-      state.setCurrentView("dashboard");
+    it("should hide button in dashboard view", async () => {
+      await state.setCurrentView("dashboard");
 
       updateFilterButtonVisibility();
 
@@ -303,8 +304,8 @@ describe("Filter Dropdown Module", () => {
       expect(btn?.style.display).toBe("none");
     });
 
-    it("should hide button in tag-cloud view", () => {
-      state.setCurrentView("tag-cloud");
+    it("should hide button in tag-cloud view", async () => {
+      await state.setCurrentView("tag-cloud");
 
       updateFilterButtonVisibility();
 
@@ -375,18 +376,18 @@ describe("Filter Dropdown Module", () => {
       expect(document.getElementById("filter-dropdown")).toBeNull();
     });
 
-    it("should maintain button visibility across view changes", () => {
-      state.setCurrentView("all");
+    it("should maintain button visibility across view changes", async () => {
+      await state.setCurrentView("all");
       updateFilterButtonVisibility();
       let btn = document.getElementById("filter-dropdown-btn");
       expect(btn?.style.display).not.toBe("none");
 
-      state.setCurrentView("dashboard");
+      await state.setCurrentView("dashboard");
       updateFilterButtonVisibility();
       btn = document.getElementById("filter-dropdown-btn");
       expect(btn?.style.display).toBe("none");
 
-      state.setCurrentView("all");
+      await state.setCurrentView("all");
       updateFilterButtonVisibility();
       btn = document.getElementById("filter-dropdown-btn");
       expect(btn?.style.display).not.toBe("none");

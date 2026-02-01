@@ -5,6 +5,18 @@
 
 import { logger } from "./logger.ts";
 
+/**
+ * Return singular or plural form based on count (for consistent labeling).
+ * e.g. pluralize(1, "tag", "tags") → "tag"; pluralize(2, "tag", "tags") → "tags"
+ */
+export function pluralize(
+  count: number,
+  singular: string,
+  plural: string,
+): string {
+  return count === 1 ? singular : plural;
+}
+
 // Escape HTML to prevent XSS
 export function escapeHtml(text: string): string {
   const div = document.createElement("div");

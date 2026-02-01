@@ -26,42 +26,51 @@
 The following components correctly use `escapeHtml()` for all user-generated content:
 
 #### 1. **BookmarkCard.ts** - SECURE
+
 - Bookmark titles: `${escapeHtml(bookmark.title)}`
 - Descriptions: `${escapeHtml(bookmark.description)}`
 - URLs: `${escapeHtml(bookmark.url)}`
 - All data attributes properly escaped
 
 #### 2. **Tag.ts** - SECURE
+
 - Tag names: `${escapeHtml(name)}`
 - Prevents XSS through tag names
 
 #### 3. **Folders.ts** - SECURE
+
 - Folder names: `${escapeHtml(f.name)}`
 - All folder data properly escaped in tree rendering
 
 #### 4. **Tag Input (tag-input.ts)** - SECURE
+
 - Selected tags: `${escapeHtml(tag)}`
 - Uses JSON escaping for data attributes
 
 #### 5. **Smart Organization UI** - SECURE
+
 - Tag suggestions: `${escapeHtml(sugg.tag)}`
 - All user content properly escaped
 
 #### 6. **Maintenance Tools** - SECURE
+
 - Broken link results: `${escapeHtml(bookmark.title)}`, `${escapeHtml(bookmark.url)}`
 
 ### ⚠️ Moderate Risk Areas (Not Vulnerable, But Reviewed)
 
 #### 1. **Layout Rendering (layouts/loader.ts)**
+
 - **Risk**: Clears and sets innerHTML for entire app structure
 - **Assessment**: SAFE - Only sets structural HTML from trusted component functions
 - **No user content directly inserted**
 
 #### 2. **Modal Rendering (confirm-dialog.ts)**
+
 - **Risk**: Sets innerHTML for modal content
 - **Assessment**: SAFE - Content is template literals with properly escaped user data
 
 #### 3. **Widget Picker & Filters**
+
 - **Risk**: Complex innerHTML assignments
 - **Assessment**: SAFE - All user data goes through components that escape properly
 
@@ -75,7 +84,9 @@ The following components correctly use `escapeHtml()` for all user-generated con
 ## New Security Utilities Added
 
 ### 1. `sanitizeHtml(html, options)`
-For cases where you need to allow *some* HTML formatting while removing dangerous content:
+
+For cases where you need to allow _some_ HTML formatting while removing dangerous content:
+
 - Strips all tags except allowlist (default: b, i, em, strong, a, br, p, span)
 - Removes all attributes except allowlist (default: href, title, target, rel)
 - Blocks `javascript:` URLs in links
@@ -84,22 +95,24 @@ For cases where you need to allow *some* HTML formatting while removing dangerou
 **Use Case**: Rich text descriptions, imported HTML content
 
 ```typescript
-import { sanitizeHtml } from '@utils/index.ts';
+import { sanitizeHtml } from "@utils/index.ts";
 
 const safeHtml = sanitizeHtml(userProvidedHtml, {
-  allowedTags: ['b', 'i', 'a'],
-  allowedAttributes: ['href', 'title']
+  allowedTags: ["b", "i", "a"],
+  allowedAttributes: ["href", "title"],
 });
 container.innerHTML = safeHtml;
 ```
 
 ### 2. `safeRender(container, content, options)`
+
 Convenience function that chooses the right rendering method:
+
 - Default: Uses `textContent` (no HTML rendered at all)
 - With `allowHtml: true`: Uses `sanitizeHtml()` first
 
 ```typescript
-import { safeRender } from '@utils/index.ts';
+import { safeRender } from "@utils/index.ts";
 
 // Safe text rendering (default)
 safeRender(div, userContent);
@@ -115,7 +128,7 @@ safeRender(div, userContent, { allowHtml: true });
 1. **Consistent escaping**: All user-generated content consistently uses `escapeHtml()`
 2. **No direct string concatenation**: Using template literals with escaping functions
 3. **Component-based architecture**: Escaping happens at component level, not at call site
-4. **Data attributes are escaped**: Even data-* attributes use proper escaping
+4. **Data attributes are escaped**: Even data-\* attributes use proper escaping
 
 ### 📋 Future Enhancements (Optional)
 
@@ -138,34 +151,34 @@ Consider adding these test cases to your test suite:
 ```typescript
 // Test escapeHtml
 expect(escapeHtml('<script>alert("xss")</script>')).toBe(
-  '&lt;script&gt;alert("xss")&lt;/script&gt;'
+  '&lt;script&gt;alert("xss")&lt;/script&gt;',
 );
 
 // Test tag name XSS
-const xssTag = '<img src=x onerror=alert(1)>';
+const xssTag = "<img src=x onerror=alert(1)>";
 const tagHtml = Tag(xssTag);
-expect(tagHtml).not.toContain('onerror');
-expect(tagHtml).toContain('&lt;img');
+expect(tagHtml).not.toContain("onerror");
+expect(tagHtml).toContain("&lt;img");
 
 // Test bookmark title XSS
 const xssBookmark = {
   title: '"><img src=x onerror=alert(1)>',
-  url: 'https://example.com'
+  url: "https://example.com",
 };
 const cardHtml = BookmarkCard(xssBookmark, 0);
-expect(cardHtml).not.toContain('onerror');
+expect(cardHtml).not.toContain("onerror");
 ```
 
 ## Compliance Status
 
-| Security Control | Status | Notes |
-|-----------------|--------|-------|
-| User input escaping | ✅ PASS | All user content properly escaped |
-| HTML sanitization | ✅ PASS | New utilities added for future use |
-| Component security | ✅ PASS | All components follow secure patterns |
-| URL validation | ✅ PASS | Server-side SSRF protection exists |
-| SQL injection | ✅ PASS | Server uses parameterized queries |
-| Authentication | ✅ PASS | JWT + CSRF tokens implemented |
+| Security Control    | Status  | Notes                                 |
+| ------------------- | ------- | ------------------------------------- |
+| User input escaping | ✅ PASS | All user content properly escaped     |
+| HTML sanitization   | ✅ PASS | New utilities added for future use    |
+| Component security  | ✅ PASS | All components follow secure patterns |
+| URL validation      | ✅ PASS | Server-side SSRF protection exists    |
+| SQL injection       | ✅ PASS | Server uses parameterized queries     |
+| Authentication      | ✅ PASS | JWT + CSRF tokens implemented         |
 
 ## Conclusion
 

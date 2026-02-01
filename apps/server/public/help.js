@@ -1,8 +1,6 @@
 (function () {
   const nav = document.querySelector(".help-nav");
-  const links = Array.from(
-    document.querySelectorAll('.help-nav a[href^="#"]'),
-  );
+  const links = Array.from(document.querySelectorAll('.help-nav a[href^="#"]'));
   const sections = links
     .map((a) => document.querySelector(a.getAttribute("href")))
     .filter(Boolean);
@@ -40,9 +38,7 @@
       // Consider only intersecting entries, pick the one closest to the top.
       const visible = entries
         .filter((e) => e.isIntersecting)
-        .sort(
-          (a, b) => a.boundingClientRect.top - b.boundingClientRect.top,
-        );
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
 
       if (visible.length === 0) return;
       const id = visible[0].target.id;

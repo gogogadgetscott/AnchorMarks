@@ -168,17 +168,17 @@ test-coverage: ## Generate test coverage reports
 	@cd $(FRONTEND_DIR) && npx vitest run --coverage
 	@echo "$(GREEN)✓ Coverage report generated$(NC)"
 
-test-docker: ## Run all tests in Docker container
+test-docker: build-test-docker ## Run all tests in Docker container
 	@echo "$(BLUE)Running tests in Docker container...$(NC)"
 	@docker run --rm docker-test sh -c "cd /apps/server && npm test && cd /apps/client && npm test"
 	@echo "$(GREEN)✓ Docker tests completed$(NC)"
 
-test-docker-backend: ## Run backend tests in Docker container
+test-docker-backend: build-test-docker ## Run backend tests in Docker container
 	@echo "$(BLUE)Running backend tests in Docker container...$(NC)"
 	@docker run --rm docker-test sh -c "cd /apps/server && npm test"
 	@echo "$(GREEN)✓ Backend tests completed$(NC)"
 
-test-docker-frontend: ## Run frontend tests in Docker container
+test-docker-frontend: build-test-docker ## Run frontend tests in Docker container
 	@echo "$(BLUE)Running frontend tests in Docker container...$(NC)"
 	@docker run --rm docker-test sh -c "cd /apps/client && npm test"
 	@echo "$(GREEN)✓ Frontend tests completed$(NC)"

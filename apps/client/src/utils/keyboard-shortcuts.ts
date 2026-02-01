@@ -53,7 +53,9 @@ class KeyboardShortcuts {
       category: "Navigation",
       global: true,
       handler: async () => {
-        const searchInput = document.getElementById("search-input") as HTMLInputElement;
+        const searchInput = document.getElementById(
+          "search-input",
+        ) as HTMLInputElement;
         if (searchInput) {
           searchInput.focus();
         }
@@ -69,7 +71,9 @@ class KeyboardShortcuts {
       category: "Navigation",
       global: true,
       handler: () => {
-        const searchInput = document.getElementById("search-input") as HTMLInputElement;
+        const searchInput = document.getElementById(
+          "search-input",
+        ) as HTMLInputElement;
         if (searchInput) {
           searchInput.focus();
           searchInput.select();
@@ -88,7 +92,9 @@ class KeyboardShortcuts {
         openModal("settings-modal");
         // Switch to shortcuts tab
         setTimeout(() => {
-          const shortcutsTab = document.querySelector('[data-settings-tab="shortcuts"]') as HTMLElement;
+          const shortcutsTab = document.querySelector(
+            '[data-settings-tab="shortcuts"]',
+          ) as HTMLElement;
           if (shortcutsTab) {
             shortcutsTab.click();
           }
@@ -170,7 +176,8 @@ class KeyboardShortcuts {
         await state.setCurrentView("dashboard");
         const { updateHeaderContent } = await import("../App.ts");
         await updateHeaderContent();
-        const { renderDashboard } = await import("@features/bookmarks/dashboard.ts");
+        const { renderDashboard } =
+          await import("@features/bookmarks/dashboard.ts");
         renderDashboard();
       },
     });
@@ -185,7 +192,8 @@ class KeyboardShortcuts {
         state.setCurrentFolder(null);
         const { updateHeaderContent } = await import("../App.ts");
         await updateHeaderContent();
-        const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
+        const { loadBookmarks } =
+          await import("@features/bookmarks/bookmarks.ts");
         await loadBookmarks();
       },
     });
@@ -199,7 +207,8 @@ class KeyboardShortcuts {
         await state.setCurrentView("favorites");
         const { updateHeaderContent } = await import("../App.ts");
         await updateHeaderContent();
-        const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
+        const { loadBookmarks } =
+          await import("@features/bookmarks/bookmarks.ts");
         await loadBookmarks();
       },
     });
@@ -236,15 +245,16 @@ class KeyboardShortcuts {
    */
   handleKeyPress(e: KeyboardEvent): boolean {
     // Returns true if a shortcut was handled, false otherwise
-    
+
     // Early check for Ctrl+K / Cmd+K - prevent browser from focusing address bar
-    const isCtrlK = (e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K");
+    const isCtrlK =
+      (e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K");
     if (isCtrlK) {
       // Always prevent default for Ctrl+K to stop browser address bar focus
       // Don't stop propagation - we still want our handlers to process it
       e.preventDefault();
     }
-    
+
     // Don't handle if typing in input/textarea
     const target = e.target as HTMLElement;
     if (
@@ -298,8 +308,8 @@ class KeyboardShortcuts {
       } else {
         // Check if this could be the start of a longer sequence
         // Look for shortcuts that start with the current sequence
-        const possibleSequence = Array.from(this.shortcuts.keys()).find(
-          (k) => k.startsWith(sequenceKey + " ")
+        const possibleSequence = Array.from(this.shortcuts.keys()).find((k) =>
+          k.startsWith(sequenceKey + " "),
         );
         if (possibleSequence) {
           // Reset timeout - sequence might continue
@@ -319,10 +329,16 @@ class KeyboardShortcuts {
     }
 
     // Check if this key starts a multi-key sequence
-    const possibleSequences = Array.from(this.shortcuts.keys()).filter(
-      (k) => k.startsWith(currentKey + " ")
+    const possibleSequences = Array.from(this.shortcuts.keys()).filter((k) =>
+      k.startsWith(currentKey + " "),
     );
-    if (possibleSequences.length > 0 && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+    if (
+      possibleSequences.length > 0 &&
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !e.altKey &&
+      !e.shiftKey
+    ) {
       // Start tracking sequence
       this.sequenceBuffer = [currentKey];
       this.sequenceTimeout = setTimeout(() => {
@@ -345,7 +361,7 @@ class KeyboardShortcuts {
 
     // Check for exact match first
     let shortcut = this.shortcuts.get(key);
-    
+
     // Only fall back to unmodified key if NO modifiers are pressed
     // If modifiers are pressed and no match found, don't fall back
     // (let legacy handler process it)
@@ -378,7 +394,6 @@ class KeyboardShortcuts {
     }
     return false; // No shortcut matched
   }
-
 }
 
 // Create singleton instance

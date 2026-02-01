@@ -43,7 +43,7 @@ function listBookmarks(db, userId, opts = {}) {
 
   const isFavoritesView = favorites === true || favorites === "true";
   const isArchivedView = archived === true || archived === "true";
-  
+
   // Skip folder_id filter for favorites and archived views - show all items regardless of folder
   if (folder_id && !isFavoritesView && !isArchivedView) {
     if (include_children) {
@@ -72,7 +72,7 @@ function listBookmarks(db, userId, opts = {}) {
       params.push(folder_id);
     }
   }
-  
+
   if (isFavoritesView) {
     // Use COALESCE to handle potential NULL values (though schema has DEFAULT 0)
     query += " AND COALESCE(b.is_favorite, 0) = 1";
@@ -84,7 +84,7 @@ function listBookmarks(db, userId, opts = {}) {
     // Use full-text search if available, otherwise fall back to LIKE
     // Check if FTS table exists (would be created separately if needed)
     const useFuzzy = opts.fuzzy === true;
-    
+
     if (useFuzzy) {
       // For fuzzy search, we'll do a broader LIKE search first, then rank in JS
       // This is a compromise - full FTS would be better but requires schema changes
@@ -97,16 +97,22 @@ function listBookmarks(db, userId, opts = {}) {
     } else {
       // Standard LIKE search with multiple patterns for better matching
       const searchTerm = `%${search}%`;
-      const searchWords = search.trim().split(/\s+/).filter(w => w.length > 0);
-      
+      const searchWords = search
+        .trim()
+        .split(/\s+/)
+        .filter((w) => w.length > 0);
+
       if (searchWords.length > 1) {
         // Multi-word search: match all words (AND logic)
-        const conditions = searchWords.map(() => 
-          "(b.title LIKE ? OR b.url LIKE ? OR b.description LIKE ? OR tg.tags_joined LIKE ?)"
-        ).join(" AND ");
+        const conditions = searchWords
+          .map(
+            () =>
+              "(b.title LIKE ? OR b.url LIKE ? OR b.description LIKE ? OR tg.tags_joined LIKE ?)",
+          )
+          .join(" AND ");
         query += ` AND (${conditions})`;
         countQuery += ` AND (${conditions})`;
-        searchWords.forEach(word => {
+        searchWords.forEach((word) => {
           const term = `%${word}%`;
           params.push(term, term, term, term);
         });

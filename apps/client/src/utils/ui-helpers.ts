@@ -4,7 +4,12 @@
  */
 
 import * as state from "@features/state.ts";
-import { escapeHtml, parseTagInput, safeLocalStorage } from "@utils/index.ts";
+import {
+  escapeHtml,
+  parseTagInput,
+  pluralize,
+  safeLocalStorage,
+} from "@utils/index.ts";
 import { api } from "@services/api.ts";
 import { logger } from "@utils/logger.ts";
 import { createFocusTrap, removeFocusTrap } from "@utils/focus-trap.ts";
@@ -268,11 +273,11 @@ export function openModal(id: string): void {
   const modal = document.getElementById(id);
   if (modal) {
     modal.classList.remove("hidden");
-    
+
     // Add ARIA attributes for accessibility
     modal.setAttribute("role", "dialog");
     modal.setAttribute("aria-modal", "true");
-    
+
     // Set aria-labelledby if modal has a title
     const modalTitle = modal.querySelector(".modal-title, h2, h3");
     if (modalTitle && modalTitle.id) {
@@ -523,12 +528,12 @@ function attachSettingsModalLogout(): void {
 export function closeModals(): void {
   document.querySelectorAll(".modal").forEach((modal) => {
     modal.classList.add("hidden");
-    
+
     // Remove focus trap when closing modal
     if (modal.id) {
       removeFocusTrap(modal.id);
     }
-    
+
     // Remove ARIA attributes
     modal.removeAttribute("role");
     modal.removeAttribute("aria-modal");
@@ -844,6 +849,15 @@ export function updateStats(): void {
   if (statFolders) statFolders.textContent = fCount.toString();
   if (statTags) statTags.textContent = tCount.toString();
 
+  // Sidebar stat labels: pluralize (e.g. "1 link" vs "4 links")
+  const labelLinks = document.getElementById("stat-label-links");
+  const labelFolders = document.getElementById("stat-label-folders");
+  const labelTags = document.getElementById("stat-label-tags");
+  if (labelLinks) labelLinks.textContent = pluralize(bCount, "link", "links");
+  if (labelFolders)
+    labelFolders.textContent = pluralize(fCount, "folder", "folders");
+  if (labelTags) labelTags.textContent = pluralize(tCount, "tag", "tags");
+
   // Sidebar badge always shows total folders
   if (foldersCount) foldersCount.textContent = state.folders.length.toString();
 }
@@ -856,8 +870,33 @@ export function getEmptyStateMessage(): string {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;color:var(--primary-400);margin-bottom:1rem">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                 </svg>
-                <h3>No favorites yet</h3>
-                <p>Click the star icon on any bookmark<br>to add it to your favorites.</p>
+                <h3>You haven't added any favorites yet</h3>
+                <p>Click the star icon <span style="color:var(--primary-400)">⭐</span> on any bookmark<br>to mark it as favorite.</p>
+            </div>
+        `;
+  }
+
+  if (state.currentView === "archived") {
+    return `
+            <div class="empty-state-content">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;color:var(--text-tertiary);margin-bottom:1rem">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                <h3>No archived bookmarks</h3>
+                <p>Archived bookmarks are hidden from your main view.<br>Use the archive action on any bookmark to add it here.</p>
+            </div>
+        `;
+  }
+
+  if (state.currentView === "recent") {
+    return `
+            <div class="empty-state-content">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;color:var(--text-tertiary);margin-bottom:1rem">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <h3>No recent bookmarks</h3>
+                <p>Recently clicked bookmarks will appear here.<br>Start browsing your bookmarks to see them here!</p>
             </div>
         `;
   }

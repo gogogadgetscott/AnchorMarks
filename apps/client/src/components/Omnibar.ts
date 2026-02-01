@@ -82,7 +82,7 @@ export function Omnibar(options: OmnibarOptions = {}): string {
           aria-label="Search bookmarks or enter commands"
           aria-autocomplete="list"
           aria-expanded="false"
-          aria-controls="omnibar-panel"
+          ${showDropdown ? 'aria-controls="omnibar-panel"' : ""}
         />
         <kbd class="search-shortcut-hint">${shortcut}</kbd>
       </div>

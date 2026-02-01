@@ -3,8 +3,6 @@
  * Tests scoring functions with real SQLite database queries
  */
 
-const path = require("path");
-const fs = require("fs");
 const Database = require("better-sqlite3");
 const { v4: uuidv4 } = require("uuid");
 

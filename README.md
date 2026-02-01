@@ -216,6 +216,7 @@ See [SECURITY.md](SECURITY.md) for details.
 > Note: Makefile target aliases (e.g., `dev`, `docker-up`, `e2e`, `lint`) were removed
 > to standardize on the Verb-Noun pattern. Please update scripts and CI to use the
 > new target names (for example: `run-backend`, `run-docker`, `test-e2e`).
+
 ## 🙋 Support / Questions
 
 - Open an issue: https://github.com/gogogadgetscott/AnchorMarks/issues

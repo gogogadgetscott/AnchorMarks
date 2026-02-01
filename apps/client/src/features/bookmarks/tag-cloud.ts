@@ -6,7 +6,7 @@
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { logger } from "@utils/logger.ts";
-import { escapeHtml, safeLocalStorage } from "@utils/index.ts";
+import { escapeHtml, pluralize, safeLocalStorage } from "@utils/index.ts";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
 import { dom, showToast } from "@utils/ui-helpers.ts";
 
@@ -198,13 +198,20 @@ function shuffleArray<T>(arr: T[]): T[] {
   return shuffled;
 }
 
-// Render the tag cloud
-export async function renderTagCloud(): Promise<void> {
-  if (state.currentView !== "tag-cloud") return;
+// Render the tag cloud (optional container for tests / custom mounting)
+export async function renderTagCloud(
+  explicitContainer?: HTMLElement | null,
+  options?: { skipViewCheck?: boolean },
+): Promise<void> {
+  if (!options?.skipViewCheck && state.currentView !== "tag-cloud") return;
   updateFilterButtonVisibility();
 
+  const outletById = document.getElementById("main-view-outlet");
   const container =
-    dom.mainViewOutlet || document.getElementById("main-view-outlet");
+    explicitContainer ??
+    (dom.mainViewOutlet && document.body.contains(dom.mainViewOutlet)
+      ? dom.mainViewOutlet
+      : outletById);
   const emptyState = document.getElementById("empty-state");
   const bulkBar = document.getElementById("bulk-bar");
 
@@ -232,7 +239,7 @@ export async function renderTagCloud(): Promise<void> {
           </svg>
         </div>
         <h3>No Tags Yet</h3>
-        <p>Add tags to your bookmarks to see them visualized here</p>
+        <p>Try organizing your bookmarks with <kbd style="display:inline-flex;align-items:center;padding:2px 6px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;font-size:0.75rem;font-weight:600;margin:0 2px">#tags</kbd> to see them visualized here</p>
       </div>
     `;
     if (emptyState) emptyState.classList.add("hidden");
@@ -276,12 +283,12 @@ export async function renderTagCloud(): Promise<void> {
     <div class="tag-cloud-legend">
       <div class="legend-item">
         <span class="legend-size legend-small">A</span>
-        <span>Less used</span>
+        <span>Less Used</span>
       </div>
       <div class="legend-gradient"></div>
       <div class="legend-item">
         <span class="legend-size legend-large">A</span>
-        <span>Most used</span>
+        <span>Most Used</span>
       </div>
     </div>
   `;
@@ -310,16 +317,16 @@ export async function renderTagCloud(): Promise<void> {
             <line x1="7" y1="7" x2="7.01" y2="7"/>
           </svg>
           <h2>Tag Cloud</h2>
-          <span class="tag-cloud-count">${showAllPref ? `${topTags.length}` : `${topTags.length} of ${tags.length}`} tags</span>
+          <span class="tag-cloud-count">${showAllPref ? `${topTags.length}` : `${topTags.length} of ${tags.length}`} ${pluralize(showAllPref ? topTags.length : tags.length, "tag", "tags")}</span>
         </div>
         <div class="tag-cloud-stats">
           <div class="tag-cloud-stat">
             <span class="stat-number">${topTags.reduce((sum, t) => sum + t.count, 0)}</span>
-            <span class="stat-label">total usages</span>
+            <span class="stat-label">Total Usages</span>
           </div>
           <div class="tag-cloud-stat">
             <span class="stat-number">${maxCount}</span>
-            <span class="stat-label">most used</span>
+            <span class="stat-label">Most Used</span>
           </div>
           <div class="tag-cloud-stat">
             <button id="tag-cloud-toggle" class="tag-cloud-toggle" aria-pressed="${showAllPref}">
@@ -373,12 +380,12 @@ export async function renderTagCloud(): Promise<void> {
       <div class="tag-cloud-legend">
         <div class="legend-item">
           <span class="legend-size legend-small">A</span>
-          <span>Less used</span>
+          <span>Less Used</span>
         </div>
         <div class="legend-gradient"></div>
         <div class="legend-item">
           <span class="legend-size legend-large">A</span>
-          <span>Most used</span>
+          <span>Most Used</span>
         </div>
       </div>
     </div>

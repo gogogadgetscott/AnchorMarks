@@ -86,7 +86,7 @@ export function updateFilterButtonVisibility(): void {
 export function initFilterDropdown(): void {
   const btn = document.getElementById("filter-dropdown-btn");
   if (!btn) {
-    // Button doesn't exist in this view - this is expected for views like 
+    // Button doesn't exist in this view - this is expected for views like
     // dashboard, favorites, recent, etc. No need to log warnings.
     return;
   }
@@ -163,7 +163,7 @@ export async function showFilterDropdown(): Promise<void> {
                             type="text"
                             id="filter-folders-search"
                             class="form-input"
-                            placeholder="Search folders..."
+                            placeholder="Search folders…"
                             style="margin-bottom: 0.5rem; font-size: 0.875rem; padding: 0.4rem 0.6rem;"
                         />
                         <div class="filter-grid" id="filter-folders-container"></div>
@@ -176,7 +176,7 @@ export async function showFilterDropdown(): Promise<void> {
                             type="text"
                             id="filter-tags-search"
                             class="form-input"
-                            placeholder="Search tags..."
+                            placeholder="Search tags…"
                             style="margin-bottom: 0.5rem; font-size: 0.875rem; padding: 0.4rem 0.6rem;"
                         />
                         <div class="filter-grid" id="filter-tags-container"></div>
@@ -216,7 +216,7 @@ export async function showFilterDropdown(): Promise<void> {
                         </div>
                         <div class="filter-control-group">
                             <label for="filter-search-input">Search:</label>
-                            <input type="text" id="filter-search-input" class="filter-input" placeholder="Search bookmarks..." />
+                            <input type="text" id="filter-search-input" class="filter-input" placeholder="Search bookmarks…" />
                         </div>
                         <button class="btn btn-outline btn-sm btn-full" id="filter-clear-all">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;margin-right:4px">
@@ -306,7 +306,7 @@ function filterFoldersInDropdown(searchTerm: string): void {
 
   if (filtered.length === 0) {
     container.innerHTML =
-      '<p style="color:var(--text-tertiary);font-size:0.875rem;padding:1rem;">No folders found</p>';
+      '<p style="color:var(--text-tertiary);font-size:0.875rem;padding:1rem;">No folders found.</p>';
     return;
   }
 
@@ -441,15 +441,17 @@ async function renderFoldersInDropdown(): Promise<void> {
 
   // Fetch ALL unfiltered bookmarks to calculate folder counts
   const allBookmarks = await api<any>("/bookmarks?limit=10000&offset=0");
-  const bookmarksToProcess = Array.isArray(allBookmarks) 
-    ? allBookmarks 
-    : (allBookmarks?.bookmarks || []);
+  const bookmarksToProcess = Array.isArray(allBookmarks)
+    ? allBookmarks
+    : allBookmarks?.bookmarks || [];
 
   // Helper to calculate unfiltered recursive bookmark count for a folder
   const getUnfilteredRecursiveCount = (folderId: string): number => {
     // Count bookmarks that belong to this folder
-    let total = bookmarksToProcess.filter(b => b.folder_id === folderId).length;
-    
+    let total = bookmarksToProcess.filter(
+      (b) => b.folder_id === folderId,
+    ).length;
+
     // Add counts from child folders
     const children = state.folders.filter((f) => f.parent_id === folderId);
     children.forEach((child) => {
@@ -547,7 +549,7 @@ async function renderFoldersInDropdown(): Promise<void> {
 
   container.innerHTML =
     html ||
-    '<p style="color:var(--text-tertiary);font-size:0.875rem;padding:1rem;">No folders</p>';
+    '<p style="color:var(--text-tertiary);font-size:0.875rem;padding:1rem;">No folders.</p>';
 
   container._allFolders = folderDataForSearch;
   container._originalHTML = container.innerHTML;
@@ -621,9 +623,9 @@ async function renderTagsInDropdown(): Promise<void> {
 
   // Fetch ALL unfiltered bookmarks to calculate tag counts based on the complete library
   const allBookmarks = await api<any>("/bookmarks?limit=10000&offset=0");
-  const bookmarksToProcess = Array.isArray(allBookmarks) 
-    ? allBookmarks 
-    : (allBookmarks?.bookmarks || []);
+  const bookmarksToProcess = Array.isArray(allBookmarks)
+    ? allBookmarks
+    : allBookmarks?.bookmarks || [];
 
   const tagMap = new Map<string, number>();
   bookmarksToProcess.forEach((b: any) => {
@@ -653,7 +655,7 @@ async function renderTagsInDropdown(): Promise<void> {
 
   if (tags.length === 0) {
     container.innerHTML =
-      '<p style="color:var(--text-tertiary);font-size:0.875rem;padding:1rem;">No tags yet</p>';
+      '<div style="padding:1rem;text-align:center;"><p style="color:var(--text-secondary);font-size:0.875rem;margin-bottom:0.5rem;">No tags yet</p><p style="color:var(--text-tertiary);font-size:0.75rem;">Try organizing your bookmarks with <kbd style="display:inline-flex;align-items:center;padding:2px 6px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;font-size:0.6875rem;font-weight:600;margin:0 2px">#tags</kbd></p></div>';
     return;
   }
 
@@ -775,7 +777,7 @@ function attachFilterDropdownListeners(): void {
         });
         return;
       }
-      
+
       state.setFilterConfig({
         ...state.filterConfig,
         search: e.target.value.trim() || undefined,
@@ -835,7 +837,7 @@ async function applyFilters(): Promise<void> {
     });
     // Still load bookmarks, but filters will be bypassed in loadBookmarks
   }
-  
+
   const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
   await loadBookmarks();
 }

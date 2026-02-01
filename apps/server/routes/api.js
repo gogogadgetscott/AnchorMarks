@@ -1,4 +1,3 @@
-const path = require("path");
 const { setupAuthRoutes } = require("./auth");
 const setupBookmarksRoutesLegacy = require("./bookmarks");
 const { setupBookmarksRoutes } = require("../controllers/bookmarks");

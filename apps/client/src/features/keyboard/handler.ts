@@ -19,7 +19,9 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     // Prevent browser from handling Ctrl+K
     e.preventDefault();
     // Handle it immediately and synchronously to avoid browser interference
-    const searchInput = document.getElementById("search-input") as HTMLInputElement;
+    const searchInput = document.getElementById(
+      "search-input",
+    ) as HTMLInputElement;
     if (searchInput) {
       searchInput.focus();
     }
@@ -173,7 +175,9 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     // Open settings modal to keyboard shortcuts tab
     openModal("settings-modal");
     setTimeout(() => {
-      const shortcutsTab = document.querySelector('[data-settings-tab="shortcuts"]') as HTMLElement;
+      const shortcutsTab = document.querySelector(
+        '[data-settings-tab="shortcuts"]',
+      ) as HTMLElement;
       if (shortcutsTab) {
         shortcutsTab.click();
       }

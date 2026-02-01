@@ -28,20 +28,21 @@ class FocusTrap {
   private isActive = false;
 
   private static readonly DEFAULT_FOCUSABLE_SELECTOR = [
-    'a[href]',
-    'button:not([disabled])',
-    'textarea:not([disabled])',
-    'input:not([disabled])',
-    'select:not([disabled])',
+    "a[href]",
+    "button:not([disabled])",
+    "textarea:not([disabled])",
+    "input:not([disabled])",
+    "select:not([disabled])",
     '[tabindex]:not([tabindex="-1"])',
     '[contenteditable="true"]',
-  ].join(', ');
+  ].join(", ");
 
   constructor(container: HTMLElement, options: FocusTrapOptions = {}) {
     this.container = container;
     this.returnFocusElement = options.returnFocusElement;
     this.onEscape = options.onEscape;
-    this.focusableSelector = options.focusableSelector || FocusTrap.DEFAULT_FOCUSABLE_SELECTOR;
+    this.focusableSelector =
+      options.focusableSelector || FocusTrap.DEFAULT_FOCUSABLE_SELECTOR;
 
     // Store currently focused element
     this.previouslyFocused = document.activeElement as HTMLElement;
@@ -57,11 +58,12 @@ class FocusTrap {
    */
   private getFocusableElements(): HTMLElement[] {
     return Array.from(
-      this.container.querySelectorAll<HTMLElement>(this.focusableSelector)
-    ).filter(element => {
+      this.container.querySelectorAll<HTMLElement>(this.focusableSelector),
+    ).filter((element) => {
       // Additional check for visibility
-      return element.offsetParent !== null && 
-             !element.hasAttribute('aria-hidden');
+      return (
+        element.offsetParent !== null && !element.hasAttribute("aria-hidden")
+      );
     });
   }
 
@@ -89,7 +91,7 @@ class FocusTrap {
    * Handle keyboard navigation within the trap
    */
   private handleKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape') {
+    if (event.key === "Escape") {
       if (this.onEscape) {
         event.preventDefault();
         this.onEscape();
@@ -97,7 +99,7 @@ class FocusTrap {
       return;
     }
 
-    if (event.key !== 'Tab') {
+    if (event.key !== "Tab") {
       return;
     }
 
@@ -131,13 +133,15 @@ class FocusTrap {
    */
   activate(): void {
     if (this.isActive) {
-      logger.warn('[FocusTrap] Trap already active', { container: this.container.id });
+      logger.warn("[FocusTrap] Trap already active", {
+        container: this.container.id,
+      });
       return;
     }
 
-    document.addEventListener('keydown', this.handleKeyDown);
+    document.addEventListener("keydown", this.handleKeyDown);
     this.isActive = true;
-    logger.debug('[FocusTrap] Activated', { container: this.container.id });
+    logger.debug("[FocusTrap] Activated", { container: this.container.id });
   }
 
   /**
@@ -148,7 +152,7 @@ class FocusTrap {
       return;
     }
 
-    document.removeEventListener('keydown', this.handleKeyDown);
+    document.removeEventListener("keydown", this.handleKeyDown);
     this.isActive = false;
 
     // Return focus to previously focused element or specified element
@@ -160,7 +164,7 @@ class FocusTrap {
       }, 0);
     }
 
-    logger.debug('[FocusTrap] Deactivated', { container: this.container.id });
+    logger.debug("[FocusTrap] Deactivated", { container: this.container.id });
   }
 }
 
@@ -169,11 +173,12 @@ class FocusTrap {
  */
 export function createFocusTrap(
   container: HTMLElement | string,
-  options: FocusTrapOptions = {}
+  options: FocusTrapOptions = {},
 ): FocusTrap {
-  const element = typeof container === 'string' 
-    ? document.getElementById(container)
-    : container;
+  const element =
+    typeof container === "string"
+      ? document.getElementById(container)
+      : container;
 
   if (!element) {
     throw new Error(`[FocusTrap] Container not found: ${container}`);
@@ -199,9 +204,7 @@ export function createFocusTrap(
  * Deactivate and remove focus trap for a container
  */
 export function removeFocusTrap(container: HTMLElement | string): void {
-  const elementId = typeof container === 'string' 
-    ? container
-    : container.id;
+  const elementId = typeof container === "string" ? container : container.id;
 
   const trap = activeFocusTraps.get(elementId);
   if (trap) {
@@ -214,9 +217,7 @@ export function removeFocusTrap(container: HTMLElement | string): void {
  * Check if a focus trap is active for a container
  */
 export function hasFocusTrap(container: HTMLElement | string): boolean {
-  const elementId = typeof container === 'string' 
-    ? container
-    : container.id;
+  const elementId = typeof container === "string" ? container : container.id;
 
   return activeFocusTraps.has(elementId);
 }
@@ -225,9 +226,9 @@ export function hasFocusTrap(container: HTMLElement | string): boolean {
  * Remove all active focus traps
  */
 export function removeAllFocusTraps(): void {
-  activeFocusTraps.forEach(trap => trap.deactivate());
+  activeFocusTraps.forEach((trap) => trap.deactivate());
   activeFocusTraps.clear();
-  logger.debug('[FocusTrap] Removed all traps');
+  logger.debug("[FocusTrap] Removed all traps");
 }
 
 // Export for debugging in development

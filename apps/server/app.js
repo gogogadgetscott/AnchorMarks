@@ -88,7 +88,7 @@ if (config.NODE_ENV !== "test") {
 const rateLimiter = require("./middleware/rateLimiter");
 
 // Performance monitoring
-const { performanceMiddleware, monitor } = require("./helpers/performance-monitor");
+const { performanceMiddleware } = require("./helpers/performance-monitor");
 
 // Middleware registration
 // Enhanced helmet configuration for security hardening

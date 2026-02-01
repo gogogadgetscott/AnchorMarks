@@ -57,7 +57,7 @@ export function renderSidebarTags(): void {
   if (showMoreBtn) {
     if (allTags.length > 15 && !state.showingAllTags) {
       showMoreBtn.classList.remove("hidden");
-      showMoreBtn.textContent = `Show all ${allTags.length} tags`;
+      showMoreBtn.textContent = `Show all ${allTags.length} ${pluralize(allTags.length, "tag", "tags")}`;
     } else {
       showMoreBtn.classList.add("hidden");
     }
@@ -149,7 +149,7 @@ export function renderTagsList(tags: { name: string; count: number }[]): void {
 
   if (tags.length === 0) {
     container.innerHTML =
-      '<div style="padding: 0.5rem; font-size: 0.75rem; color: var(--text-tertiary);">No tags found</div>';
+      '<div style="padding: 1rem; text-align: center;"><p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">No tags yet</p><p style="font-size: 0.75rem; color: var(--text-tertiary);">Try organizing your bookmarks with <kbd style="display:inline-flex;align-items:center;padding:2px 6px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;font-size:0.6875rem;font-weight:600;margin:0 2px">#tags</kbd></p></div>';
     return;
   }
 
@@ -639,7 +639,7 @@ export async function renderTagsForFilter(
 
   if (tagsToShow.length === 0) {
     container.innerHTML =
-      '<div style="padding:0.5rem;color:var(--text-tertiary);text-align:center;font-size:0.85rem">No tags yet</div>';
+      '<div style="padding:1rem;text-align:center;"><p style="color:var(--text-secondary);font-size:0.875rem;margin-bottom:0.5rem;">No tags yet</p><p style="color:var(--text-tertiary);font-size:0.75rem;">Try organizing your bookmarks with <kbd style="display:inline-flex;align-items:center;padding:2px 6px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;font-size:0.6875rem;font-weight:600;margin:0 2px">#tags</kbd></p></div>';
     return;
   }
 

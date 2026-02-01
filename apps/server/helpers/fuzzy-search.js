@@ -28,7 +28,7 @@ function levenshteinDistance(str1, str2) {
         matrix[i][j] = Math.min(
           matrix[i - 1][j] + 1, // deletion
           matrix[i][j - 1] + 1, // insertion
-          matrix[i - 1][j - 1] + 1 // substitution
+          matrix[i - 1][j - 1] + 1, // substitution
         );
       }
     }
@@ -53,7 +53,7 @@ function similarityScore(str1, str2) {
 function tokenize(text) {
   return text
     .toLowerCase()
-    .replace(/[^\w\s]/g, ' ')
+    .replace(/[^\w\s]/g, " ")
     .split(/\s+/)
     .filter((word) => word.length > 0);
 }
@@ -63,11 +63,11 @@ function tokenize(text) {
  */
 function calculateFuzzyScore(bookmark, searchTerm) {
   const searchTokens = tokenize(searchTerm);
-  const titleTokens = tokenize(bookmark.title || '');
-  const urlTokens = tokenize(bookmark.url || '');
-  const descTokens = tokenize(bookmark.description || '');
+  const titleTokens = tokenize(bookmark.title || "");
+  const urlTokens = tokenize(bookmark.url || "");
+  const descTokens = tokenize(bookmark.description || "");
   const tagTokens = bookmark.tags
-    ? tokenize(bookmark.tags.replace(/,/g, ' '))
+    ? tokenize(bookmark.tags.replace(/,/g, " "))
     : [];
 
   let totalScore = 0;
@@ -148,12 +148,13 @@ function calculateFuzzyScore(bookmark, searchTerm) {
   totalScore += (tagScore / searchTokens.length) * tagWeight;
 
   // Normalize score
-  const normalizedScore = maxPossibleScore > 0 ? totalScore / maxPossibleScore : 0;
+  const normalizedScore =
+    maxPossibleScore > 0 ? totalScore / maxPossibleScore : 0;
 
   // Boost for exact substring matches
   const exactMatchBoost = 0.2;
-  const titleLower = (bookmark.title || '').toLowerCase();
-  const urlLower = (bookmark.url || '').toLowerCase();
+  const titleLower = (bookmark.title || "").toLowerCase();
+  const urlLower = (bookmark.url || "").toLowerCase();
   const searchLower = searchTerm.toLowerCase();
 
   if (titleLower.includes(searchLower) || urlLower.includes(searchLower)) {

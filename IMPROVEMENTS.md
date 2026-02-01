@@ -5,6 +5,7 @@ This document outlines all the major improvements made to 10x the AnchorMarks ap
 ## 🚀 Performance Improvements
 
 ### 1. Service Worker for Offline Support
+
 - **Location**: `apps/client/public/sw.js`
 - **Features**:
   - Offline support with intelligent caching
@@ -15,6 +16,7 @@ This document outlines all the major improvements made to 10x the AnchorMarks ap
 - **Impact**: Enables offline usage, faster page loads, reduced server load
 
 ### 2. Database Query Optimizations
+
 - **Location**: `apps/server/models/database.js`
 - **Improvements**:
   - Added composite indexes for common query patterns:
@@ -26,6 +28,7 @@ This document outlines all the major improvements made to 10x the AnchorMarks ap
 - **Impact**: 2-5x faster queries for common operations
 
 ### 3. Enhanced Search with Multi-word Support
+
 - **Location**: `apps/server/models/bookmark.js`
 - **Features**:
   - Multi-word search with AND logic
@@ -34,6 +37,7 @@ This document outlines all the major improvements made to 10x the AnchorMarks ap
 - **Impact**: More accurate search results
 
 ### 4. Fuzzy Search Implementation
+
 - **Location**: `apps/server/helpers/fuzzy-search.js`
 - **Features**:
   - Levenshtein distance calculation
@@ -43,6 +47,7 @@ This document outlines all the major improvements made to 10x the AnchorMarks ap
 - **Impact**: Better search results even with typos
 
 ### 5. Request Batching
+
 - **Location**: `apps/server/helpers/request-batcher.js`
 - **Features**:
   - Batches multiple similar requests
@@ -51,6 +56,7 @@ This document outlines all the major improvements made to 10x the AnchorMarks ap
 - **Impact**: Reduced server load, faster bulk operations
 
 ### 6. Response Compression
+
 - **Location**: `apps/server/app.js`
 - **Features**:
   - Gzip compression for all responses
@@ -59,6 +65,7 @@ This document outlines all the major improvements made to 10x the AnchorMarks ap
 - **Impact**: 60-80% reduction in response sizes
 
 ### 7. Performance Monitoring
+
 - **Location**: `apps/server/helpers/performance-monitor.js`
 - **Features**:
   - Tracks API request times
@@ -73,6 +80,7 @@ This document outlines all the major improvements made to 10x the AnchorMarks ap
 ## 🎨 User Experience Improvements
 
 ### 8. Keyboard Shortcuts System
+
 - **Location**: `apps/client/src/utils/keyboard-shortcuts.ts`
 - **Features**:
   - Comprehensive keyboard shortcut system
@@ -94,11 +102,13 @@ This document outlines all the major improvements made to 10x the AnchorMarks ap
 ## 🔧 Code Quality Improvements
 
 ### 9. Better Error Handling
+
 - Enhanced error tracking in performance monitor
 - Graceful error handling in service worker
 - Better error messages for users
 
 ### 10. Code Organization
+
 - Modular helper functions
 - Clear separation of concerns
 - Reusable components
@@ -106,6 +116,7 @@ This document outlines all the major improvements made to 10x the AnchorMarks ap
 ## 📊 Monitoring & Analytics
 
 ### 11. Performance Stats API
+
 - Real-time performance metrics
 - Endpoint-level statistics
 - Slow query tracking
@@ -133,21 +144,25 @@ This document outlines all the major improvements made to 10x the AnchorMarks ap
 ## 🔍 How to Use New Features
 
 ### Service Worker
+
 - Automatically registered on page load
 - Works transparently in the background
 - No user action required
 
 ### Keyboard Shortcuts
+
 - Press `?` to see all available shortcuts
 - Most shortcuts work globally
 - Some shortcuts are context-specific
 
 ### Performance Monitoring
+
 - Access via `/api/health/performance`
 - Requires authentication
 - Returns stats for the last hour (configurable)
 
 ### Fuzzy Search
+
 - Currently available as a helper function
 - Can be integrated into search endpoints
 - Use `fuzzy: true` option in bookmark queries
@@ -155,16 +170,19 @@ This document outlines all the major improvements made to 10x the AnchorMarks ap
 ## 🛠️ Technical Details
 
 ### Service Worker Strategy
+
 - **Static Assets**: Cache-first
 - **API Calls**: Network-first with cache fallback
 - **HTML Pages**: Network-first with cache fallback
 
 ### Database Indexes
+
 - Composite indexes for multi-column queries
 - Covering indexes where possible
 - Automatic index usage by SQLite query planner
 
 ### Compression Settings
+
 - Level: 6 (balanced)
 - Threshold: 1KB (only compress larger responses)
 

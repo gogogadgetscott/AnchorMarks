@@ -2,9 +2,13 @@ import { vi, describe, it, beforeEach, afterEach, expect } from "vitest";
 import * as state from "@features/state.ts";
 import { renderTagCloud } from "@features/bookmarks/tag-cloud.ts";
 
-// Top-level spies used by hoisted mocks
+// Top-level spies and data used by hoisted mocks (must be set before api() is called)
 const updateHeaderSpy = vi.fn();
 const loadBookmarksSpy = vi.fn();
+const mockBookmarksForApi: any[] = [
+  { id: "1", title: "One", url: "https://a", tags: "foo,bar" },
+  { id: "2", title: "Two", url: "https://b", tags: "foo" },
+];
 
 // Mock App updateHeaderContent and bookmarks.loadBookmarks at top-level
 vi.mock("@/App.ts", () => ({
@@ -14,12 +18,11 @@ vi.mock("@features/bookmarks/bookmarks.ts", () => ({
   loadBookmarks: (...args: any[]) => loadBookmarksSpy(...args),
 }));
 
-// Mock API to avoid network calls invoked by tag-cloud buildTagData
+// Mock API: use mockBookmarksForApi so tag-cloud buildTagData always gets tag data
 vi.mock("@services/api.ts", () => ({
   api: (endpoint: string) => {
-    // Return state.bookmarks for bookmark list requests
     if (endpoint.startsWith("/bookmarks"))
-      return Promise.resolve(state.bookmarks);
+      return Promise.resolve(mockBookmarksForApi);
     return Promise.resolve([]);
   },
 }));
@@ -41,15 +44,12 @@ describe("Tag Cloud - clicking a tag", () => {
     loadBookmarksSpy.mockClear();
     setupDom();
 
-    state.setBookmarks([
-      { id: "1", title: "One", url: "https://a", tags: "foo,bar" },
-      { id: "2", title: "Two", url: "https://b", tags: "foo" },
-    ] as any);
+    state.setBookmarks(mockBookmarksForApi);
   });
 
   afterEach(() => {
-    vi.resetAllMocks();
-    vi.clearAllMocks();
+    // Don't use vi.resetAllMocks() — it resets mock implementations and breaks
+    // the vi.mock("@/App.ts") forward to updateHeaderSpy on the next run.
     // Clear any window cleanup functions
     (window as any).__tagCloudResizeCleanup?.();
     (window as any).__tagCloudResizeCleanup = undefined;
@@ -59,9 +59,12 @@ describe("Tag Cloud - clicking a tag", () => {
     // Ensure we're in tag-cloud view
     state.setCurrentView("tag-cloud");
 
-    await renderTagCloud();
+    const outlet = document.getElementById("main-view-outlet")!;
+    await renderTagCloud(outlet, { skipViewCheck: true });
 
-    const tagBtn = document.querySelector(
+    expect(outlet.innerHTML).toContain('data-tag="foo"');
+
+    const tagBtn = outlet.querySelector(
       '.tag-cloud-tag[data-tag="foo"]',
     ) as HTMLElement | null;
     expect(tagBtn).toBeTruthy();
@@ -69,8 +72,8 @@ describe("Tag Cloud - clicking a tag", () => {
     // Click it
     tagBtn!.click();
 
-    // Wait for async click handler to complete
-    await new Promise((r) => setTimeout(r, 150));
+    // Wait for async click handler (dynamic imports + loadBookmarks) to complete
+    await new Promise((r) => setTimeout(r, 300));
 
     expect(updateHeaderSpy).toHaveBeenCalled();
     expect(loadBookmarksSpy).toHaveBeenCalled();

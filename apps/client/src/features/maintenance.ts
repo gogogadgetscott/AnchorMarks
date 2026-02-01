@@ -94,7 +94,10 @@ async function refreshFavicons(): Promise<void> {
       }
     }
 
-    showToast(`Refreshed favicons for ${completed} bookmarks`, "success");
+    showToast(
+      `Refreshed favicons for ${completed} ${completed === 1 ? "bookmark" : "bookmarks"}`,
+      "success",
+    );
 
     // Reload bookmarks to show new favicons
     const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
@@ -347,7 +350,7 @@ async function checkBrokenLinks(): Promise<void> {
       showToast(
         brokenCount === 0
           ? "All links are working!"
-          : `Found ${brokenCount} broken links`,
+          : `Found ${brokenCount} broken ${brokenCount === 1 ? "link" : "links"}`,
         brokenCount === 0 ? "success" : "warning",
       );
     }
