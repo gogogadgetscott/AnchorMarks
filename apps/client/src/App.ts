@@ -397,21 +397,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const { registerGlobalCleanup } = await import("@utils/event-cleanup.ts");
   const globalSignal = registerGlobalCleanup();
 
-  // Use capture phase to intercept browser shortcuts (like Ctrl+K) before browser handles them
+  // Use capture phase to intercept browser shortcuts (like Ctrl+K) before browser handles them.
+  // Single listener on document; do not re-register on window focus or listeners would accumulate.
   document.addEventListener("keydown", handleKeyboard, {
     capture: true,
     signal: globalSignal.signal,
   });
-  window.addEventListener(
-    "focus",
-    () => {
-      document.addEventListener("keydown", handleKeyboard, {
-        capture: true,
-        signal: globalSignal.signal,
-      });
-    },
-    { signal: globalSignal.signal },
-  );
 
   // Filter sort listener (kept here for now as it's simple)
   document.getElementById("filter-sort")?.addEventListener(

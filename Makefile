@@ -11,16 +11,16 @@
 
 .PHONY: help \
 	build-frontend build-docker build-test-docker \
-	run-backend run-frontend run-all run-docker run-prod \
-	start-backend start-frontend start-all start-docker start-prod stop-all restart-all \
+	run run-backend run-frontend run-all run-docker run-prod \
+	start-backend start-frontend start-all start-docker start-prod stop stop-all restart-all \
 	test-backend test-frontend test-all test-coverage \
 	test-backend-watch test-frontend-watch \
 	test-docker test-docker-backend test-docker-frontend \
 	test-e2e test-e2e-ui test-e2e-debug test-e2e-headed \
 	lint-code lint-check lint-backend lint-frontend \
-	clean-frontend clean-all reinstall-deps \
-	install-deps install-deploy \
-	run-docker stop-docker restart-docker logs-docker shell-docker rebuild-docker \
+	clean clean-frontend clean-all reinstall-deps \
+	install install-deps install-deploy \
+	run-docker stop-docker restart-docker logs shell logs-docker shell-docker rebuild-docker \
 	create-demo-gif capture-screenshots
 
 # Variables
@@ -95,6 +95,8 @@ rebuild-docker: ## Rebuild Docker containers from scratch
 # ============================================================================
 # RUN/START/STOP TARGETS
 # ============================================================================
+run: run-all ## Alias for run-all (run backend and frontend)
+
 run-backend: ## Run backend server in development mode
 	@echo "$(BLUE)Starting backend server...$(NC)"
 	NODE_ENV=development node $(BACKEND_DIR)
@@ -114,6 +116,8 @@ run-docker: ## Run using Docker Compose
 run-prod: ## Run server in production mode
 	@echo "$(BLUE)Starting production server...$(NC)"
 	NODE_ENV=production node $(BACKEND_DIR)
+
+stop: stop-all ## Alias for stop-all (stop dev processes)
 
 stop-all: ## Stop all running development processes
 	@echo "$(BLUE)Stopping development processes...$(NC)"
@@ -140,7 +144,6 @@ restart-all: stop-all start-all ## Restart all development processes
 # ============================================================================
 # TEST TARGETS
 # ============================================================================
-
 test: test-all ## Run all tests (alias for test-all)
 
 test-backend: ## Run backend tests
@@ -242,12 +245,13 @@ test-e2e-headed: ## Run E2E tests in headed mode (visible browser)
 # ============================================================================
 # LINT & FORMAT TARGETS
 # ============================================================================
+lint: lint-code ## Alias for lint-code (lint and format code)
+
 lint-code: ## Lint and format code
 	@echo "$(BLUE)Linting and formatting code...$(NC)"
 	npx eslint "**/*.js" --config tooling/eslint.config.cjs --fix && npx prettier . --write
 	@echo "$(GREEN)✓ Code linted and formatted$(NC)"
 
-lint: lint-code ## Alias for lint-code (lint and format code)
 
 lint-check: ## Check linting without fixing
 	@echo "$(BLUE)Checking code linting...$(NC)"
@@ -268,6 +272,8 @@ lint-frontend: ## Lint frontend code only
 # ============================================================================
 # CLEANUP TARGETS
 # ============================================================================
+clean: clean-all ## Alias for clean-all (clean all artifacts)
+
 clean-frontend: ## Clean frontend build artifacts
 	@echo "$(BLUE)Cleaning frontend...$(NC)"
 	@cd $(BACKEND_DIR) && rm -rf node_modules
@@ -290,10 +296,13 @@ reinstall-deps: clean-all ## Clean and reinstall dependencies
 # ============================================================================
 # UTILITY TARGETS
 # ============================================================================
+install: install-deps ## Alias for install-deps (install dependencies)
+
 install-deps: ## Install all dependencies
 	@echo "$(BLUE)Installing dependencies...$(NC)"
 	@npm install
 	@echo "$(GREEN)✓ Dependencies installed$(NC)"
+
 
 install-deploy: ## Install for deployment
 	@echo "$(BLUE)Installing for deployment...$(NC)"
@@ -310,9 +319,13 @@ capture-screenshots: ## Capture screenshots
 	@node tooling/scripts/capture-screenshots.js
 	@echo "$(GREEN)✓ Screenshots captured$(NC)"
 
+logs: logs-docker ## Alias for logs-docker (follow Docker logs)
+
 logs-docker: ## Follow Docker container logs
 	@echo "$(BLUE)Following Docker logs...$(NC)"
 	@$(DOCKER_CMD) logs -f
+
+shell: shell-docker ## Alias for shell-docker (shell in Docker container)
 
 shell-docker: ## Open shell in Docker container
 	@$(DOCKER_CMD) exec -it anchormarks /bin/sh

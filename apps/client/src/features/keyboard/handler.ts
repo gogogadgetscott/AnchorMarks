@@ -148,13 +148,8 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     const activeEl = document.activeElement;
     if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
-    await state.setCurrentView("all");
     state.setCurrentFolder(null);
-    updateActiveNav();
-    const viewTitle = document.getElementById("view-title");
-    if (viewTitle) viewTitle.textContent = "Bookmarks";
-    const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
-    loadBookmarks();
+    await switchView("all");
   }
 
   // F11: Toggle fullscreen (on dashboard)
