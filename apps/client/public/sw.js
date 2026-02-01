@@ -7,8 +7,8 @@ const CACHE_VERSION = "anchormarks-v1.0.3";
 const CACHE_NAME = `${CACHE_VERSION}-cache`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
-// Assets to cache on install
-const PRECACHE_ASSETS = ["/", "/index.html", "/src/main.ts", "/src/App.ts"];
+// Assets to cache on install (only paths that exist when served - no source .ts files; they are bundled)
+const PRECACHE_ASSETS = ["/", "/index.html"];
 
 // Install event - cache static assets
 self.addEventListener("install", (event) => {

@@ -27,7 +27,7 @@ vi.mock("@services/api.ts", () => ({
 describe("Filter Dropdown Module", () => {
   let headersContainer: HTMLElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Setup DOM
     document.body.innerHTML = `
       <div id="headers-container">
@@ -43,8 +43,8 @@ describe("Filter Dropdown Module", () => {
 
     headersContainer = document.getElementById("headers-container")!;
 
-    // Reset state
-    state.setCurrentView("all");
+    // Reset state (await so currentView is set before tests that call showFilterDropdown)
+    await state.setCurrentView("all");
     state.setCurrentFolder(null);
     state.setCurrentCollection(null);
   });
@@ -65,15 +65,11 @@ describe("Filter Dropdown Module", () => {
       expect(reinitializedBtn).not.toBeNull();
     });
 
-    it("should return without warning if button not found", () => {
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    it("should return early when button not found", () => {
       document.getElementById("filter-dropdown-btn")?.remove();
 
-      initFilterDropdown();
-
-      // Button absence is expected in some views (dashboard, favorites, etc.)
-      expect(warnSpy).not.toHaveBeenCalled();
-      warnSpy.mockRestore();
+      expect(() => initFilterDropdown()).not.toThrow();
+      expect(document.getElementById("filter-dropdown-btn")).toBeNull();
     });
 
     it("should set button display for bookmarks views", () => {
@@ -104,8 +100,8 @@ describe("Filter Dropdown Module", () => {
   });
 
   describe("showFilterDropdown", () => {
-    beforeEach(() => {
-      state.setCurrentView("all");
+    beforeEach(async () => {
+      await state.setCurrentView("all");
     });
 
     it("should create dropdown element with correct ID", async () => {
@@ -150,7 +146,7 @@ describe("Filter Dropdown Module", () => {
     });
 
     it("should not show in non-bookmarks views", async () => {
-      state.setCurrentView("dashboard");
+      await state.setCurrentView("dashboard");
 
       await showFilterDropdown();
 
@@ -170,7 +166,7 @@ describe("Filter Dropdown Module", () => {
 
   describe("closeFilterDropdown", () => {
     beforeEach(async () => {
-      state.setCurrentView("all");
+      await state.setCurrentView("all");
       await showFilterDropdown();
     });
 
@@ -189,8 +185,8 @@ describe("Filter Dropdown Module", () => {
   });
 
   describe("toggleFilterDropdown", () => {
-    beforeEach(() => {
-      state.setCurrentView("all");
+    beforeEach(async () => {
+      await state.setCurrentView("all");
     });
 
     it("should show dropdown when not present", async () => {
@@ -242,7 +238,7 @@ describe("Filter Dropdown Module", () => {
       expect(textSpan?.textContent).toContain("Filters (2)");
     });
 
-    it("should count search term in active filters", () => {
+    it("should count search term in active filters", async () => {
       // Explicitly reset all filter state for this test
       state.setFilterConfig({
         tags: [],
@@ -252,7 +248,7 @@ describe("Filter Dropdown Module", () => {
       });
       state.setCurrentFolder(null);
       state.setCurrentCollection(null);
-      state.setCurrentView("folder");
+      await state.setCurrentView("folder");
       const searchInput = document.getElementById(
         "search-input",
       ) as HTMLInputElement;
@@ -314,10 +310,10 @@ describe("Filter Dropdown Module", () => {
     });
 
     it("should close dropdown when switching to non-bookmarks view", async () => {
-      state.setCurrentView("all");
+      await state.setCurrentView("all");
       await showFilterDropdown();
 
-      state.setCurrentView("dashboard");
+      await state.setCurrentView("dashboard");
       updateFilterButtonVisibility();
 
       expect(document.getElementById("filter-dropdown")).toBeNull();

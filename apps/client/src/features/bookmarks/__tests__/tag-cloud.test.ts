@@ -57,7 +57,7 @@ describe("Tag Cloud - clicking a tag", () => {
 
   it("calls header update and loads bookmarks when a tag is clicked", async () => {
     // Ensure we're in tag-cloud view
-    state.setCurrentView("tag-cloud");
+    await state.setCurrentView("tag-cloud");
 
     const outlet = document.getElementById("main-view-outlet")!;
     await renderTagCloud(outlet, { skipViewCheck: true });
@@ -73,10 +73,13 @@ describe("Tag Cloud - clicking a tag", () => {
     tagBtn!.click();
 
     // Wait for async click handler (dynamic imports + loadBookmarks) to complete
-    await new Promise((r) => setTimeout(r, 300));
-
-    expect(updateHeaderSpy).toHaveBeenCalled();
-    expect(loadBookmarksSpy).toHaveBeenCalled();
+    await vi.waitFor(
+      () => {
+        expect(updateHeaderSpy).toHaveBeenCalled();
+        expect(loadBookmarksSpy).toHaveBeenCalled();
+      },
+      { timeout: 2000 },
+    );
 
     // Confirm view title updated
     const viewTitle = document.getElementById("view-title");

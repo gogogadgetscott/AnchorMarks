@@ -62,11 +62,11 @@ help: ## Display this help screen
 	@echo "$(GREEN)LINT TARGETS:$(NC)"
 	@grep -E '^[A-Za-z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '^lint' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-30s$(NC) %s\n", $$1, $$2}'
 	@echo ""
-	@echo "$(GREEN)CLEANUP TARGETS:$(NC)"
-	@grep -E '^[A-Za-z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '^clean|^reinstall' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-30s$(NC) %s\n", $$1, $$2}'
+	@echo "$(GREEN)INSTALLATION & CLEANUP TARGETS:$(NC)"
+	@grep -E '^[A-Za-z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '^install|^clean|^reinstall' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-30s$(NC) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(GREEN)OTHER TARGETS:$(NC)"
-	@grep -E '^[A-Za-z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -vE '^(build|run|start|stop|restart|test|docker|rebuild|lint|clean|reinstall)' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-30s$(NC) %s\n", $$1, $$2}'
+	@grep -E '^[A-Za-z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -vE '^(build|run|start|stop|restart|test|docker|rebuild|lint|clean|reinstall|install)' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-30s$(NC) %s\n", $$1, $$2}'
 	@echo ""
 
 # ============================================================================
@@ -302,7 +302,6 @@ install-deps: ## Install all dependencies
 	@echo "$(BLUE)Installing dependencies...$(NC)"
 	@npm install
 	@echo "$(GREEN)✓ Dependencies installed$(NC)"
-
 
 install-deploy: ## Install for deployment
 	@echo "$(BLUE)Installing for deployment...$(NC)"

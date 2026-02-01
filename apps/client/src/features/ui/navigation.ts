@@ -54,7 +54,7 @@ export function initNavigationListeners(): void {
       } else {
         const { loadBookmarks } =
           await import("@features/bookmarks/bookmarks.ts");
-        loadBookmarks();
+        await loadBookmarks();
       }
     });
   });
