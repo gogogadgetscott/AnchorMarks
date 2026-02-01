@@ -765,6 +765,17 @@ function attachFilterDropdownListeners(): void {
   ) as HTMLInputElement;
   if (searchInput) {
     searchInput.addEventListener("input", async (e: any) => {
+      // Don't apply filters to favorites or recent views - they show all items
+      if (state.currentView === "favorites" || state.currentView === "recent") {
+        // Clear the search input and filter config
+        e.target.value = "";
+        state.setFilterConfig({
+          ...state.filterConfig,
+          search: undefined,
+        });
+        return;
+      }
+      
       state.setFilterConfig({
         ...state.filterConfig,
         search: e.target.value.trim() || undefined,
@@ -814,6 +825,17 @@ export function watchViewChanges(): void {
 }
 
 async function applyFilters(): Promise<void> {
+  // Don't apply filters to favorites or recent views - they show all items
+  if (state.currentView === "favorites" || state.currentView === "recent") {
+    // Clear any filters that might have been set
+    state.setFilterConfig({
+      ...state.filterConfig,
+      tags: [],
+      search: undefined,
+    });
+    // Still load bookmarks, but filters will be bypassed in loadBookmarks
+  }
+  
   const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
   await loadBookmarks();
 }

@@ -41,7 +41,11 @@ function listBookmarks(db, userId, opts = {}) {
   let countQuery = `SELECT COUNT(*) as total ${baseSelect}`;
   const params = [userId, userId];
 
-  if (folder_id) {
+  const isFavoritesView = favorites === true || favorites === "true";
+  const isArchivedView = archived === true || archived === "true";
+  
+  // Skip folder_id filter for favorites and archived views - show all items regardless of folder
+  if (folder_id && !isFavoritesView && !isArchivedView) {
     if (include_children) {
       query += ` AND (folder_id = ? OR folder_id IN (
                 WITH RECURSIVE subfolders AS (
@@ -68,13 +72,15 @@ function listBookmarks(db, userId, opts = {}) {
       params.push(folder_id);
     }
   }
-
-  if (favorites === true || favorites === "true") {
-    query += " AND b.is_favorite = 1";
-    countQuery += " AND b.is_favorite = 1";
+  
+  if (isFavoritesView) {
+    // Use COALESCE to handle potential NULL values (though schema has DEFAULT 0)
+    query += " AND COALESCE(b.is_favorite, 0) = 1";
+    countQuery += " AND COALESCE(b.is_favorite, 0) = 1";
   }
 
-  if (search) {
+  // Skip search and tag filters for favorites and archived views - show all items
+  if (search && !isFavoritesView && !isArchivedView) {
     // Use full-text search if available, otherwise fall back to LIKE
     // Check if FTS table exists (would be created separately if needed)
     const useFuzzy = opts.fuzzy === true;
@@ -114,7 +120,8 @@ function listBookmarks(db, userId, opts = {}) {
     }
   }
 
-  if (tags) {
+  // Skip tag filters for favorites and archived views - show all items
+  if (tags && !isFavoritesView && !isArchivedView) {
     // Support multiple tags with AND/OR semantics using proper JOIN + GROUP BY + HAVING
     const tagArr = String(tags)
       .split(",")
@@ -159,15 +166,22 @@ function listBookmarks(db, userId, opts = {}) {
   }
 
   // Handle archiving filter
-  if (archived === true || archived === "true") {
-    query += " AND b.is_archived = 1";
-    countQuery += " AND b.is_archived = 1";
-  } else if (archived === "all") {
-    // Show both archived and non-archived
-  } else {
-    // Default: show only non-archived
+  if (isFavoritesView) {
+    // For favorites view, always exclude archived favorites (server handles all filtering)
     query += " AND b.is_archived = 0";
     countQuery += " AND b.is_archived = 0";
+  } else {
+    // For other views, apply archived filter as requested
+    if (archived === true || archived === "true") {
+      query += " AND b.is_archived = 1";
+      countQuery += " AND b.is_archived = 1";
+    } else if (archived === "all") {
+      // Show both archived and non-archived
+    } else {
+      // Default: show only non-archived
+      query += " AND b.is_archived = 0";
+      countQuery += " AND b.is_archived = 0";
+    }
   }
 
   let orderClause = " ORDER BY position, created_at DESC";

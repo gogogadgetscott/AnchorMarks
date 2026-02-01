@@ -73,10 +73,14 @@ export async function loadBookmarks(): Promise<void> {
 
     if (state.currentView === "favorites") params.append("favorites", "true");
     if (state.currentView === "archived") params.append("archived", "true");
+    // Don't send folder_id for favorites, archived, or recent views - show all items regardless of folder
     if (
       state.currentFolder &&
       state.currentView !== "dashboard" &&
-      state.currentView !== "collection"
+      state.currentView !== "collection" &&
+      state.currentView !== "favorites" &&
+      state.currentView !== "archived" &&
+      state.currentView !== "recent"
     ) {
       params.append("folder_id", state.currentFolder);
       if (state.includeChildBookmarks) {
@@ -92,13 +96,18 @@ export async function loadBookmarks(): Promise<void> {
         "recently_added";
       params.append("sort", sortOption);
 
-      const searchTerm = state.filterConfig.search?.trim();
-      if (searchTerm) {
-        params.append("search", searchTerm);
-      }
+      // Server handles all filtering for favorites, archived, and recent views
+      // Don't send search or tag filters for these views
+      if (
+        state.currentView !== "favorites" &&
+        state.currentView !== "archived" &&
+        state.currentView !== "recent"
+      ) {
+        const searchTerm = state.filterConfig.search?.trim();
+        if (searchTerm) {
+          params.append("search", searchTerm);
+        }
 
-      // Recent view should bypass filters to show all recent bookmarks
-      if (state.currentView !== "recent") {
         // If client-side filters contain tags, include them in the server request
         if (state.filterConfig.tags && state.filterConfig.tags.length > 0) {
           // Use comma-separated tags; server performs a LIKE match on tg.tags_joined
@@ -236,28 +245,33 @@ export function renderBookmarks(): void {
 
   container.className = containerClass;
 
-  const searchSource =
-    state.filterConfig.search ??
-    ((searchInput as HTMLInputElement)?.value || "");
-  const searchTerm = searchSource.toLowerCase();
-  let filtered = [...state.bookmarks];
-
-  // Recent view bypasses all filters to show all recent bookmarks
-  if (state.currentView === "recent") {
-    filtered = filtered
-      .sort(
-        (a, b) =>
-          new Date(b.created_at || 0).getTime() -
-          new Date(a.created_at || 0).getTime(),
-      )
-      .slice(0, 20);
-  } else {
-    // Apply filters for other views
-    if (state.currentView === "archived") {
-      filtered = filtered.filter((b) => b.is_archived === 1);
-    } else {
-      filtered = filtered.filter((b) => !b.is_archived);
+  // Server handles all filtering for these views - just render what server sends
+  // Check this FIRST before calculating searchTerm to avoid any filter application
+  let filtered: Bookmark[];
+  
+  if (state.currentView === "favorites" || state.currentView === "archived" || state.currentView === "recent") {
+    // These views: server handles ALL filtering and sorting
+    // Just render what server sends - no client-side filtering needed
+    filtered = [...state.bookmarks];
+    
+    if (state.currentView === "recent") {
+      // Recent view: server returns sorted by created_at DESC, limit 20
+      filtered = filtered.slice(0, 20);
     }
+    // For favorites and archived, use all bookmarks returned by server
+    
+    // Skip all filtering logic below, go straight to rendering
+    // (filtered is already set above, just continue to shared rendering logic)
+  } else {
+    // Apply filters for other views (all, folder, etc.)
+    // Server already filters by is_archived=0 for non-archived views
+    // Client-side filtering for search and tags (if not bypassed by server)
+    
+    const searchSource =
+      state.filterConfig.search ??
+      ((searchInput as HTMLInputElement)?.value || "");
+    const searchTerm = searchSource.toLowerCase();
+    filtered = [...state.bookmarks];
 
     if (searchTerm) {
       filtered = filtered.filter(
@@ -527,10 +541,14 @@ export async function loadMoreBookmarks(): Promise<void> {
 
     if (state.currentView === "favorites") params.append("favorites", "true");
     if (state.currentView === "archived") params.append("archived", "true");
+    // Don't send folder_id for favorites, archived, or recent views - show all items regardless of folder
     if (
       state.currentFolder &&
       state.currentView !== "dashboard" &&
-      state.currentView !== "collection"
+      state.currentView !== "collection" &&
+      state.currentView !== "favorites" &&
+      state.currentView !== "archived" &&
+      state.currentView !== "recent"
     ) {
       params.append("folder_id", state.currentFolder);
       if (state.includeChildBookmarks) {

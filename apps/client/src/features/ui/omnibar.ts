@@ -1,6 +1,6 @@
 /**
- * AnchorMarks - Omnibar & Command Palette UI Module
- * Handles search, omnibar, and command palette event listeners
+ * AnchorMarks - Omnibar & Search UI Module
+ * Handles search and omnibar event listeners
  */
 
 import {
@@ -13,7 +13,7 @@ import { updateFilterButtonText } from "@features/bookmarks/filters.ts";
 import * as state from "@features/state.ts";
 
 /**
- * Initialize all search and palette related listeners
+ * Initialize all search and omnibar related listeners
  */
 export function initOmnibarListeners(): void {
   const searchInput = document.getElementById(
@@ -43,6 +43,25 @@ export function initOmnibarListeners(): void {
   searchInput.addEventListener("input", (e) => {
     const query = (e.target as HTMLInputElement).value;
     renderOmnibarPanel(query);
+
+    // Don't apply filters to favorites or recent views - they show all items
+    if (state.currentView === "favorites" || state.currentView === "recent") {
+      // Clear any existing search filter when on these views
+      if (state.filterConfig.search) {
+        state.setFilterConfig({
+          ...state.filterConfig,
+          search: undefined,
+        });
+      }
+      // Still render bookmarks to update display, but filters won't be applied
+      if (searchFilterTimeout) clearTimeout(searchFilterTimeout);
+      searchFilterTimeout = setTimeout(() => {
+        import("@features/bookmarks/bookmarks.ts").then((bookmarksModule) => {
+          bookmarksModule.renderBookmarks();
+        });
+      }, 120);
+      return;
+    }
 
     // Keep bookmark list filtered in real time using the search box
     const trimmed = query.trim();

@@ -1,10 +1,10 @@
 /**
  * AnchorMarks - Omnibar Module
- * Interactive command palette that merges search and quick actions
+ * Interactive search that merges search and quick actions
  */
 
 import * as state from "@features/state.ts";
-import { getCommandPaletteCommands } from "@features/bookmarks/commands.ts";
+import { getOmnibarCommands } from "@features/bookmarks/commands.ts";
 import { escapeHtml, safeLocalStorage } from "@utils/index.ts";
 import { Icon } from "@components/index.ts";
 
@@ -241,8 +241,8 @@ export function renderOmnibarPanel(query: string): void {
     actionsSection.classList.add("hidden");
     resultsSection.classList.remove("hidden");
 
-    // Get results from command palette system
-    const commands = getCommandPaletteCommands(trimmedQuery);
+    // Get results from omnibar/search system
+    const commands = getOmnibarCommands(trimmedQuery);
     omnibarState.currentItems = commands.map((cmd) => ({
       type: "result",
       label: cmd.label,

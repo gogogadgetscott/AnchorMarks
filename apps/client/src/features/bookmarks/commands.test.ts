@@ -1,6 +1,6 @@
 /**
- * Quick Launch Command Palette Tests
- * Tests the actual getCommandPaletteCommands function from commands.ts
+ * Quick Launch Search/Omnibar Tests
+ * Tests the actual getOmnibarCommands function from commands.ts
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
@@ -9,10 +9,10 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 vi.mock("@features/state.ts", () => ({
   bookmarks: [],
   folders: [],
-  commandPaletteActiveIndex: 0,
-  setCommandPaletteOpen: vi.fn(),
-  setCommandPaletteEntries: vi.fn(),
-  setCommandPaletteActiveIndex: vi.fn(),
+  omnibarActiveIndex: 0,
+  setOmnibarOpen: vi.fn(),
+  setOmnibarEntries: vi.fn(),
+  setOmnibarActiveIndex: vi.fn(),
   API_BASE: "http://localhost:3000",
 }));
 
@@ -28,7 +28,7 @@ vi.mock("@utils/index.ts", () => ({
 }));
 
 // Import the function after mocks are set up
-import { getCommandPaletteCommands } from "./commands";
+import { getOmnibarCommands } from "./commands";
 import * as state from "@features/state.ts";
 
 // Test data
@@ -77,7 +77,7 @@ const mockFolders = [
   { id: "f4", name: "Work Projects", parent_id: "f1" }, // Nested folder
 ];
 
-describe("Quick Launch - getCommandPaletteCommands", () => {
+describe("Quick Launch - getOmnibarCommands", () => {
   beforeEach(() => {
     // Reset mocks and set up test data
     vi.clearAllMocks();
@@ -89,7 +89,7 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
 
   describe("Empty search (no filter)", () => {
     it("should return base commands when no filter text", () => {
-      const results = getCommandPaletteCommands("");
+      const results = getOmnibarCommands("");
 
       // Should include base commands
       expect(results.some((r) => r.label === "Add bookmark")).toBe(true);
@@ -98,7 +98,7 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
     });
 
     it("should include top-level folders", () => {
-      const results = getCommandPaletteCommands("");
+      const results = getOmnibarCommands("");
 
       // Should include top-level folders (not nested ones)
       expect(
@@ -117,7 +117,7 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
     });
 
     it("should include recent bookmarks", () => {
-      const results = getCommandPaletteCommands("");
+      const results = getOmnibarCommands("");
 
       // Should include some bookmarks
       const bookmarkResults = results.filter((r) => r.category === "bookmark");
@@ -128,7 +128,7 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
 
   describe("Bookmark search (no prefix)", () => {
     it("should match bookmarks by title", () => {
-      const results = getCommandPaletteCommands("github");
+      const results = getOmnibarCommands("github");
 
       expect(results.length).toBeGreaterThan(0);
       expect(
@@ -137,7 +137,7 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
     });
 
     it("should match bookmarks by URL", () => {
-      const results = getCommandPaletteCommands("stackoverflow");
+      const results = getOmnibarCommands("stackoverflow");
 
       expect(results.length).toBeGreaterThan(0);
       expect(
@@ -146,7 +146,7 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
     });
 
     it("should match partial strings", () => {
-      const results = getCommandPaletteCommands("git");
+      const results = getOmnibarCommands("git");
 
       expect(results.some((r) => r.label.toLowerCase().includes("git"))).toBe(
         true,
@@ -154,9 +154,9 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
     });
 
     it("should be case insensitive", () => {
-      const resultsLower = getCommandPaletteCommands("google");
-      const resultsUpper = getCommandPaletteCommands("GOOGLE");
-      const resultsMixed = getCommandPaletteCommands("GoOgLe");
+      const resultsLower = getOmnibarCommands("google");
+      const resultsUpper = getOmnibarCommands("GOOGLE");
+      const resultsMixed = getOmnibarCommands("GoOgLe");
 
       expect(resultsLower.length).toBe(resultsUpper.length);
       expect(resultsLower.length).toBe(resultsMixed.length);
@@ -164,14 +164,14 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
     });
 
     it("should return empty results for no matches", () => {
-      const results = getCommandPaletteCommands("xyznonexistent123");
+      const results = getOmnibarCommands("xyznonexistent123");
 
       expect(results.length).toBe(0);
     });
 
     it("should prioritize bookmarks over folders and commands in search", () => {
       // "dev" matches bookmark titles/tags and folder "Development"
-      const results = getCommandPaletteCommands("dev");
+      const results = getOmnibarCommands("dev");
 
       // First results should be bookmarks
       const firstBookmarkIndex = results.findIndex(
@@ -187,7 +187,7 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
     });
 
     it("should include bookmark favicons", () => {
-      const results = getCommandPaletteCommands("github");
+      const results = getOmnibarCommands("github");
 
       const githubResult = results.find(
         (r) =>
@@ -216,10 +216,10 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
         },
       ];
 
-      const results = getCommandPaletteCommands("dash1");
+      const results = getOmnibarCommands("dash1");
       expect(results.some((r) => r.category === "view")).toBe(true);
 
-      const results2 = getCommandPaletteCommands("bmv1");
+      const results2 = getOmnibarCommands("bmv1");
       expect(results2.some((r) => r.category === "view")).toBe(true);
     });
 
@@ -236,7 +236,7 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
           tags: "",
         }));
 
-      const results = getCommandPaletteCommands("test");
+      const results = getOmnibarCommands("test");
       const bookmarkResults = results.filter((r) => r.category === "bookmark");
 
       expect(bookmarkResults.length).toBeLessThanOrEqual(10);
@@ -245,14 +245,14 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
 
   describe("Command prefix (>)", () => {
     it("should only return commands with > prefix", () => {
-      const results = getCommandPaletteCommands(">");
+      const results = getOmnibarCommands(">");
 
       expect(results.every((r) => r.category === "command")).toBe(true);
       expect(results.some((r) => r.label === "Add bookmark")).toBe(true);
     });
 
     it("should filter commands by search term", () => {
-      const results = getCommandPaletteCommands(">dashboard");
+      const results = getOmnibarCommands(">dashboard");
 
       expect(
         results.some((r) => r.label.toLowerCase().includes("dashboard")),
@@ -260,7 +260,7 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
     });
 
     it("should not include bookmarks or folders with > prefix", () => {
-      const results = getCommandPaletteCommands(">github");
+      const results = getOmnibarCommands(">github");
 
       expect(results.every((r) => r.category === "command")).toBe(true);
     });
@@ -268,14 +268,14 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
 
   describe("Folder prefix (@)", () => {
     it("should only return folders with @ prefix", () => {
-      const results = getCommandPaletteCommands("@");
+      const results = getOmnibarCommands("@");
 
       expect(results.every((r) => r.category === "folder")).toBe(true);
       expect(results.length).toBe(3); // Only top-level folders
     });
 
     it("should filter folders by name", () => {
-      const results = getCommandPaletteCommands("@work");
+      const results = getOmnibarCommands("@work");
 
       expect(results.some((r) => r.label.toLowerCase().includes("work"))).toBe(
         true,
@@ -284,7 +284,7 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
     });
 
     it("should not include bookmarks with @ prefix", () => {
-      const results = getCommandPaletteCommands("@development");
+      const results = getOmnibarCommands("@development");
 
       expect(results.every((r) => r.category === "folder")).toBe(true);
     });
@@ -292,20 +292,20 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
 
   describe("Tag prefix (#)", () => {
     it("should filter bookmarks by tag with # prefix", () => {
-      const results = getCommandPaletteCommands("#dev");
+      const results = getOmnibarCommands("#dev");
 
       expect(results.length).toBeGreaterThan(0);
       expect(results.every((r) => r.category === "bookmark")).toBe(true);
     });
 
     it("should return empty for non-existent tag", () => {
-      const results = getCommandPaletteCommands("#nonexistenttag");
+      const results = getOmnibarCommands("#nonexistenttag");
 
       expect(results.length).toBe(0);
     });
 
     it("should match partial tag names", () => {
-      const results = getCommandPaletteCommands("#prog");
+      const results = getOmnibarCommands("#prog");
 
       expect(results.length).toBeGreaterThan(0);
     });
@@ -313,14 +313,14 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
 
   describe("Edge cases", () => {
     it("should handle whitespace-only input", () => {
-      const results = getCommandPaletteCommands("   ");
+      const results = getOmnibarCommands("   ");
 
       // Whitespace only should be treated as empty - return all commands
       expect(results.some((r) => r.category === "command")).toBe(true);
     });
 
     it("should handle whitespace around search terms", () => {
-      const results = getCommandPaletteCommands("  github  ");
+      const results = getOmnibarCommands("  github  ");
 
       expect(
         results.some((r) => r.label.toLowerCase().includes("github")),
@@ -331,7 +331,7 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
       // @ts-ignore
       state.bookmarks = [];
 
-      const results = getCommandPaletteCommands("test");
+      const results = getOmnibarCommands("test");
 
       // Should not throw, returns commands that match
       expect(Array.isArray(results)).toBe(true);
@@ -341,7 +341,7 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
       // @ts-ignore
       state.folders = [];
 
-      const results = getCommandPaletteCommands("@test");
+      const results = getOmnibarCommands("@test");
 
       // Should not throw, should return empty
       expect(Array.isArray(results)).toBe(true);
@@ -355,7 +355,7 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
         { id: "2", title: "No Tags", url: "https://notags.com" }, // No tags
       ];
 
-      const results = getCommandPaletteCommands("notitle");
+      const results = getOmnibarCommands("notitle");
 
       // Should use URL as fallback for title
       expect(results.some((r) => r.description?.includes("notitle"))).toBe(
@@ -366,7 +366,7 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
 
   describe("Command structure", () => {
     it("should include all required command properties", () => {
-      const results = getCommandPaletteCommands("");
+      const results = getOmnibarCommands("");
 
       const command = results.find((r) => r.category === "command");
       expect(command).toBeDefined();
@@ -376,7 +376,7 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
     });
 
     it("should include all required bookmark properties", () => {
-      const results = getCommandPaletteCommands("github");
+      const results = getOmnibarCommands("github");
 
       const bookmark = results.find((r) => r.category === "bookmark");
       expect(bookmark).toBeDefined();
@@ -387,7 +387,7 @@ describe("Quick Launch - getCommandPaletteCommands", () => {
     });
 
     it("should include all required folder properties", () => {
-      const results = getCommandPaletteCommands("@");
+      const results = getOmnibarCommands("@");
 
       const folder = results.find((r) => r.category === "folder");
       expect(folder).toBeDefined();

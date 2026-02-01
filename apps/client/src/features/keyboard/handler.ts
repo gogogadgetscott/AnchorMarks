@@ -12,6 +12,22 @@ import { openModal, updateActiveNav } from "@utils/ui-helpers.ts";
  * Unified handler that integrates both old and new keyboard shortcut systems
  */
 export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
+  // Early preventDefault for Ctrl+K / Cmd+K to stop browser address bar focus
+  // This must happen BEFORE any async operations and synchronously
+  const isCtrlK = (e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K");
+  if (isCtrlK) {
+    // Prevent browser from handling Ctrl+K
+    e.preventDefault();
+    // Handle it immediately and synchronously to avoid browser interference
+    const searchInput = document.getElementById("search-input") as HTMLInputElement;
+    if (searchInput) {
+      searchInput.focus();
+    }
+    // Open omnibar asynchronously but after preventDefault
+    openOmnibar();
+    return; // Don't process through other handlers
+  }
+
   // Try new keyboard shortcuts system first
   const { keyboardShortcuts } = await import("@utils/keyboard-shortcuts.ts");
   if (keyboardShortcuts.handleKeyPress(e)) {
@@ -61,17 +77,10 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     openOmnibar();
   }
 
-  // Ctrl+K: Focus search (opens omnibar)
-  if (modifier && key === "k") {
-    e.preventDefault();
-    const searchInput = document.getElementById(
-      "search-input",
-    ) as HTMLInputElement;
-    searchInput?.focus();
-    openOmnibar();
-  }
+  // Ctrl+K is handled early in the function to prevent browser address bar focus
+  // (handled above before async operations)
 
-  // Ctrl+Shift+P: Focus search with > prefix for commands (opens omnibar in command mode)
+  // Ctrl+Shift+P: Focus search with > prefix for commands (opens omnibar/search)
   if (modifier && e.shiftKey && key === "p") {
     e.preventDefault();
     const searchInput = document.getElementById(
@@ -111,7 +120,7 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
     state.setCurrentFolder(null);
-    switchView("dashboard");
+    await switchView("dashboard");
   }
 
   // Ctrl+Shift+T: Tag Cloud
@@ -120,7 +129,7 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
     state.setCurrentFolder(null);
-    switchView("tag-cloud");
+    await switchView("tag-cloud");
   }
 
   // Ctrl+Shift+F: Favorites
@@ -129,11 +138,7 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
     state.setCurrentFolder(null);
-    updateActiveNav();
-    const viewTitle = document.getElementById("view-title");
-    if (viewTitle) viewTitle.textContent = "Favorites";
-    const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
-    loadBookmarks();
+    await switchView("favorites");
   }
 
   // Ctrl+Shift+A: All bookmarks

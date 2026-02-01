@@ -187,8 +187,8 @@ function fuzzySearch(bookmarks, searchTerm, options = {}) {
       if (b.score !== a.score) {
         return b.score - a.score;
       }
-      const clickA = bookmark.click_count || 0;
-      const clickB = bookmark.click_count || 0;
+      const clickA = a.bookmark.click_count || 0;
+      const clickB = b.bookmark.click_count || 0;
       if (clickB !== clickA) {
         return clickB - clickA;
       }

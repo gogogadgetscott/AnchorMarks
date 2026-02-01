@@ -46,7 +46,23 @@ class KeyboardShortcuts {
    * Register default shortcuts
    */
   registerDefaultShortcuts(): void {
-    // Search
+    // Search - Ctrl+K (opens omnibar)
+    this.register({
+      key: "ctrl k",
+      description: "Focus search (opens omnibar)",
+      category: "Navigation",
+      global: true,
+      handler: async () => {
+        const searchInput = document.getElementById("search-input") as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+        }
+        const { openOmnibar } = await import("@features/bookmarks/omnibar.ts");
+        openOmnibar();
+      },
+    });
+
+    // Search - single key "k" (focuses search input)
     this.register({
       key: "k",
       description: "Focus search",
@@ -220,6 +236,15 @@ class KeyboardShortcuts {
    */
   handleKeyPress(e: KeyboardEvent): boolean {
     // Returns true if a shortcut was handled, false otherwise
+    
+    // Early check for Ctrl+K / Cmd+K - prevent browser from focusing address bar
+    const isCtrlK = (e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K");
+    if (isCtrlK) {
+      // Always prevent default for Ctrl+K to stop browser address bar focus
+      // Don't stop propagation - we still want our handlers to process it
+      e.preventDefault();
+    }
+    
     // Don't handle if typing in input/textarea
     const target = e.target as HTMLElement;
     if (

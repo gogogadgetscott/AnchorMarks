@@ -274,6 +274,21 @@ export async function setCurrentView(val: string) {
       (window as any).__tagCloudResizeCleanup = undefined;
     }
   }
+  
+  // Clear filters when switching to favorites or recent views (they don't use filters)
+  if (val === "favorites" || val === "recent") {
+    filterConfig.tags = [];
+    filterConfig.search = undefined;
+    // Keep sort preference but clear other filters
+    
+    // Also clear the search input field in the UI
+    const searchInput = document.getElementById("search-input") as HTMLInputElement;
+    if (searchInput) searchInput.value = "";
+    
+    const filterSearchInput = document.getElementById("filter-search-input") as HTMLInputElement;
+    if (filterSearchInput) filterSearchInput.value = "";
+  }
+  
   // Body classes for view-specific layout overrides
   document.body.classList.toggle("dashboard-active", val === "dashboard");
   document.body.classList.toggle("tag-cloud-active", val === "tag-cloud");

@@ -1,6 +1,6 @@
 /**
  * AnchorMarks - Commands Module
- * Handles command palette functionality
+ * Handles omnibar/search functionality
  */
 
 import * as state from "@features/state.ts";
@@ -38,8 +38,8 @@ function getAllBookmarks(): Bookmark[] {
   return allBookmarksCache.length > 0 ? allBookmarksCache : state.bookmarks;
 }
 
-// Get command palette commands
-export function getCommandPaletteCommands(filterText: string = ""): Command[] {
+// Get omnibar/search commands
+export function getOmnibarCommands(filterText: string = ""): Command[] {
   const term = filterText.toLowerCase().trim();
 
   // Check for special prefixes
@@ -376,6 +376,6 @@ export function getCommandPaletteCommands(filterText: string = ""): Command[] {
 
 
 export default {
-  getCommandPaletteCommands,
+  getOmnibarCommands,
   refreshOmnibarBookmarks,
 };
