@@ -60,8 +60,10 @@ async function fetchUrlMetadata(url, redirectCount = 0) {
       response.setEncoding("utf8");
       response.on("data", (chunk) => {
         html += chunk;
-        if (html.length > 500000) {
+        if (html.length > 2000000) {
           response.destroy();
+          reject(new Error("HTML content too large"));
+          return;
         }
       });
 
