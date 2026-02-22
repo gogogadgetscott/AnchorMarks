@@ -7,7 +7,9 @@ exports.up = function (db) {
   // 1. Ensure bookmarks has tags column (denormalized for FTS external content)
   try {
     db.prepare("ALTER TABLE bookmarks ADD COLUMN tags TEXT DEFAULT ''").run();
-  } catch (e) { /* column may already exist */ }
+  } catch (_e) {
+    /* column may already exist */
+  }
 
   // 2. Populate tags from bookmark_tags for existing rows
   db.exec(`
@@ -22,7 +24,7 @@ exports.up = function (db) {
   // 3. Recreate FTS with external content (content='bookmarks')
   try {
     db.exec("DROP TABLE IF EXISTS bookmarks_fts");
-  } catch (e) { }
+  } catch (e) {}
 
   db.exec(`
     CREATE VIRTUAL TABLE bookmarks_fts USING fts5(

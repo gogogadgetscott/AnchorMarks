@@ -90,7 +90,6 @@ export function renderFolders(): void {
                  role="treeitem"
                  tabindex="0"
                  aria-label="${escapeHtml(f.name)}"
-                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}"
             >
                 <span class="folder-color" style="background: ${f.color || "var(--primary-500)"}"></span>
                 <span class="folder-name">${escapeHtml(f.name)}</span>

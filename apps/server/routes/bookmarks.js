@@ -245,44 +245,45 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     (req, res) => {
-    try {
-      const fields = req.body;
-      bookmarkModel.updateBookmark(db, req.user.id, req.params.id, fields);
+      try {
+        const fields = req.body;
+        bookmarkModel.updateBookmark(db, req.user.id, req.params.id, fields);
 
-      if (fields.tags !== undefined) {
-        if (fields.tags && fields.tags.trim && fields.tags.trim()) {
-          const tagResult = tagHelpers.ensureTagsExist(
-            db,
-            req.user.id,
-            fields.tags,
-            { returnMap: true },
-          );
-          const overrides =
-            require("../helpers/tags").normalizeTagColorOverrides(
-              fields.tag_colors || fields.tagColorOverrides,
-              tagResult.tagMap,
+        if (fields.tags !== undefined) {
+          if (fields.tags && fields.tags.trim && fields.tags.trim()) {
+            const tagResult = tagHelpers.ensureTagsExist(
+              db,
+              req.user.id,
+              fields.tags,
+              { returnMap: true },
             );
-          tagHelpers.updateBookmarkTags(db, req.params.id, tagResult.tagIds, {
-            colorOverridesByTagId: overrides,
-          });
-        } else {
-          tagHelpers.updateBookmarkTags(db, req.params.id, []);
+            const overrides =
+              require("../helpers/tags").normalizeTagColorOverrides(
+                fields.tag_colors || fields.tagColorOverrides,
+                tagResult.tagMap,
+              );
+            tagHelpers.updateBookmarkTags(db, req.params.id, tagResult.tagIds, {
+              colorOverridesByTagId: overrides,
+            });
+          } else {
+            tagHelpers.updateBookmarkTags(db, req.params.id, []);
+          }
         }
-      }
 
-      const bookmark = bookmarkModel.getBookmarkById(
-        db,
-        req.user.id,
-        req.params.id,
-      );
-      bookmark.tags_detailed = parseTagsDetailed(bookmark.tags_detailed);
-      broadcast(req.user.id, { type: "bookmarks:changed" });
-      res.json(bookmark);
-    } catch (err) {
-      console.error("Error updating bookmark:", err);
-      res.status(500).json({ error: "Failed to update bookmark" });
-    }
-  });
+        const bookmark = bookmarkModel.getBookmarkById(
+          db,
+          req.user.id,
+          req.params.id,
+        );
+        bookmark.tags_detailed = parseTagsDetailed(bookmark.tags_detailed);
+        broadcast(req.user.id, { type: "bookmarks:changed" });
+        res.json(bookmark);
+      } catch (err) {
+        console.error("Error updating bookmark:", err);
+        res.status(500).json({ error: "Failed to update bookmark" });
+      }
+    },
+  );
 
   /**
    * @swagger
@@ -346,15 +347,16 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     (req, res) => {
-    try {
-      bookmarkModel.deleteBookmark(db, req.user.id, req.params.id);
-      broadcast(req.user.id, { type: "bookmarks:changed" });
-      res.json({ success: true });
-    } catch (err) {
-      console.error("Error deleting bookmark:", err);
-      res.status(500).json({ error: "Failed to delete bookmark" });
-    }
-  });
+      try {
+        bookmarkModel.deleteBookmark(db, req.user.id, req.params.id);
+        broadcast(req.user.id, { type: "bookmarks:changed" });
+        res.json({ success: true });
+      } catch (err) {
+        console.error("Error deleting bookmark:", err);
+        res.status(500).json({ error: "Failed to delete bookmark" });
+      }
+    },
+  );
 
   // Bulk Archive/Unarchive (MUST come before /:id/archive routes!)
   app.post(

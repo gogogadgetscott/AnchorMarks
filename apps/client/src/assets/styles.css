@@ -166,9 +166,11 @@
 [data-theme="midnight"] .bookmark-card {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  background-color: color-mix(in srgb,
-      var(--card-bg) 85%,
-      transparent) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--card-bg) 85%,
+    transparent
+  ) !important;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -240,10 +242,12 @@ textarea {
 .bg-gradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg,
-      var(--primary-600) 0%,
-      #8b5cf6 50%,
-      #ec4899 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-600) 0%,
+    #8b5cf6 50%,
+    #ec4899 100%
+  );
   opacity: 0.1;
 }
 
@@ -2639,7 +2643,6 @@ body.tag-cloud-active .content-body {
 
 /* Ensure actions don't overlap title on mobile/touch */
 @media (hover: none) {
-
   .bookmark-actions,
   .compact-actions {
     opacity: 1;
@@ -2686,12 +2689,15 @@ body.tag-cloud-active .content-body {
   padding: 0.2rem 0.6rem;
   font-size: 0.75rem;
   font-weight: 500;
-  background: color-mix(in srgb,
-      var(--tag-color, var(--primary-500)) 20%,
-      transparent);
+  background: color-mix(
+    in srgb,
+    var(--tag-color, var(--primary-500)) 20%,
+    transparent
+  );
   color: var(--tag-color, var(--primary-600));
   border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
   transition: all var(--transition-fast);
   cursor: pointer;
   white-space: nowrap;
@@ -2700,12 +2706,16 @@ body.tag-cloud-active .content-body {
 }
 
 .tag:hover {
-  background: color-mix(in srgb,
-      var(--tag-color, var(--primary-500)) 25%,
-      transparent);
-  border-color: color-mix(in srgb,
-      var(--tag-color, var(--primary-500)) 35%,
-      transparent);
+  background: color-mix(
+    in srgb,
+    var(--tag-color, var(--primary-500)) 25%,
+    transparent
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--tag-color, var(--primary-500)) 35%,
+    transparent
+  );
 }
 
 [data-theme="dark"] .tag {
@@ -3203,7 +3213,6 @@ body.tag-cloud-active .content-body {
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -3548,41 +3557,57 @@ body.tag-cloud-active .content-body {
 
 /* Bookmark card with custom color */
 .bookmark-card.has-custom-color {
-  background: color-mix(in srgb,
-      var(--bookmark-color) 20%,
-      var(--bg-secondary)) !important;
-  border-color: color-mix(in srgb,
-      var(--bookmark-color) 40%,
-      var(--border-color)) !important;
+  background: color-mix(
+    in srgb,
+    var(--bookmark-color) 20%,
+    var(--bg-secondary)
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--bookmark-color) 40%,
+    var(--border-color)
+  ) !important;
   border-left: 8px solid var(--bookmark-color) !important;
 }
 
 .bookmark-card.has-custom-color:hover {
-  background: color-mix(in srgb,
-      var(--bookmark-color) 28%,
-      var(--bg-secondary)) !important;
-  border-color: color-mix(in srgb,
-      var(--bookmark-color) 50%,
-      var(--border-color)) !important;
+  background: color-mix(
+    in srgb,
+    var(--bookmark-color) 28%,
+    var(--bg-secondary)
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--bookmark-color) 50%,
+    var(--border-color)
+  ) !important;
 }
 
 [data-theme="dark"] .bookmark-card.has-custom-color {
-  background: color-mix(in srgb,
-      var(--bookmark-color) 18%,
-      var(--bg-secondary)) !important;
-  border-color: color-mix(in srgb,
-      var(--bookmark-color) 35%,
-      var(--border-color)) !important;
+  background: color-mix(
+    in srgb,
+    var(--bookmark-color) 18%,
+    var(--bg-secondary)
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--bookmark-color) 35%,
+    var(--border-color)
+  ) !important;
   border-left: 8px solid color-mix(in srgb, var(--bookmark-color) 80%, white) !important;
 }
 
 [data-theme="dark"] .bookmark-card.has-custom-color:hover {
-  background: color-mix(in srgb,
-      var(--bookmark-color) 25%,
-      var(--bg-secondary)) !important;
-  border-color: color-mix(in srgb,
-      var(--bookmark-color) 45%,
-      var(--border-color)) !important;
+  background: color-mix(
+    in srgb,
+    var(--bookmark-color) 25%,
+    var(--bg-secondary)
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--bookmark-color) 45%,
+    var(--border-color)
+  ) !important;
 }
 
 /* Tag modal needs higher z-index since it opens from within settings modal */
@@ -3623,11 +3648,14 @@ body.tag-cloud-active .content-body {
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
   font-weight: 500;
-  background: color-mix(in srgb,
-      var(--tag-color, var(--primary-500)) 15%,
-      transparent);
+  background: color-mix(
+    in srgb,
+    var(--tag-color, var(--primary-500)) 15%,
+    transparent
+  );
   color: var(--tag-color, var(--primary-700));
-  border: 1px solid color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
   border-radius: var(--radius-full);
   transition: all 0.2s;
 }
@@ -3921,12 +3949,12 @@ body.tag-cloud-active .content-body {
   box-shadow: var(--shadow-sm);
 }
 
-.toggle input:checked+.toggle-slider {
+.toggle input:checked + .toggle-slider {
   background: var(--primary-500);
   border-color: var(--primary-500);
 }
 
-.toggle input:checked+.toggle-slider::before {
+.toggle input:checked + .toggle-slider::before {
   transform: translateX(20px);
 }
 
@@ -3995,7 +4023,7 @@ body.tag-cloud-active .content-body {
   margin-bottom: 0.5rem;
 }
 
-.api-section>p {
+.api-section > p {
   font-size: 0.875rem;
   color: var(--text-secondary);
   margin-bottom: 1rem;
@@ -4322,7 +4350,6 @@ body.tag-cloud-active .content-body {
 
 /* Mobile/Tablet Responsive - Sidebar Overlay Mode */
 @media (max-width: 1024px) {
-
   /* Ensure the main app uses full viewport width on mobile */
   .main-app,
   .main-content,
@@ -4598,7 +4625,7 @@ body.dragging-widget .widget-sidebar-overlay {
   margin-bottom: 0.5rem;
 }
 
-.sync-info>p {
+.sync-info > p {
   color: var(--text-secondary);
   margin-bottom: 1.5rem;
 }
@@ -4620,7 +4647,7 @@ body.dragging-widget .widget-sidebar-overlay {
   margin-bottom: 0.5rem;
 }
 
-.import-section>p {
+.import-section > p {
   font-size: 0.875rem;
   color: var(--text-secondary);
   margin-bottom: 1rem;
@@ -5787,9 +5814,11 @@ body.dragging-widget .widget-sidebar-overlay {
   width: 16px;
   height: 16px;
   cursor: nwse-resize;
-  background: linear-gradient(135deg,
-      transparent 50%,
-      var(--text-tertiary) 50%);
+  background: linear-gradient(
+    135deg,
+    transparent 50%,
+    var(--text-tertiary) 50%
+  );
   opacity: 0.3;
   transition: opacity var(--transition-fast);
 }
@@ -7659,10 +7688,12 @@ body.tag-cloud-active .content-body {
   flex-direction: column;
   padding: 0.75rem;
   /* reduced padding to fit more tags */
-  background: linear-gradient(135deg,
-      var(--bg-primary) 0%,
-      var(--bg-secondary) 50%,
-      var(--bg-primary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--bg-primary) 0%,
+    var(--bg-secondary) 50%,
+    var(--bg-primary) 100%
+  );
   border-radius: var(--radius-xl);
   margin: 0.25rem;
   /* smaller margins */
@@ -7682,9 +7713,11 @@ body.tag-cloud-active .content-body {
   right: 0;
   height: 120px;
   /* reduced overlay height */
-  background: linear-gradient(180deg,
-      rgba(99, 102, 241, 0.03) 0%,
-      transparent 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(99, 102, 241, 0.03) 0%,
+    transparent 100%
+  );
   pointer-events: none;
 }
 
@@ -7818,10 +7851,13 @@ body.tag-cloud-active .content-body {
   font-weight: 600;
   line-height: 1.2;
   color: var(--tag-text, #ffffff);
-  background: linear-gradient(135deg,
-      color-mix(in srgb, var(--tag-color, var(--primary-500)) 85%, white),
-      color-mix(in srgb, var(--tag-color, var(--primary-500)) 65%, black));
-  border: 1px solid color-mix(in srgb, var(--tag-color, var(--primary-500)) 55%, transparent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--tag-color, var(--primary-500)) 85%, white),
+    color-mix(in srgb, var(--tag-color, var(--primary-500)) 65%, black)
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--tag-color, var(--primary-500)) 55%, transparent);
   border-radius: var(--radius-full);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -7832,7 +7868,8 @@ body.tag-cloud-active .content-body {
   text-shadow: none;
   white-space: nowrap;
   box-shadow:
-    0 4px 10px color-mix(in srgb, var(--tag-color, var(--primary-500)) 28%, transparent),
+    0 4px 10px
+      color-mix(in srgb, var(--tag-color, var(--primary-500)) 28%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
   max-width: 90%;
   overflow: hidden;
@@ -7854,14 +7891,19 @@ body.tag-cloud-active .content-body {
 
 .tag-cloud-tag:hover {
   transform: var(--tag-rotation, rotate(0deg)) scale(1.1) translateY(-2px);
-  background: linear-gradient(135deg,
-      color-mix(in srgb, var(--tag-color, var(--primary-500)) 92%, white),
-      color-mix(in srgb, var(--tag-color, var(--primary-500)) 75%, black));
-  border-color: color-mix(in srgb,
-      var(--tag-color, var(--primary-500)) 70%,
-      transparent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--tag-color, var(--primary-500)) 92%, white),
+    color-mix(in srgb, var(--tag-color, var(--primary-500)) 75%, black)
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--tag-color, var(--primary-500)) 70%,
+    transparent
+  );
   box-shadow:
-    0 10px 28px color-mix(in srgb, var(--tag-color, var(--primary-500)) 40%, transparent),
+    0 10px 28px
+      color-mix(in srgb, var(--tag-color, var(--primary-500)) 40%, transparent),
     0 2px 8px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   z-index: 10;
@@ -7900,9 +7942,11 @@ body.tag-cloud-active .content-body {
   right: 0;
   bottom: 0;
   z-index: 5;
-  background: linear-gradient(to bottom,
-      rgba(0, 0, 0, 0) 0%,
-      rgba(3, 37, 58, 0.6) 100%);
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(3, 37, 58, 0.6) 100%
+  );
   backdrop-filter: blur(6px);
   color: var(--text-primary);
   flex-shrink: 0;
@@ -7932,13 +7976,15 @@ body.tag-cloud-active .content-body {
 .legend-gradient {
   width: 100px;
   height: 4px;
-  background: linear-gradient(90deg,
-      #6366f1 0%,
-      #06b6d4 25%,
-      #22c55e 45%,
-      #eab308 65%,
-      #f97316 85%,
-      #ec4899 100%);
+  background: linear-gradient(
+    90deg,
+    #6366f1 0%,
+    #06b6d4 25%,
+    #22c55e 45%,
+    #eab308 65%,
+    #f97316 85%,
+    #ec4899 100%
+  );
   border-radius: var(--radius-full);
 }
 
@@ -8123,7 +8169,6 @@ body.fullscreen-mode .dashboard-freeform-container {
 }
 
 @keyframes pulse-badge {
-
   0%,
   100% {
     opacity: 1;
@@ -8311,11 +8356,13 @@ body.fullscreen-mode #dashboard-fullscreen-btn .fullscreen-exit-icon {
 
 .skeleton {
   background: var(--bg-tertiary);
-  background-image: linear-gradient(to right,
-      var(--bg-tertiary) 0%,
-      var(--bg-hover) 20%,
-      var(--bg-tertiary) 40%,
-      var(--bg-tertiary) 100%);
+  background-image: linear-gradient(
+    to right,
+    var(--bg-tertiary) 0%,
+    var(--bg-hover) 20%,
+    var(--bg-tertiary) 40%,
+    var(--bg-tertiary) 100%
+  );
   background-repeat: no-repeat;
   background-size: 800px 104px;
   display: inline-block;

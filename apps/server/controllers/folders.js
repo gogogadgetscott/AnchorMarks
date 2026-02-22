@@ -60,36 +60,37 @@ function setupFoldersRoutes(app, db, helpers = {}) {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     (req, res) => {
-    const { name, parent_id, color, icon } = req.body;
-    if (!name || !name.trim())
-      return res.status(400).json({ error: "Folder name is required" });
-    try {
-      const id = uuidv4();
-      const maxPos = db
-        .prepare(
-          "SELECT MAX(position) as max FROM folders WHERE user_id = ? AND (parent_id = ? OR (? IS NULL AND parent_id IS NULL))",
-        )
-        .get(req.user.id, parent_id || null, parent_id || null);
-      const position = (maxPos.max || 0) + 1;
+      const { name, parent_id, color, icon } = req.body;
+      if (!name || !name.trim())
+        return res.status(400).json({ error: "Folder name is required" });
+      try {
+        const id = uuidv4();
+        const maxPos = db
+          .prepare(
+            "SELECT MAX(position) as max FROM folders WHERE user_id = ? AND (parent_id = ? OR (? IS NULL AND parent_id IS NULL))",
+          )
+          .get(req.user.id, parent_id || null, parent_id || null);
+        const position = (maxPos.max || 0) + 1;
 
-      folderModel.createFolder(
-        db,
-        id,
-        req.user.id,
-        name.trim(),
-        color || "#6366f1",
-        icon || "folder",
-        position,
-        parent_id || null, // Added parent_id
-      );
-      const folder = folderModel.getFolderById(db, id, req.user.id);
-      broadcast(req.user.id, { type: "folders:changed" });
-      res.json(folder);
-    } catch (err) {
-      console.error("Error creating folder:", err);
-      res.status(500).json({ error: "Failed to create folder" });
-    }
-  });
+        folderModel.createFolder(
+          db,
+          id,
+          req.user.id,
+          name.trim(),
+          color || "#6366f1",
+          icon || "folder",
+          position,
+          parent_id || null, // Added parent_id
+        );
+        const folder = folderModel.getFolderById(db, id, req.user.id);
+        broadcast(req.user.id, { type: "folders:changed" });
+        res.json(folder);
+      } catch (err) {
+        console.error("Error creating folder:", err);
+        res.status(500).json({ error: "Failed to create folder" });
+      }
+    },
+  );
 
   /**
    * @swagger
@@ -131,24 +132,29 @@ function setupFoldersRoutes(app, db, helpers = {}) {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     (req, res) => {
-    const { name, parent_id, color, icon, position } = req.body;
-    try {
-      folderModel.updateFolder(db, req.params.id, req.user.id, {
-        name,
-        parent_id,
-        color,
-        icon,
-        position,
-      });
-      const folder = folderModel.getFolderById(db, req.params.id, req.user.id);
-      if (!folder) return res.status(404).json({ error: "Folder not found" });
-      broadcast(req.user.id, { type: "folders:changed" });
-      res.json(folder);
-    } catch (err) {
-      console.error("Error updating folder:", err);
-      res.status(500).json({ error: "Failed to update folder" });
-    }
-  });
+      const { name, parent_id, color, icon, position } = req.body;
+      try {
+        folderModel.updateFolder(db, req.params.id, req.user.id, {
+          name,
+          parent_id,
+          color,
+          icon,
+          position,
+        });
+        const folder = folderModel.getFolderById(
+          db,
+          req.params.id,
+          req.user.id,
+        );
+        if (!folder) return res.status(404).json({ error: "Folder not found" });
+        broadcast(req.user.id, { type: "folders:changed" });
+        res.json(folder);
+      } catch (err) {
+        console.error("Error updating folder:", err);
+        res.status(500).json({ error: "Failed to update folder" });
+      }
+    },
+  );
 
   /**
    * @swagger
@@ -173,15 +179,16 @@ function setupFoldersRoutes(app, db, helpers = {}) {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     (req, res) => {
-    try {
-      folderModel.deleteFolder(db, req.params.id, req.user.id);
-      broadcast(req.user.id, { type: "folders:changed" });
-      res.json({ success: true });
-    } catch (err) {
-      console.error("Error deleting folder:", err);
-      res.status(500).json({ error: "Failed to delete folder" });
-    }
-  });
+      try {
+        folderModel.deleteFolder(db, req.params.id, req.user.id);
+        broadcast(req.user.id, { type: "folders:changed" });
+        res.json({ success: true });
+      } catch (err) {
+        console.error("Error deleting folder:", err);
+        res.status(500).json({ error: "Failed to delete folder" });
+      }
+    },
+  );
 }
 
 module.exports = { setupFoldersRoutes };

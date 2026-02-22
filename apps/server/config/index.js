@@ -47,7 +47,10 @@ function resolveCorsOrigin() {
   if (origin === "*") {
     throw new Error("CORS_ORIGIN cannot be * in production");
   }
-  const origins = origin.split(",").map((o) => o.trim()).filter(Boolean);
+  const origins = origin
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
   if (origins.length === 0) {
     throw new Error("CORS_ORIGIN must contain at least one valid origin");
   }
@@ -55,7 +58,8 @@ function resolveCorsOrigin() {
 }
 
 const crypto = require("crypto");
-const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
+const JWT_SECRET =
+  process.env.JWT_SECRET || crypto.randomBytes(64).toString("hex");
 const DB_PATH =
   process.env.DB_PATH || path.join(__dirname, "../../database/anchormarks.db");
 const ENABLE_BACKGROUND_JOBS = NODE_ENV !== "test";

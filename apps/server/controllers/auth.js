@@ -62,12 +62,12 @@ function setupAuthRoutes(
 ) {
   // Helper to safely log security events (no-op if audit logger not provided)
   const audit = securityAudit || {
-    register: () => { },
-    loginSuccess: () => { },
-    loginFailure: () => { },
-    logout: () => { },
-    passwordChange: () => { },
-    apiKeyRegenerate: () => { },
+    register: () => {},
+    loginSuccess: () => {},
+    loginFailure: () => {},
+    logout: () => {},
+    passwordChange: () => {},
+    apiKeyRegenerate: () => {},
   };
 
   /**

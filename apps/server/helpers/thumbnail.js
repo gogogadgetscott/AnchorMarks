@@ -159,7 +159,7 @@ async function captureScreenshot(url, bookmarkId) {
     if (fs.existsSync(thumbnailPath)) {
       try {
         fs.unlinkSync(thumbnailPath);
-      } catch { }
+      } catch {}
     }
 
     return { success: false, error: "Failed to capture screenshot" };
@@ -167,7 +167,7 @@ async function captureScreenshot(url, bookmarkId) {
     if (page) {
       try {
         await page.close();
-      } catch { }
+      } catch {}
     }
   }
 }
@@ -179,7 +179,7 @@ async function closeBrowser() {
   if (browser) {
     try {
       await browser.close();
-    } catch { }
+    } catch {}
     browser = null;
   }
 }

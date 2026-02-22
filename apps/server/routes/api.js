@@ -144,7 +144,11 @@ function setupApiRoutes(app, db, helpers) {
   const setupMaintenanceRoutes = require("./maintenance");
   app.use(
     "/api/maintenance",
-    setupMaintenanceRoutes(db, authenticateTokenMiddleware, validateCsrfTokenMiddleware),
+    setupMaintenanceRoutes(
+      db,
+      authenticateTokenMiddleware,
+      validateCsrfTokenMiddleware,
+    ),
   );
 
   // Import/Export Routes
@@ -329,7 +333,7 @@ function setupApiRoutes(app, db, helpers) {
 
           // Fetch favicon in background
           if (fetchFaviconWrapper) {
-            fetchFaviconWrapper(bm.url, id).catch(() => { });
+            fetchFaviconWrapper(bm.url, id).catch(() => {});
           }
           bookmarksCreated++;
         }

@@ -4,7 +4,11 @@ const https = require("https");
 const http = require("http");
 const { URL } = require("url");
 
-module.exports = function (db, authenticateToken, validateCsrfToken = (_, __, next) => next()) {
+module.exports = function (
+  db,
+  authenticateToken,
+  validateCsrfToken = (_, __, next) => next(),
+) {
   // Check a single URL status
   /**
    * @swagger
@@ -28,49 +32,54 @@ module.exports = function (db, authenticateToken, validateCsrfToken = (_, __, ne
    *       200:
    *         description: Link status
    */
-  router.post("/check-link", authenticateToken, validateCsrfToken, async (req, res) => {
-    const { url } = req.body;
-    if (!url) return res.status(400).json({ error: "URL required" });
+  router.post(
+    "/check-link",
+    authenticateToken,
+    validateCsrfToken,
+    async (req, res) => {
+      const { url } = req.body;
+      if (!url) return res.status(400).json({ error: "URL required" });
 
-    let responded = false;
+      let responded = false;
 
-    try {
-      const parsedUrl = new URL(url);
-      const protocol = parsedUrl.protocol === "https:" ? https : http;
+      try {
+        const parsedUrl = new URL(url);
+        const protocol = parsedUrl.protocol === "https:" ? https : http;
 
-      const reqUrl = protocol.request(
-        url,
-        { method: "HEAD", timeout: 5000 },
-        (response) => {
+        const reqUrl = protocol.request(
+          url,
+          { method: "HEAD", timeout: 5000 },
+          (response) => {
+            if (responded) return;
+            responded = true;
+            res.json({
+              status: response.statusCode,
+              ok: response.statusCode >= 200 && response.statusCode < 400,
+            });
+          },
+        );
+
+        reqUrl.on("error", () => {
           if (responded) return;
           responded = true;
-          res.json({
-            status: response.statusCode,
-            ok: response.statusCode >= 200 && response.statusCode < 400,
-          });
-        },
-      );
+          res.json({ status: 0, ok: false, error: "Connection failed" });
+        });
 
-      reqUrl.on("error", () => {
+        reqUrl.on("timeout", () => {
+          if (responded) return;
+          responded = true;
+          reqUrl.destroy();
+          res.json({ status: 408, ok: false, error: "Timeout" });
+        });
+
+        reqUrl.end();
+      } catch {
         if (responded) return;
         responded = true;
-        res.json({ status: 0, ok: false, error: "Connection failed" });
-      });
-
-      reqUrl.on("timeout", () => {
-        if (responded) return;
-        responded = true;
-        reqUrl.destroy();
-        res.json({ status: 408, ok: false, error: "Timeout" });
-      });
-
-      reqUrl.end();
-    } catch {
-      if (responded) return;
-      responded = true;
-      res.json({ status: 0, ok: false, error: "Invalid URL" });
-    }
-  });
+        res.json({ status: 0, ok: false, error: "Invalid URL" });
+      }
+    },
+  );
 
   // Find duplicates
   /**

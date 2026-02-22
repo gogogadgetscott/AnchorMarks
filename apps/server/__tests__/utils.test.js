@@ -62,7 +62,7 @@ describe("server/utils.js", () => {
   describe("fetchFavicon", () => {
     it("returns null for non-http(s) bookmark URL", async () => {
       const { fetchFavicon } = require("../helpers/utils");
-      const db = { prepare: () => ({ run: () => { } }) };
+      const db = { prepare: () => ({ run: () => {} }) };
       await expect(
         fetchFavicon("ftp://example.com", "id", db, "/tmp", "test"),
       ).resolves.toBeNull();
@@ -70,7 +70,7 @@ describe("server/utils.js", () => {
 
     it("returns null for private targets in production (SSRF guard)", async () => {
       const { fetchFavicon } = require("../helpers/utils");
-      const db = { prepare: () => ({ run: () => { } }) };
+      const db = { prepare: () => ({ run: () => {} }) };
       await expect(
         fetchFavicon("http://127.0.0.1", "id", db, "/tmp", "production"),
       ).resolves.toBeNull();
@@ -112,7 +112,7 @@ describe("server/utils.js", () => {
 
     it("returns null for invalid URL input", async () => {
       const { fetchFavicon } = require("../helpers/utils");
-      const db = { prepare: () => ({ run: () => { } }) };
+      const db = { prepare: () => ({ run: () => {} }) };
       await expect(
         fetchFavicon("not-a-url", "id", db, "/tmp", "development"),
       ).resolves.toBeNull();
@@ -227,7 +227,9 @@ describe("server/utils.js", () => {
       });
 
       const dns = require("dns");
-      vi.spyOn(dns.promises, "lookup").mockResolvedValue([{ address: "93.184.216.34" }]);
+      vi.spyOn(dns.promises, "lookup").mockResolvedValue([
+        { address: "93.184.216.34" },
+      ]);
 
       const httpsSpy = vi.spyOn(https, "get").mockImplementation(getMock);
       const httpSpy = vi.spyOn(http, "get").mockImplementation(getMock);
@@ -255,8 +257,8 @@ describe("server/utils.js", () => {
       );
 
       // Allow async isPrivateAddress checks to finish
-      await new Promise(resolve => process.nextTick(resolve));
-      await new Promise(resolve => process.nextTick(resolve));
+      await new Promise((resolve) => process.nextTick(resolve));
+      await new Promise((resolve) => process.nextTick(resolve));
 
       // Second request should reuse the in-flight fetch (no additional network call).
       expect(getMock).toHaveBeenCalledTimes(1);

@@ -12,6 +12,7 @@ import { showToast, openModal, updateActiveNav } from "@utils/ui-helpers.ts";
  */
 export function initInteractions(): void {
   initGlobalDelegation();
+  initImageLoadErrorDelegation();
   initFaviconErrorHandling();
   initAuthTabListeners();
   initImportExportListeners();
@@ -179,6 +180,26 @@ function initGlobalDelegation(): void {
     }
   });
 
+  // Global Keydown Delegation (bookmark cards, folder items)
+  document.body.addEventListener("keydown", (e: KeyboardEvent) => {
+    const target = e.target as HTMLElement;
+    if (e.key !== "Enter" && e.key !== " ") return;
+    if (target.closest("input, textarea, [contenteditable='true']")) return;
+    const card = target.closest(
+      ".bookmark-card[role='listitem']",
+    ) as HTMLElement;
+    const folderItem = target.closest(
+      ".folder-item[role='treeitem']",
+    ) as HTMLElement;
+    if (card) {
+      e.preventDefault();
+      card.querySelector<HTMLElement>("[data-action='open-bookmark']")?.click();
+    } else if (folderItem) {
+      e.preventDefault();
+      folderItem.click();
+    }
+  });
+
   // Global Click Delegation
   document.body.addEventListener("click", async (e: Event) => {
     const target = (e.target as HTMLElement).closest(
@@ -199,6 +220,9 @@ function initGlobalDelegation(): void {
         break;
       case "open-modal":
         if (modal) openModal(modal);
+        break;
+      case "close-blocked-modal":
+        document.getElementById("blocked-links-modal")?.classList.add("hidden");
         break;
       case "track-click":
         if (id) {
@@ -536,6 +560,46 @@ function handleUserDropdownClickOutside(e: Event): void {
   ) {
     closeUserDropdown();
   }
+}
+
+/**
+ * Document-level delegation for img load (add img-loaded) and error (hide fallback imgs).
+ * Replaces inline onload/onerror handlers for CSP compliance.
+ */
+function initImageLoadErrorDelegation(): void {
+  document.addEventListener(
+    "load",
+    (e) => {
+      const target = e.target as HTMLElement;
+      if (
+        target instanceof HTMLImageElement &&
+        target.classList.contains("img-loading")
+      ) {
+        target.classList.add("img-loaded");
+      }
+    },
+    true,
+  );
+
+  document.addEventListener(
+    "error",
+    (e) => {
+      const target = e.target as HTMLElement;
+      if (target instanceof HTMLImageElement) {
+        // bookmark-favicon-img has its own handler in initFaviconErrorHandling
+        if (target.classList.contains("bookmark-favicon-img")) return;
+        // Hide favicons that fail to load (omnibar, blocked-links modal, etc.)
+        if (
+          target.classList.contains("command-favicon") ||
+          target.closest(".blocked-link-item") ||
+          target.hasAttribute("data-fallback")
+        ) {
+          target.style.display = "none";
+        }
+      }
+    },
+    true,
+  );
 }
 
 /**

@@ -23,42 +23,45 @@ module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     (req, res) => {
-    try {
-      const { name, icon, color, filters } = req.body;
-      if (!name || !filters)
-        return res.status(400).json({ error: "Name and filters required" });
-      const collection = smartCollectionsModel.createCollection(
-        db,
-        req.user.id,
-        { name, icon, color, filters },
-      );
-      res.json({ ...collection, filters: JSON.parse(collection.filters) });
-    } catch (err) {
-      console.error("Error creating collection:", err);
-      res.status(500).json({ error: "Failed to create collection" });
-    }
-  });
+      try {
+        const { name, icon, color, filters } = req.body;
+        if (!name || !filters)
+          return res.status(400).json({ error: "Name and filters required" });
+        const collection = smartCollectionsModel.createCollection(
+          db,
+          req.user.id,
+          { name, icon, color, filters },
+        );
+        res.json({ ...collection, filters: JSON.parse(collection.filters) });
+      } catch (err) {
+        console.error("Error creating collection:", err);
+        res.status(500).json({ error: "Failed to create collection" });
+      }
+    },
+  );
 
   app.put(
     "/api/collections/:id",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     (req, res) => {
-    try {
-      const { name, icon, color, filters, position } = req.body;
-      const updated = smartCollectionsModel.updateCollection(
-        db,
-        req.params.id,
-        req.user.id,
-        { name, icon, color, filters, position },
-      );
-      if (!updated) return res.status(404).json({ error: "Collection not found" });
-      res.json({ ...updated, filters: JSON.parse(updated.filters) });
-    } catch (err) {
-      console.error("Error updating collection:", err);
-      res.status(500).json({ error: "Failed to update collection" });
-    }
-  });
+      try {
+        const { name, icon, color, filters, position } = req.body;
+        const updated = smartCollectionsModel.updateCollection(
+          db,
+          req.params.id,
+          req.user.id,
+          { name, icon, color, filters, position },
+        );
+        if (!updated)
+          return res.status(404).json({ error: "Collection not found" });
+        res.json({ ...updated, filters: JSON.parse(updated.filters) });
+      } catch (err) {
+        console.error("Error updating collection:", err);
+        res.status(500).json({ error: "Failed to update collection" });
+      }
+    },
+  );
 
   app.delete(
     "/api/collections/:id",

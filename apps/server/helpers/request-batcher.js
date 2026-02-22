@@ -76,7 +76,7 @@ class RequestBatcher {
             items.map((item) =>
               Promise.resolve(
                 item.handler(item.req, item.res, item.next),
-              ).catch((err) => {
+              ).catch((_err) => {
                 if (!item.res.headersSent) {
                   item.res.status(500).json({ error: "Request failed" });
                 }
@@ -84,7 +84,7 @@ class RequestBatcher {
             ),
           );
         }
-      } catch (error) {
+      } catch (_error) {
         items.forEach((item) => {
           if (!item.res.headersSent) {
             item.res.status(500).json({ error: "Request failed" });

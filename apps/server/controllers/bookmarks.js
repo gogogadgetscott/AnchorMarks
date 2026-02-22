@@ -338,73 +338,76 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     async (req, res) => {
-    let { title, url, description, folder_id, tags, color, og_image } =
-      req.body;
-    const id = uuidv4();
-    if (!url) return res.status(400).json({ error: "URL is required" });
-    try {
-      // Fetch metadata if title or description is missing, or if we want to ensure we have og_image
-      if (!title || !description || !og_image) {
-        try {
-          const metadata = await fetchUrlMetadata(url);
-          if (metadata) {
-            if (!title) title = metadata.title;
-            if (!description) description = metadata.description;
-            if (!og_image) og_image = metadata.og_image;
+      let { title, url, description, folder_id, tags, color, og_image } =
+        req.body;
+      const id = uuidv4();
+      if (!url) return res.status(400).json({ error: "URL is required" });
+      try {
+        // Fetch metadata if title or description is missing, or if we want to ensure we have og_image
+        if (!title || !description || !og_image) {
+          try {
+            const metadata = await fetchUrlMetadata(url);
+            if (metadata) {
+              if (!title) title = metadata.title;
+              if (!description) description = metadata.description;
+              if (!og_image) og_image = metadata.og_image;
+            }
+          } catch (metaErr) {
+            console.warn(
+              "Could not fetch metadata during bookmark creation:",
+              metaErr.message,
+            );
           }
-        } catch (metaErr) {
-          console.warn(
-            "Could not fetch metadata during bookmark creation:",
-            metaErr.message,
-          );
         }
-      }
 
-      const maxPos = db
-        .prepare("SELECT MAX(position) as max FROM bookmarks WHERE user_id = ?")
-        .get(req.user.id);
-      const position = (maxPos.max || 0) + 1;
-      const faviconUrl = null;
-      const contentType = detectContentType(url);
+        const maxPos = db
+          .prepare(
+            "SELECT MAX(position) as max FROM bookmarks WHERE user_id = ?",
+          )
+          .get(req.user.id);
+        const position = (maxPos.max || 0) + 1;
+        const faviconUrl = null;
+        const contentType = detectContentType(url);
 
-      bookmarkModel.createBookmark(db, {
-        id,
-        user_id: req.user.id,
-        folder_id,
-        title: title || url,
-        url,
-        description,
-        favicon: faviconUrl,
-        position,
-        content_type: contentType,
-        color: color || null,
-        og_image: og_image || null,
-      });
-
-      if (tags && tags.trim()) {
-        const tagResult = ensureTagsExist(db, req.user.id, tags, {
-          returnMap: true,
+        bookmarkModel.createBookmark(db, {
+          id,
+          user_id: req.user.id,
+          folder_id,
+          title: title || url,
+          url,
+          description,
+          favicon: faviconUrl,
+          position,
+          content_type: contentType,
+          color: color || null,
+          og_image: og_image || null,
         });
-        const overrides = normalizeTagColorOverrides(
-          req.body.tag_colors || req.body.tagColorOverrides,
-          tagResult.tagMap,
-        );
-        updateBookmarkTags(db, id, tagResult.tagIds, {
-          colorOverridesByTagId: overrides,
-        });
+
+        if (tags && tags.trim()) {
+          const tagResult = ensureTagsExist(db, req.user.id, tags, {
+            returnMap: true,
+          });
+          const overrides = normalizeTagColorOverrides(
+            req.body.tag_colors || req.body.tagColorOverrides,
+            tagResult.tagMap,
+          );
+          updateBookmarkTags(db, id, tagResult.tagIds, {
+            colorOverridesByTagId: overrides,
+          });
+        }
+
+        fetchFaviconWrapper(url, id).catch(console.error);
+
+        const bookmark = bookmarkModel.getBookmarkById(db, req.user.id, id);
+        bookmark.tags_detailed = parseTagsDetailed(bookmark.tags_detailed);
+        broadcast(req.user.id, { type: "bookmarks:changed" });
+        res.json(bookmark);
+      } catch (err) {
+        console.error("Error creating bookmark:", err);
+        res.status(500).json({ error: "Failed to create bookmark" });
       }
-
-      fetchFaviconWrapper(url, id).catch(console.error);
-
-      const bookmark = bookmarkModel.getBookmarkById(db, req.user.id, id);
-      bookmark.tags_detailed = parseTagsDetailed(bookmark.tags_detailed);
-      broadcast(req.user.id, { type: "bookmarks:changed" });
-      res.json(bookmark);
-    } catch (err) {
-      console.error("Error creating bookmark:", err);
-      res.status(500).json({ error: "Failed to create bookmark" });
-    }
-  });
+    },
+  );
 
   /**
    * @swagger

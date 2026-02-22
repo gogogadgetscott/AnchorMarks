@@ -18,22 +18,23 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     (req, res) => {
-    try {
-      const { name, config } = req.body;
-      if (!name || !config)
-        return res.status(400).json({ error: "Name and config required" });
-      const view = dashboardModel.createDashboardView(
-        db,
-        req.user.id,
-        name,
-        config,
-      );
-      res.json({ ...view, config: JSON.parse(view.config) });
-    } catch (err) {
-      console.error("Error creating dashboard view:", err);
-      res.status(500).json({ error: "Failed to create dashboard view" });
-    }
-  });
+      try {
+        const { name, config } = req.body;
+        if (!name || !config)
+          return res.status(400).json({ error: "Name and config required" });
+        const view = dashboardModel.createDashboardView(
+          db,
+          req.user.id,
+          name,
+          config,
+        );
+        res.json({ ...view, config: JSON.parse(view.config) });
+      } catch (err) {
+        console.error("Error creating dashboard view:", err);
+        res.status(500).json({ error: "Failed to create dashboard view" });
+      }
+    },
+  );
 
   app.put(
     "/api/dashboard/views/:id",
@@ -78,9 +79,12 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
     validateCsrfTokenMiddleware,
     (req, res) => {
       try {
-        const view = dashboardModel.getDashboardView(db, req.params.id, req.user.id);
-        if (!view)
-          return res.status(404).json({ error: "View not found" });
+        const view = dashboardModel.getDashboardView(
+          db,
+          req.params.id,
+          req.user.id,
+        );
+        if (!view) return res.status(404).json({ error: "View not found" });
         const config = JSON.parse(view.config);
         userSettingsModel.applyDashboardConfigToUser(db, req.user.id, config);
         res.json({ success: true });

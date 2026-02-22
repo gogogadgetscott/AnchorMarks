@@ -8,7 +8,14 @@ const CACHE_NAME = `${CACHE_VERSION}-cache`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Assets to cache on install
-const PRECACHE_ASSETS = ["/", "/index.html", "/offline.html", "/icon.png", "/favicon.ico"];
+const PRECACHE_ASSETS = [
+  "/",
+  "/index.html",
+  "/offline.html",
+  "/retry.js",
+  "/icon.png",
+  "/favicon.ico",
+];
 
 // Install event - cache static assets
 self.addEventListener("install", (event) => {

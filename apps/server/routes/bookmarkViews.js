@@ -17,22 +17,25 @@ module.exports = function setupBookmarkViewsRoutes(app, db, helpers = {}) {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     (req, res) => {
-    try {
-      const { name, config } = req.body;
-      if (!name || !config)
-        return res.status(400).json({ error: "Name and config are required" });
-      const view = bookmarkViewModel.createBookmarkView(
-        db,
-        req.user.id,
-        name,
-        config,
-      );
-      res.json(view);
-    } catch (err) {
-      console.error("Error creating bookmark view:", err);
-      res.status(500).json({ error: "Failed to create bookmark view" });
-    }
-  });
+      try {
+        const { name, config } = req.body;
+        if (!name || !config)
+          return res
+            .status(400)
+            .json({ error: "Name and config are required" });
+        const view = bookmarkViewModel.createBookmarkView(
+          db,
+          req.user.id,
+          name,
+          config,
+        );
+        res.json(view);
+      } catch (err) {
+        console.error("Error creating bookmark view:", err);
+        res.status(500).json({ error: "Failed to create bookmark view" });
+      }
+    },
+  );
 
   app.put(
     "/api/bookmark/views/:id",

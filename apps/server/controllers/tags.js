@@ -64,34 +64,35 @@ function setupTagsRoutes(app, db, helpers = {}) {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     (req, res) => {
-    const { name, color, icon } = req.body;
-    if (!name || !name.trim())
-      return res.status(400).json({ error: "Tag name is required" });
-    const id = uuidv4();
-    const maxPos = db
-      .prepare("SELECT MAX(position) as max FROM tags WHERE user_id = ?")
-      .get(req.user.id);
-    const position = (maxPos.max || 0) + 1;
-    try {
-      tagModel.createTag(db, {
-        id,
-        user_id: req.user.id,
-        name: name.trim(),
-        color: color || "#f59e0b",
-        icon: icon || "tag",
-        position,
-      });
-      const tag = db
-        .prepare("SELECT *, 0 as count FROM tags WHERE id = ?")
-        .get(id);
-      broadcast(req.user.id, { type: "tags:changed" });
-      res.json(tag);
-    } catch (err) {
-      if (err.message && err.message.includes("UNIQUE"))
-        return res.status(409).json({ error: "Tag already exists" });
-      res.status(500).json({ error: "Failed to create tag" });
-    }
-  });
+      const { name, color, icon } = req.body;
+      if (!name || !name.trim())
+        return res.status(400).json({ error: "Tag name is required" });
+      const id = uuidv4();
+      const maxPos = db
+        .prepare("SELECT MAX(position) as max FROM tags WHERE user_id = ?")
+        .get(req.user.id);
+      const position = (maxPos.max || 0) + 1;
+      try {
+        tagModel.createTag(db, {
+          id,
+          user_id: req.user.id,
+          name: name.trim(),
+          color: color || "#f59e0b",
+          icon: icon || "tag",
+          position,
+        });
+        const tag = db
+          .prepare("SELECT *, 0 as count FROM tags WHERE id = ?")
+          .get(id);
+        broadcast(req.user.id, { type: "tags:changed" });
+        res.json(tag);
+      } catch (err) {
+        if (err.message && err.message.includes("UNIQUE"))
+          return res.status(409).json({ error: "Tag already exists" });
+        res.status(500).json({ error: "Failed to create tag" });
+      }
+    },
+  );
 
   /**
    * @swagger
@@ -131,33 +132,34 @@ function setupTagsRoutes(app, db, helpers = {}) {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     (req, res) => {
-    const { name, color, icon, position } = req.body;
-    try {
-      tagModel.updateTag(db, req.params.id, req.user.id, {
-        name,
-        color,
-        icon,
-        position,
-      });
-      const tag = db
-        .prepare(
-          `
+      const { name, color, icon, position } = req.body;
+      try {
+        tagModel.updateTag(db, req.params.id, req.user.id, {
+          name,
+          color,
+          icon,
+          position,
+        });
+        const tag = db
+          .prepare(
+            `
         SELECT t.*, COUNT(bt.bookmark_id) as count
         FROM tags t
         LEFT JOIN bookmark_tags bt ON t.id = bt.tag_id
         WHERE t.id = ? AND t.user_id = ?
         GROUP BY t.id
       `,
-        )
-        .get(req.params.id, req.user.id);
-      if (!tag) return res.status(404).json({ error: "Tag not found" });
-      broadcast(req.user.id, { type: "tags:changed" });
-      res.json(tag);
-    } catch (err) {
-      console.error("Error updating tag:", err);
-      res.status(500).json({ error: "Failed to update tag" });
-    }
-  });
+          )
+          .get(req.params.id, req.user.id);
+        if (!tag) return res.status(404).json({ error: "Tag not found" });
+        broadcast(req.user.id, { type: "tags:changed" });
+        res.json(tag);
+      } catch (err) {
+        console.error("Error updating tag:", err);
+        res.status(500).json({ error: "Failed to update tag" });
+      }
+    },
+  );
 
   /**
    * @swagger
@@ -182,15 +184,16 @@ function setupTagsRoutes(app, db, helpers = {}) {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     (req, res) => {
-    try {
-      tagModel.deleteTag(db, req.params.id, req.user.id);
-      broadcast(req.user.id, { type: "tags:changed" });
-      res.json({ success: true });
-    } catch (err) {
-      console.error("Error deleting tag:", err);
-      res.status(500).json({ error: "Failed to delete tag" });
-    }
-  });
+      try {
+        tagModel.deleteTag(db, req.params.id, req.user.id);
+        broadcast(req.user.id, { type: "tags:changed" });
+        res.json({ success: true });
+      } catch (err) {
+        console.error("Error deleting tag:", err);
+        res.status(500).json({ error: "Failed to delete tag" });
+      }
+    },
+  );
 
   // --- Suggest, analytics, bulk, rename ---
 
@@ -260,7 +263,7 @@ function setupTagsRoutes(app, db, helpers = {}) {
             if (rowHost === hostname) {
               parseTags(row.tags).forEach((t) => bump(t, 3.5));
             }
-          } catch { }
+          } catch {}
         }
 
         const tfCounts = {};
@@ -367,27 +370,28 @@ function setupTagsRoutes(app, db, helpers = {}) {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     (req, res) => {
-    const { bookmark_ids, tags } = req.body;
-    if (!Array.isArray(bookmark_ids) || bookmark_ids.length === 0 || !tags) {
-      return res
-        .status(400)
-        .json({ error: "bookmark_ids and tags are required" });
-    }
+      const { bookmark_ids, tags } = req.body;
+      if (!Array.isArray(bookmark_ids) || bookmark_ids.length === 0 || !tags) {
+        return res
+          .status(400)
+          .json({ error: "bookmark_ids and tags are required" });
+      }
 
-    const normalizedTags = parseTags(tags);
-    const updated = [];
+      const normalizedTags = parseTags(tags);
+      const updated = [];
 
-    bookmark_ids.forEach((id) => {
-      const current = tagHelpers.getBookmarkTagsString(db, id);
-      const merged = mergeTags(current, normalizedTags);
-      const tagsString = stringifyTags(merged);
-      const tagIds = tagHelpers.ensureTagsExist(db, req.user.id, tagsString);
-      tagHelpers.updateBookmarkTags(db, id, tagIds);
-      updated.push(id);
-    });
+      bookmark_ids.forEach((id) => {
+        const current = tagHelpers.getBookmarkTagsString(db, id);
+        const merged = mergeTags(current, normalizedTags);
+        const tagsString = stringifyTags(merged);
+        const tagIds = tagHelpers.ensureTagsExist(db, req.user.id, tagsString);
+        tagHelpers.updateBookmarkTags(db, id, tagIds);
+        updated.push(id);
+      });
 
-    res.json({ updated });
-  });
+      res.json({ updated });
+    },
+  );
 
   /**
    * @swagger
@@ -420,39 +424,44 @@ function setupTagsRoutes(app, db, helpers = {}) {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     (req, res) => {
-    const { bookmark_ids, tags } = req.body;
-    if (!Array.isArray(bookmark_ids) || bookmark_ids.length === 0 || !tags) {
-      return res
-        .status(400)
-        .json({ error: "bookmark_ids and tags are required" });
-    }
-
-    const removeSet = new Set(parseTags(tags).map((t) => t.toLowerCase()));
-    const updated = [];
-
-    bookmark_ids.forEach((id) => {
-      const current = tagHelpers.getBookmarkTagsString(db, id);
-      if (!current) {
-        tagHelpers.updateBookmarkTags(db, id, []);
-        return;
-      }
-      const filtered = parseTags(current).filter(
-        (t) => !removeSet.has(t.toLowerCase()),
-      );
-      const tagsString = filtered.length ? stringifyTags(filtered) : null;
-
-      if (tagsString) {
-        const tagIds = tagHelpers.ensureTagsExist(db, req.user.id, tagsString);
-        tagHelpers.updateBookmarkTags(db, id, tagIds);
-      } else {
-        tagHelpers.updateBookmarkTags(db, id, []);
+      const { bookmark_ids, tags } = req.body;
+      if (!Array.isArray(bookmark_ids) || bookmark_ids.length === 0 || !tags) {
+        return res
+          .status(400)
+          .json({ error: "bookmark_ids and tags are required" });
       }
 
-      updated.push(id);
-    });
+      const removeSet = new Set(parseTags(tags).map((t) => t.toLowerCase()));
+      const updated = [];
 
-    res.json({ updated });
-  });
+      bookmark_ids.forEach((id) => {
+        const current = tagHelpers.getBookmarkTagsString(db, id);
+        if (!current) {
+          tagHelpers.updateBookmarkTags(db, id, []);
+          return;
+        }
+        const filtered = parseTags(current).filter(
+          (t) => !removeSet.has(t.toLowerCase()),
+        );
+        const tagsString = filtered.length ? stringifyTags(filtered) : null;
+
+        if (tagsString) {
+          const tagIds = tagHelpers.ensureTagsExist(
+            db,
+            req.user.id,
+            tagsString,
+          );
+          tagHelpers.updateBookmarkTags(db, id, tagIds);
+        } else {
+          tagHelpers.updateBookmarkTags(db, id, []);
+        }
+
+        updated.push(id);
+      });
+
+      res.json({ updated });
+    },
+  );
 
   /**
    * @swagger
@@ -485,19 +494,20 @@ function setupTagsRoutes(app, db, helpers = {}) {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     (req, res) => {
-    const { from, to } = req.body;
-    if (!from || !to)
-      return res.status(400).json({ error: "from and to are required" });
-    try {
-      const result = tagHelpers.renameOrMergeTag(db, req.user.id, from, to);
-      if (result.error === "not_found")
-        return res.status(404).json({ error: "Tag not found" });
-      res.json({ updated: result.updated });
-    } catch (err) {
-      console.error("Tag rename error:", err);
-      res.status(500).json({ error: "Failed to rename/merge tag" });
-    }
-  });
+      const { from, to } = req.body;
+      if (!from || !to)
+        return res.status(400).json({ error: "from and to are required" });
+      try {
+        const result = tagHelpers.renameOrMergeTag(db, req.user.id, from, to);
+        if (result.error === "not_found")
+          return res.status(404).json({ error: "Tag not found" });
+        res.json({ updated: result.updated });
+      } catch (err) {
+        console.error("Tag rename error:", err);
+        res.status(500).json({ error: "Failed to rename/merge tag" });
+      }
+    },
+  );
 }
 
 module.exports = { setupTagsRoutes };

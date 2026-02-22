@@ -2,11 +2,15 @@ const statsModel = require("../models/stats");
 const bookmarkModel = require("../models/bookmark");
 const { monitor } = require("../helpers/performance-monitor");
 
-function setupHealthRoutes(app, db, {
-  authenticateTokenMiddleware,
-  validateCsrfTokenMiddleware,
-  fetchFaviconWrapper,
-}) {
+function setupHealthRoutes(
+  app,
+  db,
+  {
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    fetchFaviconWrapper,
+  },
+) {
   // Find duplicate bookmarks (same URL)
   app.get("/api/health/duplicates", authenticateTokenMiddleware, (req, res) => {
     try {

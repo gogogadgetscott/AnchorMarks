@@ -95,6 +95,10 @@ const rateLimiter = require("./middleware/rateLimiter");
 const { performanceMiddleware } = require("./helpers/performance-monitor");
 
 // Middleware registration
+// CSP violation reporting: enable with CSP_DIAGNOSTIC=true to narrow down which elements trigger script-src-attr violations.
+// Reports are POSTed to /api/csp-report and logged (see route below).
+const CSP_DIAGNOSTIC = process.env.CSP_DIAGNOSTIC === "true";
+
 // Enhanced helmet configuration for security hardening
 // CSP is environment-aware: relaxed for development (Vite HMR), strict for production
 const cspDirectives = {
@@ -107,7 +111,13 @@ const cspDirectives = {
   objectSrc: ["'none'"],
   baseUri: ["'self'"],
   formAction: ["'self'"],
+  // Edge's lazy-load placeholder intervention can inject handlers. Our code uses addEventListener.
+  // When CSP_DIAGNOSTIC=true, use 'none' to trigger violations and report them for debugging.
+  scriptSrcAttr: CSP_DIAGNOSTIC ? ["'none'"] : ["'unsafe-inline'"],
 };
+if (CSP_DIAGNOSTIC) {
+  cspDirectives.reportUri = "/api/csp-report";
+}
 
 // Development: Allow unsafe-inline/unsafe-eval for Vite HMR
 if (config.NODE_ENV === "development") {
@@ -164,10 +174,26 @@ app.use(
 // Relax CSP for API Docs (Swagger UI requires inline scripts/styles for its interactive UI)
 const swaggerCspDirectives = {
   ...cspDirectives,
-  scriptSrc: [...(cspDirectives.scriptSrc || ["'self'"]), "'unsafe-inline'", "https://cdn.jsdelivr.net"],
-  styleSrc: [...(cspDirectives.styleSrc || ["'self'"]), "'unsafe-inline'", "https://fonts.googleapis.com"],
-  imgSrc: [...(cspDirectives.imgSrc || ["'self'"]), "data:", "https:", "https://validator.swagger.io"],
-  fontSrc: [...(cspDirectives.fontSrc || ["'self'"]), "https://fonts.gstatic.com"],
+  scriptSrc: [
+    ...(cspDirectives.scriptSrc || ["'self'"]),
+    "'unsafe-inline'",
+    "https://cdn.jsdelivr.net",
+  ],
+  styleSrc: [
+    ...(cspDirectives.styleSrc || ["'self'"]),
+    "'unsafe-inline'",
+    "https://fonts.googleapis.com",
+  ],
+  imgSrc: [
+    ...(cspDirectives.imgSrc || ["'self'"]),
+    "data:",
+    "https:",
+    "https://validator.swagger.io",
+  ],
+  fontSrc: [
+    ...(cspDirectives.fontSrc || ["'self'"]),
+    "https://fonts.gstatic.com",
+  ],
 };
 
 app.use(
@@ -203,9 +229,34 @@ app.use(
 );
 // Enable compression for all responses
 app.use(compression({ level: 6, threshold: 1024 }));
-app.use(express.json({ limit: "10mb" }));
+app.use(
+  express.json({
+    limit: "10mb",
+    type: ["application/json", "application/csp-report"],
+  }),
+);
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// CSP violation report endpoint (for CSP_DIAGNOSTIC mode).
+// Browsers POST with Content-Type: application/csp-report; body: { "csp-report": { ... } }.
+app.post("/api/csp-report", (req, res) => {
+  const report = req.body?.["csp-report"] || req.body;
+  if (report && CSP_DIAGNOSTIC) {
+    console.warn("[CSP VIOLATION]", {
+      directive: report["effective-directive"] || report["violated-directive"],
+      blocked: report["blocked-uri"],
+      document: report["document-uri"],
+      source: report["source-file"],
+      line: report["line-number"],
+      column: report["column-number"],
+      script:
+        report["script-sample"] || report["original-policy"]?.slice?.(0, 80),
+      raw: report,
+    });
+  }
+  res.status(204).end();
+});
 app.use(performanceMiddleware); // Track performance before rate limiting
 app.use(rateLimiter);
 
@@ -301,7 +352,7 @@ setupSmartOrganizationRoutes(app, db, {
 // In production: Express serves built Vite assets from dist/
 const staticDir =
   config.NODE_ENV === "production" &&
-    fs.existsSync(path.join(__dirname, "..", "client", "dist"))
+  fs.existsSync(path.join(__dirname, "..", "client", "dist"))
     ? path.join(__dirname, "..", "client", "dist")
     : path.join(__dirname, "..", "client");
 

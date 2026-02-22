@@ -2,8 +2,6 @@
  * Unit tests for routes/static.js (catch-all SPA fallback).
  * Mocks fs.existsSync so no real client files are required.
  */
-const path = require("path");
-
 const mockExistsSync = vi.fn();
 vi.mock("fs", () => ({
   existsSync: (...args) => mockExistsSync(...args),

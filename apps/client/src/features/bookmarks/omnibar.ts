@@ -418,7 +418,7 @@ function renderResultsList(commands: any[]): void {
     .map((cmd, idx) => {
       let iconHtml = "";
       if (cmd.category === "bookmark" && cmd.favicon) {
-        iconHtml = `<img class="command-favicon" src="${escapeHtml(cmd.favicon)}" alt="" onerror="this.style.display='none'" style="width: 16px; height: 16px; border-radius: 2px;" />`;
+        iconHtml = `<img class="command-favicon" src="${escapeHtml(cmd.favicon)}" alt="" style="width: 16px; height: 16px; border-radius: 2px;" />`;
       } else if (cmd.icon) {
         iconHtml = `<span class="command-icon">${cmd.icon}</span>`;
       }

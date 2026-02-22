@@ -169,9 +169,7 @@ function setupSmartOrganizationRoutes(
           created: true,
         });
       } catch (err) {
-        res
-          .status(500)
-          .json({ error: "Failed to create collection" });
+        res.status(500).json({ error: "Failed to create collection" });
       }
     },
   );
