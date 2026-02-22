@@ -255,7 +255,7 @@ setupSmartOrganizationRoutes(app, db, {
 // In production: Express serves built Vite assets from dist/
 const staticDir =
   config.NODE_ENV === "production" &&
-  fs.existsSync(path.join(__dirname, "..", "client", "dist"))
+    fs.existsSync(path.join(__dirname, "..", "client", "dist"))
     ? path.join(__dirname, "..", "client", "dist")
     : path.join(__dirname, "..", "client");
 
@@ -270,6 +270,7 @@ app.use(
       // Force image content types for favicon directory - no HTML/SVG execution
       res.setHeader("Content-Type", "image/png");
       res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("Cache-Control", "public, max-age=604800, immutable");
     },
   }),
 );
@@ -278,8 +279,9 @@ app.use(
   express.static(path.join(__dirname, "public", "thumbnails"), {
     setHeaders: (res, _filePath) => {
       // Force image content types for thumbnails directory
-      res.setHeader("Content-Type", "image/jpeg");
+      res.setHeader("Content-Type", "image/webp");
       res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("Cache-Control", "public, max-age=604800, immutable");
     },
   }),
 );
