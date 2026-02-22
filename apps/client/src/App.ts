@@ -180,6 +180,13 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
       break;
 
+    case "analytics":
+      headerConfig.title = "Analytics";
+      headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
+      headerConfig.showViewToggle = false;
+      headerConfig.showAddButton = false;
+      break;
+
     case "all":
     case "folder":
     default:

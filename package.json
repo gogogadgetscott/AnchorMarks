@@ -42,6 +42,9 @@
   "overrides": {
     "validator": ">=13.15.21",
     "minimatch": ">=10.2.1",
-    "glob": ">=11.0.0"
+    "glob": ">=11.0.0",
+    "swagger-jsdoc": {
+      "glob": "^11.0.0"
+    }
   }
 }

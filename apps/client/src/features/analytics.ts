@@ -62,6 +62,9 @@ export async function renderAnalytics(): Promise<void> {
 }
 
 function renderDashboard(container: HTMLElement, stats: AdvancedStats): void {
+  const topDomains = stats.top_domains ?? [];
+  const maxDomainCount = topDomains.length > 0 ? topDomains[0].count : 1;
+
   container.innerHTML = `
     <div class="analytics-dashboard">
       <div class="analytics-header">
@@ -75,19 +78,19 @@ function renderDashboard(container: HTMLElement, stats: AdvancedStats): void {
           <div class="metric-value">${stats.total_bookmarks}</div>
           <div class="metric-label">Total Bookmarks</div>
           ${renderSparkline(
-            stats.monthly_growth.map((m) => m.count),
+            stats.monthly_growth?.map((m) => m.count) ?? [],
             "#6366f1",
           )}
         </div>
         <div class="analytics-card metric-card">
           <div class="metric-value">${stats.favorites}</div>
           <div class="metric-label">Favorites</div>
-          <div class="metric-subtext">${((stats.favorites / stats.total_bookmarks) * 100).toFixed(1)}% of total</div>
+          <div class="metric-subtext">${stats.total_bookmarks > 0 ? ((stats.favorites / stats.total_bookmarks) * 100).toFixed(1) : 0}% of total</div>
         </div>
         <div class="analytics-card metric-card">
           <div class="metric-value">${stats.totalClicks}</div>
           <div class="metric-label">Total Clicks</div>
-          <div class="metric-subtext">Engagement Score: ${stats.totalClicks > 0 ? (stats.totalClicks / stats.total_bookmarks).toFixed(1) : 0}</div>
+          <div class="metric-subtext">Engagement Score: ${stats.total_bookmarks > 0 && stats.totalClicks > 0 ? (stats.totalClicks / stats.total_bookmarks).toFixed(1) : 0}</div>
         </div>
         <div class="analytics-card metric-card">
           <div class="metric-value ${stats.dead_links > 0 ? "text-danger" : ""}">${stats.dead_links}</div>
@@ -105,13 +108,13 @@ function renderDashboard(container: HTMLElement, stats: AdvancedStats): void {
         <div class="analytics-card list-card">
           <h3>Top Domains</h3>
           <div class="domain-list">
-            ${stats.top_domains
+            ${topDomains
               .map(
                 (d) => `
               <div class="domain-item">
                 <span class="domain-name">${escapeHtml(d.domain)}</span>
                 <span class="domain-count">${d.count}</span>
-                <div class="domain-bar" style="width: ${(d.count / stats.top_domains[0].count) * 100}%"></div>
+                <div class="domain-bar" style="width: ${(d.count / maxDomainCount) * 100}%"></div>
               </div>
             `,
               )
@@ -125,12 +128,12 @@ function renderDashboard(container: HTMLElement, stats: AdvancedStats): void {
           <div class="dist-item">
             <span>Read vs Unread</span>
             <div class="progress-multi">
-              <div class="progress-segment" style="width: ${((stats.total_bookmarks - stats.unread) / stats.total_bookmarks) * 100}%; background: #6366f1" title="Read"></div>
-              <div class="progress-segment" style="width: ${(stats.unread / stats.total_bookmarks) * 100}%; background: #e5e7eb" title="Unread"></div>
+              <div class="progress-segment" style="width: ${stats.total_bookmarks > 0 ? ((stats.total_bookmarks - (stats.unread ?? 0)) / stats.total_bookmarks) * 100 : 0}%; background: #6366f1" title="Read"></div>
+              <div class="progress-segment" style="width: ${stats.total_bookmarks > 0 ? ((stats.unread ?? 0) / stats.total_bookmarks) * 100 : 0}%; background: #e5e7eb" title="Unread"></div>
             </div>
             <div class="dist-labels">
-              <span>Read: ${stats.total_bookmarks - stats.unread}</span>
-              <span>Unread: ${stats.unread}</span>
+              <span>Read: ${stats.total_bookmarks - (stats.unread ?? 0)}</span>
+              <span>Unread: ${stats.unread ?? 0}</span>
             </div>
           </div>
         </div>

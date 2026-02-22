@@ -58,6 +58,10 @@ export async function loadBookmarks(): Promise<void> {
     logger.info(
       `loadBookmarks invoked; currentView=${state.currentView} filterTags=${JSON.stringify(state.filterConfig.tags)}`,
     );
+    // Don't fetch or overwrite main content when on analytics view
+    if (state.currentView === "analytics") {
+      return;
+    }
     state.setIsLoading(true);
     state.resetPagination();
     // Show skeletons immediately
@@ -216,8 +220,12 @@ const pendingMetadataFetches = new Set<string>();
 let ogImageObserver: IntersectionObserver | null = null;
 
 export function renderBookmarks(): void {
-  // Only render if we're in a bookmark-rendering view
-  if (state.currentView === "dashboard" || state.currentView === "tag-cloud") {
+  // Only render if we're in a bookmark-rendering view (don't overwrite analytics/dashboard/tag-cloud)
+  if (
+    state.currentView === "dashboard" ||
+    state.currentView === "tag-cloud" ||
+    state.currentView === "analytics"
+  ) {
     return;
   }
 
@@ -483,10 +491,11 @@ export function renderBookmarks(): void {
   };
 
   const syncLayout = debounce(() => {
-    // Double check view mode before re-rendering
+    // Don't re-render bookmarks when on dashboard, tag-cloud, or analytics (scroll would overwrite their content)
     if (
       state.currentView === "dashboard" ||
-      state.currentView === "tag-cloud"
+      state.currentView === "tag-cloud" ||
+      state.currentView === "analytics"
     ) {
       return;
     }
@@ -525,8 +534,12 @@ export function renderBookmarks(): void {
 
 // Load more bookmarks for infinite scroll
 export async function loadMoreBookmarks(): Promise<void> {
-  // Only load more if we're in a bookmark-rendering view (not dashboard/tag-cloud)
-  if (state.currentView === "dashboard" || state.currentView === "tag-cloud") {
+  // Only load more if we're in a bookmark-rendering view (not dashboard/tag-cloud/analytics)
+  if (
+    state.currentView === "dashboard" ||
+    state.currentView === "tag-cloud" ||
+    state.currentView === "analytics"
+  ) {
     return;
   }
   // Don't load if already loading, or if we've reached the total count
