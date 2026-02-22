@@ -217,6 +217,13 @@ export let viewToolbarConfig: Record<string, any> = {
     showSort: true,
     customActions: ["bulk-unarchive"],
   },
+  analytics: {
+    title: "Analytics",
+    showViewToggle: false,
+    showSearch: false,
+    showAddButton: false,
+    customActions: [],
+  },
 };
 
 // State setters
@@ -300,6 +307,7 @@ export async function setCurrentView(val: string) {
   // Body classes for view-specific layout overrides
   document.body.classList.toggle("dashboard-active", val === "dashboard");
   document.body.classList.toggle("tag-cloud-active", val === "tag-cloud");
+  document.body.classList.toggle("analytics-active", val === "analytics");
 }
 export function setCurrentFolder(val: string | null) {
   currentFolder = val;

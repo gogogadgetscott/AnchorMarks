@@ -50,7 +50,57 @@ function getStats(db, userId) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 20)
       .map((t) => [t.name, t.count]),
+    monthly_growth: getMonthlyGrowth(db, userId),
+    top_domains: getTopDomains(db, userId),
+    dead_links: getDeadlinkCount(db, userId),
   };
+}
+
+function getMonthlyGrowth(db, userId) {
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const monthStr = d.toISOString().slice(0, 7); // YYYY-MM
+    const count = db
+      .prepare(
+        "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND strftime('%Y-%m', created_at) = ?",
+      )
+      .get(userId, monthStr).count;
+    months.push({ month: monthStr, count });
+  }
+  return months;
+}
+
+function getTopDomains(db, userId) {
+  return db
+    .prepare(
+      `
+      SELECT 
+        replace(replace(url, 'http://', ''), 'https://', '') as domain, 
+        COUNT(*) as count 
+      FROM bookmarks 
+      WHERE user_id = ? 
+      GROUP BY substr(domain, 1, instr(domain, '/') - 1)
+      HAVING domain != ''
+      ORDER BY count DESC 
+      LIMIT 10
+    `,
+    )
+    .all(userId)
+    .map((d) => {
+      // Basic cleanup for domain-only
+      let domain = d.domain.split("/")[0];
+      return { domain, count: d.count };
+    });
+}
+
+function getDeadlinkCount(db, userId) {
+  return db
+    .prepare(
+      "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND is_dead = 1",
+    )
+    .get(userId).count;
 }
 
 function findDuplicates(db, userId) {
@@ -247,4 +297,9 @@ function getLastAdded(db, userId) {
   return row ? row.created_at : null;
 }
 
-module.exports = Object.assign(module.exports, { getEngagement, getLastAdded });
+module.exports = Object.assign(module.exports, {
+  getEngagement,
+  getLastAdded,
+  getMonthlyGrowth,
+  getTopDomains,
+});

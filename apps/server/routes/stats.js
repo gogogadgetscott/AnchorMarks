@@ -9,6 +9,16 @@ function setupStatsRoutes(app, db, { authenticateTokenMiddleware }) {
       res.status(500).json({ error: "Failed to compute stats" });
     }
   });
+  app.get("/api/stats/advanced", authenticateTokenMiddleware, (req, res) => {
+    try {
+      const stats = statsModel.getStats(db, req.user.id);
+      const engagement = statsModel.getEngagement(db, req.user.id);
+      res.json({ ...stats, ...engagement });
+    } catch (err) {
+      console.error("Advanced stats error:", err);
+      res.status(500).json({ error: "Failed to compute advanced stats" });
+    }
+  });
 }
 
 module.exports = setupStatsRoutes;

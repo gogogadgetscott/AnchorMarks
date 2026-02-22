@@ -51,6 +51,7 @@ import { initTagInput } from "@features/bookmarks/tag-input.ts";
 // New Modular UI Listeners (Moved to dynamic imports)
 // ============================================================
 // Moved to dynamic imports in DOMContentLoaded or as-needed
+const confirmDialog = (msg: string, opts?: any) => import("@features/ui/confirm-dialog.ts").then(m => m.confirmDialog(msg, opts));
 
 /**
  * Set view mode (grid / list / compact)
@@ -204,20 +205,25 @@ export async function updateHeaderContent(): Promise<void> {
   updateFilterButtonVisibility();
 
   // Re-attach sidebar toggle listener
-  // Re-attach sidebar toggle listener
   const { attachSidebarToggle } = await import("@features/ui/navigation.ts");
   attachSidebarToggle();
 
   // Re-attach Omnibar listeners since header was replaced
   const { initOmnibarListeners } = await import("@features/ui/omnibar.ts");
-  initOmnibarListeners();
+  const { initInteractions } = await import("@features/ui/interactions.ts");
+  const { initTagListeners } = await import("@features/ui/tags.ts");
+
+  initOmnibarListeners(); // Call it here since header was replaced
+
+  // Re-attach other listeners that might be affected by header/content changes
+  initInteractions();
+  initTagListeners();
 }
 
 /**
  * API Key functions
  */
 export async function regenerateApiKey(): Promise<void> {
-  const { confirmDialog } = await import("@features/ui/confirm-dialog.ts");
   if (
     !(await confirmDialog("Regenerate API key? Old keys will stop working.", {
       title: "Regenerate API Key",
@@ -248,7 +254,6 @@ export function copyApiKey(): void {
  * Reset all bookmarks to default
  */
 export async function resetBookmarks(): Promise<void> {
-  const { confirmDialog } = await import("@features/ui/confirm-dialog.ts");
   if (
     !(await confirmDialog("Reset all bookmarks? This cannot be undone!", {
       title: "Reset Bookmarks",
@@ -317,7 +322,16 @@ export async function initializeApp(): Promise<void> {
     const { renderDashboard } =
       await import("@features/bookmarks/dashboard.ts");
     renderDashboard();
+  } else if (state.currentView === "tag-cloud") {
+    const { renderTagCloud } = await import(
+      "@features/bookmarks/tag-cloud.ts"
+    );
+    await renderTagCloud();
+  } else if (state.currentView === "analytics") {
+    const { renderAnalytics } = await import("@features/analytics.ts");
+    await renderAnalytics();
   }
+
 
   setViewMode(state.viewMode, false);
   updateActiveNav();

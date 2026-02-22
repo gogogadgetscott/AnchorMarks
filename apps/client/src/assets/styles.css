@@ -166,11 +166,9 @@
 [data-theme="midnight"] .bookmark-card {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  background-color: color-mix(
-    in srgb,
-    var(--card-bg) 85%,
-    transparent
-  ) !important;
+  background-color: color-mix(in srgb,
+      var(--card-bg) 85%,
+      transparent) !important;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -242,12 +240,10 @@ textarea {
 .bg-gradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    135deg,
-    var(--primary-600) 0%,
-    #8b5cf6 50%,
-    #ec4899 100%
-  );
+  background: linear-gradient(135deg,
+      var(--primary-600) 0%,
+      #8b5cf6 50%,
+      #ec4899 100%);
   opacity: 0.1;
 }
 
@@ -2004,13 +2000,16 @@ body.sidebar-collapsed .nav-section-header {
   justify-content: center;
   gap: 0.75rem;
   z-index: 10;
-  pointer-events: none; /* allow clicks to pass through edges */
+  pointer-events: none;
+  /* allow clicks to pass through edges */
   flex: 1;
-  min-width: 0; /* prevent flex children from overflowing */
+  min-width: 0;
+  /* prevent flex children from overflowing */
 }
 
 .header-center .omnibar-container {
-  pointer-events: auto; /* enable interactions inside the omnibar */
+  pointer-events: auto;
+  /* enable interactions inside the omnibar */
 }
 
 .header-right {
@@ -2640,6 +2639,7 @@ body.tag-cloud-active .content-body {
 
 /* Ensure actions don't overlap title on mobile/touch */
 @media (hover: none) {
+
   .bookmark-actions,
   .compact-actions {
     opacity: 1;
@@ -2686,15 +2686,12 @@ body.tag-cloud-active .content-body {
   padding: 0.2rem 0.6rem;
   font-size: 0.75rem;
   font-weight: 500;
-  background: color-mix(
-    in srgb,
-    var(--tag-color, var(--primary-500)) 20%,
-    transparent
-  );
+  background: color-mix(in srgb,
+      var(--tag-color, var(--primary-500)) 20%,
+      transparent);
   color: var(--tag-color, var(--primary-600));
   border-radius: var(--radius-md);
-  border: 1px solid
-    color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
   transition: all var(--transition-fast);
   cursor: pointer;
   white-space: nowrap;
@@ -2703,16 +2700,12 @@ body.tag-cloud-active .content-body {
 }
 
 .tag:hover {
-  background: color-mix(
-    in srgb,
-    var(--tag-color, var(--primary-500)) 25%,
-    transparent
-  );
-  border-color: color-mix(
-    in srgb,
-    var(--tag-color, var(--primary-500)) 35%,
-    transparent
-  );
+  background: color-mix(in srgb,
+      var(--tag-color, var(--primary-500)) 25%,
+      transparent);
+  border-color: color-mix(in srgb,
+      var(--tag-color, var(--primary-500)) 35%,
+      transparent);
 }
 
 [data-theme="dark"] .tag {
@@ -2963,7 +2956,8 @@ body.tag-cloud-active .content-body {
 .bookmarks-list .bookmark-url-and-tags {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem; /* 4px */
+  gap: 0.25rem;
+  /* 4px */
   margin-left: 1rem;
   margin-top: 0.25rem;
   min-width: 0;
@@ -3025,6 +3019,7 @@ body.tag-cloud-active .content-body {
 .bookmarks-list .bookmark-actions {
   grid-column: 5;
 }
+
 .bookmarks-list .bookmark-card:hover .bookmark-actions {
   opacity: 1;
 }
@@ -3208,6 +3203,7 @@ body.tag-cloud-active .content-body {
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 1;
@@ -3552,57 +3548,41 @@ body.tag-cloud-active .content-body {
 
 /* Bookmark card with custom color */
 .bookmark-card.has-custom-color {
-  background: color-mix(
-    in srgb,
-    var(--bookmark-color) 20%,
-    var(--bg-secondary)
-  ) !important;
-  border-color: color-mix(
-    in srgb,
-    var(--bookmark-color) 40%,
-    var(--border-color)
-  ) !important;
+  background: color-mix(in srgb,
+      var(--bookmark-color) 20%,
+      var(--bg-secondary)) !important;
+  border-color: color-mix(in srgb,
+      var(--bookmark-color) 40%,
+      var(--border-color)) !important;
   border-left: 8px solid var(--bookmark-color) !important;
 }
 
 .bookmark-card.has-custom-color:hover {
-  background: color-mix(
-    in srgb,
-    var(--bookmark-color) 28%,
-    var(--bg-secondary)
-  ) !important;
-  border-color: color-mix(
-    in srgb,
-    var(--bookmark-color) 50%,
-    var(--border-color)
-  ) !important;
+  background: color-mix(in srgb,
+      var(--bookmark-color) 28%,
+      var(--bg-secondary)) !important;
+  border-color: color-mix(in srgb,
+      var(--bookmark-color) 50%,
+      var(--border-color)) !important;
 }
 
 [data-theme="dark"] .bookmark-card.has-custom-color {
-  background: color-mix(
-    in srgb,
-    var(--bookmark-color) 18%,
-    var(--bg-secondary)
-  ) !important;
-  border-color: color-mix(
-    in srgb,
-    var(--bookmark-color) 35%,
-    var(--border-color)
-  ) !important;
+  background: color-mix(in srgb,
+      var(--bookmark-color) 18%,
+      var(--bg-secondary)) !important;
+  border-color: color-mix(in srgb,
+      var(--bookmark-color) 35%,
+      var(--border-color)) !important;
   border-left: 8px solid color-mix(in srgb, var(--bookmark-color) 80%, white) !important;
 }
 
 [data-theme="dark"] .bookmark-card.has-custom-color:hover {
-  background: color-mix(
-    in srgb,
-    var(--bookmark-color) 25%,
-    var(--bg-secondary)
-  ) !important;
-  border-color: color-mix(
-    in srgb,
-    var(--bookmark-color) 45%,
-    var(--border-color)
-  ) !important;
+  background: color-mix(in srgb,
+      var(--bookmark-color) 25%,
+      var(--bg-secondary)) !important;
+  border-color: color-mix(in srgb,
+      var(--bookmark-color) 45%,
+      var(--border-color)) !important;
 }
 
 /* Tag modal needs higher z-index since it opens from within settings modal */
@@ -3643,14 +3623,11 @@ body.tag-cloud-active .content-body {
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
   font-weight: 500;
-  background: color-mix(
-    in srgb,
-    var(--tag-color, var(--primary-500)) 15%,
-    transparent
-  );
+  background: color-mix(in srgb,
+      var(--tag-color, var(--primary-500)) 15%,
+      transparent);
   color: var(--tag-color, var(--primary-700));
-  border: 1px solid
-    color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tag-color, var(--primary-500)) 25%, transparent);
   border-radius: var(--radius-full);
   transition: all 0.2s;
 }
@@ -3944,12 +3921,12 @@ body.tag-cloud-active .content-body {
   box-shadow: var(--shadow-sm);
 }
 
-.toggle input:checked + .toggle-slider {
+.toggle input:checked+.toggle-slider {
   background: var(--primary-500);
   border-color: var(--primary-500);
 }
 
-.toggle input:checked + .toggle-slider::before {
+.toggle input:checked+.toggle-slider::before {
   transform: translateX(20px);
 }
 
@@ -4018,7 +3995,7 @@ body.tag-cloud-active .content-body {
   margin-bottom: 0.5rem;
 }
 
-.api-section > p {
+.api-section>p {
   font-size: 0.875rem;
   color: var(--text-secondary);
   margin-bottom: 1rem;
@@ -4345,6 +4322,7 @@ body.tag-cloud-active .content-body {
 
 /* Mobile/Tablet Responsive - Sidebar Overlay Mode */
 @media (max-width: 1024px) {
+
   /* Ensure the main app uses full viewport width on mobile */
   .main-app,
   .main-content,
@@ -4620,7 +4598,7 @@ body.dragging-widget .widget-sidebar-overlay {
   margin-bottom: 0.5rem;
 }
 
-.sync-info > p {
+.sync-info>p {
   color: var(--text-secondary);
   margin-bottom: 1.5rem;
 }
@@ -4642,7 +4620,7 @@ body.dragging-widget .widget-sidebar-overlay {
   margin-bottom: 0.5rem;
 }
 
-.import-section > p {
+.import-section>p {
   font-size: 0.875rem;
   color: var(--text-secondary);
   margin-bottom: 1rem;
@@ -5809,11 +5787,9 @@ body.dragging-widget .widget-sidebar-overlay {
   width: 16px;
   height: 16px;
   cursor: nwse-resize;
-  background: linear-gradient(
-    135deg,
-    transparent 50%,
-    var(--text-tertiary) 50%
-  );
+  background: linear-gradient(135deg,
+      transparent 50%,
+      var(--text-tertiary) 50%);
   opacity: 0.3;
   transition: opacity var(--transition-fast);
 }
@@ -7654,14 +7630,17 @@ html {
    ============================================ */
 
 .tag-cloud-container {
-  padding: 0 0 1.5rem 0; /* bottom padding reserved for legend */
-  height: calc(100vh - 80px); /* allow slightly more space at the bottom */
+  padding: 0 0 1.5rem 0;
+  /* bottom padding reserved for legend */
+  height: calc(100vh - 80px);
+  /* allow slightly more space at the bottom */
   max-height: calc(100vh - 120px);
   width: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  position: relative; /* needed for absolute-positioned legend */
+  position: relative;
+  /* needed for absolute-positioned legend */
 }
 
 /* Hide global empty state when Tag Cloud is active to avoid overlap */
@@ -7678,20 +7657,21 @@ body.tag-cloud-active .content-body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 0.75rem; /* reduced padding to fit more tags */
-  background: linear-gradient(
-    135deg,
-    var(--bg-primary) 0%,
-    var(--bg-secondary) 50%,
-    var(--bg-primary) 100%
-  );
+  padding: 0.75rem;
+  /* reduced padding to fit more tags */
+  background: linear-gradient(135deg,
+      var(--bg-primary) 0%,
+      var(--bg-secondary) 50%,
+      var(--bg-primary) 100%);
   border-radius: var(--radius-xl);
-  margin: 0.25rem; /* smaller margins */
+  margin: 0.25rem;
+  /* smaller margins */
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--border-color);
   position: relative;
   overflow: hidden;
-  max-height: calc(100vh - 90px); /* tightened max height */
+  max-height: calc(100vh - 90px);
+  /* tightened max height */
 }
 
 .tag-cloud-view::before {
@@ -7700,12 +7680,11 @@ body.tag-cloud-active .content-body {
   top: 0;
   left: 0;
   right: 0;
-  height: 120px; /* reduced overlay height */
-  background: linear-gradient(
-    180deg,
-    rgba(99, 102, 241, 0.03) 0%,
-    transparent 100%
-  );
+  height: 120px;
+  /* reduced overlay height */
+  background: linear-gradient(180deg,
+      rgba(99, 102, 241, 0.03) 0%,
+      transparent 100%);
   pointer-events: none;
 }
 
@@ -7788,10 +7767,12 @@ body.tag-cloud-active .content-body {
   cursor: pointer;
   transition: all 0.2s ease;
 }
+
 .tag-cloud-toggle:hover {
   background: var(--bg-secondary);
   color: var(--text-primary);
 }
+
 .tag-cloud-toggle[aria-pressed="true"] {
   border-color: var(--primary-500);
   color: var(--primary-600);
@@ -7805,14 +7786,17 @@ body.tag-cloud-active .content-body {
   align-content: center;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem 0.5rem; /* tighter gaps to fit more tags */
-  padding: 0.75rem; /* smaller padding */
+  gap: 0.35rem 0.5rem;
+  /* tighter gaps to fit more tags */
+  padding: 0.75rem;
+  /* smaller padding */
   /* Reserve space at bottom so absolute legend doesn't overlap content */
   padding-bottom: 3.5rem;
   min-height: 0;
   position: relative;
   z-index: 1;
-  overflow: auto; /* allow scrolling when content exceeds available space */
+  overflow: auto;
+  /* allow scrolling when content exceeds available space */
   -webkit-overflow-scrolling: touch;
   container-type: inline-size;
   /* Enable container queries */
@@ -7826,19 +7810,18 @@ body.tag-cloud-active .content-body {
 .tag-cloud-tag {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem; /* slightly smaller inter-item gap */
-  padding: 0.35em 0.6em; /* reduced padding */
+  gap: 0.4rem;
+  /* slightly smaller inter-item gap */
+  padding: 0.35em 0.6em;
+  /* reduced padding */
   font-size: var(--tag-size, 0.95rem);
   font-weight: 600;
   line-height: 1.2;
   color: var(--tag-text, #ffffff);
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--tag-color, var(--primary-500)) 85%, white),
-    color-mix(in srgb, var(--tag-color, var(--primary-500)) 65%, black)
-  );
-  border: 1px solid
-    color-mix(in srgb, var(--tag-color, var(--primary-500)) 55%, transparent);
+  background: linear-gradient(135deg,
+      color-mix(in srgb, var(--tag-color, var(--primary-500)) 85%, white),
+      color-mix(in srgb, var(--tag-color, var(--primary-500)) 65%, black));
+  border: 1px solid color-mix(in srgb, var(--tag-color, var(--primary-500)) 55%, transparent);
   border-radius: var(--radius-full);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -7849,8 +7832,7 @@ body.tag-cloud-active .content-body {
   text-shadow: none;
   white-space: nowrap;
   box-shadow:
-    0 4px 10px
-      color-mix(in srgb, var(--tag-color, var(--primary-500)) 28%, transparent),
+    0 4px 10px color-mix(in srgb, var(--tag-color, var(--primary-500)) 28%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
   max-width: 90%;
   overflow: hidden;
@@ -7872,19 +7854,14 @@ body.tag-cloud-active .content-body {
 
 .tag-cloud-tag:hover {
   transform: var(--tag-rotation, rotate(0deg)) scale(1.1) translateY(-2px);
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--tag-color, var(--primary-500)) 92%, white),
-    color-mix(in srgb, var(--tag-color, var(--primary-500)) 75%, black)
-  );
-  border-color: color-mix(
-    in srgb,
-    var(--tag-color, var(--primary-500)) 70%,
-    transparent
-  );
+  background: linear-gradient(135deg,
+      color-mix(in srgb, var(--tag-color, var(--primary-500)) 92%, white),
+      color-mix(in srgb, var(--tag-color, var(--primary-500)) 75%, black));
+  border-color: color-mix(in srgb,
+      var(--tag-color, var(--primary-500)) 70%,
+      transparent);
   box-shadow:
-    0 10px 28px
-      color-mix(in srgb, var(--tag-color, var(--primary-500)) 40%, transparent),
+    0 10px 28px color-mix(in srgb, var(--tag-color, var(--primary-500)) 40%, transparent),
     0 2px 8px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   z-index: 10;
@@ -7914,7 +7891,8 @@ body.tag-cloud-active .content-body {
   justify-content: center;
   gap: 1rem;
   margin-top: 1rem;
-  padding: 0.75rem 1rem; /* compact vertical padding */
+  padding: 0.75rem 1rem;
+  /* compact vertical padding */
   border-top: 1px solid var(--border-color);
   /* Pin to the bottom of the tag-cloud container */
   position: absolute;
@@ -7922,11 +7900,9 @@ body.tag-cloud-active .content-body {
   right: 0;
   bottom: 0;
   z-index: 5;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0) 0%,
-    rgba(3, 37, 58, 0.6) 100%
-  );
+  background: linear-gradient(to bottom,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(3, 37, 58, 0.6) 100%);
   backdrop-filter: blur(6px);
   color: var(--text-primary);
   flex-shrink: 0;
@@ -7956,15 +7932,13 @@ body.tag-cloud-active .content-body {
 .legend-gradient {
   width: 100px;
   height: 4px;
-  background: linear-gradient(
-    90deg,
-    #6366f1 0%,
-    #06b6d4 25%,
-    #22c55e 45%,
-    #eab308 65%,
-    #f97316 85%,
-    #ec4899 100%
-  );
+  background: linear-gradient(90deg,
+      #6366f1 0%,
+      #06b6d4 25%,
+      #22c55e 45%,
+      #eab308 65%,
+      #f97316 85%,
+      #ec4899 100%);
   border-radius: var(--radius-full);
 }
 
@@ -8149,6 +8123,7 @@ body.fullscreen-mode .dashboard-freeform-container {
 }
 
 @keyframes pulse-badge {
+
   0%,
   100% {
     opacity: 1;
@@ -8336,13 +8311,11 @@ body.fullscreen-mode #dashboard-fullscreen-btn .fullscreen-exit-icon {
 
 .skeleton {
   background: var(--bg-tertiary);
-  background-image: linear-gradient(
-    to right,
-    var(--bg-tertiary) 0%,
-    var(--bg-hover) 20%,
-    var(--bg-tertiary) 40%,
-    var(--bg-tertiary) 100%
-  );
+  background-image: linear-gradient(to right,
+      var(--bg-tertiary) 0%,
+      var(--bg-hover) 20%,
+      var(--bg-tertiary) 40%,
+      var(--bg-tertiary) 100%);
   background-repeat: no-repeat;
   background-size: 800px 104px;
   display: inline-block;
@@ -8566,4 +8539,180 @@ body.fullscreen-mode #dashboard-fullscreen-btn .fullscreen-exit-icon {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
+}
+
+/* --- Analytics Dashboard --- */
+.analytics-dashboard {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.analytics-header {
+  margin-bottom: 2rem;
+}
+
+.analytics-header h1 {
+  font-size: 2rem;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.analytics-header p {
+  color: var(--text-tertiary);
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.analytics-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-card {
+  justify-content: center;
+  min-height: 160px;
+}
+
+.metric-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #6366f1;
+  margin-bottom: 0.25rem;
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+}
+
+.metric-subtext {
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+}
+
+.chart-card {
+  grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+  .chart-card {
+    grid-column: span 1;
+  }
+}
+
+.analytics-card h3 {
+  font-size: 1.125rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+}
+
+.domain-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.domain-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+
+.domain-name {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  z-index: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.domain-count {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  z-index: 1;
+}
+
+.domain-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: #6366f1;
+  opacity: 0.2;
+  border-radius: 2px;
+}
+
+.sparkline {
+  width: 100%;
+  height: 30px;
+}
+
+.bar-chart-container {
+  display: flex;
+  flex-direction: column;
+  height: 100px;
+}
+
+.bar-chart-container svg {
+  flex: 1;
+  width: 100%;
+}
+
+.bar-chart-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.progress-multi {
+  height: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  display: flex;
+  overflow: hidden;
+  margin: 1rem 0 0.5rem;
+}
+
+.progress-segment {
+  height: 100%;
+}
+
+.dist-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.analytics-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+}
+
+.error-state {
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-danger);
 }
