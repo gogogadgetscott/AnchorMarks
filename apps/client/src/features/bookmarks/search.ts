@@ -208,8 +208,11 @@ export function renderTagsList(tags: { name: string; count: number }[]): void {
 
 // Clear all filters
 export function clearAllFilters(): void {
-  state.filterConfig.tags = [];
-  state.filterConfig.sort = "recently_added";
+  state.setFilterConfig({
+    ...state.filterConfig,
+    tags: [],
+    sort: "recently_added",
+  });
 
   const searchInput = document.getElementById(
     "search-input",

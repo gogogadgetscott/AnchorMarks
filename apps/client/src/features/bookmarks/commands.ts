@@ -316,7 +316,10 @@ export function getOmnibarCommands(filterText: string = ""): Command[] {
     const applySearchCommand: Command = {
       label: `Apply "${searchTerm}" to filter`,
       action: () => {
-        state.filterConfig.search = searchTerm;
+        state.setFilterConfig({
+          ...state.filterConfig,
+          search: searchTerm,
+        });
         const searchInput = document.getElementById(
           "search-input",
         ) as HTMLInputElement;

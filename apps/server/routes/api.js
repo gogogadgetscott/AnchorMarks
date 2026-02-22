@@ -1,4 +1,3 @@
-const { setupAuthRoutes } = require("./auth");
 const setupBookmarksRoutesLegacy = require("./bookmarks");
 const { setupBookmarksRoutes } = require("../controllers/bookmarks");
 
@@ -21,8 +20,7 @@ function setupApiRoutes(app, db, helpers) {
     });
   });
 
-  // Auth routes (register/login/etc.)
-  setupAuthRoutes(app, db, authenticateTokenMiddleware, fetchFaviconWrapper);
+  // Auth routes are registered once in app.js (with securityAudit)
 
   // Legacy bookmarks routes from routes/bookmarks.js (GET/PUT/DELETE, counts, archive)
   setupBookmarksRoutesLegacy(app, db, {

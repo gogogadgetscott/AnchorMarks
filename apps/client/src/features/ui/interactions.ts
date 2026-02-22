@@ -563,7 +563,20 @@ function initFaviconErrorHandling(): void {
         if (res && res.favicon && item.target.parentElement) {
           const parent = item.target.parentElement;
           if (parent && parent.classList.contains("bookmark-favicon")) {
-            parent.innerHTML = `<img src="${res.favicon}?t=${Date.now()}" alt="" class="bookmark-favicon-img" loading="lazy">`;
+            const url = String(res.favicon).trim();
+            const safe =
+              url.startsWith("http://") ||
+              url.startsWith("https://") ||
+              url.startsWith("/");
+            if (safe) {
+              const img = document.createElement("img");
+              img.alt = "";
+              img.className = "bookmark-favicon-img";
+              img.loading = "lazy";
+              img.setAttribute("src", `${url}?t=${Date.now()}`);
+              parent.innerHTML = "";
+              parent.appendChild(img);
+            }
           }
         }
       } catch {

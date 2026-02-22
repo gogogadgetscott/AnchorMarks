@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { api, cancelRequest } from "./api";
+import { api, cancelRequest, teardownApiDedup } from "./api";
 import * as state from "@features/state.ts";
 
 const jsonHeaders = { get: () => "application/json" } as const;
@@ -11,6 +11,7 @@ describe("api helper", () => {
     cancelRequest("/error");
     cancelRequest("/dedupe");
     cancelRequest("/abort");
+    teardownApiDedup();
     state.setCsrfToken(null);
     state.setCurrentUser(null);
     state.setIsAuthenticated(false);

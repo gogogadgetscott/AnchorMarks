@@ -4,6 +4,13 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 
+/**
+ * Optional/legacy: full middleware stack (Helmet, CORS, rate limit, static, CSRF).
+ * Not used by app.js. The app wires middleware inline in app.js with environment-specific
+ * CSP, middleware/rateLimiter.js, compression, performance monitoring, and per-route CSRF.
+ * This function is kept for reference or alternate entry points; do not use without
+ * aligning behavior with app.js (CSP, HSTS, rate limit, CORS origin).
+ */
 function setupMiddleware(app, { config, validateCsrfTokenMiddleware }) {
   const cspDirectives = {
     defaultSrc: ["'self'"],
@@ -243,6 +250,7 @@ function validateCsrfToken(db) {
 }
 
 module.exports = {
+  /** Legacy: see setupMiddleware JSDoc. Use authenticateToken and validateCsrfToken only. */
   setupMiddleware,
   authenticateToken,
   validateCsrfToken,
