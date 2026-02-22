@@ -148,27 +148,27 @@ test: test-all ## Run all tests (alias for test-all)
 
 test-backend: ## Run backend tests
 	@echo "$(BLUE)Running backend tests...$(NC)"
-	@cd $(BACKEND_DIR) && npx vitest run
+	@cd $(BACKEND_DIR) && npm run test
 	@echo "$(GREEN)✓ Backend tests completed$(NC)"
 
 test-backend-watch: ## Run backend tests in watch mode
 	@echo "$(BLUE)Running backend tests in watch mode...$(NC)"
-	@cd $(BACKEND_DIR) && npx vitest
+	@cd $(BACKEND_DIR) && npm run test:watch
 
 test-frontend: ## Run frontend tests
 	@echo "$(BLUE)Running frontend tests...$(NC)"
-	@cd $(FRONTEND_DIR) && npx vitest run
+	@cd $(FRONTEND_DIR) && npm run test
 	@echo "$(GREEN)✓ Frontend tests completed$(NC)"
 
 test-frontend-watch: ## Run frontend tests in watch mode
 	@echo "$(BLUE)Running frontend tests in watch mode...$(NC)"
-	@cd $(FRONTEND_DIR) && npx vitest
+	@cd $(FRONTEND_DIR) && npm run test:watch
 
 test-all: test-backend test-frontend ## Run all tests
 
 test-coverage: ## Generate test coverage reports
 	@echo "$(BLUE)Generating test coverage...$(NC)"
-	@cd $(FRONTEND_DIR) && npx vitest run --coverage
+	@cd $(FRONTEND_DIR) && npm run test:coverage
 	@echo "$(GREEN)✓ Coverage report generated$(NC)"
 
 test-docker: build-test-docker ## Run all tests in Docker container
