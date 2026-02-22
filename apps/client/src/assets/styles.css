@@ -7812,6 +7812,18 @@ body.tag-cloud-active .content-body {
   background: color-mix(in srgb, var(--primary-500) 12%, transparent);
 }
 
+.tag-cloud-link-analytics {
+  font-size: 0.875rem;
+  color: var(--primary-500);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.tag-cloud-link-analytics:hover {
+  text-decoration: underline;
+  color: var(--primary-600);
+}
+
 .tag-cloud-canvas {
   flex: 1;
   display: flex;
@@ -8704,6 +8716,24 @@ body.fullscreen-mode #dashboard-fullscreen-btn .fullscreen-exit-icon {
   background: #6366f1;
   opacity: 0.2;
   border-radius: 2px;
+}
+
+.analytics-tag-insights .tag-bar {
+  background: #8b5cf6;
+  opacity: 0.25;
+}
+
+.tag-insights-summary {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+}
+
+.tag-insights-summary .tag-insight-stat {
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 .sparkline {

@@ -5,6 +5,7 @@
 
 import * as state from "@features/state.ts";
 import { escapeHtml } from "@utils/index.ts";
+import type { Folder } from "../../types/index";
 import { showToast } from "@utils/ui-helpers.ts";
 import { addDashboardWidget } from "@features/bookmarks/dashboard.ts";
 import { getRecursiveBookmarkCount } from "@features/bookmarks/folders.ts";
@@ -115,7 +116,7 @@ export function closeWidgetPicker() {
 function filterWidgetPickerFolders(searchTerm: string): void {
   const container = document.getElementById(
     "widget-folders-container",
-  ) as HTMLElement & { _allFolders: any[]; _originalHTML: string };
+  ) as HTMLElement & { _allFolders: Folder[]; _originalHTML: string };
   if (!container || !container._allFolders) return;
 
   const term = searchTerm.toLowerCase().trim();
@@ -168,7 +169,10 @@ function filterWidgetPickerFolders(searchTerm: string): void {
 function filterWidgetPickerTags(searchTerm: string): void {
   const container = document.getElementById(
     "widget-tags-container",
-  ) as HTMLElement & { _allTags: any[]; _originalHTML: string };
+  ) as HTMLElement & {
+    _allTags: Array<{ name: string; count: number }>;
+    _originalHTML: string;
+  };
   if (!container || !container._allTags) return;
 
   const term = searchTerm.toLowerCase().trim();
@@ -431,7 +435,7 @@ function attachWidgetPickerListeners() {
 export function renderWidgetPickerFolders(): void {
   const container = document.getElementById(
     "widget-folders-container",
-  ) as HTMLElement & { _allFolders: any[]; _originalHTML: string };
+  ) as HTMLElement & { _allFolders: Folder[]; _originalHTML: string };
   if (!container) return;
 
   // Use a flex column layout for the tree structure instead of flat grid
@@ -454,9 +458,9 @@ export function renderWidgetPickerFolders(): void {
   }
 
   const rootFolders = foldersToRender.filter((f) => !f.parent_id);
-  const sorter = (a: any, b: any) => a.name.localeCompare(b.name);
+  const sorter = (a: Folder, b: Folder) => a.name.localeCompare(b.name);
 
-  function renderTree(folderList: any[], level = 0): string {
+  function renderTree(folderList: Folder[], level = 0): string {
     return folderList
       .sort(sorter)
       .map((folder) => {
@@ -503,7 +507,10 @@ export function renderWidgetPickerFolders(): void {
 export function renderWidgetPickerTags(): void {
   const container = document.getElementById(
     "widget-tags-container",
-  ) as HTMLElement & { _allTags: any[]; _originalHTML: string };
+  ) as HTMLElement & {
+    _allTags: Array<{ name: string; count: number }>;
+    _originalHTML: string;
+  };
   if (!container) return;
 
   // Use tag metadata from state which has accurate counts

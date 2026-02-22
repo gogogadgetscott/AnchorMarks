@@ -6,6 +6,7 @@
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { logger } from "@utils/logger.ts";
+import type { Bookmark, Tag } from "../../types/index";
 import { escapeHtml, pluralize, safeLocalStorage } from "@utils/index.ts";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
 import { dom, showToast } from "@utils/ui-helpers.ts";
@@ -141,7 +142,7 @@ async function buildTagData(): Promise<{ name: string; count: number }[]> {
   const tagCounts: Record<string, number> = {};
 
   // Fetch ALL bookmarks from server for tag cloud (ignore current filters)
-  let allBookmarks: any[] = [];
+  let allBookmarks: Bookmark[] = [];
   try {
     allBookmarks = await api("/bookmarks?sort=recently_added");
   } catch (err) {
@@ -151,14 +152,16 @@ async function buildTagData(): Promise<{ name: string; count: number }[]> {
   }
 
   // Helper to extract normalized tags from bookmark (handles string or array)
-  const extractTags = (bookmark: any): string[] => {
+  const extractTags = (bookmark: Bookmark): string[] => {
     if (!bookmark.tags) return [];
     if (Array.isArray(bookmark.tags))
-      return bookmark.tags.map((t: any) => String(t).trim()).filter(Boolean);
+      return bookmark.tags
+        .map((t: string | Tag) => String(t).trim())
+        .filter(Boolean);
     if (typeof bookmark.tags === "object") {
       try {
         return Object.values(bookmark.tags)
-          .map((v: any) => String(v).trim())
+          .map((v: unknown) => String(v).trim())
           .filter(Boolean);
       } catch (e) {
         return [];
@@ -333,6 +336,9 @@ export async function renderTagCloud(
               ${showAllPref ? "Show Top" : "Show All"}
             </button>
           </div>
+          <div class="tag-cloud-stat">
+            <a id="tag-cloud-link-analytics" class="tag-cloud-link-analytics" href="#" data-view="analytics">View Analytics</a>
+          </div>
         </div>
       </div>
       
@@ -416,6 +422,21 @@ export async function renderTagCloud(
     });
   }
 
+  // View Analytics link — navigate to Analytics dashboard
+  const analyticsLink = document.getElementById("tag-cloud-link-analytics");
+  if (analyticsLink) {
+    analyticsLink.addEventListener("click", async (e) => {
+      e.preventDefault();
+      state.setCurrentView("analytics");
+      const { updateHeaderContent } = await import("@/App.ts");
+      await updateHeaderContent();
+      const { updateActiveNav } = await import("@utils/ui-helpers.ts");
+      updateActiveNav();
+      const { renderAnalytics } = await import("@features/analytics.ts");
+      await renderAnalytics();
+    });
+  }
+
   // Attach click handlers
   container.querySelectorAll(".tag-cloud-tag").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
@@ -451,9 +472,9 @@ export async function renderTagCloud(
       if (viewTitle) viewTitle.textContent = `Tag: ${tagName}`;
 
       // Import and update UI (robust: handle import failures with graceful fallback)
-      let renderActiveFilters: any = null;
-      let renderSidebarTags: any = null;
-      let loadBookmarks: any = null;
+      let renderActiveFilters: (() => void) | null = null;
+      let renderSidebarTags: (() => void) | null = null;
+      let loadBookmarks: (() => Promise<void>) | null = null;
 
       try {
         const [searchMod, bookmarksMod] = await Promise.all([
@@ -526,7 +547,7 @@ export async function renderTagCloud(
   window.addEventListener("resize", handleResize);
 
   // Store cleanup function for when view changes
-  (window as any).__tagCloudResizeCleanup = () => {
+  window.__tagCloudResizeCleanup = () => {
     window.removeEventListener("resize", handleResize);
     if (resizeTimeout) clearTimeout(resizeTimeout);
   };

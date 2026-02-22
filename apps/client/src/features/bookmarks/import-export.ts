@@ -53,7 +53,7 @@ export async function importHtml(file: File): Promise<void> {
     if (hasLog && result.import_log) {
       const logContent = result.import_log
         .map(
-          (entry: any) =>
+          (entry: { status: string; url: string; reason?: string }) =>
             `[${entry.status.toUpperCase()}] ${entry.url}${
               entry.reason ? ` (${entry.reason})` : ""
             }`,
@@ -65,9 +65,9 @@ export async function importHtml(file: File): Promise<void> {
         `import-log-${new Date().toISOString().split("T")[0]}.txt`,
       );
     }
-  } catch (err: any) {
-    showToast(err.message, "error");
-    setImportProgress("error", err.message);
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
+    setImportProgress("error", (err as Error).message);
   } finally {
     setImportProgress("idle");
   }
@@ -114,9 +114,9 @@ export async function importJson(file: File): Promise<void> {
         result.skipped ? `, ${result.skipped} skipped` : ""
       }.`,
     );
-  } catch (err: any) {
-    showToast(err.message, "error");
-    setJsonImportProgress("error", err.message);
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
+    setJsonImportProgress("error", (err as Error).message);
   } finally {
     setJsonImportProgress("idle");
   }
@@ -130,8 +130,8 @@ export async function exportJson(): Promise<void> {
       type: "application/json",
     });
     downloadBlob(blob, "anchormarks-bookmarks.tson");
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
   }
 }
 
@@ -153,8 +153,8 @@ export async function exportHtml(): Promise<void> {
     const blob = await response.blob();
     downloadBlob(blob, "anchormarks-bookmarks.html");
     showToast("Export successful", "success");
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
   }
 }
 
@@ -196,8 +196,8 @@ export async function resetBookmarks(): Promise<void> {
       `Bookmarks reset! ${data.bookmarks_created} example bookmarks created.`,
       "success",
     );
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
   }
 }
 
@@ -232,8 +232,8 @@ export async function exportViews(): Promise<void> {
       `Exported ${exportData.views.length} dashboard view(s) and ${exportData.bookmark_views.length} bookmark view(s)`,
       "success",
     );
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
   }
 }
 
@@ -298,9 +298,9 @@ export async function importViews(file: File): Promise<void> {
     showToast(message, "success");
     showToast(message, "success");
     setViewsImportProgress("success", message);
-  } catch (err: any) {
-    showToast(err.message, "error");
-    setViewsImportProgress("error", err.message);
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
+    setViewsImportProgress("error", (err as Error).message);
   } finally {
     setViewsImportProgress("idle");
   }

@@ -110,7 +110,7 @@ function scheduleReconnect(): void {
  * Handle incoming WebSocket events.
  * Debounces rapid successive events of the same type.
  */
-function handleEvent(data: { type: string; payload?: any }): void {
+function handleEvent(data: { type: string; payload?: unknown }): void {
   const { type } = data;
 
   // Skip connected confirmation

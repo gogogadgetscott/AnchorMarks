@@ -233,7 +233,7 @@ export function removeAllFocusTraps(): void {
 
 // Export for debugging in development
 if (import.meta.env.DEV) {
-  (window as any).__focusTrapDebug = {
+  window.__focusTrapDebug = {
     activeFocusTraps,
     removeAll: removeAllFocusTraps,
   };

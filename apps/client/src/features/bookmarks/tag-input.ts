@@ -204,8 +204,8 @@ function showAutocomplete(searchTerm: string, autocomplete: HTMLElement): void {
       .filter((tag) => !selectedTags.includes(tag))
       .sort(
         (a, b) =>
-          ((state.tagMetadata[b] as any)?.count || 0) -
-          ((state.tagMetadata[a] as any)?.count || 0),
+          (state.tagMetadata[b]?.count || 0) -
+          (state.tagMetadata[a]?.count || 0),
       )
       .slice(0, 20);
   } else {
@@ -227,7 +227,7 @@ function showAutocomplete(searchTerm: string, autocomplete: HTMLElement): void {
       return `
         <div class="tag-autocomplete-item ${isSelected ? "" : ""}" data-tag="${JSON.stringify(tag).slice(1, -1)}">
           <span class="tag-autocomplete-name">${escapeHtml(tag)}</span>
-          <span class="tag-autocomplete-count">${(tagMeta as any).count || 0}</span>
+          <span class="tag-autocomplete-count">${tagMeta?.count || 0}</span>
         </div>
       `;
     })

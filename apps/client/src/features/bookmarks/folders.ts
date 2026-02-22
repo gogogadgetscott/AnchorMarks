@@ -36,7 +36,7 @@ export function getRecursiveBookmarkCount(folderId: string): number {
 /**
  * Sorter for folders: Count (desc) then Name (asc)
  */
-export const folderSorter = (a: any, b: any) => {
+export const folderSorter = (a: Folder, b: Folder) => {
   const countA = getRecursiveBookmarkCount(a.id);
   const countB = getRecursiveBookmarkCount(b.id);
   if (countA !== countB) return countB - countA;
@@ -68,7 +68,7 @@ export function renderFolders(): void {
     `[Folders] Rendering ${state.folders.length} total folders, found ${rootFolders.length} root folders`,
   );
 
-  function renderFolderTree(folderList: any[], level = 0): string {
+  function renderFolderTree(folderList: Folder[], level = 0): string {
     return folderList
       .map((f) => {
         const children = state.folders
@@ -117,11 +117,12 @@ export function renderFolders(): void {
 
   container.innerHTML = renderFolderTree(rootFolders);
 
-  container.querySelectorAll(".folder-item").forEach((item: any) => {
-    item.addEventListener("click", (e: any) => {
+  container.querySelectorAll(".folder-item").forEach((item: Element) => {
+    const htmlItem = item as HTMLElement;
+    item.addEventListener("click", (e: Event) => {
       if (e.defaultPrevented) return;
 
-      if (e.target.closest(".folder-actions")) return;
+      if ((e.target as HTMLElement).closest(".folder-actions")) return;
 
       e.stopPropagation();
 
@@ -133,16 +134,19 @@ export function renderFolders(): void {
             const y = 50 + ((existingWidgets * 30) % 200);
 
             try {
-              addDashboardWidget("folder", item.dataset.folder, x, y);
-            } catch (err: any) {
-              showToast("Error adding widget: " + err.message, "error");
+              addDashboardWidget("folder", htmlItem.dataset.folder, x, y);
+            } catch (err: unknown) {
+              showToast(
+                "Error adding widget: " + (err as Error).message,
+                "error",
+              );
             }
           },
         );
         return;
       }
 
-      state.setCurrentFolder(item.dataset.folder);
+      state.setCurrentFolder(htmlItem.dataset.folder);
       state.setCurrentView("folder");
       updateActiveNav();
       import("@features/bookmarks/search.ts").then(({ renderActiveFilters }) =>
@@ -158,16 +162,19 @@ export function renderFolders(): void {
     });
 
     if (item.getAttribute("draggable") === "true") {
-      item.addEventListener("dragstart", (e: any) => {
+      item.addEventListener("dragstart", (e: DragEvent) => {
         state.setDraggedSidebarItem({
           type: "folder",
-          id: item.dataset.folder,
-          name: item.dataset.folderName,
-          color: item.dataset.folderColor,
+          id: htmlItem.dataset.folder,
+          name: htmlItem.dataset.folderName,
+          color: htmlItem.dataset.folderColor,
         });
         if (e.dataTransfer) {
           e.dataTransfer.effectAllowed = "copy";
-          e.dataTransfer.setData("text/plain", item.dataset.folderName);
+          e.dataTransfer.setData(
+            "text/plain",
+            htmlItem.dataset.folderName || "",
+          );
         }
       });
 
@@ -209,7 +216,7 @@ export function updateFolderParentSelect(
     return false;
   }
 
-  const sorter = (a: any, b: any) => a.name.localeCompare(b.name);
+  const sorter = (a: Folder, b: Folder) => a.name.localeCompare(b.name);
 
   function buildOptions(parent_id: string | null, level = 0) {
     const children = state.folders
@@ -241,9 +248,9 @@ export function populateBulkMoveSelect(): void {
 
 // Create folder
 export async function createFolder(
-  data: any,
+  data: Partial<Folder>,
   options: { closeModal?: boolean } = {},
-): Promise<any> {
+): Promise<Folder | null> {
   const { closeModal = true } = options;
 
   try {
@@ -258,14 +265,17 @@ export async function createFolder(
     if (closeModal) closeModals();
     showToast("Folder created!", "success");
     return folder;
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
     return null;
   }
 }
 
 // Update folder
-export async function updateFolder(id: string, data: any): Promise<void> {
+export async function updateFolder(
+  id: string,
+  data: Partial<Folder>,
+): Promise<void> {
   try {
     const folder = await api(`/folders/${id}`, {
       method: "PUT",
@@ -277,8 +287,8 @@ export async function updateFolder(id: string, data: any): Promise<void> {
     updateFolderSelect();
     closeModals();
     showToast("Folder updated!", "success");
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
   }
 }
 
@@ -315,8 +325,8 @@ export async function deleteFolder(id: string): Promise<void> {
       loadBookmarks(),
     );
     showToast("Folder deleted", "success");
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
   }
 }
 
@@ -339,8 +349,9 @@ export function editFolder(id: string): void {
   ) as HTMLInputElement;
   if (colorInput) colorInput.value = folder.color || "";
 
-  document.querySelectorAll(".color-option").forEach((opt: any) => {
-    if (opt.dataset.color === folder.color) opt.classList.add("active");
+  document.querySelectorAll(".color-option").forEach((opt: Element) => {
+    if ((opt as HTMLElement).dataset.color === folder.color)
+      opt.classList.add("active");
     else opt.classList.remove("active");
   });
 
@@ -423,7 +434,7 @@ export async function renderFoldersForFilter(
                     <div class="folder-item ${isActive ? "active" : ""}" data-folder-id="${folder.id}" style="padding-left: ${indent}rem">
                         <span class="folder-icon" style="color: ${escapeHtml(folder.color || "#6b7280")}">📁</span>
                         <span class="folder-name">${escapeHtml(folder.name)}</span>
-                        <span class="folder-count">${(folder as any).bookmark_count || 0}</span>
+                        <span class="folder-count">${folder.bookmark_count || 0}</span>
                     </div>
                     ${hasChildren ? buildFolderTree(folder.id, level + 1) : ""}
                 `;
@@ -434,10 +445,10 @@ export async function renderFoldersForFilter(
   container.innerHTML = buildFolderTree();
 
   // Attach click handlers
-  container.querySelectorAll(".folder-item").forEach((item: any) => {
-    item.addEventListener("click", async (e: any) => {
+  container.querySelectorAll(".folder-item").forEach((item: Element) => {
+    item.addEventListener("click", async (e: Event) => {
       e.stopPropagation();
-      const folderId = item.dataset.folderId;
+      const folderId = (item as HTMLElement).dataset.folderId;
 
       // Toggle active state
       container

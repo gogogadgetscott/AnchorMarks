@@ -24,7 +24,12 @@ interface AdvancedStats {
   total_folders: number;
   total_tags: number;
   favorites: number;
-  top_clicked: any[];
+  top_clicked: {
+    title: string;
+    url: string;
+    favicon: string;
+    click_count: number;
+  }[];
   top_tags: [string, number][];
   monthly_growth: MonthlyGrowth[];
   top_domains: DomainStats[];
@@ -64,6 +69,13 @@ export async function renderAnalytics(): Promise<void> {
 function renderDashboard(container: HTMLElement, stats: AdvancedStats): void {
   const topDomains = stats.top_domains ?? [];
   const maxDomainCount = topDomains.length > 0 ? topDomains[0].count : 1;
+  const topTags = stats.top_tags ?? [];
+  const maxTagCount = topTags.length > 0 ? topTags[0][1] : 1;
+  const totalTagUsages = topTags.reduce((sum, [, count]) => sum + count, 0);
+  const avgTagsPerBookmark =
+    stats.total_bookmarks > 0 && totalTagUsages > 0
+      ? (totalTagUsages / stats.total_bookmarks).toFixed(1)
+      : "0";
 
   container.innerHTML = `
     <div class="analytics-dashboard">
@@ -97,6 +109,11 @@ function renderDashboard(container: HTMLElement, stats: AdvancedStats): void {
           <div class="metric-label">Dead Links</div>
           <div class="metric-subtext">${stats.dead_links > 0 ? "Action required" : "All clear!"}</div>
         </div>
+        <div class="analytics-card metric-card">
+          <div class="metric-value">${stats.total_tags}</div>
+          <div class="metric-label">Total Tags</div>
+          <div class="metric-subtext">~${avgTagsPerBookmark} tags per bookmark</div>
+        </div>
 
         <!-- Monthly Growth Chart -->
         <div class="analytics-card chart-card growth-chart">
@@ -115,6 +132,28 @@ function renderDashboard(container: HTMLElement, stats: AdvancedStats): void {
                 <span class="domain-name">${escapeHtml(d.domain)}</span>
                 <span class="domain-count">${d.count}</span>
                 <div class="domain-bar" style="width: ${(d.count / maxDomainCount) * 100}%"></div>
+              </div>
+            `,
+              )
+              .join("")}
+          </div>
+        </div>
+
+        <!-- Tag Insights -->
+        <div class="analytics-card list-card analytics-tag-insights">
+          <h3>Tag Insights</h3>
+          <div class="tag-insights-summary">
+            <span class="tag-insight-stat">${stats.total_tags} unique tags</span>
+            <span class="tag-insight-stat">${totalTagUsages} total usages</span>
+          </div>
+          <div class="domain-list tag-list">
+            ${topTags
+              .map(
+                ([name, count]) => `
+              <div class="domain-item tag-item">
+                <span class="domain-name">${escapeHtml(name)}</span>
+                <span class="domain-count">${count}</span>
+                <div class="domain-bar tag-bar" style="width: ${(count / maxTagCount) * 100}%"></div>
               </div>
             `,
               )

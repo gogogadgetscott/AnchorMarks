@@ -103,7 +103,10 @@ export function sanitizeHtml(
 export function safeRender(
   container: HTMLElement,
   content: string,
-  options: { allowHtml?: boolean; sanitizeOptions?: any } = {},
+  options: {
+    allowHtml?: boolean;
+    sanitizeOptions?: Record<string, unknown>;
+  } = {},
 ): void {
   if (!container) {
     logger.warn("safeRender called with null/undefined container");
@@ -193,13 +196,13 @@ export const safeLocalStorage = {
  * Debounce function - delays execution until after wait milliseconds have elapsed
  * since the last time the debounced function was invoked.
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number,
 ): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
 
-  return function (this: any, ...args: Parameters<T>) {
+  return function (this: unknown, ...args: Parameters<T>) {
     const context = this;
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => func.apply(context, args), wait);
@@ -218,7 +221,7 @@ export function asyncHandler(
     handler(event).catch((error) => {
       logger.error("Async handler error", error);
       // Try to show toast if available
-      const showToast = (window as any).showToast;
+      const showToast = window.showToast;
       if (typeof showToast === "function") {
         showToast(errorMessage, "error");
       }

@@ -155,9 +155,17 @@ export interface ImportResponse {
  * Sync API responses
  */
 export interface SyncPushResponse {
-  bookmarks_created: number;
-  bookmarks_updated: number;
-  folders_created: number;
+  /** Total created (bookmarks + folders) */
+  created: number;
+  /** Total updated (bookmarks + folders) */
+  updated: number;
+  /** Client folder id -> server-generated folder id for folders created in this push */
+  folder_id_map?: Record<string, string>;
+  /** Count of bookmarks not updated due to last-write-wins (server was newer) */
+  bookmarks_skipped?: number;
+  /** Count of folders not updated due to last-write-wins (server was newer) */
+  folders_skipped?: number;
+  errors?: Array<{ url?: string; folder?: string; error: string }>;
 }
 
 export interface SyncPullResponse {

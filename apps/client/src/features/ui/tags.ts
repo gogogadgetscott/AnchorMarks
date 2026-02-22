@@ -93,8 +93,8 @@ export function initTagListeners(): void {
         const { renameTagAcross } =
           await import("@features/bookmarks/search.ts");
         await renameTagAcross(from, to);
-      } catch (err: any) {
-        showToast(err.message || "Rename failed", "error");
+      } catch (err: unknown) {
+        showToast((err as Error).message || "Rename failed", "error");
       }
     });
 
@@ -117,8 +117,8 @@ export function initTagListeners(): void {
         state.setLastTagRenameAction(null);
         searchModule.updateTagRenameUndoButton();
         showToast("Undo complete", "success");
-      } catch (err: any) {
-        showToast(err.message || "Undo failed", "error");
+      } catch (err: unknown) {
+        showToast((err as Error).message || "Undo failed", "error");
       }
     });
 

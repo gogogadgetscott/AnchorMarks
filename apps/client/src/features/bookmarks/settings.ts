@@ -248,8 +248,11 @@ export function setViewMode(mode: "grid" | "list" | "compact"): void {
   state.setViewMode(mode);
   saveSettings({ view_mode: mode });
 
-  document.querySelectorAll(".view-btn").forEach((btn: any) => {
-    btn.classList.toggle("active", btn.dataset.viewMode === mode);
+  document.querySelectorAll(".view-btn").forEach((btn: Element) => {
+    btn.classList.toggle(
+      "active",
+      (btn as HTMLElement).dataset.viewMode === mode,
+    );
   });
 
   const classMap: Record<string, string> = {

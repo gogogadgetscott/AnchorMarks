@@ -121,8 +121,8 @@ function initBookmarkForms(): void {
           descInput.value = metadata.description;
 
         showToast("Info fetched successfully", "success");
-      } catch (err: any) {
-        showToast("Failed to fetch info: " + err.message, "error");
+      } catch (err: unknown) {
+        showToast("Failed to fetch info: " + (err as Error).message, "error");
       } finally {
         if (btn) {
           btn.disabled = false;
@@ -210,8 +210,8 @@ function initBookmarkForms(): void {
           }
           showToast(`Folder "${folderName}" created!`, "success");
         }
-      } catch (err: any) {
-        showToast(err.message || "Failed to create folder", "error");
+      } catch (err: unknown) {
+        showToast((err as Error).message || "Failed to create folder", "error");
       }
     });
 

@@ -18,7 +18,7 @@ interface Bookmark {
   }>;
   folder_id?: string;
   color?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

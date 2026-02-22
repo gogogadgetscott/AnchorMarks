@@ -13,13 +13,19 @@ import { updateActiveNav, closeModals } from "@utils/ui-helpers.ts";
 export function attachSidebarToggle(): void {
   // Find any toggle-sidebar-btn-* button
   const toggleBtn = document.querySelector('[id^="toggle-sidebar-btn-"]');
-  if (toggleBtn && !(toggleBtn as any)._sidebarListenerAttached) {
+  if (
+    toggleBtn &&
+    !(toggleBtn as HTMLElement & { _sidebarListenerAttached?: boolean })
+      ._sidebarListenerAttached
+  ) {
     toggleBtn.addEventListener("click", async () => {
       const { toggleSidebar } = await import("@features/bookmarks/settings.ts");
       toggleSidebar();
     });
     // Mark as attached to prevent duplicate listeners
-    (toggleBtn as any)._sidebarListenerAttached = true;
+    (
+      toggleBtn as HTMLElement & { _sidebarListenerAttached?: boolean }
+    )._sidebarListenerAttached = true;
   }
 }
 

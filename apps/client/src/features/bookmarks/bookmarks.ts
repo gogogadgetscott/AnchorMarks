@@ -18,7 +18,11 @@ import {
   updateActiveNav,
   updateStats,
 } from "@utils/ui-helpers.ts";
-import { Bookmark } from "../../types/index";
+import { Bookmark, Tag } from "../../types/index";
+import {
+  BookmarkViewResponse,
+  RestoreBookmarkViewResponse,
+} from "../../types/api";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
 import {
   BookmarkCard as createBookmarkCard,
@@ -150,7 +154,7 @@ export async function loadBookmarks(): Promise<void> {
       const tags = await api<any[]>("/tags");
       // Create a lookup map for quick access
       const tagMap: Record<string, any> = {};
-      tags.forEach((tag: any) => {
+      tags.forEach((tag: Tag) => {
         tagMap[tag.name] = {
           color: tag.color || "#f59e0b",
           icon: tag.icon || "tag",
@@ -306,7 +310,7 @@ export function renderBookmarks(): void {
       );
 
       // Helper: extract normalized tags from bookmark (support string or array)
-      const getNormalizedTags = (bookmark: any): string[] => {
+      const getNormalizedTags = (bookmark: Bookmark): string[] => {
         const raw = bookmark.tags;
         if (!raw) return [];
         if (Array.isArray(raw)) {
@@ -475,19 +479,18 @@ export function renderBookmarks(): void {
   container.style.paddingBottom = `${Math.max(0, (totalRows - endRow) * rowHeight)}px`;
 
   // Attach listeners once
-  const scrollHandlerMap =
-    (window as any)._bookmarkScrollHandlerMap || new WeakMap();
-  (window as any)._bookmarkScrollHandlerMap = scrollHandlerMap;
+  const scrollHandlerMap = window._bookmarkScrollHandlerMap || new WeakMap();
+  window._bookmarkScrollHandlerMap = scrollHandlerMap;
 
-  const debounce = <T extends (...args: any[]) => void>(
+  const debounce = <T extends (...args: unknown[]) => void>(
     fn: T,
     delay: number,
   ): T => {
-    let timeoutId: any;
-    return ((...args: any[]) => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    return ((...args: Parameters<T>) => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => fn(...args), delay);
-    }) as any;
+    }) as T;
   };
 
   const syncLayout = debounce(() => {
@@ -857,8 +860,8 @@ export async function createBookmark(data: Partial<Bookmark>): Promise<void> {
     await updateCounts();
     closeModals();
     showToast("Bookmark added!", "success");
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
   }
 }
 
@@ -967,8 +970,8 @@ export async function deleteBookmark(id: string): Promise<void> {
 
     await updateCounts();
     showToast("Bookmark deleted", "success");
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
   }
 }
 
@@ -993,8 +996,8 @@ export async function toggleFavorite(id: string): Promise<void> {
       renderBookmarks();
     }
     await updateCounts();
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
   }
 }
 
@@ -1002,7 +1005,7 @@ export async function toggleFavorite(id: string): Promise<void> {
 export async function trackClick(id: string): Promise<void> {
   try {
     await api(`/bookmarks/${id}/click`, { method: "POST" });
-  } catch (err: any) {
+  } catch (err: unknown) {
     // Silent fail
   }
 }
@@ -1033,10 +1036,13 @@ export async function editBookmark(id: string): Promise<void> {
   if (colorInput) colorInput.value = bookmark.color || "";
 
   // Update color picker UI
-  document.querySelectorAll(".color-option-bookmark").forEach((opt: any) => {
-    const optColor = opt.dataset.color || "";
-    opt.classList.toggle("active", optColor === (bookmark.color || ""));
-  });
+  document
+    .querySelectorAll(".color-option-bookmark")
+    .forEach((opt: Element) => {
+      const el = opt as HTMLElement;
+      const optColor = el.dataset.color || "";
+      opt.classList.toggle("active", optColor === (bookmark.color || ""));
+    });
 
   // Load tags into the new tag input system
   // @ts-ignore
@@ -1153,7 +1159,9 @@ async function showBookmarkViewsMenu() {
   document.getElementById("bookmark-views-dropdown")?.remove();
 
   const viewsUnknown = await loadBookmarkViews();
-  const views: any[] = Array.isArray(viewsUnknown) ? viewsUnknown : [];
+  const views: BookmarkViewResponse[] = Array.isArray(viewsUnknown)
+    ? viewsUnknown
+    : [];
 
   const dropdown = document.createElement("div");
   dropdown.id = "bookmark-views-dropdown";
@@ -1194,7 +1202,7 @@ async function showBookmarkViewsMenu() {
   if (views.length === 0) {
     html += `<div style="padding:0.5rem;color:var(--text-tertiary);text-align:center">No saved views</div>`;
   } else {
-    views.forEach((view: any) => {
+    views.forEach((view: BookmarkViewResponse) => {
       html += `
                 <div class="dropdown-item view-item" data-view-id="${view.id}" style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem;cursor:pointer;border-radius:4px">
                     <span class="view-name" style="flex:1">${escapeHtml(view.name)}</span>
@@ -1326,8 +1334,8 @@ async function saveCurrentBookmarkView() {
         tags: "bookmark-views",
       });
     }
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
   }
 }
 
@@ -1354,8 +1362,8 @@ async function deleteBookmarkView(id: string) {
     showToast("View deleted", "success");
     // Refresh dropdown if open
     document.getElementById("bookmark-views-dropdown")?.remove();
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
   }
 }
 
@@ -1365,7 +1373,7 @@ export async function restoreBookmarkView(id: string): Promise<void> {
   try {
     logger.debug("Restoring bookmark view", { viewId: id });
 
-    const response = await api<{ config: any }>(
+    const response = await api<RestoreBookmarkViewResponse>(
       `/bookmark/views/${id}/restore`,
       {
         method: "POST",
@@ -1430,13 +1438,13 @@ export async function restoreBookmarkView(id: string): Promise<void> {
   } catch (err) {
     logger.error("Error restoring bookmark view", err);
     const errorMessage =
-      err instanceof Error ? err.message : "Failed to restore view";
+      err instanceof Error ? (err as Error).message : "Failed to restore view";
     showToast(errorMessage, "error");
   }
 }
 
 // Make restoreBookmarkView global for bookmark shortcuts
-(window as any).restoreBookmarkView = restoreBookmarkView;
+window.restoreBookmarkView = restoreBookmarkView;
 
 export default {
   loadBookmarks,

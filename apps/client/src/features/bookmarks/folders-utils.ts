@@ -5,7 +5,7 @@ export function buildFolderOptionsHTML(
   folders: Folder[],
   topLabel = "None",
 ): string {
-  const sorter = (a: any, b: any) => a.name.localeCompare(b.name);
+  const sorter = (a: Folder, b: Folder) => a.name.localeCompare(b.name);
 
   let html = `<option value="">${escapeHtml(topLabel)}</option>`;
 

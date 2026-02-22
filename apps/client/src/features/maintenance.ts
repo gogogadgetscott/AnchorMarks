@@ -8,6 +8,13 @@ import { api } from "@services/api.ts";
 import { showToast } from "@utils/ui-helpers.ts";
 import { escapeHtml } from "@utils/index.ts";
 import { confirmDialog } from "@features/ui/confirm-dialog.ts";
+import type { BookmarksListResponse } from "../types/api";
+
+interface DuplicateEntry {
+  url: string;
+  ids: string;
+  count: number;
+}
 
 let linkCheckAbortController: AbortController | null = null;
 
@@ -56,7 +63,7 @@ async function refreshFavicons(): Promise<void> {
 
   try {
     // Fetch all bookmarks directly from API to ensure we process everything
-    const response = await api<{ bookmarks: any[] }>("/bookmarks?limit=10000"); // Ensure we get all bookmarks
+    const response = await api<BookmarksListResponse>("/bookmarks?limit=10000"); // Ensure we get all bookmarks
     const allBookmarks = response.bookmarks || [];
 
     const bookmarks = allBookmarks.filter(
@@ -102,8 +109,8 @@ async function refreshFavicons(): Promise<void> {
     // Reload bookmarks to show new favicons
     const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
     await loadBookmarks();
-  } catch (err: any) {
-    showToast(err.message || "Failed to refresh favicons", "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message || "Failed to refresh favicons", "error");
   } finally {
     btn.disabled = false;
     setTimeout(() => {
@@ -129,7 +136,7 @@ async function findDuplicates(): Promise<void> {
   btn.disabled = true;
 
   try {
-    const duplicates = await api<any[]>("/maintenance/duplicates");
+    const duplicates = await api<DuplicateEntry[]>("/maintenance/duplicates");
 
     if (duplicates.length === 0) {
       showToast("No duplicate bookmarks found!", "success");
@@ -142,7 +149,7 @@ async function findDuplicates(): Promise<void> {
     results.classList.remove("hidden");
 
     list.innerHTML = duplicates
-      .map((dup: any) => {
+      .map((dup: DuplicateEntry) => {
         const ids = dup.ids.split(",");
         return `
           <div class="maintenance-item">
@@ -166,8 +173,8 @@ async function findDuplicates(): Promise<void> {
     list
       .querySelectorAll('[data-action="delete-duplicates"]')
       .forEach((btn) => {
-        btn.addEventListener("click", async (e: any) => {
-          const ids = e.target.dataset.ids.split(",");
+        btn.addEventListener("click", async (e: Event) => {
+          const ids = (e.target as HTMLElement).dataset.ids!.split(",");
           if (
             !(await confirmDialog(
               `Delete ${ids.length} duplicate bookmark(s)?`,
@@ -184,19 +191,22 @@ async function findDuplicates(): Promise<void> {
               await api(`/bookmarks/${id}`, { method: "DELETE" });
             }
             showToast(`Deleted ${ids.length} duplicates`, "success");
-            e.target.closest(".maintenance-item")?.remove();
+            (e.target as HTMLElement)?.closest(".maintenance-item")?.remove();
 
             // Refresh data
             const { loadBookmarks } =
               await import("@features/bookmarks/bookmarks.ts");
             await loadBookmarks();
-          } catch (err: any) {
-            showToast(err.message || "Failed to delete duplicates", "error");
+          } catch (err: unknown) {
+            showToast(
+              (err as Error).message || "Failed to delete duplicates",
+              "error",
+            );
           }
         });
       });
-  } catch (err: any) {
-    showToast(err.message || "Failed to find duplicates", "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message || "Failed to find duplicates", "error");
   } finally {
     btn.disabled = false;
   }
@@ -311,8 +321,8 @@ async function checkBrokenLinks(): Promise<void> {
     list
       .querySelectorAll('[data-action="edit-broken-link"]')
       .forEach((editBtn) => {
-        editBtn.addEventListener("click", async (e: any) => {
-          const id = e.currentTarget.dataset.id;
+        editBtn.addEventListener("click", async (e: Event) => {
+          const id = (e.currentTarget as HTMLElement).dataset.id!;
           const { editBookmark } =
             await import("@features/bookmarks/bookmarks.ts");
           editBookmark(id);
@@ -322,8 +332,8 @@ async function checkBrokenLinks(): Promise<void> {
     list
       .querySelectorAll('[data-action="delete-broken-link"]')
       .forEach((deleteBtn) => {
-        deleteBtn.addEventListener("click", async (e: any) => {
-          const id = e.currentTarget.dataset.id;
+        deleteBtn.addEventListener("click", async (e: Event) => {
+          const id = (e.currentTarget as HTMLElement).dataset.id;
           if (
             !(await confirmDialog("Delete this bookmark?", {
               title: "Delete Broken Link",
@@ -334,14 +344,16 @@ async function checkBrokenLinks(): Promise<void> {
 
           try {
             await api(`/bookmarks/${id}`, { method: "DELETE" });
-            e.currentTarget.closest(".maintenance-item")?.remove();
+            (e.currentTarget as HTMLElement)
+              ?.closest(".maintenance-item")
+              ?.remove();
             showToast("Bookmark deleted", "success");
 
             const { loadBookmarks } =
               await import("@features/bookmarks/bookmarks.ts");
             await loadBookmarks();
-          } catch (err: any) {
-            showToast(err.message || "Failed to delete", "error");
+          } catch (err: unknown) {
+            showToast((err as Error).message || "Failed to delete", "error");
           }
         });
       });
@@ -354,8 +366,8 @@ async function checkBrokenLinks(): Promise<void> {
         brokenCount === 0 ? "success" : "warning",
       );
     }
-  } catch (err: any) {
-    showToast(err.message || "Failed to check links", "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message || "Failed to check links", "error");
   } finally {
     btn.disabled = false;
     stopBtn.style.display = "none";

@@ -5,6 +5,7 @@
 
 import * as state from "@features/state.ts";
 import { getOmnibarCommands } from "@features/bookmarks/commands.ts";
+import type { Command } from "../../types/index";
 import { escapeHtml, safeLocalStorage } from "@utils/index.ts";
 import { Icon } from "@components/index.ts";
 
@@ -402,7 +403,7 @@ function renderQuickActions(): void {
 }
 
 // Render search results
-function renderResultsList(commands: any[]): void {
+function renderResultsList(commands: Command[]): void {
   const list = document.getElementById("omnibar-results-list");
   if (!list) return;
 

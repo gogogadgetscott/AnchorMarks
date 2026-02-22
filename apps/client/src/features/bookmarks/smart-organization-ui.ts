@@ -5,9 +5,27 @@
  * and bookmark insights using the AnchorMarks API.
  */
 
+import type {
+  SmartTagSuggestion,
+  SmartInsights,
+  DomainStats,
+} from "../../types/index";
+
+/** Shape of the global AnchorMarks API exposed on `window` */
+interface AnchorMarksAPI {
+  api?: (endpoint: string, options?: RequestInit) => Promise<unknown>;
+  isAuthenticated?: () => boolean;
+  escapeHtml?: (text: string) => string;
+  showToast?: (message: string, type?: string) => void;
+  addTagToInput?: (tag: string) => void;
+  loadFolders?: () => void;
+  aiSuggestionsEnabled?: boolean;
+}
+
 // Get reference to main app API
-function getAPI(): any {
-  return (window as any).AnchorMarks || window;
+function getAPI(): AnchorMarksAPI {
+  return ((window as unknown as { AnchorMarks?: AnchorMarksAPI }).AnchorMarks ||
+    window) as AnchorMarksAPI;
 }
 
 // Helper to safely call API
@@ -137,7 +155,10 @@ function renderTagSuggestions(list: string[]): void {
   });
 }
 
-function renderSmartTagSuggestions(suggestions: any[], domainInfo: any): void {
+function renderSmartTagSuggestions(
+  suggestions: SmartTagSuggestion[],
+  domainInfo: { domain: string; bookmark_count: number; category?: string },
+): void {
   const tagSuggestions = document.getElementById("tag-suggestions");
   if (!tagSuggestions) return;
 
@@ -148,7 +169,7 @@ function renderSmartTagSuggestions(suggestions: any[], domainInfo: any): void {
   }
 
   const html = suggestions
-    .map((sugg: any) => {
+    .map((sugg: SmartTagSuggestion) => {
       const sourceIcon =
         (
           {
@@ -196,7 +217,9 @@ function renderSmartTagSuggestions(suggestions: any[], domainInfo: any): void {
   }
 }
 
-function appendAISuggestions(suggestions: any[]): void {
+function appendAISuggestions(
+  suggestions: Array<string | { tag: string }>,
+): void {
   const tagSuggestions = document.getElementById("tag-suggestions");
   if (!tagSuggestions || !suggestions || !suggestions.length) return;
 
@@ -207,7 +230,7 @@ function appendAISuggestions(suggestions: any[]): void {
   tagSuggestions.appendChild(header);
 
   const html = suggestions
-    .map((sugg: any) => {
+    .map((sugg: string | { tag: string }) => {
       const name = typeof sugg === "string" ? sugg : sugg.tag;
       return `
         <div class="smart-tag-suggestion" data-tag="${escapeHtml(name)}" title="AI-generated">
@@ -252,7 +275,16 @@ async function loadSmartCollections() {
   }
 }
 
-function renderSmartCollectionSuggestions(collections: any[]): void {
+function renderSmartCollectionSuggestions(
+  collections: Array<{
+    name: string;
+    icon: string;
+    reason: string;
+    bookmark_count: number;
+    type: string;
+    tags?: string[];
+  }>,
+): void {
   const container = document.getElementById("smart-collections-suggestions");
   if (!container) return;
 
@@ -358,8 +390,11 @@ async function createSmartCollectionFromSuggestion(
       );
       if (suggestionsEl) suggestionsEl.style.display = "none";
     }
-  } catch (err: any) {
-    showToast(`Failed to create collection: ${err.message}`, "error");
+  } catch (err: unknown) {
+    showToast(
+      `Failed to create collection: ${(err as Error).message}`,
+      "error",
+    );
   }
 }
 
@@ -378,7 +413,7 @@ async function loadSmartInsights() {
   }
 }
 
-function renderSmartInsights(insights: any): void {
+function renderSmartInsights(insights: SmartInsights): void {
   const container = document.getElementById("smart-insights-widget");
   if (!container || !insights) return;
 
@@ -410,7 +445,7 @@ function renderSmartInsights(insights: any): void {
             ${insights.top_domains
               .slice(0, 5)
               .map(
-                (d: any) => `
+                (d: { domain: string; percentage: number; count: number }) => `
               <div class="insight-item">
                 <span class="item-name">${escapeHtml(d.domain)}</span>
                 <div class="item-bar">
@@ -436,7 +471,7 @@ function renderSmartInsights(insights: any): void {
             ${insights.top_tags
               .slice(0, 8)
               .map(
-                (t: any) => `
+                (t: { tag: string; count: number }) => `
               <span class="tag-badge-small" title="${t.count} bookmarks">
                 ${escapeHtml(t.tag)} (${t.count})
               </span>
@@ -480,12 +515,15 @@ async function showDomainStats(domain: string): Promise<void> {
       `/smart-collections/domain-stats?domain=${encodeURIComponent(domain)}`,
     );
     displayDomainStatsModal(stats);
-  } catch (err: any) {
-    showToast(`Failed to load domain stats: ${err.message}`, "error");
+  } catch (err: unknown) {
+    showToast(
+      `Failed to load domain stats: ${(err as Error).message}`,
+      "error",
+    );
   }
 }
 
-function displayDomainStatsModal(stats: any): void {
+function displayDomainStatsModal(stats: DomainStats): void {
   if (!stats) return;
 
   const modal = document.createElement("div");

@@ -8,6 +8,10 @@ import { api } from "@services/api.ts";
 import { escapeHtml, parseTagInput } from "@utils/index.ts";
 import { showToast, updateActiveNav } from "@utils/ui-helpers.ts";
 import { Badge, Icon } from "@components/index.ts";
+import type { Collection, Tag } from "../../types/index";
+
+/** Tag with count and optional parent path, used in tag stats list */
+type TagStatItem = Tag & { parent?: string; count: number };
 
 // Render sidebar tags
 export function renderSidebarTags(): void {
@@ -253,7 +257,7 @@ export function renderActiveFilters(): void {
   const currentCollection =
     state.currentView === "collection" ? state.currentCollection : null;
   const collectionName = currentCollection
-    ? (state as any).collections.find((c: any) => c.id === currentCollection)
+    ? state.collections.find((c: Collection) => c.id === currentCollection)
         ?.name
     : null;
 
@@ -476,7 +480,9 @@ export async function renameTagAcross(from: string, to: string): Promise<void> {
 
 // Load tag stats
 export async function loadTagStats(): Promise<void> {
-  const tagStatsList = document.getElementById("tag-stats-list") as any;
+  const tagStatsList = document.getElementById(
+    "tag-stats-list",
+  ) as HTMLElement & { _allTags?: TagStatItem[] };
   if (!tagStatsList) return;
 
   try {
@@ -489,11 +495,11 @@ export async function loadTagStats(): Promise<void> {
     }
 
     const tagStatsListElement = tagStatsList as HTMLElement & {
-      _allTags: any[];
+      _allTags: TagStatItem[];
     };
     // Sort tags based on user preference
     const sortMode = state.filterConfig.tagSort || "count_desc";
-    tags.sort((a: any, b: any) => {
+    tags.sort((a: TagStatItem, b: TagStatItem) => {
       switch (sortMode) {
         case "count_asc":
           return a.count - b.count;
@@ -520,7 +526,7 @@ export async function loadTagStats(): Promise<void> {
 }
 
 // Render tag stats list
-function renderTagStatsList(tags: any[]): void {
+function renderTagStatsList(tags: TagStatItem[]): void {
   const tagStatsList = document.getElementById("tag-stats-list");
   if (!tagStatsList) return;
 
@@ -549,12 +555,13 @@ function renderTagStatsList(tags: any[]): void {
     .join("");
 
   // Add listeners for edit buttons
-  tagStatsList.querySelectorAll(".edit-tag-btn").forEach((btn: any) => {
-    btn.addEventListener("click", () => {
+  tagStatsList.querySelectorAll(".edit-tag-btn").forEach((btn: Element) => {
+    const el = btn as HTMLElement;
+    el.addEventListener("click", () => {
       const tag = {
-        id: btn.dataset.id,
-        name: btn.dataset.name,
-        color: btn.dataset.color,
+        id: el.dataset.id,
+        name: el.dataset.name,
+        color: el.dataset.color,
       };
       openTagModal(tag);
     });
@@ -563,7 +570,9 @@ function renderTagStatsList(tags: any[]): void {
 
 // Filter tag stats based on search term
 export function filterTagStats(searchTerm: string): void {
-  const tagStatsList = document.getElementById("tag-stats-list") as any;
+  const tagStatsList = document.getElementById(
+    "tag-stats-list",
+  ) as HTMLElement & { _allTags?: TagStatItem[] };
   if (!tagStatsList || !tagStatsList._allTags) return;
 
   const term = searchTerm.toLowerCase().trim();
@@ -573,7 +582,7 @@ export function filterTagStats(searchTerm: string): void {
     return;
   }
 
-  const filtered = tagStatsList._allTags.filter((tag: any) => {
+  const filtered = tagStatsList._allTags.filter((tag: TagStatItem) => {
     return (
       tag.name.toLowerCase().includes(term) ||
       (tag.parent && tag.parent.toLowerCase().includes(term))
@@ -655,10 +664,11 @@ export async function renderTagsForFilter(
     .join("");
 
   // Attach click handlers
-  container.querySelectorAll(".tag-item").forEach((item: any) => {
-    item.addEventListener("click", async (e: any) => {
+  container.querySelectorAll(".tag-item").forEach((item: Element) => {
+    const el = item as HTMLElement;
+    el.addEventListener("click", async (e: Event) => {
       e.stopPropagation();
-      const tagName = item.dataset.tag;
+      const tagName = el.dataset.tag;
 
       // Toggle tag filter
       const currentTags = [...state.filterConfig.tags];
@@ -666,14 +676,14 @@ export async function renderTagsForFilter(
 
       if (index > -1) {
         currentTags.splice(index, 1);
-        item.classList.remove("active");
-        item.style.background = "var(--bg-tertiary)";
-        item.style.color = "var(--text-primary)";
+        el.classList.remove("active");
+        el.style.background = "var(--bg-tertiary)";
+        el.style.color = "var(--text-primary)";
       } else {
         currentTags.push(tagName);
-        item.classList.add("active");
-        item.style.background = "var(--primary-500)";
-        item.style.color = "white";
+        el.classList.add("active");
+        el.style.background = "var(--primary-500)";
+        el.style.color = "white";
       }
 
       state.setFilterConfig({
@@ -689,7 +699,11 @@ export async function renderTagsForFilter(
 }
 
 // Tag Modal
-export function openTagModal(tag: any): void {
+export function openTagModal(tag: {
+  id?: string;
+  name?: string;
+  color?: string;
+}): void {
   const modal = document.getElementById("tag-modal");
   const form = document.getElementById("tag-form");
   const tagIdInput = document.getElementById("tag-id") as HTMLInputElement;
@@ -709,8 +723,8 @@ export function openTagModal(tag: any): void {
   const color = tag.color || "#f59e0b";
   tagColorInput.value = color;
 
-  document.querySelectorAll(".color-option-tag").forEach((btn: any) => {
-    if (btn.dataset.color === color) {
+  document.querySelectorAll(".color-option-tag").forEach((btn: Element) => {
+    if ((btn as HTMLElement).dataset.color === color) {
       btn.classList.add("active");
     } else {
       btn.classList.remove("active");
@@ -747,8 +761,8 @@ export async function handleTagSubmit(e: Event): Promise<void> {
     window.dispatchEvent(event);
 
     showToast("Tag updated successfully", "success");
-  } catch (err: any) {
-    showToast(err.message || "Failed to update tag", "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message || "Failed to update tag", "error");
   }
 }
 
@@ -779,8 +793,8 @@ export async function createNewTag(
 
     showToast(`Tag "${name}" created successfully`, "success");
     return true;
-  } catch (err: any) {
-    const errorMsg = err.message || "Failed to create tag";
+  } catch (err: unknown) {
+    const errorMsg = (err as Error).message || "Failed to create tag";
     showToast(errorMsg, "error");
     return false;
   }

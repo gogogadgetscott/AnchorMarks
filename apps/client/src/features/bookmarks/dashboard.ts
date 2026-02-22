@@ -11,6 +11,13 @@ import { api } from "@services/api.ts";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
 import { logger } from "@utils/logger.ts";
 import { confirmDialog, promptDialog } from "@features/ui/confirm-dialog.ts";
+import type {
+  Bookmark,
+  DashboardWidget,
+  TagAnalyticsItem,
+  CooccurrenceItem,
+} from "../../types/index";
+import type { DashboardViewResponse } from "../../types/api";
 
 // Grid size for snap-to-grid feature
 const GRID_SIZE = 20;
@@ -212,7 +219,7 @@ async function showViewsMenu(): Promise<void> {
   if (views.length === 0) {
     html += `<div style="padding:0.5rem;color:var(--text-tertiary);text-align:center">No saved views</div>`;
   } else {
-    views.forEach((view: any) => {
+    views.forEach((view: DashboardViewResponse) => {
       html += `
                 <div class="dropdown-item view-item" data-view-id="${view.id}" style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem;cursor:pointer;border-radius:4px">
                     <span class="view-name" style="flex:1">${escapeHtml(view.name)}</span>
@@ -244,15 +251,15 @@ async function showViewsMenu(): Promise<void> {
   document.body.appendChild(dropdown);
 
   // Attach event listeners to view items
-  dropdown.querySelectorAll(".view-item").forEach((item: any) => {
-    const viewId = item.dataset.viewId;
+  dropdown.querySelectorAll(".view-item").forEach((item: Element) => {
+    const viewId = (item as HTMLElement).dataset.viewId;
     const nameSpan = item.querySelector(".view-name");
     const viewName = nameSpan?.textContent || null;
     const deleteBtn = item.querySelector(".delete-view-btn");
 
     // Click on view name to restore
     if (nameSpan) {
-      nameSpan.addEventListener("click", async (e: any) => {
+      nameSpan.addEventListener("click", async (e: Event) => {
         e.preventDefault();
         e.stopPropagation();
         await restoreView(viewId, viewName);
@@ -261,7 +268,7 @@ async function showViewsMenu(): Promise<void> {
 
     // Click on delete button
     if (deleteBtn) {
-      deleteBtn.addEventListener("click", async (e: any) => {
+      deleteBtn.addEventListener("click", async (e: Event) => {
         e.preventDefault();
         e.stopPropagation();
         await deleteView(viewId);
@@ -352,13 +359,13 @@ export async function saveCurrentView(): Promise<void> {
         tags: "dashboard-views",
       });
     }
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
   }
 }
 
 // Load Views
-async function loadViews(): Promise<any[]> {
+async function loadViews(): Promise<DashboardViewResponse[]> {
   try {
     return await api("/dashboard/views");
   } catch {
@@ -380,8 +387,8 @@ export async function deleteView(id: string): Promise<void> {
     showToast("View deleted", "success");
     // Refresh dropdown if open
     document.getElementById("views-dropdown")?.remove();
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
   }
 }
 
@@ -424,17 +431,17 @@ export async function restoreView(
 
     // Save the state snapshot after loading the view
     saveDashboardStateSnapshot();
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
   }
 }
 
-(window as any).saveCurrentView = saveCurrentView;
-(window as any).deleteView = deleteView;
-(window as any).restoreView = restoreView;
+window.saveCurrentView = saveCurrentView;
+window.deleteView = deleteView;
+window.restoreView = restoreView;
 
 // Helper to render compact bookmark item
-function renderCompactBookmarkItem(b: any): string {
+function renderCompactBookmarkItem(b: Bookmark): string {
   const colorStyle = b.color
     ? `--bookmark-color: ${b.color}; background-color: color-mix(in srgb, ${b.color} 20%, var(--bg-primary)); border-left: 6px solid ${b.color};`
     : "";
@@ -466,7 +473,7 @@ function renderCompactBookmarkItem(b: any): string {
 }
 
 // sortBookmarks is defined locally to avoid circular dependency with bookmarks.ts
-function sortBookmarks(list: any[], widgetSort?: string): any[] {
+function sortBookmarks(list: Bookmark[], widgetSort?: string): Bookmark[] {
   const sort =
     widgetSort || state.dashboardConfig.bookmarkSort || "recently_added";
   return [...list].sort((a, b) => {
@@ -638,7 +645,7 @@ function loadMoreWidgetItems(sentinel: HTMLElement): void {
 
   if (nextBatch.length > 0) {
     const html = nextBatch
-      .map((b: any) => renderCompactBookmarkItem(b))
+      .map((b: Bookmark) => renderCompactBookmarkItem(b))
       .join("");
     sentinel.insertAdjacentHTML("beforebegin", html);
   }
@@ -659,11 +666,15 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
     );
     if (!widgets || widgets.length === 0) return;
 
-    const res = await api<any>("/tags/analytics");
+    const res = await api<{
+      success?: boolean;
+      tags: TagAnalyticsItem[];
+      cooccurrence: CooccurrenceItem[];
+    }>("/tags/analytics");
 
     // Handle various response formats
-    let tags: any[] = [];
-    let cooccurrence: any[] = [];
+    let tags: TagAnalyticsItem[] = [];
+    let cooccurrence: CooccurrenceItem[] = [];
 
     if (res && typeof res === "object") {
       if (res.success && Array.isArray(res.tags)) {
@@ -675,11 +686,12 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
       }
     }
 
-    widgets.forEach((root: any) => {
+    widgets.forEach((root: Element) => {
       const indexAttr = root.getAttribute("data-analytics-widget");
       const idx = parseInt(indexAttr);
-      const widgetCfg = state.dashboardWidgets[idx] || {};
-      const settings = (widgetCfg as any).settings || {
+      const widgetCfg =
+        state.dashboardWidgets[idx] || ({} as Partial<DashboardWidget>);
+      const settings = widgetCfg.settings || {
         metric: "count",
         limit: 20,
         pairSort: "count",
@@ -745,7 +757,9 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
       const coocEl = root.querySelector(".tag-analytics-cooccurrence");
       if (topTagsEl) {
         const sortedTags = [...tags].sort(
-          (a: any, b: any) => (b[metric] || 0) - (a[metric] || 0),
+          (a: TagAnalyticsItem, b: TagAnalyticsItem) =>
+            ((b[metric as keyof TagAnalyticsItem] as number) || 0) -
+            ((a[metric as keyof TagAnalyticsItem] as number) || 0),
         );
         const topTags = sortedTags.slice(0, limit);
         const metricColor =
@@ -756,26 +770,28 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
               : colors.favorites;
         topTagsEl.innerHTML = topTags
           .map(
-            (t: any) => `
+            (t: TagAnalyticsItem) => `
               <div class="tag-name" title="${escapeHtml(t.name)}">${escapeHtml(t.name)}</div>
-              <div class="tag-count" style="text-align:right;color:${metricColor}">${t[metric] || 0}</div>
+              <div class="tag-count" style="text-align:right;color:${metricColor}">${(t[metric as keyof TagAnalyticsItem] as number) || 0}</div>
             `,
           )
           .join("");
       }
       if (coocEl) {
-        const sortedPairs = [...cooccurrence].sort((a: any, b: any) => {
-          if (pairSort === "alpha") {
-            const na = (a.tag_name_a + " + " + a.tag_name_b).toLowerCase();
-            const nb = (b.tag_name_a + " + " + b.tag_name_b).toLowerCase();
-            return na.localeCompare(nb);
-          }
-          return (b.count || 0) - (a.count || 0);
-        });
+        const sortedPairs = [...cooccurrence].sort(
+          (a: CooccurrenceItem, b: CooccurrenceItem) => {
+            if (pairSort === "alpha") {
+              const na = (a.tag_name_a + " + " + a.tag_name_b).toLowerCase();
+              const nb = (b.tag_name_a + " + " + b.tag_name_b).toLowerCase();
+              return na.localeCompare(nb);
+            }
+            return (b.count || 0) - (a.count || 0);
+          },
+        );
         const pairs = sortedPairs.slice(0, limit);
         coocEl.innerHTML = pairs
           .map(
-            (p: any) => `
+            (p: CooccurrenceItem) => `
               <div class="pair-name" title="${escapeHtml(p.tag_name_a)} + ${escapeHtml(p.tag_name_b)}">${escapeHtml(p.tag_name_a)} + ${escapeHtml(p.tag_name_b)}</div>
               <div class="pair-count" style="text-align:right;color:${colors.pairs}">${p.count}</div>
             `,
@@ -785,11 +801,11 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
 
       // Listeners
       if (metricSel) {
-        metricSel.addEventListener("change", (e: any) => {
-          const val = e.target.value;
-          if (!(state.dashboardWidgets[idx] as any).settings)
-            (state.dashboardWidgets[idx] as any).settings = {};
-          (state.dashboardWidgets[idx] as any).settings.metric = val;
+        metricSel.addEventListener("change", (e: Event) => {
+          const val = (e.target as HTMLSelectElement).value;
+          if (!state.dashboardWidgets[idx].settings)
+            state.dashboardWidgets[idx].settings = {};
+          state.dashboardWidgets[idx].settings!.metric = val;
           import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
             saveSettings({ dashboard_widgets: state.dashboardWidgets }),
           );
@@ -797,11 +813,11 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
         });
       }
       if (limitSel) {
-        limitSel.addEventListener("change", (e: any) => {
-          const val = parseInt(e.target.value);
-          if (!(state.dashboardWidgets[idx] as any).settings)
-            (state.dashboardWidgets[idx] as any).settings = {};
-          (state.dashboardWidgets[idx] as any).settings.limit = val;
+        limitSel.addEventListener("change", (e: Event) => {
+          const val = parseInt((e.target as HTMLSelectElement).value);
+          if (!state.dashboardWidgets[idx].settings)
+            state.dashboardWidgets[idx].settings = {};
+          state.dashboardWidgets[idx].settings!.limit = val;
           import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
             saveSettings({ dashboard_widgets: state.dashboardWidgets }),
           );
@@ -809,11 +825,11 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
         });
       }
       if (pairSortSel) {
-        pairSortSel.addEventListener("change", (e: any) => {
-          const val = e.target.value;
-          if (!(state.dashboardWidgets[idx] as any).settings)
-            (state.dashboardWidgets[idx] as any).settings = {};
-          (state.dashboardWidgets[idx] as any).settings.pairSort = val;
+        pairSortSel.addEventListener("change", (e: Event) => {
+          const val = (e.target as HTMLSelectElement).value;
+          if (!state.dashboardWidgets[idx].settings)
+            state.dashboardWidgets[idx].settings = {};
+          state.dashboardWidgets[idx].settings!.pairSort = val;
           import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
             saveSettings({ dashboard_widgets: state.dashboardWidgets }),
           );
@@ -822,16 +838,17 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
       }
 
       function ensureColors() {
-        if (!(state.dashboardWidgets[idx] as any).settings)
-          (state.dashboardWidgets[idx] as any).settings = {};
-        if (!(state.dashboardWidgets[idx] as any).settings.colors)
-          (state.dashboardWidgets[idx] as any).settings.colors = {};
+        if (!state.dashboardWidgets[idx].settings)
+          state.dashboardWidgets[idx].settings = {};
+        if (!state.dashboardWidgets[idx].settings!.colors)
+          state.dashboardWidgets[idx].settings!.colors = {};
       }
       if (colorUsage) {
-        colorUsage.addEventListener("change", (e: any) => {
+        colorUsage.addEventListener("change", (e: Event) => {
           ensureColors();
-          (state.dashboardWidgets[idx] as any).settings.colors.usage =
-            e.target.value;
+          state.dashboardWidgets[idx].settings!.colors!.usage = (
+            e.target as HTMLInputElement
+          ).value;
           import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
             saveSettings({ dashboard_widgets: state.dashboardWidgets }),
           );
@@ -839,10 +856,11 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
         });
       }
       if (colorClicks) {
-        colorClicks.addEventListener("change", (e: any) => {
+        colorClicks.addEventListener("change", (e: Event) => {
           ensureColors();
-          (state.dashboardWidgets[idx] as any).settings.colors.clicks =
-            e.target.value;
+          state.dashboardWidgets[idx].settings!.colors!.clicks = (
+            e.target as HTMLInputElement
+          ).value;
           import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
             saveSettings({ dashboard_widgets: state.dashboardWidgets }),
           );
@@ -850,10 +868,11 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
         });
       }
       if (colorFavorites) {
-        colorFavorites.addEventListener("change", (e: any) => {
+        colorFavorites.addEventListener("change", (e: Event) => {
           ensureColors();
-          (state.dashboardWidgets[idx] as any).settings.colors.favorites =
-            e.target.value;
+          state.dashboardWidgets[idx].settings!.colors!.favorites = (
+            e.target as HTMLInputElement
+          ).value;
           import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
             saveSettings({ dashboard_widgets: state.dashboardWidgets }),
           );
@@ -861,10 +880,11 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
         });
       }
       if (colorPairs) {
-        colorPairs.addEventListener("change", (e: any) => {
+        colorPairs.addEventListener("change", (e: Event) => {
           ensureColors();
-          (state.dashboardWidgets[idx] as any).settings.colors.pairs =
-            e.target.value;
+          state.dashboardWidgets[idx].settings!.colors!.pairs = (
+            e.target as HTMLInputElement
+          ).value;
           import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
             saveSettings({ dashboard_widgets: state.dashboardWidgets }),
           );
@@ -884,7 +904,10 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
-      function toCSV(rows: any[], columns: string[]) {
+      function toCSV(
+        rows: Record<string, string | number>[],
+        columns: string[],
+      ) {
         const header = columns.join(",");
         const body = rows
           .map((r) =>
@@ -911,7 +934,17 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
       }
       if (btnTagsCsv) {
         btnTagsCsv.addEventListener("click", () => {
-          const csv = toCSV(tags, ["name", "count"]);
+          const columns = ["name", "count"];
+          if (
+            tags.length > 0 &&
+            ("click_count_sum" in tags[0] || "favorite_count_sum" in tags[0])
+          ) {
+            if (typeof tags[0].click_count_sum !== "undefined")
+              columns.push("click_count_sum");
+            if (typeof tags[0].favorite_count_sum !== "undefined")
+              columns.push("favorite_count_sum");
+          }
+          const csv = toCSV(tags, columns);
           downloadFile("tag-analytics-tags.csv", "text/csv", csv);
         });
       }
@@ -935,7 +968,7 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
 function renderFreeformWidgets(): string {
   let html = "";
 
-  state.dashboardWidgets.forEach((widget: any, index) => {
+  state.dashboardWidgets.forEach((widget: DashboardWidget, index: number) => {
     if (state.isLoading) {
       // Show skeleton widget while loading
       html += `
@@ -1064,7 +1097,7 @@ function renderFreeformWidgets(): string {
                        <select class="tag-analytics-metric">
                          <option value="count">Usage</option>
                          <option value="click_count_sum">Clicks</option>
-                         <option value="favorites_count">Favorites</option>
+                         <option value="favorite_count_sum">Favorites</option>
                        </select>
                      </label>
                      <label style="display:flex;align-items:center;gap:0.25rem;">
@@ -1170,7 +1203,13 @@ function renderFreeformWidgets(): string {
 }
 
 // Get widget data
-function getWidgetData(widget: any): any {
+function getWidgetData(widget: DashboardWidget): {
+  name: string;
+  color: string;
+  bookmarks: Bookmark[];
+  count: number;
+  isLoading?: boolean;
+} | null {
   const cached = state.widgetDataCache[widget.id];
 
   if (widget.type === "folder") {
@@ -1222,7 +1261,7 @@ export function initDashboardDragDrop(): void {
     dropZone.classList.add("drag-over");
   });
 
-  dropZone.addEventListener("dragleave", (e: any) => {
+  dropZone.addEventListener("dragleave", (e: DragEvent) => {
     if (e.target === dropZone) {
       dropZone.classList.remove("drag-over");
     }
@@ -1238,7 +1277,9 @@ export function initDashboardDragDrop(): void {
 
     if (state.draggedSidebarItem) {
       const { type, id } = state.draggedSidebarItem;
-      addDashboardWidget(type as any, id, x, y);
+      if (type === "folder" || type === "tag") {
+        addDashboardWidget(type, id, x, y);
+      }
       state.setDraggedSidebarItem(null);
     }
   });
@@ -1246,15 +1287,15 @@ export function initDashboardDragDrop(): void {
   // Setup widget drag and resize
   document
     .querySelectorAll(".dashboard-widget-freeform")
-    .forEach((widget: any) => {
+    .forEach((widget: HTMLElement) => {
       const header = widget.querySelector(".widget-header");
       const resizeHandle = widget.querySelector(".widget-resize-handle");
 
       // Drag to move
-      header?.addEventListener("mousedown", (e: any) => {
+      header?.addEventListener("mousedown", (e: MouseEvent) => {
         if (
-          e.target.closest(".widget-remove") ||
-          e.target.closest(".widget-color-btn")
+          (e.target as HTMLElement).closest(".widget-remove") ||
+          (e.target as HTMLElement).closest(".widget-color-btn")
         )
           return;
 
@@ -1270,7 +1311,7 @@ export function initDashboardDragDrop(): void {
       });
 
       // Resize handle
-      resizeHandle?.addEventListener("mousedown", (e: any) => {
+      resizeHandle?.addEventListener("mousedown", (e: MouseEvent) => {
         state.setIsResizing(true);
         state.setResizingWidget(widget);
         state.setDragStartPos({ x: e.clientX, y: e.clientY });
@@ -1291,10 +1332,10 @@ export function initDashboardDragDrop(): void {
   // Setup remove widget buttons
   document
     .querySelectorAll('[data-action="remove-widget"]')
-    .forEach((btn: any) => {
-      btn.addEventListener("click", (e: any) => {
+    .forEach((btn: Element) => {
+      btn.addEventListener("click", (e: Event) => {
         e.stopPropagation();
-        const index = parseInt(btn.dataset.index);
+        const index = parseInt((btn as HTMLElement).dataset.index);
         removeDashboardWidget(index);
       });
     });
@@ -1302,10 +1343,10 @@ export function initDashboardDragDrop(): void {
   // Setup color change buttons
   document
     .querySelectorAll('[data-action="change-widget-color"]')
-    .forEach((btn: any) => {
-      btn.addEventListener("click", (e: any) => {
+    .forEach((btn: Element) => {
+      btn.addEventListener("click", (e: Event) => {
         e.stopPropagation();
-        const index = parseInt(btn.dataset.index);
+        const index = parseInt((btn as HTMLElement).dataset.index);
 
         // Close options menu first
         document
@@ -1323,10 +1364,10 @@ export function initDashboardDragDrop(): void {
   // Setup widget options toggle
   document
     .querySelectorAll('[data-action="toggle-widget-options"]')
-    .forEach((btn: any) => {
-      btn.addEventListener("click", (e: any) => {
+    .forEach((btn: Element) => {
+      btn.addEventListener("click", (e: Event) => {
         e.stopPropagation();
-        const index = btn.dataset.index;
+        const index = (btn as HTMLElement).dataset.index;
         const menu = document.querySelector(
           `.widget-options-menu[data-widget-index="${index}"]`,
         );
@@ -1361,18 +1402,24 @@ export function initDashboardDragDrop(): void {
 
   // Only add listener once (use data attribute to track)
   const container = document.getElementById("dashboard-widgets-freeform");
-  if (container && !(container as any)._menuListenerAdded) {
+  if (
+    container &&
+    !(container as HTMLElement & { _menuListenerAdded?: boolean })
+      ._menuListenerAdded
+  ) {
     document.addEventListener("click", closeWidgetMenus);
-    (container as any)._menuListenerAdded = true;
+    (
+      container as HTMLElement & { _menuListenerAdded?: boolean }
+    )._menuListenerAdded = true;
   }
 
   // Widget sort A-Z
   document
     .querySelectorAll('[data-action="widget-sort-az"]')
-    .forEach((btn: any) => {
-      btn.addEventListener("click", (e: any) => {
+    .forEach((btn: Element) => {
+      btn.addEventListener("click", (e: Event) => {
         e.stopPropagation();
-        const index = parseInt(btn.dataset.widgetIndex);
+        const index = parseInt((btn as HTMLElement).dataset.widgetIndex);
         if (state.dashboardWidgets[index]) {
           state.dashboardWidgets[index].sort = "a-z";
           saveDashboardWidgets();
@@ -1384,10 +1431,10 @@ export function initDashboardDragDrop(): void {
   // Widget sort Z-A
   document
     .querySelectorAll('[data-action="widget-sort-za"]')
-    .forEach((btn: any) => {
-      btn.addEventListener("click", (e: any) => {
+    .forEach((btn: Element) => {
+      btn.addEventListener("click", (e: Event) => {
         e.stopPropagation();
-        const index = parseInt(btn.dataset.widgetIndex);
+        const index = parseInt((btn as HTMLElement).dataset.widgetIndex);
         if (state.dashboardWidgets[index]) {
           state.dashboardWidgets[index].sort = "z-a";
           saveDashboardWidgets();
@@ -1399,11 +1446,11 @@ export function initDashboardDragDrop(): void {
   // Widget add bookmark
   document
     .querySelectorAll('[data-action="widget-add-bookmark"]')
-    .forEach((btn: any) => {
-      btn.addEventListener("click", async (e: any) => {
+    .forEach((btn: Element) => {
+      btn.addEventListener("click", async (e: Event) => {
         e.stopPropagation();
-        const widgetType = btn.dataset.widgetType;
-        const widgetId = btn.dataset.widgetId;
+        const widgetType = (btn as HTMLElement).dataset.widgetType;
+        const widgetId = (btn as HTMLElement).dataset.widgetId;
 
         // Close menu
         document
@@ -1441,13 +1488,13 @@ export function initDashboardDragDrop(): void {
   // Widget open all bookmarks
   document
     .querySelectorAll('[data-action="widget-open-all"]')
-    .forEach((btn: any) => {
-      btn.addEventListener("click", async (e: any) => {
+    .forEach((btn: Element) => {
+      btn.addEventListener("click", async (e: Event) => {
         e.stopPropagation();
 
         // Find widget by ID and Type for robustness
-        const widgetType = btn.dataset.widgetType;
-        const widgetId = btn.dataset.widgetId;
+        const widgetType = (btn as HTMLElement).dataset.widgetType;
+        const widgetId = (btn as HTMLElement).dataset.widgetId;
         const widget = state.dashboardWidgets.find(
           (w) => w.type === widgetType && w.id === widgetId,
         );
@@ -1494,9 +1541,9 @@ export function initDashboardDragDrop(): void {
 
         // Open each bookmark
         let successCount = 0;
-        const failedBookmarks: any[] = [];
+        const failedBookmarks: Bookmark[] = [];
 
-        bookmarks.forEach((b: any) => {
+        bookmarks.forEach((b: Bookmark) => {
           if (b && b.url) {
             const win = window.open(b.url, "_blank");
             if (win) {
@@ -1520,7 +1567,7 @@ export function initDashboardDragDrop(): void {
     });
 
   // Helper to show UI for blocked links
-  function showBlockedLinksUI(bookmarks: any[], successCount: number) {
+  function showBlockedLinksUI(bookmarks: Bookmark[], successCount: number) {
     // Check if modal already exists
     let modal = document.getElementById("blocked-links-modal");
 
@@ -1598,11 +1645,11 @@ export function initDashboardDragDrop(): void {
   // Widget show in bookmarks view
   document
     .querySelectorAll('[data-action="widget-show-in-view"]')
-    .forEach((btn: any) => {
-      btn.addEventListener("click", async (e: any) => {
+    .forEach((btn: Element) => {
+      btn.addEventListener("click", async (e: Event) => {
         e.stopPropagation();
-        const widgetType = btn.dataset.widgetType;
-        const widgetId = btn.dataset.widgetId;
+        const widgetType = (btn as HTMLElement).dataset.widgetType;
+        const widgetId = (btn as HTMLElement).dataset.widgetId;
 
         // Close menu
         document
@@ -1714,9 +1761,11 @@ export function addDashboardWidget(
     return;
   }
 
-  const newWidget: any = {
+  const newWidget: DashboardWidget = {
     id: id,
     type: type,
+    title: "",
+    config: {},
     x: x,
     y: y,
     w: 320,
@@ -1792,7 +1841,7 @@ function showWidgetColorPicker(index: number, button: HTMLElement): void {
                         data-color="${c.value}" 
                         title="${c.name}"
                         style="background: ${c.value}">
-                    ${(widget as any).color === c.value ? '<span class="color-check">✓</span>' : ""}
+                    ${widget.color === c.value ? '<span class="color-check">✓</span>' : ""}
                 </button>
             `,
               )
@@ -1808,10 +1857,10 @@ function showWidgetColorPicker(index: number, button: HTMLElement): void {
 
   document.body.appendChild(picker);
 
-  picker.querySelectorAll(".color-picker-option").forEach((opt: any) => {
-    opt.addEventListener("click", (e: any) => {
+  picker.querySelectorAll(".color-picker-option").forEach((opt: Element) => {
+    opt.addEventListener("click", (e: Event) => {
       e.stopPropagation();
-      const color = opt.dataset.color;
+      const color = (opt as HTMLElement).dataset.color;
       updateWidgetColor(index, color);
       picker.remove();
     });
@@ -1830,7 +1879,7 @@ function showWidgetColorPicker(index: number, button: HTMLElement): void {
 // Update widget color
 function updateWidgetColor(index: number, color: string): void {
   if (state.dashboardWidgets[index]) {
-    (state.dashboardWidgets[index] as any).color = color;
+    state.dashboardWidgets[index].color = color;
     saveDashboardWidgets();
     renderDashboard();
     showToast("Widget color updated", "success");
@@ -1851,15 +1900,15 @@ export function filterDashboardBookmarks(term: string): void {
   const widgets = document.querySelectorAll(".dashboard-widget");
   const lowerTerm = term.toLowerCase();
 
-  widgets.forEach((widget: any) => {
+  widgets.forEach((widget: HTMLElement) => {
     const items = widget.querySelectorAll(".compact-item");
     let hasVisible = false;
 
-    items.forEach((item: any) => {
+    items.forEach((item: Element) => {
       const text =
-        item.querySelector(".compact-text")?.textContent.toLowerCase() || "";
+        item.querySelector(".compact-text")?.textContent?.toLowerCase() || "";
       const matches = text.includes(lowerTerm);
-      item.style.display = matches || !term ? "" : "none";
+      (item as HTMLElement).style.display = matches || !term ? "" : "none";
       if (matches || !term) hasVisible = true;
     });
 
@@ -2018,7 +2067,7 @@ function attachLayoutSettingsListeners(): void {
 
   const snapToggleBtn = document.getElementById("snap-to-grid-toggle-btn");
   if (snapToggleBtn) {
-    snapToggleBtn.addEventListener("click", async (e: any) => {
+    snapToggleBtn.addEventListener("click", async (e: Event) => {
       e.stopPropagation();
       state.setSnapToGrid(!state.snapToGrid);
       await import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
@@ -2053,7 +2102,7 @@ export function autoPositionWidgets(): void {
   const GAP = 20;
   const COLUMNS = 3;
 
-  state.dashboardWidgets.forEach((widget: any, index) => {
+  state.dashboardWidgets.forEach((widget: DashboardWidget, index: number) => {
     const row = Math.floor(index / COLUMNS);
     const col = index % COLUMNS;
 
@@ -2110,9 +2159,9 @@ export function clearDashboard(): void {
   closeLayoutSettings();
 }
 
-(window as any).saveCurrentView = saveCurrentView;
-(window as any).deleteView = deleteView;
-(window as any).restoreView = restoreView;
+window.saveCurrentView = saveCurrentView;
+window.deleteView = deleteView;
+window.restoreView = restoreView;
 
 export default {
   renderDashboard,

@@ -100,7 +100,7 @@ export function addManagedListener<K extends keyof HTMLElementEventMap>(
   }
 
   try {
-    element.addEventListener(event as any, handler, {
+    element.addEventListener(event, handler, {
       ...options,
       signal,
     });
@@ -154,7 +154,7 @@ export function getCleanupStats(): {
 
 // Export for debugging in development
 if (import.meta.env.DEV) {
-  (window as any).__eventCleanupDebug = {
+  window.__eventCleanupDebug = {
     getStats: getCleanupStats,
     cleanupView,
     cleanupAllViews,

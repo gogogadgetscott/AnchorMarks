@@ -21,6 +21,7 @@ import {
   DashboardWidget,
   FilterConfig,
   TourStep,
+  Collection,
 } from "../types/index";
 
 // API Configuration
@@ -36,7 +37,7 @@ export let isAuthenticated: boolean = false;
 export let bookmarks: Bookmark[] = [];
 export let folders: Folder[] = [];
 export let renderedBookmarks: Bookmark[] = [];
-export let collections: any[] = [];
+export let collections: Collection[] = [];
 export let totalCount: number = 0;
 export let widgetDataCache: Record<string, Bookmark[]> = {};
 
@@ -245,7 +246,7 @@ export function setBookmarks(val: Bookmark[]) {
 export function setFolders(val: Folder[]) {
   folders = val;
 }
-export function setCollections(val: any[]) {
+export function setCollections(val: Collection[]) {
   collections = val;
 }
 export function setRenderedBookmarks(val: Bookmark[]) {
@@ -278,9 +279,9 @@ export async function setCurrentView(val: string) {
 
   // Clean up tag cloud resize listener if leaving tag cloud view
   if (prevView === "tag-cloud" && val !== "tag-cloud") {
-    if (typeof (window as any).__tagCloudResizeCleanup === "function") {
-      (window as any).__tagCloudResizeCleanup();
-      (window as any).__tagCloudResizeCleanup = undefined;
+    if (typeof window.__tagCloudResizeCleanup === "function") {
+      window.__tagCloudResizeCleanup();
+      window.__tagCloudResizeCleanup = undefined;
     }
   }
 
@@ -351,7 +352,7 @@ export function setTagCloudMaxTags(val: number) {
 export function setTagCloudDefaultShowAll(val: boolean) {
   tagCloudDefaultShowAll = val;
 }
-export function setDashboardConfig(val: any) {
+export function setDashboardConfig(val: typeof dashboardConfig) {
   dashboardConfig = val;
 }
 export function setWidgetOrder(val: Record<string, number>) {
@@ -387,7 +388,11 @@ export function setLastSelectedIndex(val: number | null) {
 export function setBulkMode(val: boolean) {
   bulkMode = val;
 }
-export function setTourState(val: any) {
+export function setTourState(val: {
+  active: boolean;
+  currentStep: number;
+  steps: TourStep[];
+}) {
   tourState = val;
 }
 export function setLastTagRenameAction(
@@ -448,7 +453,10 @@ export function setAllSidebarTags(val: { name: string; count: number }[]) {
 export function setShowingAllTags(val: boolean) {
   showingAllTags = val;
 }
-export function setViewToolbarConfig(view: string, config: any) {
+export function setViewToolbarConfig(
+  view: string,
+  config: Record<string, unknown>,
+) {
   if (viewToolbarConfig[view]) {
     viewToolbarConfig[view] = { ...viewToolbarConfig[view], ...config };
   }

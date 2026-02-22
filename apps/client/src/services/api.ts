@@ -117,11 +117,73 @@ export async function api<T = unknown>(
       });
 
       if (response.status === 401) {
-        // Clear local auth state without making another API call
+        // If this was not a refresh call, try refresh-token rotation once
+        const isRefreshCall =
+          endpoint === "/api/auth/refresh" ||
+          endpoint.startsWith("/api/auth/refresh");
+        if (!isRefreshCall) {
+          const refreshRes = await fetch(`${state.API_BASE}/api/auth/refresh`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          });
+          if (refreshRes.ok) {
+            const refreshData = await refreshRes.json();
+            if (refreshData.csrfToken)
+              state.setCsrfToken(refreshData.csrfToken);
+            if (refreshData.user) {
+              state.setCurrentUser(refreshData.user);
+              state.setIsAuthenticated(true);
+            }
+            // Retry original request once with new cookies
+            const retryRes = await fetch(`${state.API_BASE}${endpoint}`, {
+              ...options,
+              signal,
+              credentials: "include",
+              headers: {
+                ...headers,
+                ...(options.headers as Record<string, string>),
+                ...(refreshData.csrfToken &&
+                ["POST", "PUT", "DELETE", "PATCH"].includes(
+                  (options.method || "GET").toUpperCase(),
+                )
+                  ? { "X-CSRF-Token": refreshData.csrfToken }
+                  : {}),
+              },
+            });
+            if (retryRes.ok) {
+              const ct = retryRes.headers.get("content-type");
+              const data = ct?.includes("application/json")
+                ? await retryRes.json()
+                : await retryRes.text();
+              clearTimeout(timeoutId);
+              if (requestKey) {
+                pendingRequests.delete(requestKey);
+                requestMetadata.delete(requestKey);
+              }
+              return data as T;
+            }
+            if (retryRes.status === 401) {
+              state.setCsrfToken(null);
+              state.setCurrentUser(null);
+              state.setIsAuthenticated(false);
+              const { showAuthScreen } = await import("@features/auth/auth.ts");
+              showAuthScreen();
+              throw new Error("Session expired");
+            }
+            const retryCt = retryRes.headers.get("content-type");
+            const retryData = retryCt?.includes("application/json")
+              ? await retryRes.json()
+              : await retryRes.text();
+            const errMsg =
+              (retryData as Record<string, unknown>)?.error ||
+              `API Error: ${retryRes.status} ${retryRes.statusText}`;
+            throw new Error(errMsg);
+          }
+        }
         state.setCsrfToken(null);
         state.setCurrentUser(null);
         state.setIsAuthenticated(false);
-        // Show auth screen (import dynamically to avoid circular dependency)
         const { showAuthScreen } = await import("@features/auth/auth.ts");
         showAuthScreen();
         throw new Error("Session expired");
@@ -154,7 +216,7 @@ export async function api<T = unknown>(
 
       if (!response.ok) {
         const errorMessage =
-          (data as any)?.error ||
+          (data as Record<string, unknown>)?.error ||
           `API Error: ${response.status} ${response.statusText}`;
         // Special handling for CSRF errors
         if (
@@ -200,7 +262,7 @@ export async function api<T = unknown>(
   }
 
   // Expose abort method on the promise for convenience
-  (fetchPromise as any).abort = () => {
+  (fetchPromise as AbortablePromise<T>).abort = () => {
     clearTimeout(timeoutId);
     abortController.abort(new Error("Request cancelled"));
     if (requestKey) {
@@ -231,8 +293,11 @@ export function cancelRequest(
   const requestKey = getRequestKey(endpoint, options);
   if (requestKey && pendingRequests.has(requestKey)) {
     const promise = pendingRequests.get(requestKey);
-    if (promise && typeof (promise as any).abort === "function") {
-      (promise as any).abort();
+    if (
+      promise &&
+      typeof (promise as AbortablePromise<unknown>).abort === "function"
+    ) {
+      (promise as AbortablePromise<unknown>).abort!();
     }
     pendingRequests.delete(requestKey);
     requestMetadata.delete(requestKey);

@@ -8,7 +8,7 @@ import * as state from "@features/state.ts";
 
 declare global {
   interface Window {
-    AnchorMarks: any;
+    AnchorMarks: Record<string, unknown>;
     launchBookmarkFromPalette: (id: string) => void;
     searchBookmarks: (query: string) => any[];
   }
@@ -44,12 +44,13 @@ import {
 
 // Import tag input
 import { initTagInput } from "@features/bookmarks/tag-input.ts";
+import type { ConfirmDialogOptions, HeaderConfig } from "./types/index";
 
 // ============================================================
 // New Modular UI Listeners (Moved to dynamic imports)
 // ============================================================
 // Moved to dynamic imports in DOMContentLoaded or as-needed
-const confirmDialog = (msg: string, opts?: any) =>
+const confirmDialog = (msg: string, opts?: ConfirmDialogOptions) =>
   import("@features/ui/confirm-dialog.ts").then((m) =>
     m.confirmDialog(msg, opts),
   );
@@ -58,7 +59,7 @@ const confirmDialog = (msg: string, opts?: any) =>
  * Set view mode (grid / list / compact)
  */
 export async function setViewMode(mode: string, save = true): Promise<void> {
-  state.setViewMode(mode as any);
+  state.setViewMode(mode as "grid" | "list" | "compact");
   document.querySelectorAll(".view-btn").forEach((btn) => {
     btn.classList.toggle(
       "active",
@@ -83,13 +84,19 @@ export async function setViewMode(mode: string, save = true): Promise<void> {
  */
 export function attachViewToggleListeners(): void {
   document.querySelectorAll(".view-btn").forEach((btn) => {
-    btn.removeEventListener("click", (btn as any)._viewToggleHandler);
+    btn.removeEventListener(
+      "click",
+      (btn as HTMLElement & { _viewToggleHandler?: EventListener })
+        ._viewToggleHandler!,
+    );
     const handler = async (e: Event) => {
       e.preventDefault();
       const mode = (btn as HTMLElement).dataset.viewMode;
       if (mode) await setViewMode(mode);
     };
-    (btn as any)._viewToggleHandler = handler;
+    (
+      btn as HTMLElement & { _viewToggleHandler?: EventListener }
+    )._viewToggleHandler = handler;
     btn.addEventListener("click", handler);
   });
 }
@@ -103,9 +110,10 @@ export async function updateHeaderContent(): Promise<void> {
   const headersContainer = document.getElementById("headers-container");
   if (!headersContainer) return;
 
-  let headerConfig: any = {
+  const headerConfig: HeaderConfig & { title: string } = {
     id: "main-header",
     className: "main-header",
+    title: "Bookmarks",
     bulkActions: ["archive", "move", "tag", "delete"],
   };
 
@@ -248,8 +256,8 @@ export async function regenerateApiKey(): Promise<void> {
     const apiKeyEl = document.getElementById("api-key-value");
     if (apiKeyEl) apiKeyEl.textContent = data.api_key;
     showToast("API key regenerated!", "success");
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
   }
 }
 
@@ -292,8 +300,8 @@ export async function resetBookmarks(): Promise<void> {
       `Bookmarks reset! ${data.bookmarks_created} example bookmarks created.`,
       "success",
     );
-  } catch (err: any) {
-    showToast(err.message, "error");
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
   }
 }
 
@@ -530,7 +538,7 @@ window.AnchorMarks = {
     const { renderFolders } = await import("@features/bookmarks/folders.ts");
     renderFolders();
   },
-  saveSettings: async (settings: any) => {
+  saveSettings: async (settings: Record<string, unknown>) => {
     const { saveSettings } = await import("@features/bookmarks/settings.ts");
     saveSettings(settings);
   },

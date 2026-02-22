@@ -8,6 +8,7 @@ import { api } from "@services/api.ts";
 import { escapeHtml } from "@utils/index.ts";
 import { showToast } from "@utils/ui-helpers.ts";
 import { getRecursiveBookmarkCount } from "@features/bookmarks/folders.ts";
+import type { Bookmark, ActiveFilterItem } from "../../types/index";
 
 let filterDropdownPinned = false;
 
@@ -287,7 +288,17 @@ export async function showFilterDropdown(): Promise<void> {
 }
 
 function filterFoldersInDropdown(searchTerm: string): void {
-  const container = document.getElementById("filter-folders-container") as any;
+  const container = document.getElementById(
+    "filter-folders-container",
+  ) as HTMLElement & {
+    _allFolders?: Array<{
+      id: string;
+      name: string;
+      count: number;
+      color?: string;
+    }>;
+    _originalHTML?: string;
+  };
   if (!container || !container._allFolders) return;
 
   const term = searchTerm.toLowerCase().trim();
@@ -298,9 +309,11 @@ function filterFoldersInDropdown(searchTerm: string): void {
     return;
   }
 
-  const filtered = container._allFolders.filter((folder: any) => {
-    return folder.name.toLowerCase().includes(term);
-  });
+  const filtered = container._allFolders.filter(
+    (folder: { id: string; name: string; count: number; color?: string }) => {
+      return folder.name.toLowerCase().includes(term);
+    },
+  );
 
   if (filtered.length === 0) {
     container.innerHTML =
@@ -309,11 +322,12 @@ function filterFoldersInDropdown(searchTerm: string): void {
   }
 
   let html = "";
-  filtered.forEach((folder: any) => {
-    const isActive = state.currentFolder === folder.id;
-    const color = folder.color || "#6366f1";
+  filtered.forEach(
+    (folder: { id: string; name: string; count: number; color?: string }) => {
+      const isActive = state.currentFolder === folder.id;
+      const color = folder.color || "#6366f1";
 
-    html += `
+      html += `
       <div class="filter-item ${isActive ? "active" : ""}" data-folder-id="${folder.id}">
           <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
               <span class="folder-color" style="background:${color}"></span>
@@ -322,14 +336,20 @@ function filterFoldersInDropdown(searchTerm: string): void {
           <span class="filter-item-count">${folder.count}</span>
       </div>
     `;
-  });
+    },
+  );
 
   container.innerHTML = html;
   attachFolderClickHandlers();
 }
 
 function filterTagsInDropdown(searchTerm: string): void {
-  const container = document.getElementById("filter-tags-container") as any;
+  const container = document.getElementById(
+    "filter-tags-container",
+  ) as HTMLElement & {
+    _allTags?: Array<{ name: string; count: number }>;
+    _originalHTML?: string;
+  };
   if (!container || !container._allTags) return;
 
   const term = searchTerm.toLowerCase().trim();
@@ -340,9 +360,11 @@ function filterTagsInDropdown(searchTerm: string): void {
     return;
   }
 
-  const filtered = container._allTags.filter((tag: any) => {
-    return tag.name.toLowerCase().includes(term);
-  });
+  const filtered = container._allTags.filter(
+    (tag: { name: string; count: number }) => {
+      return tag.name.toLowerCase().includes(term);
+    },
+  );
 
   if (filtered.length === 0) {
     container.innerHTML =
@@ -351,7 +373,7 @@ function filterTagsInDropdown(searchTerm: string): void {
   }
 
   let html = "";
-  filtered.forEach((tag: any) => {
+  filtered.forEach((tag: { name: string; count: number }) => {
     const isActive = state.filterConfig.tags.includes(tag.name);
 
     html += `
@@ -370,9 +392,9 @@ function attachFolderClickHandlers(): void {
   const container = document.getElementById("filter-folders-container");
   if (!container) return;
 
-  container.querySelectorAll(".filter-item").forEach((item: any) => {
+  container.querySelectorAll(".filter-item").forEach((item: Element) => {
     item.addEventListener("click", async () => {
-      const folderId = item.dataset.folderId;
+      const folderId = (item as HTMLElement).dataset.folderId;
 
       state.setCurrentCollection(null);
 
@@ -403,9 +425,9 @@ function attachTagClickHandlers(): void {
   const container = document.getElementById("filter-tags-container");
   if (!container) return;
 
-  container.querySelectorAll(".filter-item").forEach((item: any) => {
+  container.querySelectorAll(".filter-item").forEach((item: Element) => {
     item.addEventListener("click", async () => {
-      const tagName = item.dataset.tag;
+      const tagName = (item as HTMLElement).dataset.tag;
       const currentTags = [...state.filterConfig.tags];
 
       if (currentTags.includes(tagName)) {
@@ -434,7 +456,17 @@ function attachTagClickHandlers(): void {
 // Obsolete helper functions removed
 
 async function renderFoldersInDropdown(): Promise<void> {
-  const container = document.getElementById("filter-folders-container") as any;
+  const container = document.getElementById(
+    "filter-folders-container",
+  ) as HTMLElement & {
+    _allFolders?: Array<{
+      id: string;
+      name: string;
+      count: number;
+      color?: string;
+    }>;
+    _originalHTML?: string;
+  };
   if (!container) return;
 
   // Fetch ALL unfiltered bookmarks to calculate folder counts
@@ -591,9 +623,9 @@ async function renderCollectionsInDropdown(): Promise<void> {
     })
     .join("");
 
-  container.querySelectorAll(".filter-item").forEach((item: any) => {
+  container.querySelectorAll(".filter-item").forEach((item: Element) => {
     item.addEventListener("click", async () => {
-      const collectionId = item.dataset.collectionId;
+      const collectionId = (item as HTMLElement).dataset.collectionId;
       const collection = state.collections.find((c) => c.id === collectionId);
 
       state.setCurrentFolder(null);
@@ -616,7 +648,12 @@ async function renderCollectionsInDropdown(): Promise<void> {
 }
 
 async function renderTagsInDropdown(): Promise<void> {
-  const container = document.getElementById("filter-tags-container") as any;
+  const container = document.getElementById(
+    "filter-tags-container",
+  ) as HTMLElement & {
+    _allTags?: Array<{ name: string; count: number }>;
+    _originalHTML?: string;
+  };
   if (!container) return;
 
   // Fetch ALL unfiltered bookmarks to calculate tag counts based on the complete library
@@ -626,7 +663,7 @@ async function renderTagsInDropdown(): Promise<void> {
     : allBookmarks?.bookmarks || [];
 
   const tagMap = new Map<string, number>();
-  bookmarksToProcess.forEach((b: any) => {
+  bookmarksToProcess.forEach((b: Bookmark) => {
     if (b.tags) {
       b.tags.split(",").forEach((t: string) => {
         const tag = t.trim();
@@ -746,8 +783,8 @@ function attachFilterDropdownListeners(): void {
     "filter-folders-search",
   ) as HTMLInputElement;
   if (folderSearchInput) {
-    folderSearchInput.addEventListener("input", (e: any) => {
-      filterFoldersInDropdown(e.target.value);
+    folderSearchInput.addEventListener("input", (e: Event) => {
+      filterFoldersInDropdown((e.target as HTMLInputElement).value);
     });
   }
 
@@ -755,8 +792,8 @@ function attachFilterDropdownListeners(): void {
     "filter-tags-search",
   ) as HTMLInputElement;
   if (tagSearchInput) {
-    tagSearchInput.addEventListener("input", (e: any) => {
-      filterTagsInDropdown(e.target.value);
+    tagSearchInput.addEventListener("input", (e: Event) => {
+      filterTagsInDropdown((e.target as HTMLInputElement).value);
     });
   }
 
@@ -764,7 +801,7 @@ function attachFilterDropdownListeners(): void {
     "filter-search-input",
   ) as HTMLInputElement;
   if (searchInput) {
-    searchInput.addEventListener("input", async (e: any) => {
+    searchInput.addEventListener("input", async (e: Event) => {
       // Don't apply filters in favorites or recent views; input is cleared when switching to those views
       if (state.currentView === "favorites" || state.currentView === "recent") {
         return;
@@ -772,7 +809,7 @@ function attachFilterDropdownListeners(): void {
 
       state.setFilterConfig({
         ...state.filterConfig,
-        search: e.target.value.trim() || undefined,
+        search: (e.target as HTMLInputElement).value.trim() || undefined,
       });
       await applyFilters();
       renderDropdownActiveFilters();
@@ -895,7 +932,7 @@ function renderDropdownActiveFilters(): void {
       document.getElementById("search-input") as HTMLInputElement
     )?.value?.trim();
 
-  const activeItems: any[] = [];
+  const activeItems: ActiveFilterItem[] = [];
 
   if (folderId) {
     const folder = state.folders.find((f) => f.id === folderId);
@@ -959,11 +996,11 @@ function renderDropdownActiveFilters(): void {
 
   container.innerHTML = html;
 
-  container.querySelectorAll(".remove-filter-btn").forEach((btn: any) => {
-    btn.addEventListener("click", async (e: any) => {
+  container.querySelectorAll(".remove-filter-btn").forEach((btn: Element) => {
+    btn.addEventListener("click", async (e: Event) => {
       e.stopPropagation();
-      const type = btn.dataset.type;
-      const id = btn.dataset.id;
+      const type = (btn as HTMLElement).dataset.type;
+      const id = (btn as HTMLElement).dataset.id;
 
       if (type === "folder") {
         state.setCurrentFolder(null);
