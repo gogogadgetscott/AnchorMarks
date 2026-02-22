@@ -1,5 +1,10 @@
 const { v4: uuidv4 } = require("uuid");
 
+// Escape LIKE wildcards (%, _) in user-supplied input
+function escapeLike(str) {
+  return String(str).replace(/[%_]/g, "\\$&");
+}
+
 function listCollections(db, userId) {
   return db
     .prepare(
@@ -107,14 +112,14 @@ function getBookmarksForCollection(db, collection, userId) {
   }
 
   if (filters.search) {
-    query += " AND (b.title LIKE ? OR b.url LIKE ? OR b.description LIKE ?)";
-    const searchTerm = `%${filters.search}%`;
+    query += " AND (b.title LIKE ? ESCAPE '\\' OR b.url LIKE ? ESCAPE '\\' OR b.description LIKE ? ESCAPE '\\')";
+    const searchTerm = `%${escapeLike(filters.search)}%`;
     params.push(searchTerm, searchTerm, searchTerm);
   }
 
   if (filters.domain) {
-    query += " AND b.url LIKE ?";
-    params.push(`%${filters.domain}%`);
+    query += " AND b.url LIKE ? ESCAPE '\\'";
+    params.push(`%${escapeLike(filters.domain)}%`);
   }
 
   if (filters.favorites) {

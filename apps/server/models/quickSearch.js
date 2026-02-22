@@ -13,7 +13,9 @@ function listRecent(db, userId, limit = 10) {
 }
 
 function search(db, userId, q, limit = 10) {
-  const searchTerm = `%${q}%`;
+  // Escape LIKE wildcards to prevent semantic injection
+  const escaped = q.replace(/[%_]/g, "\\$&");
+  const searchTerm = `%${escaped}%`;
   return db
     .prepare(
       `
@@ -21,14 +23,14 @@ function search(db, userId, q, limit = 10) {
     FROM bookmarks b
     LEFT JOIN bookmark_tags bt ON bt.bookmark_id = b.id
     LEFT JOIN tags t ON t.id = bt.tag_id
-    WHERE b.user_id = ? AND (b.title LIKE ? OR b.url LIKE ? OR t.name LIKE ?)
+    WHERE b.user_id = ? AND (b.title LIKE ? ESCAPE '\\' OR b.url LIKE ? ESCAPE '\\' OR t.name LIKE ? ESCAPE '\\')
     ORDER BY 
-      CASE WHEN b.title LIKE ? THEN 0 ELSE 1 END,
+      CASE WHEN b.title LIKE ? ESCAPE '\\' THEN 0 ELSE 1 END,
       b.click_count DESC
     LIMIT ?
   `,
     )
-    .all(userId, searchTerm, searchTerm, searchTerm, `${q}%`, parseInt(limit));
+    .all(userId, searchTerm, searchTerm, searchTerm, `${escaped}%`, parseInt(limit));
 }
 
 module.exports = { listRecent, search };

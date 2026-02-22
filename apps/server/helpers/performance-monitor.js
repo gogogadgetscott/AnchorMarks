@@ -167,9 +167,16 @@ class PerformanceMonitor {
       },
       errors: {
         total: recentErrors.length,
-        recent: recentErrors.slice(-10),
+        recent: recentErrors.slice(-10).map((e) => ({
+          timestamp: e.timestamp,
+          context: e.context,
+        })),
       },
-      slowQueries: this.metrics.slowQueries.slice(-20),
+      slowQueries: this.metrics.slowQueries.slice(-20).map((q) => ({
+        duration: q.duration,
+        timestamp: q.timestamp,
+        type: q.type,
+      })),
     };
   }
 

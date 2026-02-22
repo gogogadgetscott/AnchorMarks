@@ -173,7 +173,7 @@ function authenticateToken(db) {
         return next();
       } else {
         console.warn(
-          `[API-KEY 403] Invalid API key received: ${apiKey} for ${req.method} ${req.path}`,
+          `[API-KEY 403] Invalid API key received: ${apiKey ? apiKey.substring(0, 6) + "***" : "(empty)"} for ${req.method} ${req.path}`,
         );
         return res.status(403).json({
           error: "Invalid API key.",

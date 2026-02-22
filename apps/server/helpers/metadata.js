@@ -10,6 +10,11 @@ async function fetchUrlMetadata(url, redirectCount = 0) {
     throw new Error("Too many redirects");
   }
 
+  // SSRF guard: check before initiating the request (prevents TOCTOU / DNS rebinding)
+  if (config.NODE_ENV === "production" && (await isPrivateAddress(url))) {
+    return null;
+  }
+
   return new Promise((resolve, reject) => {
     const protocol = url.startsWith("https") ? https : http;
     const options = {
@@ -69,13 +74,6 @@ async function fetchUrlMetadata(url, redirectCount = 0) {
 
       response.on("end", async () => {
         try {
-          // SSRF guard in production
-          if (
-            config.NODE_ENV === "production" &&
-            (await isPrivateAddress(url))
-          ) {
-            return resolve(null);
-          }
           const metadata = parseHtmlMetadata(html, url);
           resolve(metadata);
         } catch (e) {

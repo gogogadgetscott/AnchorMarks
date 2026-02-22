@@ -78,7 +78,7 @@ function setupFoldersRoutes(app, db, helpers = {}) {
         position,
         parent_id || null, // Added parent_id
       );
-      const folder = folderModel.getFolderById(db, id);
+      const folder = folderModel.getFolderById(db, id, req.user.id);
       broadcast(req.user.id, { type: "folders:changed" });
       res.json(folder);
     } catch (err) {
@@ -132,7 +132,8 @@ function setupFoldersRoutes(app, db, helpers = {}) {
         icon,
         position,
       });
-      const folder = folderModel.getFolderById(db, req.params.id);
+      const folder = folderModel.getFolderById(db, req.params.id, req.user.id);
+      if (!folder) return res.status(404).json({ error: "Folder not found" });
       broadcast(req.user.id, { type: "folders:changed" });
       res.json(folder);
     } catch (err) {

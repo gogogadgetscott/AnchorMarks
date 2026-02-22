@@ -34,6 +34,11 @@ const swaggerSpecs = require("./helpers/swagger");
 const app = express();
 config.validateSecurityConfig();
 
+// Trust first proxy (nginx, Docker, etc.) for accurate req.ip and rate limiting
+if (config.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
+
 // Initialize database
 const db = initializeDatabase(config.DB_PATH);
 const { FAVICONS_DIR } = ensureDirectories();
@@ -194,7 +199,13 @@ app.use((req, res, next) => {
   res.setHeader("X-XSS-Protection", "1; mode=block");
   next();
 });
-app.use(cors({ origin: true, credentials: true }));
+app.use(
+  cors({
+    origin: config.NODE_ENV === "production" ? config.resolveCorsOrigin() : true,
+    credentials: true,
+    allowedHeaders: ["Content-Type", "X-CSRF-Token", "x-api-key"],
+  }),
+);
 // Enable compression for all responses
 app.use(compression({ level: 6, threshold: 1024 }));
 app.use(express.json({ limit: "10mb" }));
@@ -325,6 +336,14 @@ app.use(express.static(staticDir));
 // Serve frontend for all other routes (static catch-all)
 const setupStaticRoutes = require("./routes/static");
 setupStaticRoutes(app);
+
+// Global error handler — catches unhandled errors and prevents stack trace leaks
+app.use((err, _req, res, _next) => {
+  if (config.NODE_ENV === "development") {
+    console.error("Unhandled error:", err);
+  }
+  res.status(err.status || 500).json({ error: "Internal Server Error" });
+});
 
 // Graceful shutdown
 const { closeBrowser } = require("./helpers/thumbnail");

@@ -61,9 +61,20 @@ function ensureTagsExist(db, userId, tagsInput, options = {}) {
  * @param {object} db - Database instance
  * @param {string} bookmarkId - Bookmark ID
  * @param {Array} tagIds - Array of tag IDs
+ * @param {object} options - Options ({ colorOverridesByTagId, userId })
  */
 function updateBookmarkTags(db, bookmarkId, tagIds, options = {}) {
   const colorOverridesByTagId = options.colorOverridesByTagId || {};
+  const userId = options.userId;
+
+  // If userId is provided, verify ownership before modifying
+  if (userId) {
+    const owner = db
+      .prepare("SELECT id FROM bookmarks WHERE id = ? AND user_id = ?")
+      .get(bookmarkId, userId);
+    if (!owner) return; // Silently skip — bookmark doesn't belong to this user
+  }
+
   // Delete existing relationships
   db.prepare("DELETE FROM bookmark_tags WHERE bookmark_id = ?").run(bookmarkId);
 
@@ -83,9 +94,18 @@ function updateBookmarkTags(db, bookmarkId, tagIds, options = {}) {
  * Get tags for a bookmark as comma-separated string
  * @param {object} db - Database instance
  * @param {string} bookmarkId - Bookmark ID
- * @returns {string} Comma-separated tag names
+ * @param {string} [userId] - If provided, verify bookmark belongs to this user
+ * @returns {string} Comma-separated tag names (empty string if not found/not owned)
  */
-function getBookmarkTagsString(db, bookmarkId) {
+function getBookmarkTagsString(db, bookmarkId, userId) {
+  // If userId provided, verify ownership first
+  if (userId) {
+    const owner = db
+      .prepare("SELECT id FROM bookmarks WHERE id = ? AND user_id = ?")
+      .get(bookmarkId, userId);
+    if (!owner) return "";
+  }
+
   const tags = db
     .prepare(
       `

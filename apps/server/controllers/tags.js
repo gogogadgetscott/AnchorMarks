@@ -360,13 +360,20 @@ function setupTagsRoutes(app, db, helpers = {}) {
 
     const normalizedTags = parseTags(tags);
     const updated = [];
+    const userId = req.user.id;
 
     bookmark_ids.forEach((id) => {
-      const current = tagHelpers.getBookmarkTagsString(db, id);
+      // Verify ownership: skip bookmarks not belonging to this user
+      const owned = db
+        .prepare("SELECT id FROM bookmarks WHERE id = ? AND user_id = ?")
+        .get(id, userId);
+      if (!owned) return;
+
+      const current = tagHelpers.getBookmarkTagsString(db, id, userId);
       const merged = mergeTags(current, normalizedTags);
       const tagsString = stringifyTags(merged);
-      const tagIds = tagHelpers.ensureTagsExist(db, req.user.id, tagsString);
-      tagHelpers.updateBookmarkTags(db, id, tagIds);
+      const tagIds = tagHelpers.ensureTagsExist(db, userId, tagsString);
+      tagHelpers.updateBookmarkTags(db, id, tagIds, { userId });
       updated.push(id);
     });
 
@@ -409,11 +416,18 @@ function setupTagsRoutes(app, db, helpers = {}) {
 
     const removeSet = new Set(parseTags(tags).map((t) => t.toLowerCase()));
     const updated = [];
+    const userId = req.user.id;
 
     bookmark_ids.forEach((id) => {
-      const current = tagHelpers.getBookmarkTagsString(db, id);
+      // Verify ownership: skip bookmarks not belonging to this user
+      const owned = db
+        .prepare("SELECT id FROM bookmarks WHERE id = ? AND user_id = ?")
+        .get(id, userId);
+      if (!owned) return;
+
+      const current = tagHelpers.getBookmarkTagsString(db, id, userId);
       if (!current) {
-        tagHelpers.updateBookmarkTags(db, id, []);
+        tagHelpers.updateBookmarkTags(db, id, [], { userId });
         return;
       }
       const filtered = parseTags(current).filter(
@@ -422,10 +436,10 @@ function setupTagsRoutes(app, db, helpers = {}) {
       const tagsString = filtered.length ? stringifyTags(filtered) : null;
 
       if (tagsString) {
-        const tagIds = tagHelpers.ensureTagsExist(db, req.user.id, tagsString);
-        tagHelpers.updateBookmarkTags(db, id, tagIds);
+        const tagIds = tagHelpers.ensureTagsExist(db, userId, tagsString);
+        tagHelpers.updateBookmarkTags(db, id, tagIds, { userId });
       } else {
-        tagHelpers.updateBookmarkTags(db, id, []);
+        tagHelpers.updateBookmarkTags(db, id, [], { userId });
       }
 
       updated.push(id);

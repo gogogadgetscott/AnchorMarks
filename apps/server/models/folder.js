@@ -14,7 +14,12 @@ function listFolders(db, userId) {
     .all(userId);
 }
 
-function getFolderById(db, id) {
+function getFolderById(db, id, userId) {
+  if (userId !== undefined && userId !== null) {
+    return db
+      .prepare("SELECT * FROM folders WHERE id = ? AND user_id = ?")
+      .get(id, userId) || null;
+  }
   return db.prepare("SELECT * FROM folders WHERE id = ?").get(id);
 }
 

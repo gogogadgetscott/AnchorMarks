@@ -487,7 +487,7 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
 
         if (result.success) {
           // Update bookmark with thumbnail path
-          bookmarkModel.setThumbnailLocal(db, bookmark.id, result.path);
+          bookmarkModel.setThumbnailLocal(db, bookmark.id, result.path, req.user.id);
 
           return res.json({
             success: true,

@@ -379,7 +379,12 @@ function deleteAllForUser(db, userId) {
   return db.prepare("DELETE FROM bookmarks WHERE user_id = ?").run(userId);
 }
 
-function setThumbnailLocal(db, bookmarkId, localPath) {
+function setThumbnailLocal(db, bookmarkId, localPath, userId) {
+  if (userId) {
+    return db
+      .prepare("UPDATE bookmarks SET thumbnail_local = ? WHERE id = ? AND user_id = ?")
+      .run(localPath, bookmarkId, userId);
+  }
   return db
     .prepare("UPDATE bookmarks SET thumbnail_local = ? WHERE id = ?")
     .run(localPath, bookmarkId);
