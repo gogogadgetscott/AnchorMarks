@@ -113,9 +113,14 @@ function listBookmarks(db, userId, opts = {}) {
 
     if (useFuzzy) {
       // Fuzzy search doesn't natively map to FTS5 strictly without trigrams, so we mix it with MATCH broadly
-      // Format: "word1*" OR "word2*" 
-      const searchWords = search.trim().split(/\s+/).filter(w => w.length > 0);
-      const ftsQuery = searchWords.map(w => `"${w.replace(/"/g, '""')}"*`).join(' OR ');
+      // Format: "word1*" OR "word2*"
+      const searchWords = search
+        .trim()
+        .split(/\s+/)
+        .filter((w) => w.length > 0);
+      const ftsQuery = searchWords
+        .map((w) => `"${w.replace(/"/g, '""')}"*`)
+        .join(" OR ");
 
       query += " AND fts MATCH ?";
       countQuery += " AND fts MATCH ?";
@@ -123,8 +128,13 @@ function listBookmarks(db, userId, opts = {}) {
     } else {
       // Standard multi-word search matching ALL words
       // Format: "word1"* AND "word2"*
-      const searchWords = search.trim().split(/\s+/).filter(w => w.length > 0);
-      const ftsQuery = searchWords.map(w => `"${w.replace(/"/g, '""')}"*`).join(' AND ');
+      const searchWords = search
+        .trim()
+        .split(/\s+/)
+        .filter((w) => w.length > 0);
+      const ftsQuery = searchWords
+        .map((w) => `"${w.replace(/"/g, '""')}"*`)
+        .join(" AND ");
 
       query += " AND fts MATCH ?";
       countQuery += " AND fts MATCH ?";
@@ -215,9 +225,10 @@ function listBookmarks(db, userId, opts = {}) {
         orderClause = " ORDER BY title COLLATE NOCASE DESC";
         break;
       default:
-        orderClause = search && !isFavoritesView && !isArchivedView
-          ? " ORDER BY fts.rank"
-          : " ORDER BY position, created_at DESC";
+        orderClause =
+          search && !isFavoritesView && !isArchivedView
+            ? " ORDER BY fts.rank"
+            : " ORDER BY position, created_at DESC";
     }
   } else if (search && !isFavoritesView && !isArchivedView) {
     orderClause = " ORDER BY fts.rank";

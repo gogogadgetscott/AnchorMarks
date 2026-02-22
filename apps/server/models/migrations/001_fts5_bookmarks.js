@@ -4,8 +4,8 @@
  */
 
 exports.up = function (db) {
-    // 1. Create the virtual FTS5 table
-    db.exec(`
+  // 1. Create the virtual FTS5 table
+  db.exec(`
     CREATE VIRTUAL TABLE IF NOT EXISTS bookmarks_fts USING fts5(
       id UNINDEXED, -- UUID, not used for matching words
       user_id UNINDEXED, -- Tenant isolation
@@ -18,8 +18,8 @@ exports.up = function (db) {
     );
   `);
 
-    // 2. Populate existing data into the FTS table
-    db.exec(`
+  // 2. Populate existing data into the FTS table
+  db.exec(`
     INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
     SELECT 
       b.rowid, b.id, b.user_id, b.title, b.url, b.description, COALESCE(tg.tags_joined, '') as tags
@@ -32,10 +32,10 @@ exports.up = function (db) {
     ) tg ON tg.bookmark_id = b.id;
   `);
 
-    // 3. Create triggers to keep the FTS table synchronized with the bookmarks table natively
+  // 3. Create triggers to keep the FTS table synchronized with the bookmarks table natively
 
-    // Trigger: After Insert
-    db.exec(`
+  // Trigger: After Insert
+  db.exec(`
     CREATE TRIGGER IF NOT EXISTS bookmarks_fts_insert AFTER INSERT ON bookmarks
     BEGIN
       INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
@@ -43,8 +43,8 @@ exports.up = function (db) {
     END;
   `);
 
-    // Trigger: After Delete
-    db.exec(`
+  // Trigger: After Delete
+  db.exec(`
     CREATE TRIGGER IF NOT EXISTS bookmarks_fts_delete AFTER DELETE ON bookmarks
     BEGIN
       INSERT INTO bookmarks_fts (bookmarks_fts, rowid, id, user_id, title, url, description, tags)
@@ -56,8 +56,8 @@ exports.up = function (db) {
     END;
   `);
 
-    // Trigger: After Update
-    db.exec(`
+  // Trigger: After Update
+  db.exec(`
     CREATE TRIGGER IF NOT EXISTS bookmarks_fts_update AFTER UPDATE ON bookmarks
     BEGIN
       -- Delete the old row from the FTS index
@@ -78,10 +78,10 @@ exports.up = function (db) {
     END;
   `);
 
-    // Triggers for syncing Tag additions and removals dynamically
+  // Triggers for syncing Tag additions and removals dynamically
 
-    // Trigger: Tag Link Added
-    db.exec(`
+  // Trigger: Tag Link Added
+  db.exec(`
     CREATE TRIGGER IF NOT EXISTS bookmark_tags_insert AFTER INSERT ON bookmark_tags
     BEGIN
       -- Update FTS by removing old representation
@@ -104,8 +104,8 @@ exports.up = function (db) {
     END;
   `);
 
-    // Trigger: Tag Link Removed
-    db.exec(`
+  // Trigger: Tag Link Removed
+  db.exec(`
     CREATE TRIGGER IF NOT EXISTS bookmark_tags_delete AFTER DELETE ON bookmark_tags
     BEGIN
       -- Update FTS by removing old representation
@@ -129,8 +129,8 @@ exports.up = function (db) {
     END;
   `);
 
-    // Trigger: Tag Renamed
-    db.exec(`
+  // Trigger: Tag Renamed
+  db.exec(`
     CREATE TRIGGER IF NOT EXISTS tags_update AFTER UPDATE OF name ON tags
     BEGIN
       -- Delete the old row from the FTS index for all bookmarks linked to this tag
