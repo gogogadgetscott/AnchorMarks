@@ -1,23 +1,15 @@
 /**
  * Unit tests for middleware/index.js (authenticateToken, validateCsrfToken).
- * Uses mocks for db, jsonwebtoken, and config so no real DB is required.
+ * Uses mocks for db and config so no real DB is required. JWT tests use real tokens.
  */
-const { describe, it, expect, vi, beforeEach } = require("vitest");
-
-const mockJwtVerify = vi.fn();
+process.env.JWT_SECRET = "test-jwt-secret-middleware";
+const jwt = require("jsonwebtoken");
 const mockIsApiKeyAllowed = vi.fn();
 
-vi.mock("jsonwebtoken", () => ({
-  verify: (token, secret) => {
-    const result = mockJwtVerify(token, secret);
-    if (result instanceof Error) throw result;
-    if (result != null) return result;
-    throw new Error("invalid token");
-  },
-}));
-
 vi.mock("../config", () => ({
-  JWT_SECRET: "test-jwt-secret",
+  get JWT_SECRET() {
+    return process.env.JWT_SECRET || "test-jwt-secret-middleware";
+  },
   isApiKeyAllowed: (req) => mockIsApiKeyAllowed(req),
 }));
 
@@ -40,11 +32,13 @@ function createMockDb(userByApiKey = null, userById = null) {
 describe("middleware/index", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.resetModules();
     mockIsApiKeyAllowed.mockReturnValue(true);
   });
 
   describe("authenticateToken", () => {
     it("returns 401 when no cookie and no API key", () => {
+      vi.resetModules();
       const { authenticateToken } = require("../middleware/index");
       const db = createMockDb();
       const middleware = authenticateToken(db);
@@ -146,35 +140,36 @@ describe("middleware/index", () => {
     });
 
     it("calls next with user when valid JWT cookie", () => {
+      vi.resetModules();
       const { authenticateToken } = require("../middleware/index");
       const user = { id: "user-1", email: "u@x.com" };
       const db = createMockDb(null, user);
       db.prepare().get.mockImplementation((id) =>
         id === "user-1" ? user : null,
       );
-      mockJwtVerify.mockReturnValue({ userId: "user-1" });
+      const secret = process.env.JWT_SECRET || "test-jwt-secret-middleware";
+      const token = jwt.sign(
+        { userId: "user-1" },
+        secret,
+        { expiresIn: "1h" },
+      );
       const middleware = authenticateToken(db);
-      const req = { headers: {}, cookies: { token: "valid-jwt" } };
-      const res = {};
+      const req = { headers: {}, cookies: { token } };
+      const res = { status: vi.fn().mockReturnThis(), json: vi.fn(), clearCookie: vi.fn() };
       const next = vi.fn();
 
       middleware(req, res, next);
 
-      expect(mockJwtVerify).toHaveBeenCalledWith(
-        "valid-jwt",
-        "test-jwt-secret",
-      );
       expect(next).toHaveBeenCalled();
       expect(req.user).toEqual(user);
       expect(req.authType).toBe("jwt");
+      expect(res.clearCookie).not.toHaveBeenCalled();
     });
 
     it("returns 403 and clears cookie when JWT is invalid", () => {
+      vi.resetModules();
       const { authenticateToken } = require("../middleware/index");
       const db = createMockDb();
-      mockJwtVerify.mockImplementation(() => {
-        throw new Error("invalid token");
-      });
       const middleware = authenticateToken(db);
       const req = { headers: {}, cookies: { token: "bad-jwt" } };
       const res = {
@@ -193,13 +188,23 @@ describe("middleware/index", () => {
     });
 
     it("returns 401 when JWT valid but user not found in db", () => {
+      vi.resetModules();
       const { authenticateToken } = require("../middleware/index");
       const db = createMockDb(null, null);
-      db.prepare().get.mockReturnValue(null);
-      mockJwtVerify.mockReturnValue({ userId: "user-1" });
+      db.prepare().get.mockImplementation(() => null);
+      const secret = process.env.JWT_SECRET || "test-jwt-secret-middleware";
+      const token = jwt.sign(
+        { userId: "user-1" },
+        secret,
+        { expiresIn: "1h" },
+      );
       const middleware = authenticateToken(db);
-      const req = { headers: {}, cookies: { token: "valid-jwt" } };
-      const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+      const req = { headers: {}, cookies: { token } };
+      const res = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+        clearCookie: vi.fn(),
+      };
       const next = vi.fn();
 
       middleware(req, res, next);
