@@ -84,8 +84,8 @@ async function captureScreenshot(url, bookmarkId) {
     return { success: false, error: "Thumbnail generation is disabled" };
   }
 
-  const thumbnailPath = path.join(THUMBNAILS_DIR, `${bookmarkId}.jpg`);
-  const relativePath = `/thumbnails/${bookmarkId}.jpg`;
+  const thumbnailPath = path.join(THUMBNAILS_DIR, `${bookmarkId}.webp`);
+  const relativePath = `/thumbnails/${bookmarkId}.webp`;
 
   // Check if thumbnail already exists
   if (fs.existsSync(thumbnailPath)) {
@@ -146,8 +146,8 @@ async function captureScreenshot(url, bookmarkId) {
     // Take screenshot
     await page.screenshot({
       path: thumbnailPath,
-      type: "jpeg",
-      quality: config.THUMBNAIL_QUALITY,
+      type: "webp",
+      quality: config.THUMBNAIL_QUALITY || 80,
       fullPage: false,
     });
 
@@ -159,7 +159,7 @@ async function captureScreenshot(url, bookmarkId) {
     if (fs.existsSync(thumbnailPath)) {
       try {
         fs.unlinkSync(thumbnailPath);
-      } catch {}
+      } catch { }
     }
 
     return { success: false, error: err.message };
@@ -167,7 +167,7 @@ async function captureScreenshot(url, bookmarkId) {
     if (page) {
       try {
         await page.close();
-      } catch {}
+      } catch { }
     }
   }
 }
@@ -179,7 +179,7 @@ async function closeBrowser() {
   if (browser) {
     try {
       await browser.close();
-    } catch {}
+    } catch { }
     browser = null;
   }
 }
@@ -189,7 +189,7 @@ async function closeBrowser() {
  * @param {string} bookmarkId - The bookmark ID
  */
 function deleteThumbnail(bookmarkId) {
-  const thumbnailPath = path.join(THUMBNAILS_DIR, `${bookmarkId}.jpg`);
+  const thumbnailPath = path.join(THUMBNAILS_DIR, `${bookmarkId}.webp`);
   if (fs.existsSync(thumbnailPath)) {
     try {
       fs.unlinkSync(thumbnailPath);
@@ -207,7 +207,7 @@ function deleteThumbnail(bookmarkId) {
  * @returns {boolean}
  */
 function thumbnailExists(bookmarkId) {
-  const thumbnailPath = path.join(THUMBNAILS_DIR, `${bookmarkId}.jpg`);
+  const thumbnailPath = path.join(THUMBNAILS_DIR, `${bookmarkId}.webp`);
   return fs.existsSync(thumbnailPath);
 }
 
