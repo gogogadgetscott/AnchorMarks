@@ -17,16 +17,38 @@ const DEFAULT_TIMEOUT_MS = 30000;
 // Cleanup interval (5 minutes)
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 
-// Cleanup stale pending requests periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, metadata] of requestMetadata.entries()) {
-    if (now - metadata.timestamp > CLEANUP_INTERVAL_MS) {
-      pendingRequests.delete(key);
-      requestMetadata.delete(key);
+let cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
+
+function startDedupCleanupInterval(): void {
+  if (cleanupIntervalId != null) return;
+  cleanupIntervalId = setInterval(() => {
+    const now = Date.now();
+    for (const [key, metadata] of requestMetadata.entries()) {
+      if (now - metadata.timestamp > CLEANUP_INTERVAL_MS) {
+        pendingRequests.delete(key);
+        requestMetadata.delete(key);
+      }
     }
+  }, CLEANUP_INTERVAL_MS);
+}
+
+function stopDedupCleanupInterval(): void {
+  if (cleanupIntervalId != null) {
+    clearInterval(cleanupIntervalId);
+    cleanupIntervalId = null;
   }
-}, CLEANUP_INTERVAL_MS);
+}
+
+startDedupCleanupInterval();
+
+// Teardown on page unload so the interval does not keep the context alive
+function onPageUnload(): void {
+  stopDedupCleanupInterval();
+}
+if (typeof window !== "undefined") {
+  window.addEventListener("pagehide", onPageUnload);
+  window.addEventListener("beforeunload", onPageUnload);
+}
 
 /**
  * Generate a cache key for request deduplication
@@ -217,4 +239,16 @@ export function cancelRequest(
   }
 }
 
-export default { api };
+/**
+ * Teardown GET-dedup cleanup interval (and unregister unload listeners).
+ * Call from tests or app lifecycle to avoid the interval running after unmount/exit.
+ */
+export function teardownApiDedup(): void {
+  stopDedupCleanupInterval();
+  if (typeof window !== "undefined") {
+    window.removeEventListener("pagehide", onPageUnload);
+    window.removeEventListener("beforeunload", onPageUnload);
+  }
+}
+
+export default { api, teardownApiDedup };

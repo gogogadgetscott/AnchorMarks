@@ -190,7 +190,6 @@ app.use(rateLimiter);
 const setupDashboardRoutes = require("./routes/dashboard");
 const setupBookmarkViewsRoutes = require("./routes/bookmarkViews");
 const setupCollectionsRoutes = require("./routes/collections");
-const setupTagsRoutes = require("./routes/tags");
 const controllerTags = require("./controllers/tags");
 const setupImportExportRoutes = require("./routes/importExport");
 const setupHealthRoutes = require("./routes/health");
@@ -215,7 +214,6 @@ setupBookmarkViewsRoutes(app, db, {
   validateCsrfTokenMiddleware,
 });
 setupCollectionsRoutes(app, db, { authenticateTokenMiddleware });
-setupTagsRoutes(app, db, { authenticateTokenMiddleware });
 controllerTags.setupTagsRoutes(app, db, { authenticateTokenMiddleware });
 setupImportExportRoutes(app, db, {
   authenticateTokenMiddleware,

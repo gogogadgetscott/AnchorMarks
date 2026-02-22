@@ -296,27 +296,52 @@ function initGlobalDelegation(): void {
             removeTagFilter(tag),
           );
         break;
-      case "clear-search":
+      case "clear-search": {
         const searchInput = document.getElementById(
           "search-input",
         ) as HTMLInputElement;
-        if (searchInput) {
-          searchInput.value = "";
-          state.filterConfig.search = "";
-          import("@features/bookmarks/bookmarks.ts").then(
-            ({ renderBookmarks }) => renderBookmarks(),
-          );
-        }
-        break;
-      case "clear-persistent-search":
-        state.filterConfig.search = undefined;
-        import("@features/bookmarks/bookmarks.ts").then(({ renderBookmarks }) =>
-          renderBookmarks(),
+        if (searchInput) searchInput.value = "";
+        state.setFilterConfig({
+          ...state.filterConfig,
+          search: undefined,
+        });
+        import("@features/bookmarks/filters.ts").then(({ applyFilters }) =>
+          applyFilters().then(() => {
+            import("@features/bookmarks/search.ts").then((m) =>
+              m.renderActiveFilters(),
+            );
+            import("@features/bookmarks/filters.ts").then((m) =>
+              m.updateFilterButtonText(),
+            );
+          }),
         );
-        import("@features/bookmarks/filters.ts").then(
-          ({ updateFilterButtonText }) => updateFilterButtonText(),
+        break;
+      }
+      case "clear-persistent-search": {
+        state.setFilterConfig({
+          ...state.filterConfig,
+          search: undefined,
+        });
+        const filterSearchInput = document.getElementById(
+          "filter-search-input",
+        ) as HTMLInputElement;
+        if (filterSearchInput) filterSearchInput.value = "";
+        const searchInput = document.getElementById(
+          "search-input",
+        ) as HTMLInputElement;
+        if (searchInput) searchInput.value = "";
+        import("@features/bookmarks/filters.ts").then(({ applyFilters }) =>
+          applyFilters().then(() => {
+            import("@features/bookmarks/search.ts").then((m) =>
+              m.renderActiveFilters(),
+            );
+            import("@features/bookmarks/filters.ts").then((m) =>
+              m.updateFilterButtonText(),
+            );
+          }),
         );
         break;
+      }
       case "toggle-widget-picker":
         e.stopPropagation();
         import("@features/bookmarks/widget-picker.ts").then(
@@ -538,7 +563,20 @@ function initFaviconErrorHandling(): void {
         if (res && res.favicon && item.target.parentElement) {
           const parent = item.target.parentElement;
           if (parent && parent.classList.contains("bookmark-favicon")) {
-            parent.innerHTML = `<img src="${res.favicon}?t=${Date.now()}" alt="" class="bookmark-favicon-img" loading="lazy">`;
+            const url = String(res.favicon).trim();
+            const safe =
+              url.startsWith("http://") ||
+              url.startsWith("https://") ||
+              url.startsWith("/");
+            if (safe) {
+              const img = document.createElement("img");
+              img.alt = "";
+              img.className = "bookmark-favicon-img";
+              img.loading = "lazy";
+              img.setAttribute("src", `${url}?t=${Date.now()}`);
+              parent.innerHTML = "";
+              parent.appendChild(img);
+            }
           }
         }
       } catch {

@@ -1614,8 +1614,11 @@ export function initDashboardDragDrop(): void {
             await import("@features/bookmarks/bookmarks.ts");
           const { updateActiveNav } = await import("@utils/ui-helpers.ts");
           state.setCurrentView("all");
-          state.filterConfig.tags = [widgetId];
-          state.filterConfig.tagMode = "OR";
+          state.setFilterConfig({
+            ...state.filterConfig,
+            tags: [widgetId],
+            tagMode: "OR",
+          });
           await loadBookmarks();
           renderBookmarks();
           updateActiveNav();
