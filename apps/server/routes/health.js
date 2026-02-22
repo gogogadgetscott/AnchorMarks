@@ -2,7 +2,11 @@ const statsModel = require("../models/stats");
 const bookmarkModel = require("../models/bookmark");
 const { monitor } = require("../helpers/performance-monitor");
 
-function setupHealthRoutes(app, db, { authenticateTokenMiddleware }) {
+function setupHealthRoutes(app, db, {
+  authenticateTokenMiddleware,
+  validateCsrfTokenMiddleware,
+  fetchFaviconWrapper,
+}) {
   // Find duplicate bookmarks (same URL)
   app.get("/api/health/duplicates", authenticateTokenMiddleware, (req, res) => {
     try {
@@ -18,6 +22,7 @@ function setupHealthRoutes(app, db, { authenticateTokenMiddleware }) {
   app.post(
     "/api/health/duplicates/cleanup",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     (req, res) => {
       try {
         const result = statsModel.cleanupDuplicates(db, req.user.id);

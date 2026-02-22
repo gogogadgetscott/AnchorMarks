@@ -2,7 +2,7 @@ const { v4: uuidv4 } = require("uuid");
 const { broadcast } = require("../helpers/websocket");
 
 function setupFoldersRoutes(app, db, helpers = {}) {
-  const { authenticateTokenMiddleware } = helpers;
+  const { authenticateTokenMiddleware, validateCsrfTokenMiddleware } = helpers;
   const folderModel = require("../models/folder");
 
   /**
@@ -55,7 +55,11 @@ function setupFoldersRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Folder created successfully
    */
-  app.post("/api/folders", authenticateTokenMiddleware, (req, res) => {
+  app.post(
+    "/api/folders",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
     const { name, parent_id, color, icon } = req.body;
     if (!name || !name.trim())
       return res.status(400).json({ error: "Folder name is required" });
@@ -78,7 +82,7 @@ function setupFoldersRoutes(app, db, helpers = {}) {
         position,
         parent_id || null, // Added parent_id
       );
-      const folder = folderModel.getFolderById(db, id);
+      const folder = folderModel.getFolderById(db, id, req.user.id);
       broadcast(req.user.id, { type: "folders:changed" });
       res.json(folder);
     } catch (err) {
@@ -122,7 +126,11 @@ function setupFoldersRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Folder updated successfully
    */
-  app.put("/api/folders/:id", authenticateTokenMiddleware, (req, res) => {
+  app.put(
+    "/api/folders/:id",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
     const { name, parent_id, color, icon, position } = req.body;
     try {
       folderModel.updateFolder(db, req.params.id, req.user.id, {
@@ -132,7 +140,8 @@ function setupFoldersRoutes(app, db, helpers = {}) {
         icon,
         position,
       });
-      const folder = folderModel.getFolderById(db, req.params.id);
+      const folder = folderModel.getFolderById(db, req.params.id, req.user.id);
+      if (!folder) return res.status(404).json({ error: "Folder not found" });
       broadcast(req.user.id, { type: "folders:changed" });
       res.json(folder);
     } catch (err) {
@@ -159,7 +168,11 @@ function setupFoldersRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Folder deleted successfully
    */
-  app.delete("/api/folders/:id", authenticateTokenMiddleware, (req, res) => {
+  app.delete(
+    "/api/folders/:id",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
     try {
       folderModel.deleteFolder(db, req.params.id, req.user.id);
       broadcast(req.user.id, { type: "folders:changed" });

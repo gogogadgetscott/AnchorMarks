@@ -162,7 +162,7 @@ async function captureScreenshot(url, bookmarkId) {
       } catch { }
     }
 
-    return { success: false, error: err.message };
+    return { success: false, error: "Failed to capture screenshot" };
   } finally {
     if (page) {
       try {

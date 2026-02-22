@@ -1,5 +1,5 @@
 module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
-  const { authenticateTokenMiddleware } = helpers;
+  const { authenticateTokenMiddleware, validateCsrfTokenMiddleware } = helpers;
   const dashboardModel = require("../models/dashboard");
   const userSettingsModel = require("../models/userSettings");
 
@@ -13,7 +13,11 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
     }
   });
 
-  app.post("/api/dashboard/views", authenticateTokenMiddleware, (req, res) => {
+  app.post(
+    "/api/dashboard/views",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
     try {
       const { name, config } = req.body;
       if (!name || !config)
@@ -34,6 +38,7 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
   app.put(
     "/api/dashboard/views/:id",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     (req, res) => {
       try {
         const { name, config, position } = req.body;
@@ -43,6 +48,7 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
           req.user.id,
           { name, config, position },
         );
+        if (!view) return res.status(404).json({ error: "View not found" });
         res.json({ ...view, config: JSON.parse(view.config) });
       } catch (err) {
         console.error("Error updating dashboard view:", err);
@@ -54,6 +60,7 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
   app.delete(
     "/api/dashboard/views/:id",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     (req, res) => {
       try {
         dashboardModel.deleteDashboardView(db, req.params.id, req.user.id);
@@ -68,10 +75,11 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
   app.post(
     "/api/dashboard/views/:id/restore",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     (req, res) => {
       try {
-        const view = dashboardModel.getDashboardView(db, req.params.id);
-        if (!view || view.user_id !== req.user.id)
+        const view = dashboardModel.getDashboardView(db, req.params.id, req.user.id);
+        if (!view)
           return res.status(404).json({ error: "View not found" });
         const config = JSON.parse(view.config);
         userSettingsModel.applyDashboardConfigToUser(db, req.user.id, config);

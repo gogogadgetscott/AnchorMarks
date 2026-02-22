@@ -4,7 +4,7 @@ const bookmarkModel = require("../models/bookmark");
 function setupSyncRoutes(
   app,
   db,
-  { authenticateTokenMiddleware, fetchFaviconWrapper },
+  { authenticateTokenMiddleware, validateCsrfTokenMiddleware, fetchFaviconWrapper },
 ) {
   app.get("/api/sync/status", authenticateTokenMiddleware, (req, res) => {
     try {
@@ -15,7 +15,11 @@ function setupSyncRoutes(
     }
   });
 
-  app.post("/api/sync/push", authenticateTokenMiddleware, (req, res) => {
+  app.post(
+    "/api/sync/push",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
     try {
       const { bookmarks, folders } = req.body;
       const results = syncModel.push(db, req.user.id, { bookmarks, folders });

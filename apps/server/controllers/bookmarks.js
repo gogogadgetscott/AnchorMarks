@@ -51,7 +51,11 @@ function normalizeTagColorOverrides(raw, tagMap = {}) {
 const { fetchUrlMetadata, detectContentType } = require("../helpers/metadata");
 
 function setupBookmarksRoutes(app, db, helpers = {}) {
-  const { authenticateTokenMiddleware, fetchFaviconWrapper } = helpers;
+  const {
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    fetchFaviconWrapper,
+  } = helpers;
 
   /**
    * @swagger
@@ -270,6 +274,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
   app.post(
     "/api/bookmarks/fetch-metadata",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     async (req, res) => {
       const { url } = req.body;
       if (!url) return res.status(400).json({ error: "URL is required" });
@@ -328,7 +333,11 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
    *         description: Bookmark created successfully
    */
   // Create bookmark
-  app.post("/api/bookmarks", authenticateTokenMiddleware, async (req, res) => {
+  app.post(
+    "/api/bookmarks",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    async (req, res) => {
     let { title, url, description, folder_id, tags, color, og_image } =
       req.body;
     const id = uuidv4();
@@ -419,6 +428,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
   app.post(
     "/api/bookmarks/:id/click",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     (req, res) => {
       try {
         bookmarkModel.incrementClick(db, req.params.id, req.user.id);

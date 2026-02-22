@@ -4,7 +4,10 @@ const { parseTagsDetailed } = require("../helpers/tags");
 const { generateBookmarkHtml } = require("../helpers/html");
 const { queueMetadataFetch } = require("../helpers/metadata-queue");
 
-function setupImportExportRoutes(app, db, { authenticateTokenMiddleware }) {
+function setupImportExportRoutes(app, db, {
+  authenticateTokenMiddleware,
+  validateCsrfTokenMiddleware,
+}) {
   /**
    * @swagger
    * /import/html:
@@ -30,6 +33,7 @@ function setupImportExportRoutes(app, db, { authenticateTokenMiddleware }) {
   app.post(
     "/api/import/html",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     async (req, res) => {
       try {
         const { html } = req.body;
@@ -85,7 +89,11 @@ function setupImportExportRoutes(app, db, { authenticateTokenMiddleware }) {
    *       200:
    *         description: Import results
    */
-  app.post("/api/import/json", authenticateTokenMiddleware, (req, res) => {
+  app.post(
+    "/api/import/json",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
     try {
       const { bookmarks = [], folders = [] } = req.body;
       const result = importExportModel.importJson(db, req.user.id, {

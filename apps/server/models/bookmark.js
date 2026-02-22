@@ -224,8 +224,13 @@ function listBookmarks(db, userId, opts = {}) {
 
   if (limit) {
     const total = db.prepare(countQuery).get(...params).total;
-    query += ` LIMIT ${parseInt(limit)}`;
-    if (offset) query += ` OFFSET ${parseInt(offset)}`;
+    const safeLimit = Math.max(
+      1,
+      Math.min(10000, parseInt(String(limit), 10) || 50),
+    );
+    const safeOffset = Math.max(0, parseInt(String(offset), 10) || 0);
+    query += " LIMIT ? OFFSET ?";
+    params.push(safeLimit, safeOffset);
     const bookmarks = db.prepare(query).all(...params);
     return { bookmarks, total };
   }

@@ -46,7 +46,7 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
           results.created++;
         }
       } catch (err) {
-        results.errors.push({ folder: folder.name, error: err.message });
+        results.errors.push({ folder: folder.name, error: "Sync failed" });
       }
     }
   }
@@ -113,7 +113,7 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
           results.created++;
         }
       } catch (err) {
-        results.errors.push({ url: bm.url, error: err.message });
+        results.errors.push({ url: bm.url, error: "Sync failed" });
       }
     }
   }

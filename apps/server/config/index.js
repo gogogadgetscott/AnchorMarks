@@ -40,14 +40,18 @@ function resolveCorsOrigin() {
   const env = process.env.NODE_ENV || "development";
   if (env !== "production") return true;
 
-  const origin = process.env.CORS_ORIGIN;
-  if (origin.trim() === "*") {
+  const origin = (process.env.CORS_ORIGIN || "").trim();
+  if (!origin) {
+    throw new Error("CORS_ORIGIN must be configured in production");
+  }
+  if (origin === "*") {
     throw new Error("CORS_ORIGIN cannot be * in production");
   }
-  return origin
-    .split(",")
-    .map((o) => o.trim())
-    .filter(Boolean);
+  const origins = origin.split(",").map((o) => o.trim()).filter(Boolean);
+  if (origins.length === 0) {
+    throw new Error("CORS_ORIGIN must contain at least one valid origin");
+  }
+  return origins;
 }
 
 const crypto = require("crypto");

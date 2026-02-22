@@ -1,5 +1,5 @@
 module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
-  const { authenticateTokenMiddleware } = helpers;
+  const { authenticateTokenMiddleware, validateCsrfTokenMiddleware } = helpers;
   const smartCollectionsModel = require("../models/smartCollections");
   const { parseTagsDetailed } = require("../helpers/tags");
 
@@ -18,7 +18,11 @@ module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
     }
   });
 
-  app.post("/api/collections", authenticateTokenMiddleware, (req, res) => {
+  app.post(
+    "/api/collections",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
     try {
       const { name, icon, color, filters } = req.body;
       if (!name || !filters)
@@ -35,7 +39,11 @@ module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
     }
   });
 
-  app.put("/api/collections/:id", authenticateTokenMiddleware, (req, res) => {
+  app.put(
+    "/api/collections/:id",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
     try {
       const { name, icon, color, filters, position } = req.body;
       const updated = smartCollectionsModel.updateCollection(
@@ -44,6 +52,7 @@ module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
         req.user.id,
         { name, icon, color, filters, position },
       );
+      if (!updated) return res.status(404).json({ error: "Collection not found" });
       res.json({ ...updated, filters: JSON.parse(updated.filters) });
     } catch (err) {
       console.error("Error updating collection:", err);
@@ -54,6 +63,7 @@ module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
   app.delete(
     "/api/collections/:id",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     (req, res) => {
       try {
         smartCollectionsModel.deleteCollection(db, req.params.id, req.user.id);

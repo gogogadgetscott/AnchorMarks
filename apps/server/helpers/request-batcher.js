@@ -78,7 +78,7 @@ class RequestBatcher {
                 item.handler(item.req, item.res, item.next),
               ).catch((err) => {
                 if (!item.res.headersSent) {
-                  item.res.status(500).json({ error: err.message });
+                  item.res.status(500).json({ error: "Request failed" });
                 }
               }),
             ),
@@ -87,7 +87,7 @@ class RequestBatcher {
       } catch (error) {
         items.forEach((item) => {
           if (!item.res.headersSent) {
-            item.res.status(500).json({ error: error.message });
+            item.res.status(500).json({ error: "Request failed" });
           }
         });
       }

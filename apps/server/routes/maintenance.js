@@ -4,7 +4,7 @@ const https = require("https");
 const http = require("http");
 const { URL } = require("url");
 
-module.exports = function (db, authenticateToken) {
+module.exports = function (db, authenticateToken, validateCsrfToken = (_, __, next) => next()) {
   // Check a single URL status
   /**
    * @swagger
@@ -28,7 +28,7 @@ module.exports = function (db, authenticateToken) {
    *       200:
    *         description: Link status
    */
-  router.post("/check-link", authenticateToken, async (req, res) => {
+  router.post("/check-link", authenticateToken, validateCsrfToken, async (req, res) => {
     const { url } = req.body;
     if (!url) return res.status(400).json({ error: "URL required" });
 
@@ -51,10 +51,10 @@ module.exports = function (db, authenticateToken) {
         },
       );
 
-      reqUrl.on("error", (err) => {
+      reqUrl.on("error", () => {
         if (responded) return;
         responded = true;
-        res.json({ status: 0, ok: false, error: err.message });
+        res.json({ status: 0, ok: false, error: "Connection failed" });
       });
 
       reqUrl.on("timeout", () => {
@@ -101,7 +101,7 @@ module.exports = function (db, authenticateToken) {
 
       res.json(duplicates);
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: "Failed to list duplicates" });
     }
   });
 
@@ -118,12 +118,12 @@ module.exports = function (db, authenticateToken) {
    *       200:
    *         description: Database optimized
    */
-  router.post("/optimize", authenticateToken, (req, res) => {
+  router.post("/optimize", authenticateToken, validateCsrfToken, (req, res) => {
     try {
       db.exec("VACUUM");
       res.json({ success: true, message: "Database optimized" });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: "Failed to optimize database" });
     }
   });
 

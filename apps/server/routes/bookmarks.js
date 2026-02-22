@@ -1,5 +1,10 @@
 module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
-  const { authenticateTokenMiddleware, fetchFaviconWrapper, config } = helpers;
+  const {
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    fetchFaviconWrapper,
+    config,
+  } = helpers;
   const bookmarkModel = require("../models/bookmark");
   const tagHelpers = require("../helpers/tag-helpers");
   const { parseTagsDetailed } = require("../helpers/tags");
@@ -235,7 +240,11 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Bookmark updated successfully
    */
-  app.put("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
+  app.put(
+    "/api/bookmarks/:id",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
     try {
       const fields = req.body;
       bookmarkModel.updateBookmark(db, req.user.id, req.params.id, fields);
@@ -296,6 +305,7 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
   app.post(
     "/api/bookmarks/:id/refresh-favicon",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     async (req, res) => {
       const bookmark = bookmarkModel.getBookmarkById(
         db,
@@ -331,7 +341,11 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Bookmark deleted successfully
    */
-  app.delete("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
+  app.delete(
+    "/api/bookmarks/:id",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
     try {
       bookmarkModel.deleteBookmark(db, req.user.id, req.params.id);
       broadcast(req.user.id, { type: "bookmarks:changed" });
@@ -346,6 +360,7 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
   app.post(
     "/api/bookmarks/bulk/archive",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     (req, res) => {
       const { ids } = req.body;
       if (!Array.isArray(ids))
@@ -371,6 +386,7 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
   app.post(
     "/api/bookmarks/bulk/unarchive",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     (req, res) => {
       const { ids } = req.body;
       if (!Array.isArray(ids))
@@ -395,6 +411,7 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
   app.post(
     "/api/bookmarks/:id/archive",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     (req, res) => {
       try {
         bookmarkModel.updateBookmark(db, req.user.id, req.params.id, {
@@ -411,6 +428,7 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
   app.post(
     "/api/bookmarks/:id/unarchive",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     (req, res) => {
       try {
         bookmarkModel.updateBookmark(db, req.user.id, req.params.id, {
@@ -446,6 +464,7 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
   app.post(
     "/api/bookmarks/:id/thumbnail",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     async (req, res) => {
       try {
         const bookmark = bookmarkModel.getBookmarkById(

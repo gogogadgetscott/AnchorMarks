@@ -4,7 +4,7 @@ const tagHelpers = require("../helpers/tag-helpers");
 const tagParseHelpers = require("../helpers/tags");
 
 function setupTagsRoutes(app, db, helpers = {}) {
-  const { authenticateTokenMiddleware } = helpers;
+  const { authenticateTokenMiddleware, validateCsrfTokenMiddleware } = helpers;
   const tagModel = require("../models/tag");
   const { parseTags, mergeTags, stringifyTags } = tagParseHelpers;
   const { broadcast } = require("../helpers/websocket");
@@ -59,7 +59,11 @@ function setupTagsRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Tag created successfully
    */
-  app.post("/api/tags", authenticateTokenMiddleware, (req, res) => {
+  app.post(
+    "/api/tags",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
     const { name, color, icon } = req.body;
     if (!name || !name.trim())
       return res.status(400).json({ error: "Tag name is required" });
@@ -122,7 +126,11 @@ function setupTagsRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Tag updated successfully
    */
-  app.put("/api/tags/:id", authenticateTokenMiddleware, (req, res) => {
+  app.put(
+    "/api/tags/:id",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
     const { name, color, icon, position } = req.body;
     try {
       tagModel.updateTag(db, req.params.id, req.user.id, {
@@ -137,11 +145,11 @@ function setupTagsRoutes(app, db, helpers = {}) {
         SELECT t.*, COUNT(bt.bookmark_id) as count
         FROM tags t
         LEFT JOIN bookmark_tags bt ON t.id = bt.tag_id
-        WHERE t.id = ?
+        WHERE t.id = ? AND t.user_id = ?
         GROUP BY t.id
       `,
         )
-        .get(req.params.id);
+        .get(req.params.id, req.user.id);
       if (!tag) return res.status(404).json({ error: "Tag not found" });
       broadcast(req.user.id, { type: "tags:changed" });
       res.json(tag);
@@ -169,7 +177,11 @@ function setupTagsRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Tag deleted successfully
    */
-  app.delete("/api/tags/:id", authenticateTokenMiddleware, (req, res) => {
+  app.delete(
+    "/api/tags/:id",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
     try {
       tagModel.deleteTag(db, req.params.id, req.user.id);
       broadcast(req.user.id, { type: "tags:changed" });
@@ -350,7 +362,11 @@ function setupTagsRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Tags added successfully
    */
-  app.post("/api/tags/bulk-add", authenticateTokenMiddleware, (req, res) => {
+  app.post(
+    "/api/tags/bulk-add",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
     const { bookmark_ids, tags } = req.body;
     if (!Array.isArray(bookmark_ids) || bookmark_ids.length === 0 || !tags) {
       return res
@@ -399,7 +415,11 @@ function setupTagsRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Tags removed successfully
    */
-  app.post("/api/tags/bulk-remove", authenticateTokenMiddleware, (req, res) => {
+  app.post(
+    "/api/tags/bulk-remove",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
     const { bookmark_ids, tags } = req.body;
     if (!Array.isArray(bookmark_ids) || bookmark_ids.length === 0 || !tags) {
       return res
@@ -460,7 +480,11 @@ function setupTagsRoutes(app, db, helpers = {}) {
    *       404:
    *         description: Tag not found
    */
-  app.post("/api/tags/rename", authenticateTokenMiddleware, (req, res) => {
+  app.post(
+    "/api/tags/rename",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
     const { from, to } = req.body;
     if (!from || !to)
       return res.status(400).json({ error: "from and to are required" });

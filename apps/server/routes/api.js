@@ -43,6 +43,7 @@ function setupApiRoutes(app, db, helpers) {
   // Bookmarks routes from controllers (includes POST /api/bookmarks)
   setupBookmarksRoutes(app, db, {
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     fetchFaviconWrapper,
   });
 
@@ -143,7 +144,7 @@ function setupApiRoutes(app, db, helpers) {
   const setupMaintenanceRoutes = require("./maintenance");
   app.use(
     "/api/maintenance",
-    setupMaintenanceRoutes(db, authenticateTokenMiddleware),
+    setupMaintenanceRoutes(db, authenticateTokenMiddleware, validateCsrfTokenMiddleware),
   );
 
   // Import/Export Routes
@@ -431,7 +432,7 @@ function setupApiRoutes(app, db, helpers) {
             err.code === "AI_KEY_MISSING" ||
             err.code === "AI_UNSUPPORTED")
         ) {
-          return res.status(501).json({ error: err.message });
+          return res.status(501).json({ error: "AI service not configured" });
         }
         console.error("AI tag suggestions error:", err);
         return res.status(500).json({ error: "Failed to get AI suggestions" });

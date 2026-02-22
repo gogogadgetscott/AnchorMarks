@@ -194,7 +194,13 @@ app.use((req, res, next) => {
   res.setHeader("X-XSS-Protection", "1; mode=block");
   next();
 });
-app.use(cors({ origin: true, credentials: true }));
+app.use(
+  cors({
+    origin: config.resolveCorsOrigin(),
+    credentials: true,
+    allowedHeaders: ["Content-Type", "X-CSRF-Token", "x-api-key"],
+  }),
+);
 // Enable compression for all responses
 app.use(compression({ level: 6, threshold: 1024 }));
 app.use(express.json({ limit: "10mb" }));
@@ -243,14 +249,26 @@ setupBookmarkViewsRoutes(app, db, {
   authenticateTokenMiddleware,
   validateCsrfTokenMiddleware,
 });
-setupCollectionsRoutes(app, db, { authenticateTokenMiddleware });
-controllerTags.setupTagsRoutes(app, db, { authenticateTokenMiddleware });
+setupCollectionsRoutes(app, db, {
+  authenticateTokenMiddleware,
+  validateCsrfTokenMiddleware,
+});
+controllerTags.setupTagsRoutes(app, db, {
+  authenticateTokenMiddleware,
+  validateCsrfTokenMiddleware,
+});
 setupImportExportRoutes(app, db, {
   authenticateTokenMiddleware,
+  validateCsrfTokenMiddleware,
 });
-setupSyncRoutes(app, db, { authenticateTokenMiddleware, fetchFaviconWrapper });
+setupSyncRoutes(app, db, {
+  authenticateTokenMiddleware,
+  validateCsrfTokenMiddleware,
+  fetchFaviconWrapper,
+});
 setupHealthRoutes(app, db, {
   authenticateTokenMiddleware,
+  validateCsrfTokenMiddleware,
   fetchFaviconWrapper,
 }); // Must be before setupApiRoutes to avoid /api/bookmarks/by-domain being shadowed
 setupApiRoutes(app, db, {
