@@ -1,6 +1,17 @@
+// Config via env: RATE_LIMIT_MAX (default 100), RATE_LIMIT_WINDOW_MS (default 60000),
+// RATE_LIMIT_DISABLED=1 to turn off (e.g. when all traffic is one IP behind Docker/proxy).
 const requestCounts = new Map();
-const RATE_LIMIT_WINDOW = 60000; // 1 minute
-const RATE_LIMIT_MAX = 100; // requests per minute
+const RATE_LIMIT_WINDOW = parseInt(
+  process.env.RATE_LIMIT_WINDOW_MS,
+  10,
+) || 60000; // 1 minute
+const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX, 10);
+const RATE_LIMIT_DISABLED =
+  process.env.RATE_LIMIT_DISABLED === "1" ||
+  process.env.RATE_LIMIT_DISABLED === "true";
+const effectiveMax = RATE_LIMIT_DISABLED
+  ? null
+  : (Number.isNaN(RATE_LIMIT_MAX) || RATE_LIMIT_MAX <= 0 ? 100 : RATE_LIMIT_MAX);
 const CLEANUP_INTERVAL = 300000; // 5 minutes
 
 // Periodic cleanup of expired rate limit entries to prevent memory leak
@@ -39,6 +50,8 @@ if (process.env.NODE_ENV === "production") {
 
 function rateLimiter(req, res, next) {
   try {
+    if (effectiveMax === null) return next();
+
     // Skip rate limiting for static asset requests (favicons, thumbnails, JS/CSS/images)
     if (
       req.method === "GET" &&
@@ -86,7 +99,7 @@ function rateLimiter(req, res, next) {
     const recent = times.filter((t) => now - t < RATE_LIMIT_WINDOW);
     recent.push(now);
     requestCounts.set(key, recent);
-    if (recent.length > RATE_LIMIT_MAX) {
+    if (recent.length > effectiveMax) {
       return res.status(429).json({ error: "Rate limit exceeded" });
     }
     next();

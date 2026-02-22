@@ -4,7 +4,7 @@ const tagHelpers = require("../helpers/tag-helpers");
 const tagParseHelpers = require("../helpers/tags");
 
 function setupTagsRoutes(app, db, helpers = {}) {
-  const { authenticateTokenMiddleware } = helpers;
+  const { authenticateTokenMiddleware, validateCsrfTokenMiddleware } = helpers;
   const tagModel = require("../models/tag");
   const { parseTags, mergeTags, stringifyTags } = tagParseHelpers;
   const { broadcast } = require("../helpers/websocket");
@@ -59,35 +59,40 @@ function setupTagsRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Tag created successfully
    */
-  app.post("/api/tags", authenticateTokenMiddleware, (req, res) => {
-    const { name, color, icon } = req.body;
-    if (!name || !name.trim())
-      return res.status(400).json({ error: "Tag name is required" });
-    const id = uuidv4();
-    const maxPos = db
-      .prepare("SELECT MAX(position) as max FROM tags WHERE user_id = ?")
-      .get(req.user.id);
-    const position = (maxPos.max || 0) + 1;
-    try {
-      tagModel.createTag(db, {
-        id,
-        user_id: req.user.id,
-        name: name.trim(),
-        color: color || "#f59e0b",
-        icon: icon || "tag",
-        position,
-      });
-      const tag = db
-        .prepare("SELECT *, 0 as count FROM tags WHERE id = ?")
-        .get(id);
-      broadcast(req.user.id, { type: "tags:changed" });
-      res.json(tag);
-    } catch (err) {
-      if (err.message && err.message.includes("UNIQUE"))
-        return res.status(409).json({ error: "Tag already exists" });
-      res.status(500).json({ error: "Failed to create tag" });
-    }
-  });
+  app.post(
+    "/api/tags",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      const { name, color, icon } = req.body;
+      if (!name || !name.trim())
+        return res.status(400).json({ error: "Tag name is required" });
+      const id = uuidv4();
+      const maxPos = db
+        .prepare("SELECT MAX(position) as max FROM tags WHERE user_id = ?")
+        .get(req.user.id);
+      const position = (maxPos.max || 0) + 1;
+      try {
+        tagModel.createTag(db, {
+          id,
+          user_id: req.user.id,
+          name: name.trim(),
+          color: color || "#f59e0b",
+          icon: icon || "tag",
+          position,
+        });
+        const tag = db
+          .prepare("SELECT *, 0 as count FROM tags WHERE id = ?")
+          .get(id);
+        broadcast(req.user.id, { type: "tags:changed" });
+        res.json(tag);
+      } catch (err) {
+        if (err.message && err.message.includes("UNIQUE"))
+          return res.status(409).json({ error: "Tag already exists" });
+        res.status(500).json({ error: "Failed to create tag" });
+      }
+    },
+  );
 
   /**
    * @swagger
@@ -122,34 +127,39 @@ function setupTagsRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Tag updated successfully
    */
-  app.put("/api/tags/:id", authenticateTokenMiddleware, (req, res) => {
-    const { name, color, icon, position } = req.body;
-    try {
-      tagModel.updateTag(db, req.params.id, req.user.id, {
-        name,
-        color,
-        icon,
-        position,
-      });
-      const tag = db
-        .prepare(
-          `
+  app.put(
+    "/api/tags/:id",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      const { name, color, icon, position } = req.body;
+      try {
+        tagModel.updateTag(db, req.params.id, req.user.id, {
+          name,
+          color,
+          icon,
+          position,
+        });
+        const tag = db
+          .prepare(
+            `
         SELECT t.*, COUNT(bt.bookmark_id) as count
         FROM tags t
         LEFT JOIN bookmark_tags bt ON t.id = bt.tag_id
-        WHERE t.id = ?
+        WHERE t.id = ? AND t.user_id = ?
         GROUP BY t.id
       `,
-        )
-        .get(req.params.id);
-      if (!tag) return res.status(404).json({ error: "Tag not found" });
-      broadcast(req.user.id, { type: "tags:changed" });
-      res.json(tag);
-    } catch (err) {
-      console.error("Error updating tag:", err);
-      res.status(500).json({ error: "Failed to update tag" });
-    }
-  });
+          )
+          .get(req.params.id, req.user.id);
+        if (!tag) return res.status(404).json({ error: "Tag not found" });
+        broadcast(req.user.id, { type: "tags:changed" });
+        res.json(tag);
+      } catch (err) {
+        console.error("Error updating tag:", err);
+        res.status(500).json({ error: "Failed to update tag" });
+      }
+    },
+  );
 
   /**
    * @swagger
@@ -169,16 +179,21 @@ function setupTagsRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Tag deleted successfully
    */
-  app.delete("/api/tags/:id", authenticateTokenMiddleware, (req, res) => {
-    try {
-      tagModel.deleteTag(db, req.params.id, req.user.id);
-      broadcast(req.user.id, { type: "tags:changed" });
-      res.json({ success: true });
-    } catch (err) {
-      console.error("Error deleting tag:", err);
-      res.status(500).json({ error: "Failed to delete tag" });
-    }
-  });
+  app.delete(
+    "/api/tags/:id",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      try {
+        tagModel.deleteTag(db, req.params.id, req.user.id);
+        broadcast(req.user.id, { type: "tags:changed" });
+        res.json({ success: true });
+      } catch (err) {
+        console.error("Error deleting tag:", err);
+        res.status(500).json({ error: "Failed to delete tag" });
+      }
+    },
+  );
 
   // --- Suggest, analytics, bulk, rename ---
 
@@ -248,7 +263,7 @@ function setupTagsRoutes(app, db, helpers = {}) {
             if (rowHost === hostname) {
               parseTags(row.tags).forEach((t) => bump(t, 3.5));
             }
-          } catch { }
+          } catch {}
         }
 
         const tfCounts = {};
@@ -350,35 +365,40 @@ function setupTagsRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Tags added successfully
    */
-  app.post("/api/tags/bulk-add", authenticateTokenMiddleware, (req, res) => {
-    const { bookmark_ids, tags } = req.body;
-    if (!Array.isArray(bookmark_ids) || bookmark_ids.length === 0 || !tags) {
-      return res
-        .status(400)
-        .json({ error: "bookmark_ids and tags are required" });
-    }
+  app.post(
+    "/api/tags/bulk-add",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      const { bookmark_ids, tags } = req.body;
+      if (!Array.isArray(bookmark_ids) || bookmark_ids.length === 0 || !tags) {
+        return res
+          .status(400)
+          .json({ error: "bookmark_ids and tags are required" });
+      }
 
-    const normalizedTags = parseTags(tags);
-    const updated = [];
-    const userId = req.user.id;
+      const normalizedTags = parseTags(tags);
+      const updated = [];
+      const userId = req.user.id;
 
-    bookmark_ids.forEach((id) => {
-      // Verify ownership: skip bookmarks not belonging to this user
-      const owned = db
-        .prepare("SELECT id FROM bookmarks WHERE id = ? AND user_id = ?")
-        .get(id, userId);
-      if (!owned) return;
+      bookmark_ids.forEach((id) => {
+        // Verify ownership: skip bookmarks not belonging to this user
+        const owned = db
+          .prepare("SELECT id FROM bookmarks WHERE id = ? AND user_id = ?")
+          .get(id, userId);
+        if (!owned) return;
 
-      const current = tagHelpers.getBookmarkTagsString(db, id, userId);
-      const merged = mergeTags(current, normalizedTags);
-      const tagsString = stringifyTags(merged);
-      const tagIds = tagHelpers.ensureTagsExist(db, userId, tagsString);
-      tagHelpers.updateBookmarkTags(db, id, tagIds, { userId });
-      updated.push(id);
-    });
+        const current = tagHelpers.getBookmarkTagsString(db, id, userId);
+        const merged = mergeTags(current, normalizedTags);
+        const tagsString = stringifyTags(merged);
+        const tagIds = tagHelpers.ensureTagsExist(db, userId, tagsString);
+        tagHelpers.updateBookmarkTags(db, id, tagIds, { userId });
+        updated.push(id);
+      });
 
-    res.json({ updated });
-  });
+      res.json({ updated });
+    },
+  );
 
   /**
    * @swagger
@@ -406,47 +426,52 @@ function setupTagsRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Tags removed successfully
    */
-  app.post("/api/tags/bulk-remove", authenticateTokenMiddleware, (req, res) => {
-    const { bookmark_ids, tags } = req.body;
-    if (!Array.isArray(bookmark_ids) || bookmark_ids.length === 0 || !tags) {
-      return res
-        .status(400)
-        .json({ error: "bookmark_ids and tags are required" });
-    }
-
-    const removeSet = new Set(parseTags(tags).map((t) => t.toLowerCase()));
-    const updated = [];
-    const userId = req.user.id;
-
-    bookmark_ids.forEach((id) => {
-      // Verify ownership: skip bookmarks not belonging to this user
-      const owned = db
-        .prepare("SELECT id FROM bookmarks WHERE id = ? AND user_id = ?")
-        .get(id, userId);
-      if (!owned) return;
-
-      const current = tagHelpers.getBookmarkTagsString(db, id, userId);
-      if (!current) {
-        tagHelpers.updateBookmarkTags(db, id, [], { userId });
-        return;
-      }
-      const filtered = parseTags(current).filter(
-        (t) => !removeSet.has(t.toLowerCase()),
-      );
-      const tagsString = filtered.length ? stringifyTags(filtered) : null;
-
-      if (tagsString) {
-        const tagIds = tagHelpers.ensureTagsExist(db, userId, tagsString);
-        tagHelpers.updateBookmarkTags(db, id, tagIds, { userId });
-      } else {
-        tagHelpers.updateBookmarkTags(db, id, [], { userId });
+  app.post(
+    "/api/tags/bulk-remove",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      const { bookmark_ids, tags } = req.body;
+      if (!Array.isArray(bookmark_ids) || bookmark_ids.length === 0 || !tags) {
+        return res
+          .status(400)
+          .json({ error: "bookmark_ids and tags are required" });
       }
 
-      updated.push(id);
-    });
+      const removeSet = new Set(parseTags(tags).map((t) => t.toLowerCase()));
+      const updated = [];
+      const userId = req.user.id;
 
-    res.json({ updated });
-  });
+      bookmark_ids.forEach((id) => {
+        // Verify ownership: skip bookmarks not belonging to this user
+        const owned = db
+          .prepare("SELECT id FROM bookmarks WHERE id = ? AND user_id = ?")
+          .get(id, userId);
+        if (!owned) return;
+
+        const current = tagHelpers.getBookmarkTagsString(db, id, userId);
+        if (!current) {
+          tagHelpers.updateBookmarkTags(db, id, [], { userId });
+          return;
+        }
+        const filtered = parseTags(current).filter(
+          (t) => !removeSet.has(t.toLowerCase()),
+        );
+        const tagsString = filtered.length ? stringifyTags(filtered) : null;
+
+        if (tagsString) {
+          const tagIds = tagHelpers.ensureTagsExist(db, userId, tagsString);
+          tagHelpers.updateBookmarkTags(db, id, tagIds, { userId });
+        } else {
+          tagHelpers.updateBookmarkTags(db, id, [], { userId });
+        }
+
+        updated.push(id);
+      });
+
+      res.json({ updated });
+    },
+  );
 
   /**
    * @swagger
@@ -474,20 +499,25 @@ function setupTagsRoutes(app, db, helpers = {}) {
    *       404:
    *         description: Tag not found
    */
-  app.post("/api/tags/rename", authenticateTokenMiddleware, (req, res) => {
-    const { from, to } = req.body;
-    if (!from || !to)
-      return res.status(400).json({ error: "from and to are required" });
-    try {
-      const result = tagHelpers.renameOrMergeTag(db, req.user.id, from, to);
-      if (result.error === "not_found")
-        return res.status(404).json({ error: "Tag not found" });
-      res.json({ updated: result.updated });
-    } catch (err) {
-      console.error("Tag rename error:", err);
-      res.status(500).json({ error: "Failed to rename/merge tag" });
-    }
-  });
+  app.post(
+    "/api/tags/rename",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      const { from, to } = req.body;
+      if (!from || !to)
+        return res.status(400).json({ error: "from and to are required" });
+      try {
+        const result = tagHelpers.renameOrMergeTag(db, req.user.id, from, to);
+        if (result.error === "not_found")
+          return res.status(404).json({ error: "Tag not found" });
+        res.json({ updated: result.updated });
+      } catch (err) {
+        console.error("Tag rename error:", err);
+        res.status(500).json({ error: "Failed to rename/merge tag" });
+      }
+    },
+  );
 }
 
 module.exports = { setupTagsRoutes };

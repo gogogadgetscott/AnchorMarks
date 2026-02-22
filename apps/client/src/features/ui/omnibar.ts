@@ -72,13 +72,15 @@ export function initOmnibarListeners(): void {
 
     if (searchFilterTimeout) clearTimeout(searchFilterTimeout);
     searchFilterTimeout = setTimeout(() => {
-      import("@features/bookmarks/filters.ts").then(({ applyFilters }) => {
+      import("@features/bookmarks/filters.ts").then((m) => {
+        const applyFilters = m.applyFilters;
+        if (typeof applyFilters !== "function") return;
         applyFilters().then(() => {
-          import("@features/bookmarks/search.ts").then((m) =>
-            m.renderActiveFilters(),
+          import("@features/bookmarks/search.ts").then((mod) =>
+            mod.renderActiveFilters(),
           );
-          import("@features/bookmarks/filters.ts").then((m) =>
-            m.updateFilterButtonText(),
+          import("@features/bookmarks/filters.ts").then((mod) =>
+            mod.updateFilterButtonText(),
           );
         });
       });

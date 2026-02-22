@@ -52,6 +52,7 @@ function initializeDatabase(DB_PATH) {
         last_checked DATETIME,
         content_type TEXT,
         is_archived INTEGER DEFAULT 0,
+        tags TEXT DEFAULT '',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -151,6 +152,25 @@ function initializeDatabase(DB_PATH) {
       CREATE INDEX IF NOT EXISTS idx_bookmark_views_user ON bookmark_views(user_id);
       
       -- INITIALIZE VIRTUAL FTS5 TABLE AND SYSTEM TRIGGERS --
+    `);
+
+    // Robust FTS5 Check: Recreate if 'id' column is missing
+    let recreateFts = false;
+    try {
+      const columns = db.prepare("PRAGMA table_info(bookmarks_fts)").all();
+      if (columns.length > 0 && !columns.some((c) => c.name === "id")) {
+        console.log(
+          "Detecting old bookmarks_fts schema (missing id), recreating...",
+        );
+        recreateFts = true;
+      }
+    } catch (_e) {}
+
+    if (recreateFts) {
+      db.exec("DROP TABLE bookmarks_fts");
+    }
+
+    db.exec(`
       CREATE VIRTUAL TABLE IF NOT EXISTS bookmarks_fts USING fts5(
         id UNINDEXED,
         user_id UNINDEXED,
@@ -165,98 +185,49 @@ function initializeDatabase(DB_PATH) {
       CREATE TRIGGER IF NOT EXISTS bookmarks_fts_insert AFTER INSERT ON bookmarks
       BEGIN
         INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
-        VALUES (new.rowid, new.id, new.user_id, new.title, new.url, new.description, '');
+        VALUES (new.rowid, new.id, new.user_id, new.title, new.url, new.description, COALESCE(new.tags, ''));
       END;
 
       CREATE TRIGGER IF NOT EXISTS bookmarks_fts_delete AFTER DELETE ON bookmarks
       BEGIN
-        INSERT INTO bookmarks_fts (bookmarks_fts, rowid, id, user_id, title, url, description, tags)
-        VALUES ('delete', old.rowid, old.id, old.user_id, old.title, old.url, old.description, 
-          (SELECT GROUP_CONCAT(t.name, ', ') 
-           FROM bookmark_tags bt 
-           JOIN tags t ON t.id = bt.tag_id 
-           WHERE bt.bookmark_id = old.id));
+        INSERT INTO bookmarks_fts (bookmarks_fts, rowid) VALUES ('delete', old.rowid);
       END;
 
       CREATE TRIGGER IF NOT EXISTS bookmarks_fts_update AFTER UPDATE ON bookmarks
       BEGIN
-        INSERT INTO bookmarks_fts (bookmarks_fts, rowid, id, user_id, title, url, description, tags)
-        VALUES ('delete', old.rowid, old.id, old.user_id, old.title, old.url, old.description, 
-          (SELECT GROUP_CONCAT(t.name, ', ') 
-           FROM bookmark_tags bt 
-           JOIN tags t ON t.id = bt.tag_id 
-           WHERE bt.bookmark_id = old.id));
-        
+        INSERT INTO bookmarks_fts (bookmarks_fts, rowid) VALUES ('delete', old.rowid);
         INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
-        VALUES (new.rowid, new.id, new.user_id, new.title, new.url, new.description, 
-          (SELECT GROUP_CONCAT(t.name, ', ') 
-           FROM bookmark_tags bt 
-           JOIN tags t ON t.id = bt.tag_id 
-           WHERE bt.bookmark_id = new.id));
+        VALUES (new.rowid, new.id, new.user_id, new.title, new.url, new.description, COALESCE(new.tags, ''));
       END;
 
-      CREATE TRIGGER IF NOT EXISTS bookmark_tags_insert AFTER INSERT ON bookmark_tags
+      CREATE TRIGGER IF NOT EXISTS bookmark_tags_sync_insert AFTER INSERT ON bookmark_tags
       BEGIN
-        INSERT INTO bookmarks_fts (bookmarks_fts, rowid, id, user_id, title, url, description, tags)
-        SELECT 'delete', b.rowid, b.id, b.user_id, b.title, b.url, b.description,
-          (SELECT GROUP_CONCAT(t2.name, ', ') 
-           FROM bookmark_tags bt2 
-           JOIN tags t2 ON t2.id = bt2.tag_id 
-           WHERE bt2.bookmark_id = new.bookmark_id AND bt2.tag_id != new.tag_id)
-        FROM bookmarks b WHERE b.id = new.bookmark_id;
-
-        INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
-        SELECT b.rowid, b.id, b.user_id, b.title, b.url, b.description,
-          (SELECT GROUP_CONCAT(t2.name, ', ') 
-           FROM bookmark_tags bt2 
-           JOIN tags t2 ON t2.id = bt2.tag_id 
-           WHERE bt2.bookmark_id = new.bookmark_id)
-        FROM bookmarks b WHERE b.id = new.bookmark_id;
+        UPDATE bookmarks SET tags = (
+          SELECT COALESCE(GROUP_CONCAT(t.name, ', '), '')
+          FROM bookmark_tags bt
+          JOIN tags t ON t.id = bt.tag_id
+          WHERE bt.bookmark_id = new.bookmark_id
+        ) WHERE id = new.bookmark_id;
       END;
 
-      CREATE TRIGGER IF NOT EXISTS bookmark_tags_delete AFTER DELETE ON bookmark_tags
+      CREATE TRIGGER IF NOT EXISTS bookmark_tags_sync_delete AFTER DELETE ON bookmark_tags
       BEGIN
-        INSERT INTO bookmarks_fts (bookmarks_fts, rowid, id, user_id, title, url, description, tags)
-        SELECT 'delete', b.rowid, b.id, b.user_id, b.title, b.url, b.description,
-          (SELECT GROUP_CONCAT(t2.name, ', ') 
-           FROM bookmark_tags bt2 
-           JOIN tags t2 ON t2.id = bt2.tag_id 
-           WHERE bt2.bookmark_id = old.bookmark_id
-           UNION SELECT name FROM tags WHERE id = old.tag_id)
-        FROM bookmarks b WHERE b.id = old.bookmark_id;
-
-        INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
-        SELECT b.rowid, b.id, b.user_id, b.title, b.url, b.description,
-          (SELECT GROUP_CONCAT(t2.name, ', ') 
-           FROM bookmark_tags bt2 
-           JOIN tags t2 ON t2.id = bt2.tag_id 
-           WHERE bt2.bookmark_id = old.bookmark_id)
-        FROM bookmarks b WHERE b.id = old.bookmark_id;
+        UPDATE bookmarks SET tags = (
+          SELECT COALESCE(GROUP_CONCAT(t.name, ', '), '')
+          FROM bookmark_tags bt
+          JOIN tags t ON t.id = bt.tag_id
+          WHERE bt.bookmark_id = old.bookmark_id
+        ) WHERE id = old.bookmark_id;
       END;
 
-      CREATE TRIGGER IF NOT EXISTS tags_update AFTER UPDATE OF name ON tags
+      CREATE TRIGGER IF NOT EXISTS tags_sync_update AFTER UPDATE OF name ON tags
       BEGIN
-        INSERT INTO bookmarks_fts (bookmarks_fts, rowid, id, user_id, title, url, description, tags)
-        SELECT 'delete', b.rowid, b.id, b.user_id, b.title, b.url, b.description,
-          (SELECT GROUP_CONCAT(
-             CASE WHEN t2.id = old.id THEN old.name ELSE t2.name END, ', '
-           ) 
-           FROM bookmark_tags bt2 
-           JOIN tags t2 ON t2.id = bt2.tag_id 
-           WHERE bt2.bookmark_id = b.id)
-        FROM bookmarks b
-        JOIN bookmark_tags bt ON bt.bookmark_id = b.id
-        WHERE bt.tag_id = new.id;
-        
-        INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
-        SELECT b.rowid, b.id, b.user_id, b.title, b.url, b.description,
-          (SELECT GROUP_CONCAT(t2.name, ', ') 
-           FROM bookmark_tags bt2 
-           JOIN tags t2 ON t2.id = bt2.tag_id 
-           WHERE bt2.bookmark_id = b.id)
-        FROM bookmarks b
-        JOIN bookmark_tags bt ON bt.bookmark_id = b.id
-        WHERE bt.tag_id = new.id;
+        UPDATE bookmarks SET tags = (
+          SELECT COALESCE(GROUP_CONCAT(t2.name, ', '), '')
+          FROM bookmark_tags bt2
+          JOIN tags t2 ON t2.id = bt2.tag_id
+          WHERE bt2.bookmark_id = bookmarks.id
+        ) WHERE id IN (SELECT bookmark_id FROM bookmark_tags WHERE tag_id = new.id);
       END;
     `);
   } catch (err) {

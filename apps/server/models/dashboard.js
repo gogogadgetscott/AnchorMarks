@@ -23,7 +23,12 @@ function createDashboardView(db, userId, name, config) {
   return db.prepare("SELECT * FROM dashboard_views WHERE id = ?").get(id);
 }
 
-function getDashboardView(db, id) {
+function getDashboardView(db, id, userId) {
+  if (userId !== undefined && userId !== null) {
+    return db
+      .prepare("SELECT * FROM dashboard_views WHERE id = ? AND user_id = ?")
+      .get(id, userId);
+  }
   return db.prepare("SELECT * FROM dashboard_views WHERE id = ?").get(id);
 }
 
@@ -44,7 +49,9 @@ function updateDashboardView(db, id, userId, fields) {
     id,
     userId,
   );
-  return db.prepare("SELECT * FROM dashboard_views WHERE id = ?").get(id);
+  return db
+    .prepare("SELECT * FROM dashboard_views WHERE id = ? AND user_id = ?")
+    .get(id, userId);
 }
 
 function deleteDashboardView(db, id, userId) {

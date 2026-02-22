@@ -45,13 +45,14 @@ import {
 // Import tag input
 import { initTagInput } from "@features/bookmarks/tag-input.ts";
 
-
-
 // ============================================================
 // New Modular UI Listeners (Moved to dynamic imports)
 // ============================================================
 // Moved to dynamic imports in DOMContentLoaded or as-needed
-const confirmDialog = (msg: string, opts?: any) => import("@features/ui/confirm-dialog.ts").then(m => m.confirmDialog(msg, opts));
+const confirmDialog = (msg: string, opts?: any) =>
+  import("@features/ui/confirm-dialog.ts").then((m) =>
+    m.confirmDialog(msg, opts),
+  );
 
 /**
  * Set view mode (grid / list / compact)
@@ -177,6 +178,13 @@ export async function updateHeaderContent(): Promise<void> {
     case "tag-cloud":
       headerConfig.title = "Tag Cloud";
       headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
+      break;
+
+    case "analytics":
+      headerConfig.title = "Analytics";
+      headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
+      headerConfig.showViewToggle = false;
+      headerConfig.showAddButton = false;
       break;
 
     case "all":
@@ -323,15 +331,12 @@ export async function initializeApp(): Promise<void> {
       await import("@features/bookmarks/dashboard.ts");
     renderDashboard();
   } else if (state.currentView === "tag-cloud") {
-    const { renderTagCloud } = await import(
-      "@features/bookmarks/tag-cloud.ts"
-    );
+    const { renderTagCloud } = await import("@features/bookmarks/tag-cloud.ts");
     await renderTagCloud();
   } else if (state.currentView === "analytics") {
     const { renderAnalytics } = await import("@features/analytics.ts");
     await renderAnalytics();
   }
-
 
   setViewMode(state.viewMode, false);
   updateActiveNav();
@@ -386,10 +391,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     showMainApp();
     await initializeApp();
     // Dynamically load Smart Organization
-    import("@features/bookmarks/smart-organization-ui.ts").then((mod) => mod.default.init());
+    import("@features/bookmarks/smart-organization-ui.ts").then((mod) =>
+      mod.default.init(),
+    );
     initTagInput();
     // Dynamically load Maintenance
-    import("@features/maintenance.ts").then(({ initMaintenance }) => initMaintenance());
+    import("@features/maintenance.ts").then(({ initMaintenance }) =>
+      initMaintenance(),
+    );
   }
 
   // Initialize modular listeners

@@ -78,7 +78,7 @@ function setupSmartOrganizationRoutes(
         });
       } catch (err) {
         console.error("Smart tag suggestions error:", err.message || err);
-        return res.status(400).json({ error: err.message || "Invalid URL" });
+        return res.status(400).json({ error: "Invalid URL" });
       }
     },
   );
@@ -118,7 +118,7 @@ function setupSmartOrganizationRoutes(
         res.json({ collections: unique.slice(0, parseInt(limit)) });
       } catch (err) {
         console.error("Smart collections suggest error:", err);
-        return res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: "Failed to get suggestions" });
       }
     },
   );
@@ -168,10 +168,8 @@ function setupSmartOrganizationRoutes(
           filters: filterObj,
           created: true,
         });
-      } catch (err) {
-        res
-          .status(500)
-          .json({ error: "Failed to create collection: " + err.message });
+      } catch (_err) {
+        res.status(500).json({ error: "Failed to create collection" });
       }
     },
   );
@@ -205,8 +203,8 @@ function setupSmartOrganizationRoutes(
           recentBookmarks,
           mostClicked,
         });
-      } catch (err) {
-        res.status(500).json({ error: err.message });
+      } catch (_err) {
+        res.status(500).json({ error: "Failed to get domain stats" });
       }
     },
   );
@@ -218,8 +216,8 @@ function setupSmartOrganizationRoutes(
       try {
         const clusters = smartOrg.getTagClusters(db, req.user.id);
         res.json({ clusters });
-      } catch (err) {
-        res.status(500).json({ error: err.message });
+      } catch (_err) {
+        res.status(500).json({ error: "Failed to get tag clusters" });
       }
     },
   );
@@ -253,8 +251,8 @@ function setupSmartOrganizationRoutes(
         },
         suggestions: { create_these_collections: [], organize_these_tags: [] },
       });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+    } catch (_err) {
+      res.status(500).json({ error: "Failed to get smart insights" });
     }
   });
 }

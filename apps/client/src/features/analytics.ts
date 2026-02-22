@@ -10,58 +10,62 @@ import { dom, showToast } from "@utils/ui-helpers.ts";
 import { logger } from "@utils/logger.ts";
 
 interface MonthlyGrowth {
-    month: string;
-    count: number;
+  month: string;
+  count: number;
 }
 
 interface DomainStats {
-    domain: string;
-    count: number;
+  domain: string;
+  count: number;
 }
 
 interface AdvancedStats {
-    total_bookmarks: number;
-    total_folders: number;
-    total_tags: number;
-    favorites: number;
-    top_clicked: any[];
-    top_tags: [string, number][];
-    monthly_growth: MonthlyGrowth[];
-    top_domains: DomainStats[];
-    dead_links: number;
-    totalClicks: number;
-    unread: number;
-    frequentlyUsed: number;
+  total_bookmarks: number;
+  total_folders: number;
+  total_tags: number;
+  favorites: number;
+  top_clicked: any[];
+  top_tags: [string, number][];
+  monthly_growth: MonthlyGrowth[];
+  top_domains: DomainStats[];
+  dead_links: number;
+  totalClicks: number;
+  unread: number;
+  frequentlyUsed: number;
 }
 
 /**
  * Render the Advanced Analytics dashboard
  */
 export async function renderAnalytics(): Promise<void> {
-    if (state.currentView !== "analytics") return;
+  if (state.currentView !== "analytics") return;
 
-    const container = dom.mainViewOutlet || document.getElementById("main-view-outlet");
-    if (!container) return;
+  const container =
+    dom.mainViewOutlet || document.getElementById("main-view-outlet");
+  if (!container) return;
 
-    container.innerHTML = `
+  container.innerHTML = `
     <div class="analytics-loading">
       <div class="spinner"></div>
       <p>Crunching the numbers...</p>
     </div>
   `;
 
-    try {
-        const stats = await api<AdvancedStats>("/stats/advanced");
-        renderDashboard(container, stats);
-    } catch (err) {
-        logger.error("Failed to fetch analytics data", err);
-        showToast("Failed to load analytics", "error");
-        container.innerHTML = `<div class="error-state">Failed to load analytics data.</div>`;
-    }
+  try {
+    const stats = await api<AdvancedStats>("/stats/advanced");
+    renderDashboard(container, stats);
+  } catch (err) {
+    logger.error("Failed to fetch analytics data", err);
+    showToast("Failed to load analytics", "error");
+    container.innerHTML = `<div class="error-state">Failed to load analytics data.</div>`;
+  }
 }
 
 function renderDashboard(container: HTMLElement, stats: AdvancedStats): void {
-    container.innerHTML = `
+  const topDomains = stats.top_domains ?? [];
+  const maxDomainCount = topDomains.length > 0 ? topDomains[0].count : 1;
+
+  container.innerHTML = `
     <div class="analytics-dashboard">
       <div class="analytics-header">
         <h1>Advanced Analytics</h1>
@@ -73,22 +77,25 @@ function renderDashboard(container: HTMLElement, stats: AdvancedStats): void {
         <div class="analytics-card metric-card">
           <div class="metric-value">${stats.total_bookmarks}</div>
           <div class="metric-label">Total Bookmarks</div>
-          ${renderSparkline(stats.monthly_growth.map(m => m.count), "#6366f1")}
+          ${renderSparkline(
+            stats.monthly_growth?.map((m) => m.count) ?? [],
+            "#6366f1",
+          )}
         </div>
         <div class="analytics-card metric-card">
           <div class="metric-value">${stats.favorites}</div>
           <div class="metric-label">Favorites</div>
-          <div class="metric-subtext">${((stats.favorites / stats.total_bookmarks) * 100).toFixed(1)}% of total</div>
+          <div class="metric-subtext">${stats.total_bookmarks > 0 ? ((stats.favorites / stats.total_bookmarks) * 100).toFixed(1) : 0}% of total</div>
         </div>
         <div class="analytics-card metric-card">
           <div class="metric-value">${stats.totalClicks}</div>
           <div class="metric-label">Total Clicks</div>
-          <div class="metric-subtext">Engagement Score: ${stats.totalClicks > 0 ? (stats.totalClicks / stats.total_bookmarks).toFixed(1) : 0}</div>
+          <div class="metric-subtext">Engagement Score: ${stats.total_bookmarks > 0 && stats.totalClicks > 0 ? (stats.totalClicks / stats.total_bookmarks).toFixed(1) : 0}</div>
         </div>
         <div class="analytics-card metric-card">
-          <div class="metric-value ${stats.dead_links > 0 ? 'text-danger' : ''}">${stats.dead_links}</div>
+          <div class="metric-value ${stats.dead_links > 0 ? "text-danger" : ""}">${stats.dead_links}</div>
           <div class="metric-label">Dead Links</div>
-          <div class="metric-subtext">${stats.dead_links > 0 ? 'Action required' : 'All clear!'}</div>
+          <div class="metric-subtext">${stats.dead_links > 0 ? "Action required" : "All clear!"}</div>
         </div>
 
         <!-- Monthly Growth Chart -->
@@ -101,13 +108,17 @@ function renderDashboard(container: HTMLElement, stats: AdvancedStats): void {
         <div class="analytics-card list-card">
           <h3>Top Domains</h3>
           <div class="domain-list">
-            ${stats.top_domains.map(d => `
+            ${topDomains
+              .map(
+                (d) => `
               <div class="domain-item">
                 <span class="domain-name">${escapeHtml(d.domain)}</span>
                 <span class="domain-count">${d.count}</span>
-                <div class="domain-bar" style="width: ${(d.count / stats.top_domains[0].count) * 100}%"></div>
+                <div class="domain-bar" style="width: ${(d.count / maxDomainCount) * 100}%"></div>
               </div>
-            `).join('')}
+            `,
+              )
+              .join("")}
           </div>
         </div>
 
@@ -117,12 +128,12 @@ function renderDashboard(container: HTMLElement, stats: AdvancedStats): void {
           <div class="dist-item">
             <span>Read vs Unread</span>
             <div class="progress-multi">
-              <div class="progress-segment" style="width: ${((stats.total_bookmarks - stats.unread) / stats.total_bookmarks) * 100}%; background: #6366f1" title="Read"></div>
-              <div class="progress-segment" style="width: ${(stats.unread / stats.total_bookmarks) * 100}%; background: #e5e7eb" title="Unread"></div>
+              <div class="progress-segment" style="width: ${stats.total_bookmarks > 0 ? ((stats.total_bookmarks - (stats.unread ?? 0)) / stats.total_bookmarks) * 100 : 0}%; background: #6366f1" title="Read"></div>
+              <div class="progress-segment" style="width: ${stats.total_bookmarks > 0 ? ((stats.unread ?? 0) / stats.total_bookmarks) * 100 : 0}%; background: #e5e7eb" title="Unread"></div>
             </div>
             <div class="dist-labels">
-              <span>Read: ${stats.total_bookmarks - stats.unread}</span>
-              <span>Unread: ${stats.unread}</span>
+              <span>Read: ${stats.total_bookmarks - (stats.unread ?? 0)}</span>
+              <span>Unread: ${stats.unread ?? 0}</span>
             </div>
           </div>
         </div>
@@ -132,20 +143,25 @@ function renderDashboard(container: HTMLElement, stats: AdvancedStats): void {
 }
 
 function renderSparkline(data: number[], color: string): string {
-    if (data.length < 2) return '';
-    const max = Math.max(...data, 1);
-    const min = Math.min(...data);
-    const width = 100;
-    const height = 30;
-    const padding = 2;
+  if (data.length < 2) return "";
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data);
+  const width = 100;
+  const height = 30;
+  const padding = 2;
 
-    const points = data.map((d, i) => {
-        const x = (i / (data.length - 1)) * width;
-        const y = height - ((d - min) / (max - min || 1)) * (height - padding * 2) - padding;
-        return `${x},${y}`;
-    }).join(' ');
+  const points = data
+    .map((d, i) => {
+      const x = (i / (data.length - 1)) * width;
+      const y =
+        height -
+        ((d - min) / (max - min || 1)) * (height - padding * 2) -
+        padding;
+      return `${x},${y}`;
+    })
+    .join(" ");
 
-    return `
+  return `
     <svg viewBox="0 0 ${width} ${height}" class="sparkline">
       <polyline fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${points}" />
     </svg>
@@ -153,24 +169,26 @@ function renderSparkline(data: number[], color: string): string {
 }
 
 function renderBarChart(data: MonthlyGrowth[], color: string): string {
-    const max = Math.max(...data.map(d => d.count), 1);
-    const width = 100;
-    const height = 40;
-    const gap = 2;
-    const barWidth = (width - (data.length - 1) * gap) / data.length;
+  const max = Math.max(...data.map((d) => d.count), 1);
+  const width = 100;
+  const height = 40;
+  const gap = 2;
+  const barWidth = (width - (data.length - 1) * gap) / data.length;
 
-    return `
+  return `
     <div class="bar-chart-container">
       <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
-        ${data.map((d, i) => {
-        const barHeight = (d.count / max) * height;
-        const x = i * (barWidth + gap);
-        const y = height - barHeight;
-        return `<rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${color}" rx="1" />`;
-    }).join('')}
+        ${data
+          .map((d, i) => {
+            const barHeight = (d.count / max) * height;
+            const x = i * (barWidth + gap);
+            const y = height - barHeight;
+            return `<rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${color}" rx="1" />`;
+          })
+          .join("")}
       </svg>
       <div class="bar-chart-labels">
-        ${data.map(d => `<span>${d.month.split('-')[1]}</span>`).join('')}
+        ${data.map((d) => `<span>${d.month.split("-")[1]}</span>`).join("")}
       </div>
     </div>
   `;

@@ -13,7 +13,7 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.5.0",
-    "cheerio": "^1.1.2",
+    "cheerio": "^1.2.0",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -28,7 +28,7 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
-    "eslint": "^9.39.2",
+    "eslint": "^10.0.1",
     "globals": "^16.5.0",
     "prettier": "^3.7.4",
     "supertest": "^7.1.3",

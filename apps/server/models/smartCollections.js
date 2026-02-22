@@ -34,7 +34,9 @@ function createCollection(db, userId, { name, icon, color, filters }) {
     position,
   );
 
-  return db.prepare("SELECT * FROM smart_collections WHERE id = ?").get(id);
+  return db
+    .prepare("SELECT * FROM smart_collections WHERE id = ? AND user_id = ?")
+    .get(id, userId);
 }
 
 function updateCollection(
@@ -63,7 +65,9 @@ function updateCollection(
     userId,
   );
 
-  return db.prepare("SELECT * FROM smart_collections WHERE id = ?").get(id);
+  return db
+    .prepare("SELECT * FROM smart_collections WHERE id = ? AND user_id = ?")
+    .get(id, userId);
 }
 
 function deleteCollection(db, id, userId) {

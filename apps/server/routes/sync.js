@@ -4,7 +4,11 @@ const bookmarkModel = require("../models/bookmark");
 function setupSyncRoutes(
   app,
   db,
-  { authenticateTokenMiddleware, fetchFaviconWrapper },
+  {
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    fetchFaviconWrapper,
+  },
 ) {
   app.get("/api/sync/status", authenticateTokenMiddleware, (req, res) => {
     try {
@@ -15,33 +19,38 @@ function setupSyncRoutes(
     }
   });
 
-  app.post("/api/sync/push", authenticateTokenMiddleware, (req, res) => {
-    try {
-      const { bookmarks, folders } = req.body;
-      const results = syncModel.push(db, req.user.id, { bookmarks, folders });
+  app.post(
+    "/api/sync/push",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      try {
+        const { bookmarks, folders } = req.body;
+        const results = syncModel.push(db, req.user.id, { bookmarks, folders });
 
-      if (bookmarks && bookmarks.length) {
-        for (const bm of bookmarks) {
-          if (!bm.url) continue;
-          try {
-            const id = bookmarkModel.findBookmarkIdByUrl(
-              db,
-              req.user.id,
-              bm.url,
-            );
-            if (id) fetchFaviconWrapper(bm.url, id).catch(console.error);
-          } catch {
-            // ignore
+        if (bookmarks && bookmarks.length) {
+          for (const bm of bookmarks) {
+            if (!bm.url) continue;
+            try {
+              const id = bookmarkModel.findBookmarkIdByUrl(
+                db,
+                req.user.id,
+                bm.url,
+              );
+              if (id) fetchFaviconWrapper(bm.url, id).catch(console.error);
+            } catch {
+              // ignore
+            }
           }
         }
-      }
 
-      res.json(results);
-    } catch (err) {
-      console.error("Sync push error:", err);
-      res.status(500).json({ error: "Failed to push sync data" });
-    }
-  });
+        res.json(results);
+      } catch (err) {
+        console.error("Sync push error:", err);
+        res.status(500).json({ error: "Failed to push sync data" });
+      }
+    },
+  );
 
   app.get("/api/sync/pull", authenticateTokenMiddleware, (req, res) => {
     try {

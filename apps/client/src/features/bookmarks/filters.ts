@@ -818,7 +818,7 @@ export function watchViewChanges(): void {
   updateFilterButtonVisibility();
 }
 
-async function applyFilters(): Promise<void> {
+export async function applyFilters(): Promise<void> {
   // Don't apply filters to favorites or recent views - they show all items
   if (state.currentView === "favorites" || state.currentView === "recent") {
     // Clear any filters that might have been set

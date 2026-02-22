@@ -139,6 +139,9 @@ describe("Auth negative paths and extras", () => {
       .send({ currentPassword: password, newPassword });
 
     expect(res.status).toBe(200);
+    if (res.body && res.body.csrfToken) {
+      csrfToken = res.body.csrfToken;
+    }
     password = newPassword; // Update local tracker
   });
 

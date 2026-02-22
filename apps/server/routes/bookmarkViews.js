@@ -1,5 +1,5 @@
 module.exports = function setupBookmarkViewsRoutes(app, db, helpers = {}) {
-  const { authenticateTokenMiddleware } = helpers;
+  const { authenticateTokenMiddleware, validateCsrfTokenMiddleware } = helpers;
   const bookmarkViewModel = require("../models/bookmarkView");
 
   app.get("/api/bookmark/views", authenticateTokenMiddleware, (req, res) => {
@@ -12,27 +12,35 @@ module.exports = function setupBookmarkViewsRoutes(app, db, helpers = {}) {
     }
   });
 
-  app.post("/api/bookmark/views", authenticateTokenMiddleware, (req, res) => {
-    try {
-      const { name, config } = req.body;
-      if (!name || !config)
-        return res.status(400).json({ error: "Name and config are required" });
-      const view = bookmarkViewModel.createBookmarkView(
-        db,
-        req.user.id,
-        name,
-        config,
-      );
-      res.json(view);
-    } catch (err) {
-      console.error("Error creating bookmark view:", err);
-      res.status(500).json({ error: "Failed to create bookmark view" });
-    }
-  });
+  app.post(
+    "/api/bookmark/views",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      try {
+        const { name, config } = req.body;
+        if (!name || !config)
+          return res
+            .status(400)
+            .json({ error: "Name and config are required" });
+        const view = bookmarkViewModel.createBookmarkView(
+          db,
+          req.user.id,
+          name,
+          config,
+        );
+        res.json(view);
+      } catch (err) {
+        console.error("Error creating bookmark view:", err);
+        res.status(500).json({ error: "Failed to create bookmark view" });
+      }
+    },
+  );
 
   app.put(
     "/api/bookmark/views/:id",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     (req, res) => {
       try {
         const { name, config } = req.body;
@@ -55,6 +63,7 @@ module.exports = function setupBookmarkViewsRoutes(app, db, helpers = {}) {
   app.delete(
     "/api/bookmark/views/:id",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     (req, res) => {
       try {
         const result = bookmarkViewModel.deleteBookmarkView(
@@ -75,6 +84,7 @@ module.exports = function setupBookmarkViewsRoutes(app, db, helpers = {}) {
   app.post(
     "/api/bookmark/views/:id/restore",
     authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
     (req, res) => {
       try {
         const view = bookmarkViewModel.getBookmarkView(

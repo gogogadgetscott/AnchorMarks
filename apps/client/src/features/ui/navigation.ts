@@ -51,6 +51,9 @@ export function initNavigationListeners(): void {
         const { renderTagCloud } =
           await import("@features/bookmarks/tag-cloud.ts");
         await renderTagCloud();
+      } else if (view === "analytics") {
+        const { renderAnalytics } = await import("@features/analytics.ts");
+        await renderAnalytics();
       } else {
         const { loadBookmarks } =
           await import("@features/bookmarks/bookmarks.ts");

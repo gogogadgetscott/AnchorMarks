@@ -145,15 +145,15 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: process.env.CORS_ORIGIN
       ? process.env.CORS_ORIGIN.split(",")
-        .map((h) => h.replace(/^https?:\/\/|[\/]$/g, "").trim())
-        .filter(Boolean)
+          .map((h) => h.replace(/^https?:\/\/|[\/]$/g, "").trim())
+          .filter(Boolean)
       : [],
     // Enable HTTPS when SSL certificates are available
     https: SSL_ENABLED
       ? {
-        key: fs.readFileSync(resolvedKeyPath),
-        cert: fs.readFileSync(resolvedCertPath),
-      }
+          key: fs.readFileSync(resolvedKeyPath),
+          cert: fs.readFileSync(resolvedCertPath),
+        }
       : false,
     // Proxy API requests to Express backend
     proxy: {

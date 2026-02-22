@@ -226,6 +226,11 @@ describe("server/utils.js", () => {
         return req;
       });
 
+      const dns = require("dns");
+      vi.spyOn(dns.promises, "lookup").mockResolvedValue([
+        { address: "93.184.216.34" },
+      ]);
+
       const httpsSpy = vi.spyOn(https, "get").mockImplementation(getMock);
       const httpSpy = vi.spyOn(http, "get").mockImplementation(getMock);
 
@@ -251,6 +256,10 @@ describe("server/utils.js", () => {
         "development",
       );
 
+      // Allow async isPrivateAddress checks to finish
+      await new Promise((resolve) => process.nextTick(resolve));
+      await new Promise((resolve) => process.nextTick(resolve));
+
       // Second request should reuse the in-flight fetch (no additional network call).
       expect(getMock).toHaveBeenCalledTimes(1);
 
@@ -271,6 +280,7 @@ describe("server/utils.js", () => {
       createStreamSpy.mockRestore();
       httpsSpy.mockRestore();
       httpSpy.mockRestore();
+      vi.restoreAllMocks(); // Ensure dns mock is restored
     });
 
     it("handles request timeout by trying the next source (mocked)", async () => {

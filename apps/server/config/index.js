@@ -40,20 +40,40 @@ function resolveCorsOrigin() {
   const env = process.env.NODE_ENV || "development";
   if (env !== "production") return true;
 
-  const origin = process.env.CORS_ORIGIN;
-  if (origin.trim() === "*") {
+  const origin = (process.env.CORS_ORIGIN || "").trim();
+  if (!origin) {
+    throw new Error("CORS_ORIGIN must be configured in production");
+  }
+  if (origin === "*") {
     throw new Error("CORS_ORIGIN cannot be * in production");
   }
-  return origin
+  const origins = origin
     .split(",")
     .map((o) => o.trim())
     .filter(Boolean);
+  if (origins.length === 0) {
+    throw new Error("CORS_ORIGIN must contain at least one valid origin");
+  }
+  return origins;
 }
 
 const crypto = require("crypto");
-const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
-const DB_PATH =
-  process.env.DB_PATH || path.join(__dirname, "../../database/anchormarks.db");
+const JWT_SECRET =
+  process.env.JWT_SECRET || crypto.randomBytes(64).toString("hex");
+// Resolve DB_PATH so relative paths (e.g. ./apps/database/anchormarks.db) are
+// relative to project root, not process cwd (fixes Docker when cwd is /apps/server).
+const projectRoot = path.join(__dirname, "..", "..", "..");
+const defaultDbPath = path.join(
+  __dirname,
+  "..",
+  "..",
+  "database",
+  "anchormarks.db",
+);
+const rawDbPath = process.env.DB_PATH || defaultDbPath;
+const DB_PATH = path.isAbsolute(rawDbPath)
+  ? path.normalize(rawDbPath)
+  : path.resolve(projectRoot, rawDbPath);
 const ENABLE_BACKGROUND_JOBS = NODE_ENV !== "test";
 const ENABLE_FAVICON_BACKGROUND_JOBS = false; // Only fetch favicons on import/save
 

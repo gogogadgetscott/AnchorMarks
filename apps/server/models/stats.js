@@ -1,5 +1,6 @@
 const https = require("https");
 const http = require("http");
+const { isPrivateAddress } = require("../helpers/utils");
 
 function getStats(db, userId) {
   const bookmarkCount = db
@@ -73,26 +74,34 @@ function getMonthlyGrowth(db, userId) {
 }
 
 function getTopDomains(db, userId) {
+  // Normalize URL to host (strip protocol); group by host (handle URLs with and without path)
   return db
     .prepare(
       `
-      SELECT 
-        replace(replace(url, 'http://', ''), 'https://', '') as domain, 
-        COUNT(*) as count 
-      FROM bookmarks 
-      WHERE user_id = ? 
-      GROUP BY substr(domain, 1, instr(domain, '/') - 1)
-      HAVING domain != ''
-      ORDER BY count DESC 
+      WITH normalized AS (
+        SELECT 
+          replace(replace(replace(url, 'http://', ''), 'https://', ''), 'www.', '') as raw_domain
+        FROM bookmarks
+        WHERE user_id = ? AND trim(url) != ''
+      ),
+      host_only AS (
+        SELECT 
+          CASE WHEN instr(raw_domain, '/') > 0 
+            THEN substr(raw_domain, 1, instr(raw_domain, '/') - 1) 
+            ELSE raw_domain 
+          END AS domain
+        FROM normalized
+        WHERE trim(raw_domain) != ''
+      )
+      SELECT domain, COUNT(*) AS count
+      FROM host_only
+      GROUP BY domain
+      ORDER BY count DESC
       LIMIT 10
     `,
     )
     .all(userId)
-    .map((d) => {
-      // Basic cleanup for domain-only
-      let domain = d.domain.split("/")[0];
-      return { domain, count: d.count };
-    });
+    .map((d) => ({ domain: d.domain, count: d.count }));
 }
 
 function getDeadlinkCount(db, userId) {
@@ -210,6 +219,33 @@ async function runDeadlinkChecks(db, userId, limit = 50) {
   for (const bookmark of checkList) {
     try {
       const urlObj = new URL(bookmark.url);
+      if (!["http:", "https:"].includes(urlObj.protocol)) {
+        db.prepare(
+          "UPDATE bookmarks SET last_checked = CURRENT_TIMESTAMP WHERE id = ?",
+        ).run(bookmark.id);
+        results.push({
+          id: bookmark.id,
+          url: bookmark.url,
+          title: bookmark.title,
+          error: "Invalid URL protocol",
+        });
+        continue;
+      }
+      if (
+        process.env.NODE_ENV === "production" &&
+        (await isPrivateAddress(bookmark.url))
+      ) {
+        db.prepare(
+          "UPDATE bookmarks SET last_checked = CURRENT_TIMESTAMP WHERE id = ?",
+        ).run(bookmark.id);
+        results.push({
+          id: bookmark.id,
+          url: bookmark.url,
+          title: bookmark.title,
+          error: "Private networks not allowed",
+        });
+        continue;
+      }
       const protocol = urlObj.protocol === "https:" ? https : http;
 
       const isDead = await new Promise((resolve) => {

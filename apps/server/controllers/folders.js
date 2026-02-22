@@ -2,7 +2,7 @@ const { v4: uuidv4 } = require("uuid");
 const { broadcast } = require("../helpers/websocket");
 
 function setupFoldersRoutes(app, db, helpers = {}) {
-  const { authenticateTokenMiddleware } = helpers;
+  const { authenticateTokenMiddleware, validateCsrfTokenMiddleware } = helpers;
   const folderModel = require("../models/folder");
 
   /**
@@ -55,18 +55,22 @@ function setupFoldersRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Folder created successfully
    */
-  app.post("/api/folders", authenticateTokenMiddleware, (req, res) => {
-    const { name, parent_id, color, icon } = req.body;
-    if (!name || !name.trim())
-      return res.status(400).json({ error: "Folder name is required" });
-    try {
-      const id = uuidv4();
-      const maxPos = db
-        .prepare(
-          "SELECT MAX(position) as max FROM folders WHERE user_id = ? AND (parent_id = ? OR (? IS NULL AND parent_id IS NULL))",
-        )
-        .get(req.user.id, parent_id || null, parent_id || null);
-      const position = (maxPos.max || 0) + 1;
+  app.post(
+    "/api/folders",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      const { name, parent_id, color, icon } = req.body;
+      if (!name || !name.trim())
+        return res.status(400).json({ error: "Folder name is required" });
+      try {
+        const id = uuidv4();
+        const maxPos = db
+          .prepare(
+            "SELECT MAX(position) as max FROM folders WHERE user_id = ? AND (parent_id = ? OR (? IS NULL AND parent_id IS NULL))",
+          )
+          .get(req.user.id, parent_id || null, parent_id || null);
+        const position = (maxPos.max || 0) + 1;
 
       folderModel.createFolder(
         db,
@@ -160,16 +164,21 @@ function setupFoldersRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Folder deleted successfully
    */
-  app.delete("/api/folders/:id", authenticateTokenMiddleware, (req, res) => {
-    try {
-      folderModel.deleteFolder(db, req.params.id, req.user.id);
-      broadcast(req.user.id, { type: "folders:changed" });
-      res.json({ success: true });
-    } catch (err) {
-      console.error("Error deleting folder:", err);
-      res.status(500).json({ error: "Failed to delete folder" });
-    }
-  });
+  app.delete(
+    "/api/folders/:id",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      try {
+        folderModel.deleteFolder(db, req.params.id, req.user.id);
+        broadcast(req.user.id, { type: "folders:changed" });
+        res.json({ success: true });
+      } catch (err) {
+        console.error("Error deleting folder:", err);
+        res.status(500).json({ error: "Failed to delete folder" });
+      }
+    },
+  );
 }
 
 module.exports = { setupFoldersRoutes };
