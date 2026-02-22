@@ -147,6 +147,8 @@ export async function login(email: string, password: string): Promise<boolean> {
     // Refresh header/profile display immediately after login
     updateUserInfo();
     showMainApp();
+    // Connect WebSocket for real-time updates
+    import("@services/websocket.ts").then(({ connectWebSocket }) => connectWebSocket());
     showToast("Welcome back!", "success");
     return true;
   } catch (err) {
@@ -174,6 +176,8 @@ export async function register(
     state.setCurrentUser(data.user);
     state.setIsAuthenticated(true);
     showMainApp();
+    // Connect WebSocket for real-time updates
+    import("@services/websocket.ts").then(({ connectWebSocket }) => connectWebSocket());
     showToast("Account created successfully!", "success");
     return true;
   } catch (err) {
@@ -186,6 +190,8 @@ export async function register(
 
 // Logout
 export function logout(): void {
+  // Disconnect WebSocket before logout
+  import("@services/websocket.ts").then(({ disconnectWebSocket }) => disconnectWebSocket());
   api("/auth/logout", { method: "POST" })
     .catch((err) => {
       // Log logout errors but don't block logout process

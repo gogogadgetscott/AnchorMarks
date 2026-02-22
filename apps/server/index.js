@@ -68,6 +68,10 @@ if (config.SSL_ENABLED) {
   server = http.createServer(app);
 }
 
+// Attach WebSocket server for real-time notifications
+const { initWebSocket } = require("./helpers/websocket");
+initWebSocket(server);
+
 server.listen(config.PORT, config.HOST, () => {
   const lines = [];
 

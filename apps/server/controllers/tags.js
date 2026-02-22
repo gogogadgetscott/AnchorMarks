@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require("uuid");
+const { broadcast } = require("../helpers/websocket");
 
 function setupTagsRoutes(app, db, helpers = {}) {
   const { authenticateTokenMiddleware } = helpers;
@@ -35,6 +36,7 @@ function setupTagsRoutes(app, db, helpers = {}) {
       const tag = db
         .prepare("SELECT *, 0 as count FROM tags WHERE id = ?")
         .get(id);
+      broadcast(req.user.id, { type: "tags:changed" });
       res.json(tag);
     } catch (err) {
       if (err.message && err.message.includes("UNIQUE"))
@@ -64,6 +66,7 @@ function setupTagsRoutes(app, db, helpers = {}) {
         )
         .get(req.params.id);
       if (!tag) return res.status(404).json({ error: "Tag not found" });
+      broadcast(req.user.id, { type: "tags:changed" });
       res.json(tag);
     } catch (err) {
       console.error("Error updating tag:", err);
@@ -74,6 +77,7 @@ function setupTagsRoutes(app, db, helpers = {}) {
   app.delete("/api/tags/:id", authenticateTokenMiddleware, (req, res) => {
     try {
       tagModel.deleteTag(db, req.params.id, req.user.id);
+      broadcast(req.user.id, { type: "tags:changed" });
       res.json({ success: true });
     } catch (err) {
       console.error("Error deleting tag:", err);

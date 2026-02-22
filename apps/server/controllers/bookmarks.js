@@ -6,6 +6,7 @@ const {
 const bookmarkModel = require("../models/bookmark");
 const { isPrivateAddress } = require("../helpers/utils");
 const config = require("../config");
+const { broadcast } = require("../helpers/websocket");
 
 function parseTagsDetailed(raw) {
   if (!raw) return [];
@@ -251,6 +252,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
 
       const bookmark = bookmarkModel.getBookmarkById(db, req.user.id, id);
       bookmark.tags_detailed = parseTagsDetailed(bookmark.tags_detailed);
+      broadcast(req.user.id, { type: "bookmarks:changed" });
       res.json(bookmark);
     } catch (err) {
       console.error("Error creating bookmark:", err);
