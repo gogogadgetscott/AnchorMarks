@@ -27,6 +27,10 @@ const { authenticateToken, validateCsrfToken } = require("./middleware/index");
 const { setupAuthRoutes } = require("./routes/auth");
 const { isPrivateAddress, fetchFavicon } = require("./helpers/utils.js");
 
+// API Documentation
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpecs = require("./helpers/swagger");
+
 const app = express();
 config.validateSecurityConfig();
 
@@ -154,6 +158,32 @@ app.use(
       ? { policy: "same-origin" }
       : false,
     originAgentCluster: config.SSL_ENABLED,
+  }),
+);
+
+// Relax CSP for API Docs (Swagger UI requires inline scripts/styles for its interactive UI)
+const swaggerCspDirectives = {
+  ...cspDirectives,
+  scriptSrc: [...(cspDirectives.scriptSrc || ["'self'"]), "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+  styleSrc: [...(cspDirectives.styleSrc || ["'self'"]), "'unsafe-inline'", "https://fonts.googleapis.com"],
+  imgSrc: [...(cspDirectives.imgSrc || ["'self'"]), "data:", "https:", "https://validator.swagger.io"],
+  fontSrc: [...(cspDirectives.fontSrc || ["'self'"]), "https://fonts.gstatic.com"],
+};
+
+app.use(
+  "/api/docs",
+  helmet({
+    contentSecurityPolicy: { directives: swaggerCspDirectives },
+    hsts: false,
+    crossOriginOpenerPolicy: false,
+    originAgentCluster: false,
+  }),
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpecs, {
+    customCss: ".swagger-ui .topbar { display: none }", // Hide topbar for cleaner look
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
   }),
 );
 // Additional manual headers for redundancy

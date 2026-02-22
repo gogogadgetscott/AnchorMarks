@@ -6,6 +6,28 @@ const { URL } = require("url");
 
 module.exports = function (db, authenticateToken) {
   // Check a single URL status
+  /**
+   * @swagger
+   * /maintenance/check-link:
+   *   post:
+   *     summary: Check if a URL is alive
+   *     tags: [Maintenance]
+   *     security:
+   *       - cookieAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [url]
+   *             properties:
+   *               url:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Link status
+   */
   router.post("/check-link", authenticateToken, async (req, res) => {
     const { url } = req.body;
     if (!url) return res.status(400).json({ error: "URL required" });
@@ -51,6 +73,18 @@ module.exports = function (db, authenticateToken) {
   });
 
   // Find duplicates
+  /**
+   * @swagger
+   * /maintenance/duplicates:
+   *   get:
+   *     summary: Find duplicate bookmarks
+   *     tags: [Maintenance]
+   *     security:
+   *       - cookieAuth: []
+   *     responses:
+   *       200:
+   *         description: A list of duplicate groups
+   */
   router.get("/duplicates", authenticateToken, (req, res) => {
     try {
       const duplicates = db
@@ -72,6 +106,18 @@ module.exports = function (db, authenticateToken) {
   });
 
   // Vacuum database
+  /**
+   * @swagger
+   * /maintenance/optimize:
+   *   post:
+   *     summary: Optimize the database (VACUUM)
+   *     tags: [Maintenance]
+   *     security:
+   *       - cookieAuth: []
+   *     responses:
+   *       200:
+   *         description: Database optimized
+   */
   router.post("/optimize", authenticateToken, (req, res) => {
     try {
       db.exec("VACUUM");

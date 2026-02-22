@@ -6,6 +6,56 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
   const { isPrivateAddress } = require("../helpers/utils");
   const { broadcast } = require("../helpers/websocket");
 
+  /**
+   * @swagger
+   * /bookmarks:
+   *   get:
+   *     summary: List bookmarks
+   *     tags: [Bookmarks]
+   *     security:
+   *       - cookieAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: folder_id
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: search
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: favorites
+   *         schema:
+   *           type: boolean
+   *       - in: query
+   *         name: tags
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: tagMode
+   *         schema:
+   *           type: string
+   *           enum: [AND, OR]
+   *       - in: query
+   *         name: sort
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: limit
+   *         schema:
+   *           type: integer
+   *       - in: query
+   *         name: offset
+   *         schema:
+   *           type: integer
+   *       - in: query
+   *         name: archived
+   *         schema:
+   *           type: boolean
+   *     responses:
+   *       200:
+   *         description: A list of bookmarks
+   */
   app.get("/api/bookmarks", authenticateTokenMiddleware, (req, res) => {
     try {
       const {
@@ -54,6 +104,18 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
     }
   });
 
+  /**
+   * @swagger
+   * /bookmarks/counts:
+   *   get:
+   *     summary: Get bookmark counts for sidebar
+   *     tags: [Bookmarks]
+   *     security:
+   *       - cookieAuth: []
+   *     responses:
+   *       200:
+   *         description: Counts for different bookmark views
+   */
   // Get bookmark counts for sidebar
   app.get("/api/bookmarks/counts", authenticateTokenMiddleware, (req, res) => {
     try {
@@ -99,6 +161,26 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
     }
   });
 
+  /**
+   * @swagger
+   * /bookmarks/{id}:
+   *   get:
+   *     summary: Get a single bookmark
+   *     tags: [Bookmarks]
+   *     security:
+   *       - cookieAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Bookmark details
+   *       404:
+   *         description: Bookmark not found
+   */
   app.get("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
     try {
       const bookmark = bookmarkModel.getBookmarkById(
@@ -116,6 +198,43 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
     }
   });
 
+  /**
+   * @swagger
+   * /bookmarks/{id}:
+   *   put:
+   *     summary: Update a bookmark
+   *     tags: [Bookmarks]
+   *     security:
+   *       - cookieAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               title:
+   *                 type: string
+   *               url:
+   *                 type: string
+   *               description:
+   *                 type: string
+   *               folder_id:
+   *                 type: string
+   *               tags:
+   *                 type: string
+   *               is_favorite:
+   *                 type: integer
+   *     responses:
+   *       200:
+   *         description: Bookmark updated successfully
+   */
   app.put("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
     try {
       const fields = req.body;
@@ -156,6 +275,24 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
     }
   });
 
+  /**
+   * @swagger
+   * /bookmarks/{id}/refresh-favicon:
+   *   post:
+   *     summary: Refresh the favicon for a bookmark
+   *     tags: [Bookmarks]
+   *     security:
+   *       - cookieAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Favicon refreshed
+   */
   app.post(
     "/api/bookmarks/:id/refresh-favicon",
     authenticateTokenMiddleware,
@@ -176,6 +313,24 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
     },
   );
 
+  /**
+   * @swagger
+   * /bookmarks/{id}:
+   *   delete:
+   *     summary: Delete a bookmark
+   *     tags: [Bookmarks]
+   *     security:
+   *       - cookieAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Bookmark deleted successfully
+   */
   app.delete("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
     try {
       bookmarkModel.deleteBookmark(db, req.user.id, req.params.id);
@@ -269,6 +424,24 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
     },
   );
 
+  /**
+   * @swagger
+   * /bookmarks/{id}/thumbnail:
+   *   post:
+   *     summary: Generate a thumbnail for a bookmark
+   *     tags: [Bookmarks]
+   *     security:
+   *       - cookieAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Thumbnail generated successfully
+   */
   // Generate thumbnail screenshot for a bookmark
   app.post(
     "/api/bookmarks/:id/thumbnail",

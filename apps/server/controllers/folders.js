@@ -5,6 +5,18 @@ function setupFoldersRoutes(app, db, helpers = {}) {
   const { authenticateTokenMiddleware } = helpers;
   const folderModel = require("../models/folder");
 
+  /**
+   * @swagger
+   * /folders:
+   *   get:
+   *     summary: List all folders
+   *     tags: [Folders]
+   *     security:
+   *       - cookieAuth: []
+   *     responses:
+   *       200:
+   *         description: A list of folders
+   */
   app.get("/api/folders", authenticateTokenMiddleware, (req, res) => {
     try {
       const folders = folderModel.listFolders(db, req.user.id);
@@ -15,6 +27,34 @@ function setupFoldersRoutes(app, db, helpers = {}) {
     }
   });
 
+  /**
+   * @swagger
+   * /folders:
+   *   post:
+   *     summary: Create a new folder
+   *     tags: [Folders]
+   *     security:
+   *       - cookieAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [name]
+   *             properties:
+   *               name:
+   *                 type: string
+   *               parent_id:
+   *                 type: string
+   *               color:
+   *                 type: string
+   *               icon:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Folder created successfully
+   */
   app.post("/api/folders", authenticateTokenMiddleware, (req, res) => {
     const { name, parent_id, color, icon } = req.body;
     if (!name || !name.trim())
@@ -47,6 +87,41 @@ function setupFoldersRoutes(app, db, helpers = {}) {
     }
   });
 
+  /**
+   * @swagger
+   * /folders/{id}:
+   *   put:
+   *     summary: Update a folder
+   *     tags: [Folders]
+   *     security:
+   *       - cookieAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *               parent_id:
+   *                 type: string
+   *               color:
+   *                 type: string
+   *               icon:
+   *                 type: string
+   *               position:
+   *                 type: integer
+   *     responses:
+   *       200:
+   *         description: Folder updated successfully
+   */
   app.put("/api/folders/:id", authenticateTokenMiddleware, (req, res) => {
     const { name, parent_id, color, icon, position } = req.body;
     try {
@@ -66,6 +141,24 @@ function setupFoldersRoutes(app, db, helpers = {}) {
     }
   });
 
+  /**
+   * @swagger
+   * /folders/{id}:
+   *   delete:
+   *     summary: Delete a folder
+   *     tags: [Folders]
+   *     security:
+   *       - cookieAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Folder deleted successfully
+   */
   app.delete("/api/folders/:id", authenticateTokenMiddleware, (req, res) => {
     try {
       folderModel.deleteFolder(db, req.params.id, req.user.id);

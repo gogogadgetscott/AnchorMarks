@@ -7,8 +7,22 @@ function setupTagsRoutes(app, db, helpers = {}) {
   const { authenticateTokenMiddleware } = helpers;
   const tagModel = require("../models/tag");
   const { parseTags, mergeTags, stringifyTags } = tagParseHelpers;
+  const { broadcast } = require("../helpers/websocket");
 
   // --- CRUD (tag entity) ---
+
+  /**
+   * @swagger
+   * /tags:
+   *   get:
+   *     summary: List all tags
+   *     tags: [Tags]
+   *     security:
+   *       - cookieAuth: []
+   *     responses:
+   *       200:
+   *         description: A list of tags
+   */
   app.get("/api/tags", authenticateTokenMiddleware, (req, res) => {
     try {
       const tags = tagModel.listTags(db, req.user.id);
@@ -19,6 +33,32 @@ function setupTagsRoutes(app, db, helpers = {}) {
     }
   });
 
+  /**
+   * @swagger
+   * /tags:
+   *   post:
+   *     summary: Create a new tag
+   *     tags: [Tags]
+   *     security:
+   *       - cookieAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [name]
+   *             properties:
+   *               name:
+   *                 type: string
+   *               color:
+   *                 type: string
+   *               icon:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Tag created successfully
+   */
   app.post("/api/tags", authenticateTokenMiddleware, (req, res) => {
     const { name, color, icon } = req.body;
     if (!name || !name.trim())
@@ -49,6 +89,39 @@ function setupTagsRoutes(app, db, helpers = {}) {
     }
   });
 
+  /**
+   * @swagger
+   * /tags/{id}:
+   *   put:
+   *     summary: Update a tag
+   *     tags: [Tags]
+   *     security:
+   *       - cookieAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *               color:
+   *                 type: string
+   *               icon:
+   *                 type: string
+   *               position:
+   *                 type: integer
+   *     responses:
+   *       200:
+   *         description: Tag updated successfully
+   */
   app.put("/api/tags/:id", authenticateTokenMiddleware, (req, res) => {
     const { name, color, icon, position } = req.body;
     try {
@@ -78,6 +151,24 @@ function setupTagsRoutes(app, db, helpers = {}) {
     }
   });
 
+  /**
+   * @swagger
+   * /tags/{id}:
+   *   delete:
+   *     summary: Delete a tag
+   *     tags: [Tags]
+   *     security:
+   *       - cookieAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Tag deleted successfully
+   */
   app.delete("/api/tags/:id", authenticateTokenMiddleware, (req, res) => {
     try {
       tagModel.deleteTag(db, req.params.id, req.user.id);
@@ -90,6 +181,25 @@ function setupTagsRoutes(app, db, helpers = {}) {
   });
 
   // --- Suggest, analytics, bulk, rename ---
+
+  /**
+   * @swagger
+   * /tags/suggest:
+   *   get:
+   *     summary: Get tag suggestions for a URL
+   *     tags: [Tags]
+   *     security:
+   *       - cookieAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: url
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: A list of suggested tags
+   */
   app.get("/api/tags/suggest", authenticateTokenMiddleware, (req, res) => {
     const { url } = req.query;
     if (!url) return res.json([]);
@@ -138,7 +248,7 @@ function setupTagsRoutes(app, db, helpers = {}) {
             if (rowHost === hostname) {
               parseTags(row.tags).forEach((t) => bump(t, 3.5));
             }
-          } catch {}
+          } catch { }
         }
 
         const tfCounts = {};
@@ -162,6 +272,7 @@ function setupTagsRoutes(app, db, helpers = {}) {
         "app",
         "io",
         "dev",
+        "ai",
       ]);
       hostname.split(".").forEach((part) => {
         if (part && part.length > 2 && !stopwords.has(part)) bump(part, 1.5);
@@ -190,6 +301,18 @@ function setupTagsRoutes(app, db, helpers = {}) {
     }
   });
 
+  /**
+   * @swagger
+   * /tags/analytics:
+   *   get:
+   *     summary: Get tag usage analytics
+   *     tags: [Tags]
+   *     security:
+   *       - cookieAuth: []
+   *     responses:
+   *       200:
+   *         description: Tag analytics data
+   */
   app.get("/api/tags/analytics", authenticateTokenMiddleware, (req, res) => {
     try {
       const tags = tagHelpers.getTagUsageCounts(db, req.user.id);
@@ -201,6 +324,32 @@ function setupTagsRoutes(app, db, helpers = {}) {
     }
   });
 
+  /**
+   * @swagger
+   * /tags/bulk-add:
+   *   post:
+   *     summary: Add tags to multiple bookmarks
+   *     tags: [Tags]
+   *     security:
+   *       - cookieAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [bookmark_ids, tags]
+   *             properties:
+   *               bookmark_ids:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *               tags:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Tags added successfully
+   */
   app.post("/api/tags/bulk-add", authenticateTokenMiddleware, (req, res) => {
     const { bookmark_ids, tags } = req.body;
     if (!Array.isArray(bookmark_ids) || bookmark_ids.length === 0 || !tags) {
@@ -224,6 +373,32 @@ function setupTagsRoutes(app, db, helpers = {}) {
     res.json({ updated });
   });
 
+  /**
+   * @swagger
+   * /tags/bulk-remove:
+   *   post:
+   *     summary: Remove tags from multiple bookmarks
+   *     tags: [Tags]
+   *     security:
+   *       - cookieAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [bookmark_ids, tags]
+   *             properties:
+   *               bookmark_ids:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *               tags:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Tags removed successfully
+   */
   app.post("/api/tags/bulk-remove", authenticateTokenMiddleware, (req, res) => {
     const { bookmark_ids, tags } = req.body;
     if (!Array.isArray(bookmark_ids) || bookmark_ids.length === 0 || !tags) {
@@ -259,6 +434,32 @@ function setupTagsRoutes(app, db, helpers = {}) {
     res.json({ updated });
   });
 
+  /**
+   * @swagger
+   * /tags/rename:
+   *   post:
+   *     summary: Rename or merge a tag
+   *     tags: [Tags]
+   *     security:
+   *       - cookieAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [from, to]
+   *             properties:
+   *               from:
+   *                 type: string
+   *               to:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Tag renamed successfully
+   *       404:
+   *         description: Tag not found
+   */
   app.post("/api/tags/rename", authenticateTokenMiddleware, (req, res) => {
     const { from, to } = req.body;
     if (!from || !to)

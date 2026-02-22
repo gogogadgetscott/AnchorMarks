@@ -11,6 +11,16 @@ function setupApiRoutes(app, db, helpers) {
   } = helpers;
 
   // Health
+  /**
+   * @swagger
+   * /health:
+   *   get:
+   *     summary: Check API health status
+   *     tags: [System]
+   *     responses:
+   *       200:
+   *         description: API is healthy
+   */
   app.get("/api/health", (req, res) => {
     res.json({
       status: "ok",
@@ -52,6 +62,24 @@ function setupApiRoutes(app, db, helpers) {
 
   // Save/update user settings
   const userSettingsModel = require("../models/userSettings");
+  /**
+   * @swagger
+   * /settings:
+   *   put:
+   *     summary: Update user settings
+   *     tags: [Settings]
+   *     security:
+   *       - cookieAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *     responses:
+   *       200:
+   *         description: Settings updated successfully
+   */
   app.put(
     "/api/settings",
     authenticateTokenMiddleware,
@@ -123,6 +151,18 @@ function setupApiRoutes(app, db, helpers) {
   setupImportExportRoutes(app, db, { authenticateTokenMiddleware });
 
   // Settings API
+  /**
+   * @swagger
+   * /settings:
+   *   get:
+   *     summary: Get user settings
+   *     tags: [Settings]
+   *     security:
+   *       - cookieAuth: []
+   *     responses:
+   *       200:
+   *         description: Current user settings
+   */
   app.get("/api/settings", authenticateTokenMiddleware, (req, res) => {
     try {
       const settings = db
@@ -194,6 +234,31 @@ function setupApiRoutes(app, db, helpers) {
     STARTER_FOLDER,
   } = require("../helpers/example-bookmarks");
 
+  /**
+   * @swagger
+   * /api/settings/reset-bookmarks:
+   *   post:
+   *     summary: Reset bookmarks to default starter set
+   *     tags: [Settings]
+   *     security:
+   *       - cookieAuth: []
+   *     responses:
+   *       200:
+   *         description: Bookmarks reset successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 success:
+   *                   type: boolean
+   *                 bookmarks_created:
+   *                   type: integer
+   *                 message:
+   *                   type: string
+   *       500:
+   *         description: Failed to reset bookmarks
+   */
   app.post(
     "/api/settings/reset-bookmarks",
     authenticateTokenMiddleware,
@@ -260,7 +325,7 @@ function setupApiRoutes(app, db, helpers) {
 
           // Fetch favicon in background
           if (fetchFaviconWrapper) {
-            fetchFaviconWrapper(bm.url, id).catch(() => {});
+            fetchFaviconWrapper(bm.url, id).catch(() => { });
           }
           bookmarksCreated++;
         }
@@ -280,6 +345,54 @@ function setupApiRoutes(app, db, helpers) {
   // AI tag suggestions
   const aiTags = require("../helpers/ai-tags");
 
+  /**
+   * @swagger
+   * /api/tags/suggest-ai:
+   *   get:
+   *     summary: Get AI-powered tag suggestions
+   *     tags: [Tags]
+   *     security:
+   *       - cookieAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: url
+   *         description: The URL for which to suggest tags.
+   *         required: true
+   *         schema:
+   *           type: string
+   *           format: url
+   *       - in: query
+   *         name: limit
+   *         description: Maximum number of tags to suggest.
+   *         schema:
+   *           type: integer
+   *           default: 10
+   *     responses:
+   *       200:
+   *         description: AI tag suggestions
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 suggestions:
+   *                   type: array
+   *                   items:
+   *                     type: string
+   *                 info:
+   *                   type: object
+   *                   properties:
+   *                     provider:
+   *                       type: string
+   *                     model:
+   *                       type: string
+   *       400:
+   *         description: Invalid URL or missing URL parameter
+   *       501:
+   *         description: AI not configured or key missing
+   *       500:
+   *         description: Failed to get AI suggestions
+   */
   app.get(
     "/api/tags/suggest-ai",
     authenticateTokenMiddleware,

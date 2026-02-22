@@ -70,6 +70,24 @@ function setupAuthRoutes(
     apiKeyRegenerate: () => { },
   };
 
+  /**
+   * @swagger
+   * /auth/csrf:
+   *   get:
+   *     summary: Get CSRF token
+   *     tags: [Auth]
+   *     description: Generates and returns a CSRF token in a cookie and response body.
+   *     responses:
+   *       200:
+   *         description: CSRF token generated successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 csrfToken:
+   *                   type: string
+   */
   // Get CSRF Token
   app.get("/api/auth/csrf", (req, res) => {
     const csrfToken = generateCsrfToken();
@@ -83,6 +101,31 @@ function setupAuthRoutes(
     res.json({ csrfToken });
   });
 
+  /**
+   * @swagger
+   * /auth/register:
+   *   post:
+   *     summary: Register a new user
+   *     tags: [Auth]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [email, password]
+   *             properties:
+   *               email:
+   *                 type: string
+   *               password:
+   *                 type: string
+   *                 minLength: 6
+   *     responses:
+   *       200:
+   *         description: User registered successfully
+   *       400:
+   *         description: Invalid input or user already exists
+   */
   // Register
   app.post("/api/auth/register", async (req, res) => {
     try {
@@ -163,6 +206,30 @@ function setupAuthRoutes(
     }
   });
 
+  /**
+   * @swagger
+   * /auth/login:
+   *   post:
+   *     summary: Log in a user
+   *     tags: [Auth]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [email, password]
+   *             properties:
+   *               email:
+   *                 type: string
+   *               password:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Login successful
+   *       400:
+   *         description: Invalid credentials
+   */
   // Login
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -228,6 +295,20 @@ function setupAuthRoutes(
     }
   });
 
+  /**
+   * @swagger
+   * /auth/me:
+   *   get:
+   *     summary: Get current user info
+   *     tags: [Auth]
+   *     security:
+   *       - cookieAuth: []
+   *     responses:
+   *       200:
+   *         description: Current user information
+   *       401:
+   *         description: Unauthorized
+   */
   // Get current user
   app.get("/api/auth/me", authenticateToken, (req, res) => {
     res.json({
@@ -242,6 +323,18 @@ function setupAuthRoutes(
     });
   });
 
+  /**
+   * @swagger
+   * /auth/logout:
+   *   post:
+   *     summary: Log out a user
+   *     tags: [Auth]
+   *     security:
+   *       - cookieAuth: []
+   *     responses:
+   *       200:
+   *         description: Logout successful
+   */
   // Logout
   app.post("/api/auth/logout", authenticateToken, (req, res) => {
     audit.logout(req.user.id, req);
@@ -258,6 +351,20 @@ function setupAuthRoutes(
     res.json({ success: true, csrfToken });
   });
 
+  /**
+   * @swagger
+   * /auth/me:
+   *   delete:
+   *     summary: Delete current user account
+   *     tags: [Auth]
+   *     security:
+   *       - cookieAuth: []
+   *     responses:
+   *       200:
+   *         description: Account deleted successfully
+   *       401:
+   *         description: Unauthorized
+   */
   // Delete account
   app.delete("/api/auth/me", authenticateToken, (req, res) => {
     try {
@@ -287,6 +394,25 @@ function setupAuthRoutes(
     }
   });
 
+  /**
+   * @swagger
+   * /auth/regenerate-key:
+   *   post:
+   *     summary: Regenerate API key
+   *     tags: [Auth]
+   *     security:
+   *       - cookieAuth: []
+   *     responses:
+   *       200:
+   *         description: API key regenerated
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 api_key:
+   *                   type: string
+   */
   // Regenerate API key
   app.post("/api/auth/regenerate-key", authenticateToken, (req, res) => {
     const newApiKey = "lv_" + uuidv4().replace(/-/g, "");
@@ -298,6 +424,29 @@ function setupAuthRoutes(
     res.json({ api_key: newApiKey });
   });
 
+  /**
+   * @swagger
+   * /auth/profile:
+   *   put:
+   *     summary: Update user profile
+   *     tags: [Auth]
+   *     security:
+   *       - cookieAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               email:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Profile updated
+   *       400:
+   *         description: Email already in use
+   */
   // Update profile
   app.put("/api/auth/profile", authenticateToken, (req, res) => {
     try {
@@ -320,6 +469,33 @@ function setupAuthRoutes(
     }
   });
 
+  /**
+   * @swagger
+   * /auth/password:
+   *   put:
+   *     summary: Change user password
+   *     tags: [Auth]
+   *     security:
+   *       - cookieAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [currentPassword, newPassword]
+   *             properties:
+   *               currentPassword:
+   *                 type: string
+   *               newPassword:
+   *                 type: string
+   *                 minLength: 6
+   *     responses:
+   *       200:
+   *         description: Password changed successfully
+   *       400:
+   *         description: Incorrect current password or invalid new password
+   */
   // Change password
   app.put("/api/auth/password", authenticateToken, async (req, res) => {
     try {

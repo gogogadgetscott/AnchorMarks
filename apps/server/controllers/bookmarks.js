@@ -53,6 +53,56 @@ const { fetchUrlMetadata, detectContentType } = require("../helpers/metadata");
 function setupBookmarksRoutes(app, db, helpers = {}) {
   const { authenticateTokenMiddleware, fetchFaviconWrapper } = helpers;
 
+  /**
+   * @swagger
+   * /bookmarks:
+   *   get:
+   *     summary: List bookmarks
+   *     tags: [Bookmarks]
+   *     security:
+   *       - cookieAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: folder_id
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: search
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: favorites
+   *         schema:
+   *           type: boolean
+   *       - in: query
+   *         name: tags
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: tagMode
+   *         schema:
+   *           type: string
+   *           enum: [AND, OR]
+   *       - in: query
+   *         name: sort
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: limit
+   *         schema:
+   *           type: integer
+   *       - in: query
+   *         name: offset
+   *         schema:
+   *           type: integer
+   *       - in: query
+   *         name: archived
+   *         schema:
+   *           type: boolean
+   *     responses:
+   *       200:
+   *         description: A list of bookmarks
+   */
   // List bookmarks
   app.get("/api/bookmarks", authenticateTokenMiddleware, (req, res) => {
     const {
@@ -100,6 +150,18 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
     }
   });
 
+  /**
+   * @swagger
+   * /bookmarks/counts:
+   *   get:
+   *     summary: Get bookmark counts for sidebar
+   *     tags: [Bookmarks]
+   *     security:
+   *       - cookieAuth: []
+   *     responses:
+   *       200:
+   *         description: Counts for different bookmark views
+   */
   // Get bookmark counts for sidebar (must be before /:id route)
   app.get("/api/bookmarks/counts", authenticateTokenMiddleware, (req, res) => {
     try {
@@ -145,6 +207,26 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
     }
   });
 
+  /**
+   * @swagger
+   * /bookmarks/{id}:
+   *   get:
+   *     summary: Get a single bookmark
+   *     tags: [Bookmarks]
+   *     security:
+   *       - cookieAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Bookmark details
+   *       404:
+   *         description: Bookmark not found
+   */
   // Get single bookmark
   app.get("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
     try {
@@ -163,6 +245,27 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
     }
   });
 
+  /**
+   * @swagger
+   * /bookmarks/fetch-metadata:
+   *   post:
+   *     summary: Fetch metadata for a URL
+   *     tags: [Bookmarks]
+   *     security:
+   *       - cookieAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               url:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: URL metadata
+   */
   // Fetch metadata
   app.post(
     "/api/bookmarks/fetch-metadata",
@@ -190,6 +293,40 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
     },
   );
 
+  /**
+   * @swagger
+   * /bookmarks:
+   *   post:
+   *     summary: Create a new bookmark
+   *     tags: [Bookmarks]
+   *     security:
+   *       - cookieAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [url]
+   *             properties:
+   *               url:
+   *                 type: string
+   *               title:
+   *                 type: string
+   *               description:
+   *                 type: string
+   *               folder_id:
+   *                 type: string
+   *               tags:
+   *                 type: string
+   *               color:
+   *                 type: string
+   *               og_image:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Bookmark created successfully
+   */
   // Create bookmark
   app.post("/api/bookmarks", authenticateTokenMiddleware, async (req, res) => {
     let { title, url, description, folder_id, tags, color, og_image } =
@@ -260,6 +397,24 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
     }
   });
 
+  /**
+   * @swagger
+   * /bookmarks/{id}/click:
+   *   post:
+   *     summary: Track a click on a bookmark
+   *     tags: [Bookmarks]
+   *     security:
+   *       - cookieAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Click tracked successfully
+   */
   // Track click
   app.post(
     "/api/bookmarks/:id/click",

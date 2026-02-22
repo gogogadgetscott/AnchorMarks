@@ -5,6 +5,28 @@ const { generateBookmarkHtml } = require("../helpers/html");
 const { queueMetadataFetch } = require("../helpers/metadata-queue");
 
 function setupImportExportRoutes(app, db, { authenticateTokenMiddleware }) {
+  /**
+   * @swagger
+   * /import/html:
+   *   post:
+   *     summary: Import bookmarks from HTML file content
+   *     tags: [Import/Export]
+   *     security:
+   *       - cookieAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required: [html]
+   *             properties:
+   *               html:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Import results
+   */
   app.post(
     "/api/import/html",
     authenticateTokenMiddleware,
@@ -36,6 +58,33 @@ function setupImportExportRoutes(app, db, { authenticateTokenMiddleware }) {
     },
   );
 
+  /**
+   * @swagger
+   * /import/json:
+   *   post:
+   *     summary: Import bookmarks from JSON format
+   *     tags: [Import/Export]
+   *     security:
+   *       - cookieAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               bookmarks:
+   *                 type: array
+   *                 items:
+   *                   type: object
+   *               folders:
+   *                 type: array
+   *                 items:
+   *                   type: object
+   *     responses:
+   *       200:
+   *         description: Import results
+   */
   app.post("/api/import/json", authenticateTokenMiddleware, (req, res) => {
     try {
       const { bookmarks = [], folders = [] } = req.body;
@@ -62,6 +111,25 @@ function setupImportExportRoutes(app, db, { authenticateTokenMiddleware }) {
     }
   });
 
+  /**
+   * @swagger
+   * /export:
+   *   get:
+   *     summary: Export bookmarks and folders
+   *     tags: [Import/Export]
+   *     security:
+   *       - cookieAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: format
+   *         description: Export format (json or html)
+   *         schema:
+   *           type: string
+   *           enum: [json, html]
+   *     responses:
+   *       200:
+   *         description: Export data
+   */
   app.get("/api/export", authenticateTokenMiddleware, (req, res) => {
     try {
       const { format } = req.query;
