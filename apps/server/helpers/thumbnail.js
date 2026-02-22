@@ -96,10 +96,7 @@ async function captureScreenshot(url, bookmarkId) {
     return { success: false, error: "Invalid URL protocol" };
   }
 
-  if (
-    process.env.NODE_ENV === "production" &&
-    (await isPrivateAddress(url))
-  ) {
+  if (process.env.NODE_ENV === "production" && (await isPrivateAddress(url))) {
     return { success: false, error: "Private networks not allowed" };
   }
 

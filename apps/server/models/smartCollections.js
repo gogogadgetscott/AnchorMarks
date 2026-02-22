@@ -116,7 +116,8 @@ function getBookmarksForCollection(db, collection, userId) {
   }
 
   if (filters.search) {
-    query += " AND (b.title LIKE ? ESCAPE '\\' OR b.url LIKE ? ESCAPE '\\' OR b.description LIKE ? ESCAPE '\\')";
+    query +=
+      " AND (b.title LIKE ? ESCAPE '\\' OR b.url LIKE ? ESCAPE '\\' OR b.description LIKE ? ESCAPE '\\')";
     const searchTerm = `%${escapeLike(filters.search)}%`;
     params.push(searchTerm, searchTerm, searchTerm);
   }

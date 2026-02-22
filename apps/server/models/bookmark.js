@@ -374,7 +374,9 @@ function deleteAllForUser(db, userId) {
 function setThumbnailLocal(db, bookmarkId, localPath, userId) {
   if (userId) {
     return db
-      .prepare("UPDATE bookmarks SET thumbnail_local = ? WHERE id = ? AND user_id = ?")
+      .prepare(
+        "UPDATE bookmarks SET thumbnail_local = ? WHERE id = ? AND user_id = ?",
+      )
       .run(localPath, bookmarkId, userId);
   }
   return db

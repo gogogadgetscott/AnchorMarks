@@ -471,8 +471,7 @@ function setupAuthRoutes(
     (req, res) => {
       try {
         const { email } = req.body;
-        if (!email)
-          return res.status(400).json({ error: "Email is required" });
+        if (!email) return res.status(400).json({ error: "Email is required" });
 
         const existing = db
           .prepare("SELECT id FROM users WHERE email = ? AND id != ?")

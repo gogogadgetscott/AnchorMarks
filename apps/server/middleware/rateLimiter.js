@@ -1,17 +1,17 @@
 // Config via env: RATE_LIMIT_MAX (default 100), RATE_LIMIT_WINDOW_MS (default 60000),
 // RATE_LIMIT_DISABLED=1 to turn off (e.g. when all traffic is one IP behind Docker/proxy).
 const requestCounts = new Map();
-const RATE_LIMIT_WINDOW = parseInt(
-  process.env.RATE_LIMIT_WINDOW_MS,
-  10,
-) || 60000; // 1 minute
+const RATE_LIMIT_WINDOW =
+  parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 60000; // 1 minute
 const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX, 10);
 const RATE_LIMIT_DISABLED =
   process.env.RATE_LIMIT_DISABLED === "1" ||
   process.env.RATE_LIMIT_DISABLED === "true";
 const effectiveMax = RATE_LIMIT_DISABLED
   ? null
-  : (Number.isNaN(RATE_LIMIT_MAX) || RATE_LIMIT_MAX <= 0 ? 100 : RATE_LIMIT_MAX);
+  : Number.isNaN(RATE_LIMIT_MAX) || RATE_LIMIT_MAX <= 0
+    ? 100
+    : RATE_LIMIT_MAX;
 const CLEANUP_INTERVAL = 300000; // 5 minutes
 
 // Periodic cleanup of expired rate limit entries to prevent memory leak

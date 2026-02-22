@@ -30,7 +30,14 @@ function search(db, userId, q, limit = 10) {
     LIMIT ?
   `,
     )
-    .all(userId, searchTerm, searchTerm, searchTerm, `${escaped}%`, parseInt(limit));
+    .all(
+      userId,
+      searchTerm,
+      searchTerm,
+      searchTerm,
+      `${escaped}%`,
+      parseInt(limit),
+    );
 }
 
 module.exports = { listRecent, search };

@@ -72,24 +72,25 @@ function setupFoldersRoutes(app, db, helpers = {}) {
           .get(req.user.id, parent_id || null, parent_id || null);
         const position = (maxPos.max || 0) + 1;
 
-      folderModel.createFolder(
-        db,
-        id,
-        req.user.id,
-        name.trim(),
-        color || "#6366f1",
-        icon || "folder",
-        position,
-        parent_id || null, // Added parent_id
-      );
-      const folder = folderModel.getFolderById(db, id, req.user.id);
-      broadcast(req.user.id, { type: "folders:changed" });
-      res.json(folder);
-    } catch (err) {
-      console.error("Error creating folder:", err);
-      res.status(500).json({ error: "Failed to create folder" });
-    }
-  });
+        folderModel.createFolder(
+          db,
+          id,
+          req.user.id,
+          name.trim(),
+          color || "#6366f1",
+          icon || "folder",
+          position,
+          parent_id || null, // Added parent_id
+        );
+        const folder = folderModel.getFolderById(db, id, req.user.id);
+        broadcast(req.user.id, { type: "folders:changed" });
+        res.json(folder);
+      } catch (err) {
+        console.error("Error creating folder:", err);
+        res.status(500).json({ error: "Failed to create folder" });
+      }
+    },
+  );
 
   /**
    * @swagger
