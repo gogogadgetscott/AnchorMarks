@@ -75,7 +75,7 @@ export function RichBookmarkCard(bookmark: Bookmark, index: number): string {
   const delayClass = `delay-${index % 10}`;
 
   // Determine which image to show: og_image > thumbnail_local > placeholder
-  const imageSrc = bookmark.og_image || bookmark.thumbnail_local;
+  const imageSrc = escapeHtml(bookmark.og_image || bookmark.thumbnail_local || "");
   const imageHtml = imageSrc
     ? `<div class="rich-card-image">
          <img src="${imageSrc}" alt="" class="img-loading" loading="lazy" onload="this.classList.add('img-loaded')">

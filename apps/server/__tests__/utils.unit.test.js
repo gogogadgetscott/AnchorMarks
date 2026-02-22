@@ -232,9 +232,17 @@ describe("utils.js - Unit Tests", () => {
   });
 
   describe("fetchFavicon - Edge Cases", () => {
+    let lookupSpy;
+    beforeEach(() => {
+      const dns = require("dns");
+      lookupSpy = vi.spyOn(dns.promises, "lookup").mockResolvedValue([{ address: "93.184.216.34" }]);
+    });
+    afterEach(() => {
+      if (lookupSpy) lookupSpy.mockRestore();
+    });
     it("should return null for non-http protocols", async () => {
       const { fetchFavicon } = require("../helpers/utils");
-      const db = { prepare: () => ({ run: () => {} }) };
+      const db = { prepare: () => ({ run: () => { } }) };
 
       await expect(
         fetchFavicon("ftp://example.com", "id", db, "/tmp", "test"),
@@ -249,7 +257,7 @@ describe("utils.js - Unit Tests", () => {
 
     it("should block private targets in production (SSRF prevention)", async () => {
       const { fetchFavicon } = require("../helpers/utils");
-      const db = { prepare: () => ({ run: () => {} }) };
+      const db = { prepare: () => ({ run: () => { } }) };
 
       await expect(
         fetchFavicon("http://127.0.0.1", "id", db, "/tmp", "production"),
@@ -300,7 +308,7 @@ describe("utils.js - Unit Tests", () => {
       const fs = require("fs");
       const existsSpy = vi.spyOn(fs, "existsSync").mockReturnValue(false);
 
-      const db = { prepare: () => ({ run: () => {} }) };
+      const db = { prepare: () => ({ run: () => { } }) };
       const { fetchFavicon } = require("../helpers/utils");
 
       const result = await fetchFavicon(
@@ -346,7 +354,7 @@ describe("utils.js - Unit Tests", () => {
 
     it("should handle invalid URL gracefully", async () => {
       const { fetchFavicon } = require("../helpers/utils");
-      const db = { prepare: () => ({ run: () => {} }) };
+      const db = { prepare: () => ({ run: () => { } }) };
 
       await expect(
         fetchFavicon("not-a-url", "id", db, "/tmp", "test"),

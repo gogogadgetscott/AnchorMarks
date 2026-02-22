@@ -62,13 +62,27 @@ function setupAuthRoutes(
 ) {
   // Helper to safely log security events (no-op if audit logger not provided)
   const audit = securityAudit || {
-    register: () => {},
-    loginSuccess: () => {},
-    loginFailure: () => {},
-    logout: () => {},
-    passwordChange: () => {},
-    apiKeyRegenerate: () => {},
+    register: () => { },
+    loginSuccess: () => { },
+    loginFailure: () => { },
+    logout: () => { },
+    passwordChange: () => { },
+    apiKeyRegenerate: () => { },
   };
+
+  // Get CSRF Token
+  app.get("/api/auth/csrf", (req, res) => {
+    const csrfToken = generateCsrfToken();
+    res.cookie("csrfToken", csrfToken, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      path: "/",
+    });
+    res.json({ csrfToken });
+  });
+
   // Register
   app.post("/api/auth/register", async (req, res) => {
     try {
