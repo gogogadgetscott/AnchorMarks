@@ -81,48 +81,54 @@ function listBookmarks(db, userId, opts = {}) {
 
   // Skip search and tag filters for favorites and archived views - show all items
   if (search && !isFavoritesView && !isArchivedView) {
-    // Use full-text search if available, otherwise fall back to LIKE
-    // Check if FTS table exists (would be created separately if needed)
+    // Utilize the FTS5 table for ultra-fast full-text matching and relevance ranking
     const useFuzzy = opts.fuzzy === true;
 
-    if (useFuzzy) {
-      // For fuzzy search, we'll do a broader LIKE search first, then rank in JS
-      // This is a compromise - full FTS would be better but requires schema changes
-      query +=
-        " AND (b.title LIKE ? OR b.url LIKE ? OR b.description LIKE ? OR tg.tags_joined LIKE ?)";
-      countQuery +=
-        " AND (b.title LIKE ? OR b.url LIKE ? OR b.description LIKE ? OR tg.tags_joined LIKE ?)";
-      const searchTerm = `%${search}%`;
-      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-    } else {
-      // Standard LIKE search with multiple patterns for better matching
-      const searchTerm = `%${search}%`;
-      const searchWords = search
-        .trim()
-        .split(/\s+/)
-        .filter((w) => w.length > 0);
+    // Instead of using complex LIKE clauses, we're joining against the synchronized FTS5 virtual table
+    let ftsBaseSelect = `
+      FROM bookmarks b
+      INNER JOIN bookmarks_fts fts ON fts.id = b.id
+      LEFT JOIN (
+        SELECT bt.bookmark_id,
+               GROUP_CONCAT(t.name, ', ') as tags_joined,
+               json_group_array(
+                 json_object(
+                   'name', t.name,
+                   'tag_id', t.id,
+                   'color', t.color,
+                   'color_override', bt.color_override
+                 )
+               ) as tags_detailed
+        FROM bookmark_tags bt
+        JOIN tags t ON t.id = bt.tag_id
+        WHERE t.user_id = ?
+        GROUP BY bt.bookmark_id
+      ) tg ON tg.bookmark_id = b.id
+      WHERE b.user_id = ?
+    `;
 
-      if (searchWords.length > 1) {
-        // Multi-word search: match all words (AND logic)
-        const conditions = searchWords
-          .map(
-            () =>
-              "(b.title LIKE ? OR b.url LIKE ? OR b.description LIKE ? OR tg.tags_joined LIKE ?)",
-          )
-          .join(" AND ");
-        query += ` AND (${conditions})`;
-        countQuery += ` AND (${conditions})`;
-        searchWords.forEach((word) => {
-          const term = `%${word}%`;
-          params.push(term, term, term, term);
-        });
-      } else {
-        query +=
-          " AND (b.title LIKE ? OR b.url LIKE ? OR b.description LIKE ? OR tg.tags_joined LIKE ?)";
-        countQuery +=
-          " AND (b.title LIKE ? OR b.url LIKE ? OR b.description LIKE ? OR tg.tags_joined LIKE ?)";
-        params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-      }
+    // Reset queries with the inner joined base selection
+    query = `SELECT b.*, COALESCE(tg.tags_joined, '') as tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed ${ftsBaseSelect}`;
+    countQuery = `SELECT COUNT(*) as total ${ftsBaseSelect}`;
+
+    if (useFuzzy) {
+      // Fuzzy search doesn't natively map to FTS5 strictly without trigrams, so we mix it with MATCH broadly
+      // Format: "word1*" OR "word2*" 
+      const searchWords = search.trim().split(/\s+/).filter(w => w.length > 0);
+      const ftsQuery = searchWords.map(w => `"${w.replace(/"/g, '""')}"*`).join(' OR ');
+
+      query += " AND fts MATCH ?";
+      countQuery += " AND fts MATCH ?";
+      params.push(ftsQuery);
+    } else {
+      // Standard multi-word search matching ALL words
+      // Format: "word1"* AND "word2"*
+      const searchWords = search.trim().split(/\s+/).filter(w => w.length > 0);
+      const ftsQuery = searchWords.map(w => `"${w.replace(/"/g, '""')}"*`).join(' AND ');
+
+      query += " AND fts MATCH ?";
+      countQuery += " AND fts MATCH ?";
+      params.push(ftsQuery);
     }
   }
 
@@ -211,8 +217,12 @@ function listBookmarks(db, userId, opts = {}) {
         orderClause = " ORDER BY title COLLATE NOCASE DESC";
         break;
       default:
-        orderClause = " ORDER BY position, created_at DESC";
+        orderClause = search && !isFavoritesView && !isArchivedView
+          ? " ORDER BY fts.rank"
+          : " ORDER BY position, created_at DESC";
     }
+  } else if (search && !isFavoritesView && !isArchivedView) {
+    orderClause = " ORDER BY fts.rank";
   }
   query += orderClause;
 
