@@ -109,7 +109,7 @@ module.exports = function (
         .all(req.user.id);
 
       res.json(duplicates);
-    } catch (err) {
+    } catch (_err) {
       res.status(500).json({ error: "Failed to list duplicates" });
     }
   });
@@ -131,7 +131,7 @@ module.exports = function (
     try {
       db.exec("VACUUM");
       res.json({ success: true, message: "Database optimized" });
-    } catch (err) {
+    } catch (_err) {
       res.status(500).json({ error: "Failed to optimize database" });
     }
   });

@@ -45,7 +45,7 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
           );
           results.created++;
         }
-      } catch (err) {
+      } catch (_err) {
         results.errors.push({ folder: folder.name, error: "Sync failed" });
       }
     }
@@ -112,7 +112,7 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
           // Trigger favicon fetch is handled by app layer; model returns created ids for caller to act on
           results.created++;
         }
-      } catch (err) {
+      } catch (_err) {
         results.errors.push({ url: bm.url, error: "Sync failed" });
       }
     }

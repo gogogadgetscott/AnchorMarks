@@ -13,7 +13,7 @@
 	build-frontend build-docker build-test-docker \
 	run run-backend run-frontend run-all run-docker run-prod \
 	start-backend start-frontend start-all start-docker start-prod stop stop-all restart-all \
-	test-backend test-frontend test-all test-coverage \
+	test-backend test-backend-local test-frontend test-frontend-local test-all test-coverage \
 	test-backend-watch test-frontend-watch \
 	test-docker test-docker-backend test-docker-frontend \
 	test-e2e test-e2e-ui test-e2e-debug test-e2e-headed \
@@ -82,9 +82,9 @@ build-docker: ## Build Docker containers
 	@$(DOCKER_CMD) build
 	@echo "$(GREEN)✓ Docker containers built$(NC)"
 
-build-test-docker: ## Build test Docker container
+build-test-docker: ## Build test Docker container (used by test-docker-* targets)
 	@echo "$(BLUE)Building test Docker container...$(NC)"
-	@$(DOCKER_CMD) build test
+	@$(DOCKER_CMD) --profile test build test
 	@echo "$(GREEN)✓ Test Docker container built$(NC)"
 
 rebuild-docker: ## Rebuild Docker containers from scratch
@@ -142,12 +142,14 @@ restart-docker: ## Restart Docker containers
 restart-all: stop-all start-all ## Restart all development processes
 
 # ============================================================================
-# TEST TARGETS
+# TEST TARGETS (default: run in Docker to avoid native addon/libc issues)
 # ============================================================================
 test: test-all ## Run all tests (alias for test-all)
 
-test-backend: ## Run backend tests
-	@echo "$(BLUE)Running backend tests...$(NC)"
+test-backend: test-docker-backend ## Run backend tests (in Docker)
+
+test-backend-local: ## Run backend tests on host (requires compatible better-sqlite3 build)
+	@echo "$(BLUE)Running backend tests on host...$(NC)"
 	@cd $(BACKEND_DIR) && npm run test
 	@echo "$(GREEN)✓ Backend tests completed$(NC)"
 
@@ -155,8 +157,10 @@ test-backend-watch: ## Run backend tests in watch mode
 	@echo "$(BLUE)Running backend tests in watch mode...$(NC)"
 	@cd $(BACKEND_DIR) && npm run test:watch
 
-test-frontend: ## Run frontend tests
-	@echo "$(BLUE)Running frontend tests...$(NC)"
+test-frontend: test-docker-frontend ## Run frontend tests (in Docker)
+
+test-frontend-local: ## Run frontend tests on host
+	@echo "$(BLUE)Running frontend tests on host...$(NC)"
 	@cd $(FRONTEND_DIR) && npm run test
 	@echo "$(GREEN)✓ Frontend tests completed$(NC)"
 
@@ -164,7 +168,7 @@ test-frontend-watch: ## Run frontend tests in watch mode
 	@echo "$(BLUE)Running frontend tests in watch mode...$(NC)"
 	@cd $(FRONTEND_DIR) && npm run test:watch
 
-test-all: test-backend test-frontend ## Run all tests
+test-all: test-docker ## Run all tests (backend + frontend in Docker)
 
 test-coverage: ## Generate test coverage reports
 	@echo "$(BLUE)Generating test coverage...$(NC)"
@@ -173,17 +177,17 @@ test-coverage: ## Generate test coverage reports
 
 test-docker: build-test-docker ## Run all tests in Docker container
 	@echo "$(BLUE)Running tests in Docker container...$(NC)"
-	@docker run --rm docker-test sh -c "cd /apps/server && npm test && cd /apps/client && npm test"
+	@docker run --rm docker-test:latest sh -c "cd /apps/server && npm run test && cd /apps/client && npm run test"
 	@echo "$(GREEN)✓ Docker tests completed$(NC)"
 
 test-docker-backend: build-test-docker ## Run backend tests in Docker container
 	@echo "$(BLUE)Running backend tests in Docker container...$(NC)"
-	@docker run --rm docker-test sh -c "cd /apps/server && npm test"
+	@docker run --rm docker-test:latest sh -c "cd /apps/server && npm run test"
 	@echo "$(GREEN)✓ Backend tests completed$(NC)"
 
 test-docker-frontend: build-test-docker ## Run frontend tests in Docker container
 	@echo "$(BLUE)Running frontend tests in Docker container...$(NC)"
-	@docker run --rm docker-test sh -c "cd /apps/client && npm test"
+	@docker run --rm docker-test:latest sh -c "cd /apps/client && npm run test"
 	@echo "$(GREEN)✓ Frontend tests completed$(NC)"
 
 test-e2e: ## Run E2E tests with Playwright

@@ -168,7 +168,7 @@ function setupSmartOrganizationRoutes(
           filters: filterObj,
           created: true,
         });
-      } catch (err) {
+      } catch (_err) {
         res.status(500).json({ error: "Failed to create collection" });
       }
     },
@@ -203,7 +203,7 @@ function setupSmartOrganizationRoutes(
           recentBookmarks,
           mostClicked,
         });
-      } catch (err) {
+      } catch (_err) {
         res.status(500).json({ error: "Failed to get domain stats" });
       }
     },
@@ -216,7 +216,7 @@ function setupSmartOrganizationRoutes(
       try {
         const clusters = smartOrg.getTagClusters(db, req.user.id);
         res.json({ clusters });
-      } catch (err) {
+      } catch (_err) {
         res.status(500).json({ error: "Failed to get tag clusters" });
       }
     },
@@ -251,7 +251,7 @@ function setupSmartOrganizationRoutes(
         },
         suggestions: { create_these_collections: [], organize_these_tags: [] },
       });
-    } catch (err) {
+    } catch (_err) {
       res.status(500).json({ error: "Failed to get smart insights" });
     }
   });

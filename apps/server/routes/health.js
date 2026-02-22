@@ -8,7 +8,7 @@ function setupHealthRoutes(
   {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
-    fetchFaviconWrapper,
+    fetchFaviconWrapper: _fetchFaviconWrapper,
   },
 ) {
   // Find duplicate bookmarks (same URL)

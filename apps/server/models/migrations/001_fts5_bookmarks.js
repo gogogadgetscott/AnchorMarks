@@ -24,7 +24,7 @@ exports.up = function (db) {
   // 3. Recreate FTS with external content (content='bookmarks')
   try {
     db.exec("DROP TABLE IF EXISTS bookmarks_fts");
-  } catch (e) {}
+  } catch (_e) {}
 
   db.exec(`
     CREATE VIRTUAL TABLE bookmarks_fts USING fts5(

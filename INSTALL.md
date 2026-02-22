@@ -699,6 +699,22 @@ sudo nano /etc/systemd/system/anchormarks.service
 sudo systemctl daemon-reload
 ```
 
+### Backend tests fail: `libc.musl-x86_64.so.1` / better-sqlite3
+
+If you see **"libc.musl-x86_64.so.1: cannot open shared object file"** when running `make test-backend` or `npm run test` in `apps/server`, the `better-sqlite3` native addon was built for a different environment (e.g. Alpine/musl in Docker) and does not match your current system (e.g. glibc on WSL/Ubuntu).
+
+**Fix:** Rebuild the addon for your current system. If the addon’s build directory is owned by another user (e.g. `nobody` after a Docker run), fix ownership then rebuild:
+
+```bash
+# Fix ownership if build was created by Docker/root
+sudo chown -R "$(whoami):$(whoami)" apps/server/node_modules/better-sqlite3
+
+# Rebuild for your system
+cd apps/server && npm rebuild better-sqlite3
+```
+
+Then run tests again: `make test-backend`.
+
 ### Docker Issues
 
 ```bash
