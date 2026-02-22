@@ -394,7 +394,8 @@ function renderQuickActions(): void {
   // Add click handlers
   list.querySelectorAll(".omnibar-item").forEach((item, index) => {
     item.addEventListener("click", () => {
-      actions[index].action();
+      const action = actions[index]?.action;
+      if (typeof action === "function") action();
       closeOmnibar();
     });
   });
@@ -464,7 +465,8 @@ function renderResultsList(commands: any[]): void {
   // Add click handlers
   list.querySelectorAll(".omnibar-item").forEach((item, index) => {
     item.addEventListener("click", () => {
-      commands[index].action();
+      const action = commands[index]?.action;
+      if (typeof action === "function") action();
       closeOmnibar();
 
       // Add to recent searches if it's a search query
@@ -532,7 +534,9 @@ export function executeActiveItem(): void {
   if (!cmd) return;
 
   try {
-    cmd.action();
+    if (typeof cmd.action === "function") {
+      cmd.action();
+    }
   } catch (err) {
     console.error("Error executing command action:", err);
   }

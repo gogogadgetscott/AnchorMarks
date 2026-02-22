@@ -60,8 +60,20 @@ function resolveCorsOrigin() {
 const crypto = require("crypto");
 const JWT_SECRET =
   process.env.JWT_SECRET || crypto.randomBytes(64).toString("hex");
-const DB_PATH =
-  process.env.DB_PATH || path.join(__dirname, "../../database/anchormarks.db");
+// Resolve DB_PATH so relative paths (e.g. ./apps/database/anchormarks.db) are
+// relative to project root, not process cwd (fixes Docker when cwd is /apps/server).
+const projectRoot = path.join(__dirname, "..", "..", "..");
+const defaultDbPath = path.join(
+  __dirname,
+  "..",
+  "..",
+  "database",
+  "anchormarks.db",
+);
+const rawDbPath = process.env.DB_PATH || defaultDbPath;
+const DB_PATH = path.isAbsolute(rawDbPath)
+  ? path.normalize(rawDbPath)
+  : path.resolve(projectRoot, rawDbPath);
 const ENABLE_BACKGROUND_JOBS = NODE_ENV !== "test";
 const ENABLE_FAVICON_BACKGROUND_JOBS = false; // Only fetch favicons on import/save
 

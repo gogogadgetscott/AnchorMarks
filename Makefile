@@ -28,9 +28,11 @@ ROOT_DIR := $(CURDIR)
 APP_DIR := $(ROOT_DIR)/apps
 BACKEND_DIR := $(APP_DIR)/server
 FRONTEND_DIR := $(APP_DIR)/client
+# Docker: compose, Dockerfile, and entrypoint live in tooling/docker. Database in container: /apps/database.
 DOCKER_COMPOSE := tooling/docker/docker-compose.yml
 ENV_FILE := $(CURDIR)/.env
 DOCKER_CMD := docker compose --env-file $(ENV_FILE) -f $(DOCKER_COMPOSE)
+DOCKER_DB_DIR := $(APP_DIR)/database
 
 # Colors for output
 BLUE := \033[0;34m
@@ -77,9 +79,9 @@ build-frontend: ## Build frontend for production
 	@cd $(FRONTEND_DIR) && npx vite build && npx esbuild src/shared/folders-utils-browser.ts --bundle --platform=browser --format=iife --global-name=foldersUtils --outfile=../server/public/js/folders-utils.js --minify
 	@echo "$(GREEN)✓ Frontend built successfully$(NC)"
 
-build-docker: ## Build Docker containers
+build-docker: ## Build Docker containers (anchormarks image; entrypoint ensures /apps/database is writable)
 	@echo "$(BLUE)Building Docker containers...$(NC)"
-	@$(DOCKER_CMD) build
+	@$(DOCKER_CMD) build anchormarks
 	@echo "$(GREEN)✓ Docker containers built$(NC)"
 
 build-test-docker: ## Build test Docker container (used by test-docker-* targets)
@@ -87,9 +89,10 @@ build-test-docker: ## Build test Docker container (used by test-docker-* targets
 	@$(DOCKER_CMD) --profile test build test
 	@echo "$(GREEN)✓ Test Docker container built$(NC)"
 
-rebuild-docker: ## Rebuild Docker containers from scratch
+rebuild-docker: ## Rebuild Docker containers from scratch (ensures database dir exists for volume mount)
 	@echo "$(BLUE)Rebuilding Docker containers...$(NC)"
-	@$(DOCKER_CMD) down && $(DOCKER_CMD) build --no-cache && $(DOCKER_CMD) up -d
+	@mkdir -p $(DOCKER_DB_DIR)
+	@$(DOCKER_CMD) down && $(DOCKER_CMD) build --no-cache anchormarks && $(DOCKER_CMD) up -d
 	@echo "$(GREEN)✓ Docker containers rebuilt$(NC)"
 
 # ============================================================================
@@ -109,13 +112,22 @@ run-all: ## Run both backend and frontend concurrently
 	@echo "$(BLUE)Starting development environment...$(NC)"
 	@npx concurrently "make run-backend" "make run-frontend"
 
-run-docker: ## Run using Docker Compose
+run-docker: ## Run using Docker Compose (ensures apps/database exists for volume; entrypoint chowns for node user)
 	@echo "$(BLUE)Starting Docker containers...$(NC)"
-	@$(DOCKER_CMD) pull && $(DOCKER_CMD) up -d && $(DOCKER_CMD) logs -f
+	@mkdir -p $(DOCKER_DB_DIR)
+	@$(DOCKER_CMD) up -d --build && $(DOCKER_CMD) logs -f
 
-run-prod: ## Run server in production mode
+run-prod: ## Run server in production mode (on host)
 	@echo "$(BLUE)Starting production server...$(NC)"
 	NODE_ENV=production node $(BACKEND_DIR)
+
+start-docker: ## Start Docker containers in background (no log follow); ensures apps/database exists
+	@echo "$(BLUE)Starting Docker containers in background...$(NC)"
+	@mkdir -p $(DOCKER_DB_DIR)
+	@$(DOCKER_CMD) up -d --build
+	@echo "$(GREEN)✓ Containers started. Use 'make logs-docker' to follow logs.$(NC)"
+
+start-prod: start-docker ## Alias: start Docker production stack in background
 
 stop: stop-all ## Alias for stop-all (stop dev processes)
 

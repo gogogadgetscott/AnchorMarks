@@ -4,6 +4,10 @@ set -e
 echo "Initializing AnchorMarks container..."
 echo "Using pre-built frontend from image"
 
+# Ensure database directory exists and is writable by node (bind mounts often end up root-owned)
+mkdir -p /apps/database
+chown node:node /apps/database
+
 # Ensure server dependencies are present (host volume may not include node_modules)
 echo "Installing server dependencies (production)..."
 cd /apps/server
