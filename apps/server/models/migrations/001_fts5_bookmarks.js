@@ -5,6 +5,19 @@
 
 exports.up = function (db) {
   // 1. Create the virtual FTS5 table
+  // Robust FTS5 Check: Recreate if 'id' column is missing
+  let recreateFts = false;
+  try {
+    const columns = db.prepare("PRAGMA table_info(bookmarks_fts)").all();
+    if (columns.length > 0 && !columns.some((c) => c.name === "id")) {
+      recreateFts = true;
+    }
+  } catch (e) { }
+
+  if (recreateFts) {
+    db.exec("DROP TABLE bookmarks_fts");
+  }
+
   db.exec(`
     CREATE VIRTUAL TABLE IF NOT EXISTS bookmarks_fts USING fts5(
       id UNINDEXED, -- UUID, not used for matching words
