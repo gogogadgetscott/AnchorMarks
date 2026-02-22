@@ -149,7 +149,10 @@ function setupApiRoutes(app, db, helpers) {
 
   // Import/Export Routes
   const setupImportExportRoutes = require("./importExport");
-  setupImportExportRoutes(app, db, { authenticateTokenMiddleware });
+  setupImportExportRoutes(app, db, {
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+  });
 
   // Settings API
   /**
