@@ -15,7 +15,10 @@ vi.mock("../config", () => ({
 
 function createMockDb(userByApiKey = null, userById = null) {
   const get = vi.fn().mockImplementation((arg) => {
-    if (userByApiKey != null && (arg === "valid-key" || userByApiKey.id === arg))
+    if (
+      userByApiKey != null &&
+      (arg === "valid-key" || userByApiKey.id === arg)
+    )
       return userByApiKey;
     if (userById != null && arg === (userById.id || "user-1")) return userById;
     return userByApiKey != null && arg === "valid-key"
@@ -84,7 +87,11 @@ describe("middleware/index", () => {
       const db = createMockDb(null, null);
       db.prepare().get.mockReturnValue(null);
       const middleware = authenticateToken(db);
-      const req = { headers: { "x-api-key": "bad-key" }, method: "GET", path: "/api/bookmarks" };
+      const req = {
+        headers: { "x-api-key": "bad-key" },
+        method: "GET",
+        path: "/api/bookmarks",
+      };
       const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
       const next = vi.fn();
 
@@ -148,14 +155,14 @@ describe("middleware/index", () => {
         id === "user-1" ? user : null,
       );
       const secret = process.env.JWT_SECRET || "test-jwt-secret-middleware";
-      const token = jwt.sign(
-        { userId: "user-1" },
-        secret,
-        { expiresIn: "1h" },
-      );
+      const token = jwt.sign({ userId: "user-1" }, secret, { expiresIn: "1h" });
       const middleware = authenticateToken(db);
       const req = { headers: {}, cookies: { token } };
-      const res = { status: vi.fn().mockReturnThis(), json: vi.fn(), clearCookie: vi.fn() };
+      const res = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+        clearCookie: vi.fn(),
+      };
       const next = vi.fn();
 
       middleware(req, res, next);
@@ -193,11 +200,7 @@ describe("middleware/index", () => {
       const db = createMockDb(null, null);
       db.prepare().get.mockImplementation(() => null);
       const secret = process.env.JWT_SECRET || "test-jwt-secret-middleware";
-      const token = jwt.sign(
-        { userId: "user-1" },
-        secret,
-        { expiresIn: "1h" },
-      );
+      const token = jwt.sign({ userId: "user-1" }, secret, { expiresIn: "1h" });
       const middleware = authenticateToken(db);
       const req = { headers: {}, cookies: { token } };
       const res = {

@@ -1,0 +1,16 @@
+{
+    "name": "AnchorMarks",
+    "short_name": "AnchorMarks",
+    "description": "A modern web-based bookmark manager with browser sync, API access, and AI-assisted organization.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#6366f1",
+    "icons": [
+        {
+            "src": "/icon.png",
+            "sizes": "192x192 512x512",
+            "type": "image/png"
+        }
+    ]
+}

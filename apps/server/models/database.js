@@ -149,7 +149,28 @@ function initializeDatabase(DB_PATH) {
       );
 
       CREATE INDEX IF NOT EXISTS idx_bookmark_views_user ON bookmark_views(user_id);
+
+      CREATE VIRTUAL TABLE IF NOT EXISTS bookmarks_fts USING fts5(
+        title, url, description,
+        content='bookmarks', content_rowid='rowid'
+      );
+
+      CREATE TRIGGER IF NOT EXISTS bookmarks_fts_ai AFTER INSERT ON bookmarks BEGIN
+        INSERT INTO bookmarks_fts(rowid, title, url, description) VALUES (new.rowid, new.title, new.url, new.description);
+      END;
+
+      CREATE TRIGGER IF NOT EXISTS bookmarks_fts_ad AFTER DELETE ON bookmarks BEGIN
+        INSERT INTO bookmarks_fts(bookmarks_fts, rowid, title, url, description) VALUES ('delete', old.rowid, old.title, old.url, old.description);
+      END;
+
+      CREATE TRIGGER IF NOT EXISTS bookmarks_fts_au AFTER UPDATE ON bookmarks BEGIN
+        INSERT INTO bookmarks_fts(bookmarks_fts, rowid, title, url, description) VALUES ('delete', old.rowid, old.title, old.url, old.description);
+        INSERT INTO bookmarks_fts(rowid, title, url, description) VALUES (new.rowid, new.title, new.url, new.description);
+      END;
     `);
+
+    // Rebuild FTS index to ensure it's populated for existing rows
+    db.exec("INSERT INTO bookmarks_fts(bookmarks_fts) VALUES('rebuild');");
   } catch (err) {
     console.error(`Failed to initialize database at ${DB_PATH}:`, err);
     throw err;

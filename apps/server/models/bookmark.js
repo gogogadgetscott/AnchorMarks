@@ -81,49 +81,21 @@ function listBookmarks(db, userId, opts = {}) {
 
   // Skip search and tag filters for favorites and archived views - show all items
   if (search && !isFavoritesView && !isArchivedView) {
-    // Use full-text search if available, otherwise fall back to LIKE
-    // Check if FTS table exists (would be created separately if needed)
-    const useFuzzy = opts.fuzzy === true;
+    const searchWords = search
+      .trim()
+      .split(/\s+/)
+      .filter((w) => w.length > 0);
+    const ftsQuery = searchWords
+      .map((w) => `"${w.replace(/"/g, '""')}"*`)
+      .join(" AND ");
 
-    if (useFuzzy) {
-      // For fuzzy search, we'll do a broader LIKE search first, then rank in JS
-      // This is a compromise - full FTS would be better but requires schema changes
-      query +=
-        " AND (b.title LIKE ? OR b.url LIKE ? OR b.description LIKE ? OR tg.tags_joined LIKE ?)";
-      countQuery +=
-        " AND (b.title LIKE ? OR b.url LIKE ? OR b.description LIKE ? OR tg.tags_joined LIKE ?)";
-      const searchTerm = `%${search}%`;
-      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-    } else {
-      // Standard LIKE search with multiple patterns for better matching
-      const searchTerm = `%${search}%`;
-      const searchWords = search
-        .trim()
-        .split(/\s+/)
-        .filter((w) => w.length > 0);
+    const ftsCondition = `(b.rowid IN (SELECT rowid FROM bookmarks_fts WHERE bookmarks_fts MATCH ?) OR tg.tags_joined LIKE ?)`;
 
-      if (searchWords.length > 1) {
-        // Multi-word search: match all words (AND logic)
-        const conditions = searchWords
-          .map(
-            () =>
-              "(b.title LIKE ? OR b.url LIKE ? OR b.description LIKE ? OR tg.tags_joined LIKE ?)",
-          )
-          .join(" AND ");
-        query += ` AND (${conditions})`;
-        countQuery += ` AND (${conditions})`;
-        searchWords.forEach((word) => {
-          const term = `%${word}%`;
-          params.push(term, term, term, term);
-        });
-      } else {
-        query +=
-          " AND (b.title LIKE ? OR b.url LIKE ? OR b.description LIKE ? OR tg.tags_joined LIKE ?)";
-        countQuery +=
-          " AND (b.title LIKE ? OR b.url LIKE ? OR b.description LIKE ? OR tg.tags_joined LIKE ?)";
-        params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-      }
-    }
+    query += ` AND ${ftsCondition}`;
+    countQuery += ` AND ${ftsCondition}`;
+
+    const likeTerm = `%${search}%`;
+    params.push(ftsQuery, likeTerm);
   }
 
   // Skip tag filters for favorites and archived views - show all items
