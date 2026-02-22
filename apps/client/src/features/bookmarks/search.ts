@@ -330,27 +330,15 @@ export function renderActiveFilters(): void {
         `;
   });
 
-  // Search chip
-  if (searchInput?.value.trim()) {
-    html += `
-            <div class="filter-chip tag-chip">
-                <span>Search: ${escapeHtml(searchInput.value)}</span>
-                <button data-action="clear-search" title="Remove">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                </button>
-            </div>
-        `;
-  }
-
-  // Persistent search chip
-  if (state.filterConfig.search) {
+  // Single search chip (main box and filterConfig.search are synced)
+  const searchTerm =
+    state.filterConfig.search?.trim() || searchInput?.value?.trim() || "";
+  if (searchTerm) {
     html += `
             <div class="filter-chip search-chip">
                 ${Icon("search", { size: 12 })}
-                <span>Search: ${escapeHtml(state.filterConfig.search)}</span>
-                <button data-action="clear-persistent-search" title="Remove">
+                <span>Search: ${escapeHtml(searchTerm)}</span>
+                <button data-action="clear-search" title="Remove">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                     </svg>
@@ -444,10 +432,15 @@ export function clearSearch(): void {
     "search-input",
   ) as HTMLInputElement;
   if (searchInput) searchInput.value = "";
-  import("@features/bookmarks/bookmarks.ts").then(({ renderBookmarks }) =>
-    renderBookmarks(),
+  state.setFilterConfig({
+    ...state.filterConfig,
+    search: undefined,
+  });
+  import("@features/bookmarks/filters.ts").then(({ applyFilters }) =>
+    applyFilters().then(() => {
+      renderActiveFilters();
+    }),
   );
-  renderActiveFilters();
 }
 
 // Rename tag across all bookmarks

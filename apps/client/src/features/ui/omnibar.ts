@@ -63,7 +63,7 @@ export function initOmnibarListeners(): void {
       return;
     }
 
-    // Keep bookmark list filtered in real time using the search box
+    // Keep bookmark list filtered: persist search and refetch from server so search is full-library
     const trimmed = query.trim();
     state.setFilterConfig({
       ...state.filterConfig,
@@ -72,14 +72,15 @@ export function initOmnibarListeners(): void {
 
     if (searchFilterTimeout) clearTimeout(searchFilterTimeout);
     searchFilterTimeout = setTimeout(() => {
-      Promise.all([
-        import("@features/bookmarks/bookmarks.ts"),
-        import("@features/bookmarks/search.ts"),
-        import("@features/bookmarks/filters.ts"),
-      ]).then(([bookmarksModule, searchModule, filtersModule]) => {
-        bookmarksModule.renderBookmarks();
-        searchModule.renderActiveFilters();
-        filtersModule.updateFilterButtonText();
+      import("@features/bookmarks/filters.ts").then(({ applyFilters }) => {
+        applyFilters().then(() => {
+          import("@features/bookmarks/search.ts").then((m) =>
+            m.renderActiveFilters(),
+          );
+          import("@features/bookmarks/filters.ts").then((m) =>
+            m.updateFilterButtonText(),
+          );
+        });
       });
     }, 120);
   });

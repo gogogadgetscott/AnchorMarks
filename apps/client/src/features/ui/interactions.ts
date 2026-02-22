@@ -296,27 +296,52 @@ function initGlobalDelegation(): void {
             removeTagFilter(tag),
           );
         break;
-      case "clear-search":
+      case "clear-search": {
         const searchInput = document.getElementById(
           "search-input",
         ) as HTMLInputElement;
-        if (searchInput) {
-          searchInput.value = "";
-          state.filterConfig.search = "";
-          import("@features/bookmarks/bookmarks.ts").then(
-            ({ renderBookmarks }) => renderBookmarks(),
-          );
-        }
-        break;
-      case "clear-persistent-search":
-        state.filterConfig.search = undefined;
-        import("@features/bookmarks/bookmarks.ts").then(({ renderBookmarks }) =>
-          renderBookmarks(),
+        if (searchInput) searchInput.value = "";
+        state.setFilterConfig({
+          ...state.filterConfig,
+          search: undefined,
+        });
+        import("@features/bookmarks/filters.ts").then(({ applyFilters }) =>
+          applyFilters().then(() => {
+            import("@features/bookmarks/search.ts").then((m) =>
+              m.renderActiveFilters(),
+            );
+            import("@features/bookmarks/filters.ts").then((m) =>
+              m.updateFilterButtonText(),
+            );
+          }),
         );
-        import("@features/bookmarks/filters.ts").then(
-          ({ updateFilterButtonText }) => updateFilterButtonText(),
+        break;
+      }
+      case "clear-persistent-search": {
+        state.setFilterConfig({
+          ...state.filterConfig,
+          search: undefined,
+        });
+        const filterSearchInput = document.getElementById(
+          "filter-search-input",
+        ) as HTMLInputElement;
+        if (filterSearchInput) filterSearchInput.value = "";
+        const searchInput = document.getElementById(
+          "search-input",
+        ) as HTMLInputElement;
+        if (searchInput) searchInput.value = "";
+        import("@features/bookmarks/filters.ts").then(({ applyFilters }) =>
+          applyFilters().then(() => {
+            import("@features/bookmarks/search.ts").then((m) =>
+              m.renderActiveFilters(),
+            );
+            import("@features/bookmarks/filters.ts").then((m) =>
+              m.updateFilterButtonText(),
+            );
+          }),
         );
         break;
+      }
       case "toggle-widget-picker":
         e.stopPropagation();
         import("@features/bookmarks/widget-picker.ts").then(

@@ -128,45 +128,43 @@ function listBookmarks(db, userId, opts = {}) {
 
   // Skip tag filters for favorites and archived views - show all items
   if (tags && !isFavoritesView && !isArchivedView) {
-    // Support multiple tags with AND/OR semantics using proper JOIN + GROUP BY + HAVING
+    // Support multiple tags with AND/OR semantics; match case-insensitively
     const tagArr = String(tags)
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean);
+    const tagArrLower = tagArr.map((t) => t.toLowerCase());
 
-    if (tagArr.length > 0) {
-      // Use a subquery with proper tag matching to avoid substring false positives
+    if (tagArrLower.length > 0) {
+      // Use LOWER(t.name) so "work" matches "Work"
       if (tagMode && String(tagMode).toLowerCase() === "and") {
-        // AND mode: bookmark must have ALL specified tags
-        // We need a HAVING COUNT that matches the number of requested tags
-        const tagPlaceholders = tagArr.map(() => "?").join(",");
+        const tagPlaceholders = tagArrLower.map(() => "?").join(",");
         const tagFilter = `
           AND b.id IN (
             SELECT DISTINCT bt.bookmark_id
             FROM bookmark_tags bt
             JOIN tags t ON t.id = bt.tag_id
-            WHERE t.user_id = ? AND t.name IN (${tagPlaceholders})
+            WHERE t.user_id = ? AND LOWER(t.name) IN (${tagPlaceholders})
             GROUP BY bt.bookmark_id
-            HAVING COUNT(DISTINCT t.name) = ?
+            HAVING COUNT(DISTINCT LOWER(t.name)) = ?
           )
         `;
         query += tagFilter;
         countQuery += tagFilter;
-        params.push(userId, ...tagArr, tagArr.length);
+        params.push(userId, ...tagArrLower, tagArrLower.length);
       } else {
-        // OR mode: bookmark must have ANY of the specified tags
-        const tagPlaceholders = tagArr.map(() => "?").join(",");
+        const tagPlaceholders = tagArrLower.map(() => "?").join(",");
         const tagFilter = `
           AND b.id IN (
             SELECT DISTINCT bt.bookmark_id
             FROM bookmark_tags bt
             JOIN tags t ON t.id = bt.tag_id
-            WHERE t.user_id = ? AND t.name IN (${tagPlaceholders})
+            WHERE t.user_id = ? AND LOWER(t.name) IN (${tagPlaceholders})
           )
         `;
         query += tagFilter;
         countQuery += tagFilter;
-        params.push(userId, ...tagArr);
+        params.push(userId, ...tagArrLower);
       }
     }
   }

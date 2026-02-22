@@ -281,10 +281,12 @@ describe("Bookmark Model - listBookmarks with Tag Filtering", () => {
       expect(result.bookmarks.length).toBe(0);
     });
 
-    it("should be case-sensitive for tag names", () => {
+    it("should match tag names case-insensitively", () => {
       const result = listBookmarks(db, userId, { tags: "A" });
-      // Should not match "a" if tags are case-sensitive
-      expect(result.bookmarks.length).toBe(0);
+      // "A" should match bookmarks with tag "a" (case-insensitive)
+      expect(result.bookmarks.length).toBeGreaterThan(0);
+      const titles = result.bookmarks.map((b) => b.title);
+      expect(titles).toContain("Only A");
     });
   });
 

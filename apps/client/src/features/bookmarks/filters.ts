@@ -20,16 +20,14 @@ function getActiveFilterCount(): number {
     count += state.filterConfig.tags.length;
   }
 
-  // Count search term
+  // Count search once (main box and filterConfig.search are synced)
   const searchInput = document.getElementById(
     "search-input",
   ) as HTMLInputElement;
-  if (searchInput && searchInput.value.trim()) {
-    count += 1;
-  }
-
-  // Count persistent search
-  if (state.filterConfig.search) {
+  const hasSearch =
+    (searchInput && searchInput.value.trim()) ||
+    (state.filterConfig.search && state.filterConfig.search.trim());
+  if (hasSearch) {
     count += 1;
   }
 
@@ -891,9 +889,11 @@ function renderDropdownActiveFilters(): void {
   const tags = state.filterConfig.tags || [];
   const folderId = state.currentFolder;
   const collectionId = state.currentCollection;
-  const searchTerm = (
-    document.getElementById("search-input") as HTMLInputElement
-  )?.value?.trim();
+  const searchTerm =
+    state.filterConfig.search?.trim() ||
+    (
+      document.getElementById("search-input") as HTMLInputElement
+    )?.value?.trim();
 
   const activeItems: any[] = [];
 
@@ -922,14 +922,6 @@ function renderDropdownActiveFilters(): void {
       type: "search",
       label: `Search: ${searchTerm}`,
       id: "search",
-    });
-  }
-
-  if (state.filterConfig.search) {
-    activeItems.push({
-      type: "persistent-search",
-      label: `Search: ${state.filterConfig.search}`,
-      id: "persistent-search",
     });
   }
 
@@ -985,12 +977,14 @@ function renderDropdownActiveFilters(): void {
         const newTags = state.filterConfig.tags.filter((t) => t !== id);
         state.setFilterConfig({ ...state.filterConfig, tags: newTags });
       } else if (type === "search") {
+        state.setFilterConfig({
+          ...state.filterConfig,
+          search: undefined,
+        });
         const searchInput = document.getElementById(
           "search-input",
         ) as HTMLInputElement;
         if (searchInput) searchInput.value = "";
-      } else if (type === "persistent-search") {
-        state.setFilterConfig({ ...state.filterConfig, search: undefined });
         const filterSearchInput = document.getElementById(
           "filter-search-input",
         ) as HTMLInputElement;

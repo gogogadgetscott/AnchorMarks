@@ -271,13 +271,18 @@ export function renderBookmarks(): void {
     // Server already filters by is_archived=0 for non-archived views
     // Client-side filtering for search and tags (if not bypassed by server)
 
+    // When server was given a search param (all/folder/collection), it already filtered; don't re-apply
+    // client-side (avoids mismatch: server uses multi-word AND, client was using full-string includes).
     const searchSource =
       state.filterConfig.search ??
       ((searchInput as HTMLInputElement)?.value || "");
-    const searchTerm = searchSource.toLowerCase();
+    const searchTerm = searchSource.trim().toLowerCase();
     filtered = [...state.bookmarks];
 
-    if (searchTerm) {
+    const serverAlreadyFilteredSearch =
+      state.filterConfig.search?.trim() &&
+      ["all", "folder", "collection"].includes(state.currentView);
+    if (searchTerm && !serverAlreadyFilteredSearch) {
       filtered = filtered.filter(
         (b) =>
           b.title.toLowerCase().includes(searchTerm) ||
