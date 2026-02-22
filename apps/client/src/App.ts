@@ -45,20 +45,12 @@ import {
 // Import tag input
 import { initTagInput } from "@features/bookmarks/tag-input.ts";
 
-// Import Smart Organization UI
-import SmartOrg from "@features/bookmarks/smart-organization-ui.ts";
+
 
 // ============================================================
-// New Modular UI Listeners
+// New Modular UI Listeners (Moved to dynamic imports)
 // ============================================================
-import { handleKeyboard } from "@features/keyboard/handler.ts";
-import { initNavigationListeners } from "@features/ui/navigation.ts";
-import { initFormListeners } from "@features/ui/forms.ts";
-import { initOmnibarListeners } from "@features/ui/omnibar.ts";
-import { initInteractions } from "@features/ui/interactions.ts";
-import { initTagListeners } from "@features/ui/tags.ts";
-import { confirmDialog } from "@features/ui/confirm-dialog.ts";
-import { initMaintenance } from "@features/maintenance.ts";
+// Moved to dynamic imports in DOMContentLoaded or as-needed
 
 /**
  * Set view mode (grid / list / compact)
@@ -225,6 +217,7 @@ export async function updateHeaderContent(): Promise<void> {
  * API Key functions
  */
 export async function regenerateApiKey(): Promise<void> {
+  const { confirmDialog } = await import("@features/ui/confirm-dialog.ts");
   if (
     !(await confirmDialog("Regenerate API key? Old keys will stop working.", {
       title: "Regenerate API Key",
@@ -255,6 +248,7 @@ export function copyApiKey(): void {
  * Reset all bookmarks to default
  */
 export async function resetBookmarks(): Promise<void> {
+  const { confirmDialog } = await import("@features/ui/confirm-dialog.ts");
   if (
     !(await confirmDialog("Reset all bookmarks? This cannot be undone!", {
       title: "Reset Bookmarks",
@@ -377,21 +371,39 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadSettings();
     showMainApp();
     await initializeApp();
-    SmartOrg.init();
+    // Dynamically load Smart Organization
+    import("@features/bookmarks/smart-organization-ui.ts").then((mod) => mod.default.init());
     initTagInput();
+    // Dynamically load Maintenance
+    import("@features/maintenance.ts").then(({ initMaintenance }) => initMaintenance());
   }
 
   // Initialize modular listeners
+  const [
+    { initNavigationListeners },
+    { initFormListeners },
+    { initInteractions },
+    { initTagListeners },
+    { handleKeyboard },
+  ] = await Promise.all([
+    import("@features/ui/navigation.ts"),
+    import("@features/ui/forms.ts"),
+    import("@features/ui/interactions.ts"),
+    import("@features/ui/tags.ts"),
+    import("@features/keyboard/handler.ts"),
+  ]);
+
   initNavigationListeners();
   initFormListeners();
+
   // Only call initOmnibarListeners here if NOT authenticated, since
   // updateHeaderContent() already attaches listeners when authenticated
   if (!isAuthed) {
+    const { initOmnibarListeners } = await import("@features/ui/omnibar.ts");
     initOmnibarListeners();
   }
   initInteractions();
   initTagListeners();
-  initMaintenance();
 
   // Global keyboard shortcuts with cleanup support
   const { registerGlobalCleanup } = await import("@utils/event-cleanup.ts");

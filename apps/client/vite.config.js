@@ -92,30 +92,52 @@ export default defineConfig({
       },
       output: {
         manualChunks: {
-          auth: ["src/features/auth/auth.js"],
+          auth: ["src/features/auth/auth.ts"],
           bookmarks: [
-            "src/features/bookmarks/bookmarks.js",
-            "src/features/bookmarks/folders.js",
-            "src/features/bookmarks/search.js",
-            "src/features/bookmarks/bulk-ops.js",
+            "src/features/bookmarks/bookmarks.ts",
+            "src/features/bookmarks/folders.ts",
+            "src/features/bookmarks/search.ts",
+            "src/features/bookmarks/bulk-ops.ts",
+            "src/features/bookmarks/filters.ts",
+            "src/features/bookmarks/tag-input.ts",
           ],
-          dashboard: ["src/features/bookmarks/dashboard.js"],
-          commands: ["src/features/bookmarks/commands.js"],
-          extras: [
-            "src/features/bookmarks/import-export.js",
-            "src/features/bookmarks/tour.js",
-            "src/features/bookmarks/widget-picker.js",
+          dashboard: ["src/features/bookmarks/dashboard.ts"],
+          commands: ["src/features/bookmarks/commands.ts"],
+          features: [
+            "src/features/keyboard/handler.ts",
+            "src/features/ui/navigation.ts",
+            "src/features/ui/forms.ts",
+            "src/features/ui/omnibar.ts",
+            "src/features/ui/interactions.ts",
+            "src/features/ui/tags.ts",
+            "src/features/ui/confirm-dialog.ts",
+            "src/features/maintenance.ts",
+          ],
+          utils: [
+            "src/utils/index.ts",
+            "src/utils/logger.ts",
+            "src/utils/error-handler.ts",
+            "src/utils/event-cleanup.ts",
+            "src/utils/keyboard-shortcuts.ts",
+          ],
+          plugins: [
+            "src/features/bookmarks/import-export.ts",
+            "src/features/bookmarks/tour.ts",
+            "src/features/bookmarks/widget-picker.ts",
+            "src/features/bookmarks/smart-organization-ui.ts",
+            "src/features/bookmarks/tag-cloud.ts",
           ],
           ui: [
-            "src/utils/ui-helpers.js",
-            "src/layouts/loader.js",
-            "src/components/index.js",
+            "src/utils/ui-helpers.ts",
+            "src/layouts/loader.ts",
+            "src/components/index.ts",
           ],
         },
       },
     },
     // Generate source maps for easier debugging
     sourcemap: true,
+    reportCompressedSize: true,
   },
   server: {
     host: "0.0.0.0",
@@ -123,15 +145,15 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: process.env.CORS_ORIGIN
       ? process.env.CORS_ORIGIN.split(",")
-          .map((h) => h.replace(/^https?:\/\/|[\/]$/g, "").trim())
-          .filter(Boolean)
+        .map((h) => h.replace(/^https?:\/\/|[\/]$/g, "").trim())
+        .filter(Boolean)
       : [],
     // Enable HTTPS when SSL certificates are available
     https: SSL_ENABLED
       ? {
-          key: fs.readFileSync(resolvedKeyPath),
-          cert: fs.readFileSync(resolvedCertPath),
-        }
+        key: fs.readFileSync(resolvedKeyPath),
+        cert: fs.readFileSync(resolvedCertPath),
+      }
       : false,
     // Proxy API requests to Express backend
     proxy: {
