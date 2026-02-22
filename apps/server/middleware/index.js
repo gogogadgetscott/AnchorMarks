@@ -121,7 +121,7 @@ function setupMiddleware(app, { config, validateCsrfTokenMiddleware }) {
 
   // Apply CSRF validation to state-changing operations (skip auth endpoints)
   app.use("/api", (req, res, next) => {
-    const unauthenticatedPaths = ["/auth/login", "/auth/register", "/health"];
+    const unauthenticatedPaths = ["/health"];
 
     if (
       unauthenticatedPaths.some((p) => req.url === p || req.url.startsWith(p))

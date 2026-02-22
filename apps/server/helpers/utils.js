@@ -49,8 +49,8 @@ async function fetchFavicon(url, bookmarkId, db, FAVICONS_DIR, NODE_ENV) {
     const urlObj = new URL(url);
     if (!["http:", "https:"].includes(urlObj.protocol)) return null;
 
-    // Block private/loopback targets in production to avoid SSRF
-    if (NODE_ENV === "production" && (await isPrivateAddress(url))) {
+    // Block private/loopback targets to avoid SSRF
+    if (await isPrivateAddress(url)) {
       return null;
     }
     const domain = urlObj.hostname;

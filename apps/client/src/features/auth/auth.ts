@@ -131,9 +131,22 @@ export function showMainApp(): void {
   if (mainApp) mainApp.classList.remove("hidden");
 }
 
+// Prefetch CSRF Token
+export async function prefetchCsrf(): Promise<void> {
+  if (!state.csrfToken) {
+    try {
+      const data = await api<{ csrfToken: string }>("/auth/csrf");
+      state.setCsrfToken(data.csrfToken);
+    } catch (e) {
+      logger.error("Failed to prefetch CSRF token", e);
+    }
+  }
+}
+
 // Login
 export async function login(email: string, password: string): Promise<boolean> {
   try {
+    await prefetchCsrf();
     const data = await api<{
       csrfToken: string;
       user: User;
@@ -163,6 +176,7 @@ export async function register(
   password: string,
 ): Promise<boolean> {
   try {
+    await prefetchCsrf();
     const data = await api<{
       csrfToken: string;
       user: User;

@@ -50,7 +50,8 @@ function resolveCorsOrigin() {
     .filter(Boolean);
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || DEFAULT_JWT_SECRET;
+const crypto = require("crypto");
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
 const DB_PATH =
   process.env.DB_PATH || path.join(__dirname, "../../database/anchormarks.db");
 const ENABLE_BACKGROUND_JOBS = NODE_ENV !== "test";
