@@ -752,6 +752,7 @@ For more information, see:
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Development guidelines
 - [SECURITY.md](SECURITY.md) - Security best practices
 - [ROADMAP.md](ROADMAP.md) - Planned features
+- [PROGRESS.md](PROGRESS.md) - Recent work log
 
 ### Note: Flexible user settings (settings_json)
 

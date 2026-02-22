@@ -57,6 +57,7 @@ function setupAuthRoutes(
   app,
   db,
   authenticateToken,
+  validateCsrfTokenMiddleware,
   fetchFavicon,
   securityAudit = null,
 ) {
@@ -336,20 +337,25 @@ function setupAuthRoutes(
    *         description: Logout successful
    */
   // Logout
-  app.post("/api/auth/logout", authenticateToken, (req, res) => {
-    audit.logout(req.user.id, req);
-    res.clearCookie("token");
-    res.clearCookie("csrfToken");
-    // Rotate CSRF token after logout for extra safety
-    const csrfToken = generateCsrfToken();
-    res.cookie("csrfToken", csrfToken, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
-    res.json({ success: true, csrfToken });
-  });
+  app.post(
+    "/api/auth/logout",
+    authenticateToken,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      audit.logout(req.user.id, req);
+      res.clearCookie("token");
+      res.clearCookie("csrfToken");
+      // Rotate CSRF token after logout for extra safety
+      const csrfToken = generateCsrfToken();
+      res.cookie("csrfToken", csrfToken, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+      res.json({ success: true, csrfToken });
+    },
+  );
 
   /**
    * @swagger
@@ -366,33 +372,38 @@ function setupAuthRoutes(
    *         description: Unauthorized
    */
   // Delete account
-  app.delete("/api/auth/me", authenticateToken, (req, res) => {
-    try {
-      const userId = req.user.id;
+  app.delete(
+    "/api/auth/me",
+    authenticateToken,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      try {
+        const userId = req.user.id;
 
-      // Delete from security audit log
-      db.prepare("DELETE FROM security_audit_log WHERE user_id = ?").run(
-        userId,
-      );
+        // Delete from security audit log
+        db.prepare("DELETE FROM security_audit_log WHERE user_id = ?").run(
+          userId,
+        );
 
-      // Delete user (cascades to all other tables)
-      const result = db.prepare("DELETE FROM users WHERE id = ?").run(userId);
+        // Delete user (cascades to all other tables)
+        const result = db.prepare("DELETE FROM users WHERE id = ?").run(userId);
 
-      if (result.changes === 0) {
-        return res.status(404).json({ error: "User not found" });
+        if (result.changes === 0) {
+          return res.status(404).json({ error: "User not found" });
+        }
+
+        res.clearCookie("token");
+        res.clearCookie("csrfToken");
+        res.json({
+          success: true,
+          message: "Account and data deleted successfully",
+        });
+      } catch (err) {
+        console.error("Delete account error:", err);
+        res.status(500).json({ error: "Failed to delete account" });
       }
-
-      res.clearCookie("token");
-      res.clearCookie("csrfToken");
-      res.json({
-        success: true,
-        message: "Account and data deleted successfully",
-      });
-    } catch (err) {
-      console.error("Delete account error:", err);
-      res.status(500).json({ error: "Failed to delete account" });
-    }
-  });
+    },
+  );
 
   /**
    * @swagger
@@ -414,15 +425,20 @@ function setupAuthRoutes(
    *                   type: string
    */
   // Regenerate API key
-  app.post("/api/auth/regenerate-key", authenticateToken, (req, res) => {
-    const newApiKey = "lv_" + uuidv4().replace(/-/g, "");
-    db.prepare("UPDATE users SET api_key = ? WHERE id = ?").run(
-      newApiKey,
-      req.user.id,
-    );
-    audit.apiKeyRegenerate(req.user.id, req);
-    res.json({ api_key: newApiKey });
-  });
+  app.post(
+    "/api/auth/regenerate-key",
+    authenticateToken,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      const newApiKey = "lv_" + uuidv4().replace(/-/g, "");
+      db.prepare("UPDATE users SET api_key = ? WHERE id = ?").run(
+        newApiKey,
+        req.user.id,
+      );
+      audit.apiKeyRegenerate(req.user.id, req);
+      res.json({ api_key: newApiKey });
+    },
+  );
 
   /**
    * @swagger
@@ -448,26 +464,32 @@ function setupAuthRoutes(
    *         description: Email already in use
    */
   // Update profile
-  app.put("/api/auth/profile", authenticateToken, (req, res) => {
-    try {
-      const { email } = req.body;
-      if (!email) return res.status(400).json({ error: "Email is required" });
+  app.put(
+    "/api/auth/profile",
+    authenticateToken,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      try {
+        const { email } = req.body;
+        if (!email)
+          return res.status(400).json({ error: "Email is required" });
 
-      const existing = db
-        .prepare("SELECT id FROM users WHERE email = ? AND id != ?")
-        .get(email.toLowerCase(), req.user.id);
-      if (existing)
-        return res.status(400).json({ error: "Email already in use" });
+        const existing = db
+          .prepare("SELECT id FROM users WHERE email = ? AND id != ?")
+          .get(email.toLowerCase(), req.user.id);
+        if (existing)
+          return res.status(400).json({ error: "Email already in use" });
 
-      db.prepare(
-        "UPDATE users SET email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-      ).run(email.toLowerCase(), req.user.id);
-      res.json({ success: true, email: email.toLowerCase() });
-    } catch (err) {
-      console.error("Update profile error:", err);
-      res.status(500).json({ error: "Failed to update profile" });
-    }
-  });
+        db.prepare(
+          "UPDATE users SET email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        ).run(email.toLowerCase(), req.user.id);
+        res.json({ success: true, email: email.toLowerCase() });
+      } catch (err) {
+        console.error("Update profile error:", err);
+        res.status(500).json({ error: "Failed to update profile" });
+      }
+    },
+  );
 
   /**
    * @swagger
@@ -497,47 +519,52 @@ function setupAuthRoutes(
    *         description: Incorrect current password or invalid new password
    */
   // Change password
-  app.put("/api/auth/password", authenticateToken, async (req, res) => {
-    try {
-      const { currentPassword, newPassword } = req.body;
-      if (!currentPassword || !newPassword)
-        return res
-          .status(400)
-          .json({ error: "Both current and new passwords are required" });
-      if (newPassword.length < 6)
-        return res
-          .status(400)
-          .json({ error: "New password must be at least 6 characters" });
+  app.put(
+    "/api/auth/password",
+    authenticateToken,
+    validateCsrfTokenMiddleware,
+    async (req, res) => {
+      try {
+        const { currentPassword, newPassword } = req.body;
+        if (!currentPassword || !newPassword)
+          return res
+            .status(400)
+            .json({ error: "Both current and new passwords are required" });
+        if (newPassword.length < 6)
+          return res
+            .status(400)
+            .json({ error: "New password must be at least 6 characters" });
 
-      const user = db
-        .prepare("SELECT password FROM users WHERE id = ?")
-        .get(req.user.id);
-      const validPassword = await bcrypt.compare(
-        currentPassword,
-        user.password,
-      );
-      if (!validPassword)
-        return res.status(400).json({ error: "Incorrect current password" });
+        const user = db
+          .prepare("SELECT password FROM users WHERE id = ?")
+          .get(req.user.id);
+        const validPassword = await bcrypt.compare(
+          currentPassword,
+          user.password,
+        );
+        if (!validPassword)
+          return res.status(400).json({ error: "Incorrect current password" });
 
-      const hashedPassword = await bcrypt.hash(newPassword, 12);
-      db.prepare(
-        "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-      ).run(hashedPassword, req.user.id);
-      audit.passwordChange(req.user.id, req);
-      // Rotate CSRF token after password change
-      const csrfToken = generateCsrfToken();
-      res.cookie("csrfToken", csrfToken, {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-      });
-      res.json({ success: true, csrfToken });
-    } catch (err) {
-      console.error("Change password error:", err);
-      res.status(500).json({ error: "Failed to change password" });
-    }
-  });
+        const hashedPassword = await bcrypt.hash(newPassword, 12);
+        db.prepare(
+          "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        ).run(hashedPassword, req.user.id);
+        audit.passwordChange(req.user.id, req);
+        // Rotate CSRF token after password change
+        const csrfToken = generateCsrfToken();
+        res.cookie("csrfToken", csrfToken, {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+        });
+        res.json({ success: true, csrfToken });
+      } catch (err) {
+        console.error("Change password error:", err);
+        res.status(500).json({ error: "Failed to change password" });
+      }
+    },
+  );
 }
 
 module.exports = { setupAuthRoutes, createExampleBookmarks };

@@ -1,5 +1,6 @@
 const https = require("https");
 const http = require("http");
+const { isPrivateAddress } = require("../helpers/utils");
 
 function getStats(db, userId) {
   const bookmarkCount = db
@@ -218,6 +219,33 @@ async function runDeadlinkChecks(db, userId, limit = 50) {
   for (const bookmark of checkList) {
     try {
       const urlObj = new URL(bookmark.url);
+      if (!["http:", "https:"].includes(urlObj.protocol)) {
+        db.prepare(
+          "UPDATE bookmarks SET last_checked = CURRENT_TIMESTAMP WHERE id = ?",
+        ).run(bookmark.id);
+        results.push({
+          id: bookmark.id,
+          url: bookmark.url,
+          title: bookmark.title,
+          error: "Invalid URL protocol",
+        });
+        continue;
+      }
+      if (
+        process.env.NODE_ENV === "production" &&
+        (await isPrivateAddress(bookmark.url))
+      ) {
+        db.prepare(
+          "UPDATE bookmarks SET last_checked = CURRENT_TIMESTAMP WHERE id = ?",
+        ).run(bookmark.id);
+        results.push({
+          id: bookmark.id,
+          url: bookmark.url,
+          title: bookmark.title,
+          error: "Private networks not allowed",
+        });
+        continue;
+      }
       const protocol = urlObj.protocol === "https:" ? https : http;
 
       const isDead = await new Promise((resolve) => {

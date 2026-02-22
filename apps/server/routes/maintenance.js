@@ -3,6 +3,7 @@ const router = express.Router();
 const https = require("https");
 const http = require("http");
 const { URL } = require("url");
+const { isPrivateAddress } = require("../helpers/utils");
 
 module.exports = function (
   db,
@@ -44,6 +45,17 @@ module.exports = function (
 
       try {
         const parsedUrl = new URL(url);
+        if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+          return res.status(400).json({ error: "Invalid URL protocol" });
+        }
+        if (
+          process.env.NODE_ENV === "production" &&
+          (await isPrivateAddress(url))
+        ) {
+          return res
+            .status(403)
+            .json({ error: "Private networks not allowed" });
+        }
         const protocol = parsedUrl.protocol === "https:" ? https : http;
 
         const reqUrl = protocol.request(

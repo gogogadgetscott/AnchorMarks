@@ -6,6 +6,7 @@
 const path = require("path");
 const fs = require("fs");
 const config = require("../config");
+const { isPrivateAddress } = require("./utils");
 
 let browser = null;
 let browserInitializing = false;
@@ -82,6 +83,24 @@ async function getBrowser() {
 async function captureScreenshot(url, bookmarkId) {
   if (!config.THUMBNAIL_ENABLED) {
     return { success: false, error: "Thumbnail generation is disabled" };
+  }
+
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(url);
+  } catch {
+    return { success: false, error: "Invalid URL" };
+  }
+
+  if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+    return { success: false, error: "Invalid URL protocol" };
+  }
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    (await isPrivateAddress(url))
+  ) {
+    return { success: false, error: "Private networks not allowed" };
   }
 
   const thumbnailPath = path.join(THUMBNAILS_DIR, `${bookmarkId}.webp`);

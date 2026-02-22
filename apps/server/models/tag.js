@@ -37,7 +37,12 @@ function updateTag(db, id, userId, fields) {
 }
 
 function deleteTag(db, id, userId) {
-  db.prepare("DELETE FROM bookmark_tags WHERE tag_id = ?").run(id);
+  db.prepare(
+    `
+    DELETE FROM bookmark_tags
+    WHERE tag_id IN (SELECT id FROM tags WHERE id = ? AND user_id = ?)
+  `,
+  ).run(id, userId);
   return db
     .prepare("DELETE FROM tags WHERE id = ? AND user_id = ?")
     .run(id, userId);

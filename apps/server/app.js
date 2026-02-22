@@ -286,6 +286,7 @@ setupAuthRoutes(
   app,
   db,
   authenticateTokenMiddleware,
+  validateCsrfTokenMiddleware,
   fetchFaviconWrapper,
   securityAudit,
 );
