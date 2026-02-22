@@ -1,7 +1,46 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
-const { JWT_SECRET } = require("../config");
+const {
+  JWT_SECRET,
+  JWT_ACCESS_EXPIRY,
+  JWT_REFRESH_EXPIRY,
+} = require("../config");
+
+function expiryToMs(expiry) {
+  const s = String(expiry);
+  const n = parseInt(s, 10);
+  if (s.endsWith("d")) return n * 24 * 60 * 60 * 1000;
+  if (s.endsWith("h")) return n * 60 * 60 * 1000;
+  if (s.endsWith("m")) return n * 60 * 1000;
+  if (s.endsWith("s")) return n * 1000;
+  return 7 * 24 * 60 * 60 * 1000;
+}
+
+function setTokenCookies(res, accessToken, refreshToken, csrfToken) {
+  const isProd = process.env.NODE_ENV === "production";
+  const cookieOpts = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "Strict" : "Lax",
+    path: "/",
+  };
+  res.cookie("token", accessToken, {
+    ...cookieOpts,
+    maxAge: expiryToMs(JWT_ACCESS_EXPIRY),
+  });
+  res.cookie("refreshToken", refreshToken, {
+    ...cookieOpts,
+    maxAge: expiryToMs(JWT_REFRESH_EXPIRY),
+  });
+  res.cookie("csrfToken", csrfToken, {
+    httpOnly: false,
+    secure: isProd,
+    sameSite: isProd ? "Strict" : "Lax",
+    maxAge: expiryToMs(JWT_REFRESH_EXPIRY),
+    path: "/",
+  });
+}
 const {
   ensureTagsExist,
   updateBookmarkTags,
@@ -52,6 +91,8 @@ function createExampleBookmarks(db, userId, folderId = null, fetchFavicon) {
 
   return created;
 }
+
+const { validateBody, schemas } = require("../validation");
 
 function setupAuthRoutes(
   app,
@@ -128,84 +169,80 @@ function setupAuthRoutes(
    *         description: Invalid input or user already exists
    */
   // Register
-  app.post("/api/auth/register", async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      const normalizedEmail = (email || "").trim().toLowerCase();
+  app.post(
+    "/api/auth/register",
+    validateBody(schemas.authRegister),
+    async (req, res) => {
+      try {
+        const { email, password } = req.validated;
+        const normalizedEmail = (email || "").trim().toLowerCase();
 
-      if (!normalizedEmail || !password)
-        return res.status(400).json({ error: "All fields are required" });
-      if (password.length < 6)
-        return res
-          .status(400)
-          .json({ error: "Password must be at least 6 characters" });
+        const existingUser = db
+          .prepare("SELECT * FROM users WHERE email = ?")
+          .get(normalizedEmail);
+        if (existingUser)
+          return res.status(400).json({ error: "User already exists" });
 
-      const existingUser = db
-        .prepare("SELECT * FROM users WHERE email = ?")
-        .get(normalizedEmail);
-      if (existingUser)
-        return res.status(400).json({ error: "User already exists" });
+        const hashedPassword = await bcrypt.hash(password, 12);
+        const userId = uuidv4();
+        const apiKey = "lv_" + uuidv4().replace(/-/g, "");
 
-      const hashedPassword = await bcrypt.hash(password, 12);
-      const userId = uuidv4();
-      const apiKey = "lv_" + uuidv4().replace(/-/g, "");
+        db.prepare(
+          "INSERT INTO users (id, email, password, api_key) VALUES (?, ?, ?, ?)",
+        ).run(userId, normalizedEmail, hashedPassword, apiKey);
 
-      db.prepare(
-        "INSERT INTO users (id, email, password, api_key) VALUES (?, ?, ?, ?)",
-      ).run(userId, normalizedEmail, hashedPassword, apiKey);
+        const defaultFolderId = uuidv4();
+        db.prepare(
+          "INSERT INTO folders (id, user_id, name, color, icon) VALUES (?, ?, ?, ?, ?)",
+        ).run(
+          defaultFolderId,
+          userId,
+          STARTER_FOLDER.name,
+          STARTER_FOLDER.color,
+          STARTER_FOLDER.icon,
+        );
 
-      const defaultFolderId = uuidv4();
-      db.prepare(
-        "INSERT INTO folders (id, user_id, name, color, icon) VALUES (?, ?, ?, ?, ?)",
-      ).run(
-        defaultFolderId,
-        userId,
-        STARTER_FOLDER.name,
-        STARTER_FOLDER.color,
-        STARTER_FOLDER.icon,
-      );
+        createExampleBookmarks(db, userId, defaultFolderId, fetchFavicon);
 
-      createExampleBookmarks(db, userId, defaultFolderId, fetchFavicon);
+        const refreshJti = uuidv4();
+        const accessToken = jwt.sign({ userId }, JWT_SECRET, {
+          expiresIn: JWT_ACCESS_EXPIRY,
+        });
+        const refreshToken = jwt.sign({ userId, jti: refreshJti }, JWT_SECRET, {
+          expiresIn: JWT_REFRESH_EXPIRY,
+        });
+        const csrfToken = generateCsrfToken();
+        const refreshExpiresAt = new Date(
+          Date.now() + expiryToMs(JWT_REFRESH_EXPIRY),
+        ).toISOString();
+        db.prepare(
+          "INSERT INTO refresh_tokens (id, user_id, expires_at) VALUES (?, ?, ?)",
+        ).run(refreshJti, userId, refreshExpiresAt);
 
-      const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: "30d" });
-      const csrfToken = generateCsrfToken();
+        setTokenCookies(res, accessToken, refreshToken, csrfToken);
 
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        path: "/",
-      });
-      res.cookie("csrfToken", csrfToken, {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        path: "/",
-      });
+        // Log successful registration
+        audit.register(userId, req, { email: normalizedEmail });
 
-      // Log successful registration
-      audit.register(userId, req, { email: normalizedEmail });
-
-      res.json({
-        user: {
-          id: userId,
-          username: email, // use email as username
-          email,
-          role: "user",
-          api_key: apiKey,
-        },
-        csrfToken,
-      });
-    } catch (err) {
-      if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
-        return res.status(400).json({ error: "User already exists" });
+        res.json({
+          user: {
+            id: userId,
+            username: email, // use email as username
+            email,
+            role: "user",
+            api_key: apiKey,
+          },
+          csrfToken,
+        });
+      } catch (err) {
+        if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
+          return res.status(400).json({ error: "User already exists" });
+        }
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
       }
-      console.error(err);
-      res.status(500).json({ error: "Server error" });
-    }
-  });
+    },
+  );
 
   /**
    * @swagger
@@ -232,69 +269,72 @@ function setupAuthRoutes(
    *         description: Invalid credentials
    */
   // Login
-  app.post("/api/auth/login", async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      const normalizedEmail = (email || "").trim().toLowerCase();
+  app.post(
+    "/api/auth/login",
+    validateBody(schemas.authLogin),
+    async (req, res) => {
+      try {
+        const { email, password } = req.validated;
+        const normalizedEmail = (email || "").trim().toLowerCase();
 
-      const user = db
-        .prepare("SELECT * FROM users WHERE email = ?")
-        .get(normalizedEmail);
-      if (!user) {
-        audit.loginFailure(null, req, {
-          email: normalizedEmail,
-          reason: "user_not_found",
+        const user = db
+          .prepare("SELECT * FROM users WHERE email = ?")
+          .get(normalizedEmail);
+        if (!user) {
+          audit.loginFailure(null, req, {
+            email: normalizedEmail,
+            reason: "user_not_found",
+          });
+          return res.status(400).json({ error: "Invalid credentials" });
+        }
+
+        const validPassword = await bcrypt.compare(password, user.password);
+        if (!validPassword) {
+          audit.loginFailure(user.id, req, {
+            email: normalizedEmail,
+            reason: "invalid_password",
+          });
+          return res.status(400).json({ error: "Invalid credentials" });
+        }
+
+        const refreshJti = uuidv4();
+        const accessToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
+          expiresIn: JWT_ACCESS_EXPIRY,
         });
-        return res.status(400).json({ error: "Invalid credentials" });
-      }
+        const refreshToken = jwt.sign(
+          { userId: user.id, jti: refreshJti },
+          JWT_SECRET,
+          { expiresIn: JWT_REFRESH_EXPIRY },
+        );
+        const csrfToken = generateCsrfToken();
+        const refreshExpiresAt = new Date(
+          Date.now() + expiryToMs(JWT_REFRESH_EXPIRY),
+        ).toISOString();
+        db.prepare(
+          "INSERT INTO refresh_tokens (id, user_id, expires_at) VALUES (?, ?, ?)",
+        ).run(refreshJti, user.id, refreshExpiresAt);
 
-      const validPassword = await bcrypt.compare(password, user.password);
-      if (!validPassword) {
-        audit.loginFailure(user.id, req, {
-          email: normalizedEmail,
-          reason: "invalid_password",
+        setTokenCookies(res, accessToken, refreshToken, csrfToken);
+
+        // Log successful login
+        audit.loginSuccess(user.id, req, { email: user.email });
+
+        res.json({
+          user: {
+            id: user.id,
+            username: user.email, // use email as username
+            email: user.email,
+            role: user.role || "user",
+            api_key: user.api_key,
+          },
+          csrfToken,
         });
-        return res.status(400).json({ error: "Invalid credentials" });
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
       }
-
-      const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
-        expiresIn: "30d",
-      });
-      const csrfToken = generateCsrfToken();
-
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        path: "/",
-      });
-      res.cookie("csrfToken", csrfToken, {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        path: "/",
-      });
-
-      // Log successful login
-      audit.loginSuccess(user.id, req, { email: user.email });
-
-      res.json({
-        user: {
-          id: user.id,
-          username: user.email, // use email as username
-          email: user.email,
-          role: user.role || "user",
-          api_key: user.api_key,
-        },
-        csrfToken,
-      });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: "Server error" });
-    }
-  });
+    },
+  );
 
   /**
    * @swagger
@@ -336,6 +376,110 @@ function setupAuthRoutes(
    *       200:
    *         description: Logout successful
    */
+  /**
+   * @swagger
+   * /auth/refresh:
+   *   post:
+   *     summary: Rotate tokens using refresh token (no auth required)
+   *     tags: [Auth]
+   *     description: Accepts refresh token from cookie; issues new access + refresh and invalidates the old refresh (rotation).
+   *     responses:
+   *       200:
+   *         description: New tokens issued
+   *       401:
+   *         description: Refresh token missing, invalid, or already used
+   */
+  app.post("/api/auth/refresh", (req, res) => {
+    try {
+      db.prepare("DELETE FROM refresh_tokens WHERE expires_at < ?").run(
+        new Date().toISOString(),
+      );
+      const refreshToken = req.cookies.refreshToken;
+      if (!refreshToken) {
+        res.clearCookie("token");
+        res.clearCookie("refreshToken");
+        res.clearCookie("csrfToken");
+        return res.status(401).json({ error: "Refresh token required" });
+      }
+      const decoded = jwt.verify(refreshToken, JWT_SECRET);
+      const { userId, jti } = decoded;
+      if (!userId || !jti) {
+        res.clearCookie("token");
+        res.clearCookie("refreshToken");
+        res.clearCookie("csrfToken");
+        return res.status(401).json({ error: "Invalid refresh token" });
+      }
+      const row = db
+        .prepare(
+          "SELECT id, user_id, expires_at FROM refresh_tokens WHERE id = ?",
+        )
+        .get(jti);
+      const now = new Date().toISOString();
+      if (!row || row.expires_at < now) {
+        if (row) db.prepare("DELETE FROM refresh_tokens WHERE id = ?").run(jti);
+        res.clearCookie("token");
+        res.clearCookie("refreshToken");
+        res.clearCookie("csrfToken");
+        return res
+          .status(401)
+          .json({ error: "Refresh token expired or revoked" });
+      }
+      db.prepare("DELETE FROM refresh_tokens WHERE id = ?").run(jti);
+
+      const user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
+      if (!user) {
+        res.clearCookie("token");
+        res.clearCookie("refreshToken");
+        res.clearCookie("csrfToken");
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      const newRefreshJti = uuidv4();
+      const accessToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
+        expiresIn: JWT_ACCESS_EXPIRY,
+      });
+      const newRefreshToken = jwt.sign(
+        { userId: user.id, jti: newRefreshJti },
+        JWT_SECRET,
+        { expiresIn: JWT_REFRESH_EXPIRY },
+      );
+      const csrfToken = generateCsrfToken();
+      const refreshExpiresAt = new Date(
+        Date.now() + expiryToMs(JWT_REFRESH_EXPIRY),
+      ).toISOString();
+      db.prepare(
+        "INSERT INTO refresh_tokens (id, user_id, expires_at) VALUES (?, ?, ?)",
+      ).run(newRefreshJti, user.id, refreshExpiresAt);
+
+      setTokenCookies(res, accessToken, newRefreshToken, csrfToken);
+
+      res.json({
+        user: {
+          id: user.id,
+          username: user.email,
+          email: user.email,
+          role: user.role || "user",
+          api_key: user.api_key,
+        },
+        csrfToken,
+      });
+    } catch (err) {
+      if (
+        err.name === "TokenExpiredError" ||
+        err.name === "JsonWebTokenError"
+      ) {
+        res.clearCookie("token");
+        res.clearCookie("refreshToken");
+        res.clearCookie("csrfToken");
+        return res
+          .status(401)
+          .json({ error: "Refresh token invalid or expired" });
+      }
+      console.error("Refresh token error:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
   // Logout
   app.post(
     "/api/auth/logout",
@@ -343,15 +487,19 @@ function setupAuthRoutes(
     validateCsrfTokenMiddleware,
     (req, res) => {
       audit.logout(req.user.id, req);
+      db.prepare("DELETE FROM refresh_tokens WHERE user_id = ?").run(
+        req.user.id,
+      );
       res.clearCookie("token");
+      res.clearCookie("refreshToken");
       res.clearCookie("csrfToken");
-      // Rotate CSRF token after logout for extra safety
       const csrfToken = generateCsrfToken();
       res.cookie("csrfToken", csrfToken, {
         httpOnly: false,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
-        maxAge: 30 * 24 * 60 * 60 * 1000,
+        maxAge: expiryToMs(JWT_REFRESH_EXPIRY),
+        path: "/",
       });
       res.json({ success: true, csrfToken });
     },
@@ -393,6 +541,7 @@ function setupAuthRoutes(
         }
 
         res.clearCookie("token");
+        res.clearCookie("refreshToken");
         res.clearCookie("csrfToken");
         res.json({
           success: true,
@@ -468,10 +617,10 @@ function setupAuthRoutes(
     "/api/auth/profile",
     authenticateToken,
     validateCsrfTokenMiddleware,
+    validateBody(schemas.authProfile),
     (req, res) => {
       try {
-        const { email } = req.body;
-        if (!email) return res.status(400).json({ error: "Email is required" });
+        const { email } = req.validated;
 
         const existing = db
           .prepare("SELECT id FROM users WHERE email = ? AND id != ?")
@@ -522,17 +671,10 @@ function setupAuthRoutes(
     "/api/auth/password",
     authenticateToken,
     validateCsrfTokenMiddleware,
+    validateBody(schemas.authPassword),
     async (req, res) => {
       try {
-        const { currentPassword, newPassword } = req.body;
-        if (!currentPassword || !newPassword)
-          return res
-            .status(400)
-            .json({ error: "Both current and new passwords are required" });
-        if (newPassword.length < 6)
-          return res
-            .status(400)
-            .json({ error: "New password must be at least 6 characters" });
+        const { currentPassword, newPassword } = req.validated;
 
         const user = db
           .prepare("SELECT password FROM users WHERE id = ?")
@@ -548,14 +690,17 @@ function setupAuthRoutes(
         db.prepare(
           "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
         ).run(hashedPassword, req.user.id);
+        db.prepare("DELETE FROM refresh_tokens WHERE user_id = ?").run(
+          req.user.id,
+        );
         audit.passwordChange(req.user.id, req);
-        // Rotate CSRF token after password change
         const csrfToken = generateCsrfToken();
         res.cookie("csrfToken", csrfToken, {
           httpOnly: false,
           secure: process.env.NODE_ENV === "production",
           sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
-          maxAge: 30 * 24 * 60 * 60 * 1000,
+          maxAge: expiryToMs(JWT_REFRESH_EXPIRY),
+          path: "/",
         });
         res.json({ success: true, csrfToken });
       } catch (err) {

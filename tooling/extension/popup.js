@@ -182,7 +182,12 @@ async function pushBrowserBookmarks() {
       body: JSON.stringify({ bookmarks, folders }),
     });
 
-    statusText.textContent = `Pushed ${result.created} new, ${result.updated} updated`;
+    const skipped =
+      (result.bookmarks_skipped || 0) + (result.folders_skipped || 0);
+    statusText.textContent =
+      skipped > 0
+        ? `Pushed ${result.created} new, ${result.updated} updated (${skipped} skipped, server newer)`
+        : `Pushed ${result.created} new, ${result.updated} updated`;
     await syncBookmarks();
   } catch (err) {
     statusText.textContent = "Push failed: " + err.message;

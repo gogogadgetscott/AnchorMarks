@@ -3,20 +3,42 @@ const tagHelpers = require("../helpers/tag-helpers");
 const bookmarkModel = require("../models/bookmark");
 const smartCollectionsModel = require("../models/smartCollections");
 const statsModel = require("../models/stats");
+const { schemas } = require("../validation");
 
 function setupSmartOrganizationRoutes(
   app,
   db,
-  { authenticateTokenMiddleware, validateCsrfTokenMiddleware },
+  {
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    validateBody,
+    validateQuery,
+  },
 ) {
   app.get(
     "/api/tags/suggest-smart",
     authenticateTokenMiddleware,
+    ...(validateQuery ? [validateQuery(schemas.smartOrgSuggestQuery)] : []),
     (req, res) => {
-      const { url, limit = 10 } = req.query;
-      const include_domain = req.query.include_domain !== "false";
-      const include_activity = req.query.include_activity !== "false";
-      const include_similar = req.query.include_similar !== "false";
+      const q = req.validatedQuery || req.query;
+      const {
+        url,
+        limit = 10,
+        include_domain,
+        include_activity,
+        include_similar,
+        domain_weight,
+        activity_weight,
+        similarity_weight,
+      } = q;
+      const includeDomain = include_domain !== "false";
+      const includeActivity = include_activity !== "false";
+      const includeSimilar = include_similar !== "false";
+      const weights = {
+        domain: domain_weight ?? (includeDomain ? 0.35 : 0),
+        activity: activity_weight ?? (includeActivity ? 0.4 : 0),
+        similarity: similarity_weight ?? (includeSimilar ? 0.25 : 0),
+      };
 
       if (!url)
         return res.status(400).json({ error: "URL parameter required" });
@@ -33,7 +55,7 @@ function setupSmartOrganizationRoutes(
         const domainStats = smartOrg.getDomainStats(db, req.user.id, domain);
 
         const tagsToScore = new Set();
-        if (include_domain && categoryInfo.tags)
+        if (includeDomain && categoryInfo.tags)
           categoryInfo.tags.forEach((t) => tagsToScore.add(t));
 
         const userTags = tagHelpers
@@ -46,11 +68,7 @@ function setupSmartOrganizationRoutes(
 
         const suggestions = [];
         tagsToScore.forEach((tag) => {
-          const scores = smartOrg.calculateTagScore(db, req.user.id, url, tag, {
-            domain: include_domain ? 0.35 : 0,
-            activity: include_activity ? 0.4 : 0,
-            similarity: include_similar ? 0.25 : 0,
-          });
+          const scores = smartOrg.calculateTagScore(db, req.user.id, url, tag, weights);
 
           if (scores.score > 0.1) {
             suggestions.push({
@@ -86,8 +104,12 @@ function setupSmartOrganizationRoutes(
   app.get(
     "/api/smart-collections/suggest",
     authenticateTokenMiddleware,
+    ...(validateQuery
+      ? [validateQuery(schemas.smartCollectionsSuggestQuery)]
+      : []),
     (req, res) => {
-      const { type, limit = 5 } = req.query;
+      const q = req.validatedQuery || req.query;
+      const { type, limit = 5 } = q;
       try {
         let suggestions = [];
         if (!type || type === "tag_cluster") {
@@ -115,7 +137,7 @@ function setupSmartOrganizationRoutes(
           seen.add(s.name);
           return true;
         });
-        res.json({ collections: unique.slice(0, parseInt(limit)) });
+        res.json({ collections: unique.slice(0, Number(limit)) });
       } catch (err) {
         console.error("Smart collections suggest error:", err);
         return res.status(500).json({ error: "Failed to get suggestions" });
@@ -127,7 +149,9 @@ function setupSmartOrganizationRoutes(
     "/api/smart-collections/create",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    ...(validateBody ? [validateBody(schemas.smartCollectionCreate)] : []),
     (req, res) => {
+      const raw = req.validated || req.body;
       const {
         name,
         type = "tag_cluster",
@@ -136,9 +160,7 @@ function setupSmartOrganizationRoutes(
         tags,
         domain,
         filters,
-      } = req.body;
-      if (!name || !type)
-        return res.status(400).json({ error: "Name and type are required" });
+      } = raw;
       if (type === "tag_cluster" && (!tags || !tags.length))
         return res
           .status(400)
@@ -177,10 +199,9 @@ function setupSmartOrganizationRoutes(
   app.get(
     "/api/smart-collections/domain-stats",
     authenticateTokenMiddleware,
+    ...(validateQuery ? [validateQuery(schemas.domainQuery)] : []),
     (req, res) => {
-      const { domain } = req.query;
-      if (!domain)
-        return res.status(400).json({ error: "Domain parameter required" });
+      const { domain } = req.validatedQuery || req.query;
       try {
         const stats = smartOrg.getDomainStats(db, req.user.id, domain);
         const category = smartOrg.getDomainCategory(`https://${domain}`);

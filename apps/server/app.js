@@ -24,6 +24,7 @@ try {
 const config = require("./config");
 const { initializeDatabase, ensureDirectories } = require("./models/database");
 const { authenticateToken, validateCsrfToken } = require("./middleware/index");
+const { validateBody, validateQuery } = require("./validation");
 const { setupAuthRoutes } = require("./routes/auth");
 const { isPrivateAddress, fetchFavicon } = require("./helpers/utils.js");
 
@@ -51,8 +52,31 @@ const {
 initializeAuditLog(db);
 const securityAudit = createSecurityAuditLogger(db, {
   enableFileLogging: process.env.SECURITY_LOG_FILE === "true",
-  retentionDays: parseInt(process.env.SECURITY_LOG_RETENTION_DAYS) || 90,
+  retentionDays: parseInt(process.env.SECURITY_LOG_RETENTION_DAYS, 10) || 90,
 });
+
+// Audit log retention: run daily (once at startup and then every 24h)
+const AUDIT_RETENTION_INTERVAL_MS = 24 * 60 * 60 * 1000;
+let auditRetentionTimer = null;
+if (config.NODE_ENV !== "test") {
+  function runAuditRetention() {
+    try {
+      const { dbDeleted, filesDeleted } = securityAudit.runRetentionCleanup();
+      if (dbDeleted > 0 || filesDeleted > 0) {
+        console.log(
+          `[Audit retention] Removed ${dbDeleted} DB row(s), ${filesDeleted} log file(s)`,
+        );
+      }
+    } catch (err) {
+      console.error("[Audit retention] Cleanup failed:", err);
+    }
+  }
+  runAuditRetention();
+  auditRetentionTimer = setInterval(
+    runAuditRetention,
+    AUDIT_RETENTION_INTERVAL_MS,
+  );
+}
 
 // Middleware functions
 const authenticateTokenMiddleware = authenticateToken(db);
@@ -301,32 +325,42 @@ const { setupApiRoutes } = require("./routes/api");
 setupDashboardRoutes(app, db, {
   authenticateTokenMiddleware,
   validateCsrfTokenMiddleware,
+  validateBody,
+  validateQuery,
 });
 setupBookmarkViewsRoutes(app, db, {
   authenticateTokenMiddleware,
   validateCsrfTokenMiddleware,
+  validateBody,
 });
 setupCollectionsRoutes(app, db, {
   authenticateTokenMiddleware,
   validateCsrfTokenMiddleware,
+  validateBody,
 });
 controllerTags.setupTagsRoutes(app, db, {
   authenticateTokenMiddleware,
   validateCsrfTokenMiddleware,
+  validateBody,
+  validateQuery,
 });
 setupImportExportRoutes(app, db, {
   authenticateTokenMiddleware,
   validateCsrfTokenMiddleware,
+  validateBody,
+  validateQuery,
 });
 setupSyncRoutes(app, db, {
   authenticateTokenMiddleware,
   validateCsrfTokenMiddleware,
   fetchFaviconWrapper,
+  validateBody,
 });
 setupHealthRoutes(app, db, {
   authenticateTokenMiddleware,
   validateCsrfTokenMiddleware,
   fetchFaviconWrapper,
+  validateQuery,
 }); // Must be before setupApiRoutes to avoid /api/bookmarks/by-domain being shadowed
 setupApiRoutes(app, db, {
   authenticateTokenMiddleware,
@@ -334,6 +368,8 @@ setupApiRoutes(app, db, {
   fetchFaviconWrapper,
   config,
   version: APP_VERSION,
+  validateBody,
+  validateQuery,
 });
 
 // Helper functions are imported in route modules as needed
@@ -343,7 +379,10 @@ const { fetchUrlMetadata } = require("./helpers/metadata");
 const setupQuickSearchRoutes = require("./routes/quickSearch");
 const setupStatsRoutes = require("./routes/stats");
 
-setupQuickSearchRoutes(app, db, { authenticateTokenMiddleware });
+setupQuickSearchRoutes(app, db, {
+  authenticateTokenMiddleware,
+  validateQuery,
+});
 setupStatsRoutes(app, db, { authenticateTokenMiddleware });
 
 // Smart organization routes moved to `routes/smartOrganization.js`
@@ -351,6 +390,8 @@ const setupSmartOrganizationRoutes = require("./routes/smartOrganization");
 setupSmartOrganizationRoutes(app, db, {
   authenticateTokenMiddleware,
   validateCsrfTokenMiddleware,
+  validateBody,
+  validateQuery,
 });
 
 // Serve frontend assets
@@ -414,6 +455,7 @@ const { closeBrowser } = require("./helpers/thumbnail");
 
 process.on("SIGINT", async () => {
   console.log("\nShutting down gracefully...");
+  if (auditRetentionTimer) clearInterval(auditRetentionTimer);
   metadataQueue.stopProcessor();
   await closeBrowser();
   db.close();
@@ -422,6 +464,7 @@ process.on("SIGINT", async () => {
 
 process.on("SIGTERM", async () => {
   console.log("\nShutting down gracefully...");
+  if (auditRetentionTimer) clearInterval(auditRetentionTimer);
   metadataQueue.stopProcessor();
   await closeBrowser();
   db.close();

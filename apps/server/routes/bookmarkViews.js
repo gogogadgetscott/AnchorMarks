@@ -1,5 +1,11 @@
+const { schemas } = require("../validation");
+
 module.exports = function setupBookmarkViewsRoutes(app, db, helpers = {}) {
-  const { authenticateTokenMiddleware, validateCsrfTokenMiddleware } = helpers;
+  const {
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    validateBody,
+  } = helpers;
   const bookmarkViewModel = require("../models/bookmarkView");
 
   app.get("/api/bookmark/views", authenticateTokenMiddleware, (req, res) => {
@@ -16,13 +22,10 @@ module.exports = function setupBookmarkViewsRoutes(app, db, helpers = {}) {
     "/api/bookmark/views",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    ...(validateBody ? [validateBody(schemas.bookmarkViewCreate)] : []),
     (req, res) => {
       try {
-        const { name, config } = req.body;
-        if (!name || !config)
-          return res
-            .status(400)
-            .json({ error: "Name and config are required" });
+        const { name, config } = req.validated || req.body;
         const view = bookmarkViewModel.createBookmarkView(
           db,
           req.user.id,
@@ -41,9 +44,10 @@ module.exports = function setupBookmarkViewsRoutes(app, db, helpers = {}) {
     "/api/bookmark/views/:id",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    ...(validateBody ? [validateBody(schemas.bookmarkViewUpdate)] : []),
     (req, res) => {
       try {
-        const { name, config } = req.body;
+        const { name, config } = req.validated || req.body;
         const updated = bookmarkViewModel.updateBookmarkView(
           db,
           req.params.id,

@@ -4,13 +4,8 @@ This document tracks planned features and larger initiatives.
 
 ## Near Term
 
-| Item                                                                     | Owner | Target |
-| ------------------------------------------------------------------------ | ----- | ------ |
-| Security: Add request schema validation for auth/bookmarks/folders/tags. | TBD   | TBD    |
-| Security: Review and tune rate limiting defaults.                        | TBD   | TBD    |
-| Security: Define audit log retention policy and rotation.                | TBD   | TBD    |
-| Sync: Improve conflict resolution and add last-write-wins metadata.      | TBD   | TBD    |
-| Tags: Enhance analytics dashboards and tag insights.                     | TBD   | TBD    |
+| Item | Owner | Target |
+| ---- | ----- | ------ |
 
 ## Mid Term
 

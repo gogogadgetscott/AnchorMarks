@@ -153,15 +153,20 @@ function getTagUsageCounts(db, userId) {
   return db
     .prepare(
       `
-      SELECT t.name, COUNT(bt.tag_id) as count
+      SELECT
+        t.name,
+        COUNT(bt.tag_id) AS count,
+        COALESCE(SUM(b.click_count), 0) AS click_count_sum,
+        COALESCE(SUM(b.is_favorite), 0) AS favorite_count_sum
       FROM tags t
       LEFT JOIN bookmark_tags bt ON bt.tag_id = t.id
+      LEFT JOIN bookmarks b ON b.id = bt.bookmark_id AND b.user_id = ?
       WHERE t.user_id = ?
       GROUP BY t.id
       ORDER BY count DESC
     `,
     )
-    .all(userId);
+    .all(userId, userId);
 }
 
 function getTagCooccurrence(db, userId) {

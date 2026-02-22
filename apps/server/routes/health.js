@@ -1,6 +1,7 @@
 const statsModel = require("../models/stats");
 const bookmarkModel = require("../models/bookmark");
 const { monitor } = require("../helpers/performance-monitor");
+const { schemas } = require("../validation");
 
 function setupHealthRoutes(
   app,
@@ -9,6 +10,7 @@ function setupHealthRoutes(
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     fetchFaviconWrapper: _fetchFaviconWrapper,
+    validateQuery,
   },
 ) {
   // Find duplicate bookmarks (same URL)
@@ -42,10 +44,12 @@ function setupHealthRoutes(
   app.get(
     "/api/health/deadlinks",
     authenticateTokenMiddleware,
+    ...(validateQuery ? [validateQuery(schemas.healthDeadlinksQuery)] : []),
     async (req, res) => {
       try {
-        const { check } = req.query;
-        const limit = parseInt(req.query.limit) || 50;
+        const q = req.validatedQuery || req.query;
+        const { check } = q;
+        const limit = q.limit ?? 50;
 
         if (check !== "true") {
           const info = statsModel.getDeadlinksInfo(db, req.user.id, limit);
@@ -100,9 +104,11 @@ function setupHealthRoutes(
   app.get(
     "/api/health/performance",
     authenticateTokenMiddleware,
+    ...(validateQuery ? [validateQuery(schemas.healthPerformanceQuery)] : []),
     (req, res) => {
       try {
-        const timeWindow = parseInt(req.query.window) || 3600000; // 1 hour default
+        const q = req.validatedQuery || req.query;
+        const timeWindow = q.window ?? 3600000; // 1 hour default
         const stats = monitor.getStats(timeWindow);
         res.json(stats);
       } catch (err) {

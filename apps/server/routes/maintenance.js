@@ -4,12 +4,15 @@ const https = require("https");
 const http = require("http");
 const { URL } = require("url");
 const { isPrivateAddress } = require("../helpers/utils");
+const { schemas } = require("../validation");
 
 module.exports = function (
   db,
   authenticateToken,
   validateCsrfToken = (_, __, next) => next(),
+  validationHelpers = {},
 ) {
+  const { validateBody } = validationHelpers;
   // Check a single URL status
   /**
    * @swagger
@@ -37,17 +40,13 @@ module.exports = function (
     "/check-link",
     authenticateToken,
     validateCsrfToken,
+    ...(validateBody ? [validateBody(schemas.checkLink)] : []),
     async (req, res) => {
-      const { url } = req.body;
-      if (!url) return res.status(400).json({ error: "URL required" });
+      const { url } = req.validated || req.body;
 
       let responded = false;
 
       try {
-        const parsedUrl = new URL(url);
-        if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-          return res.status(400).json({ error: "Invalid URL protocol" });
-        }
         if (
           process.env.NODE_ENV === "production" &&
           (await isPrivateAddress(url))
@@ -56,6 +55,7 @@ module.exports = function (
             .status(403)
             .json({ error: "Private networks not allowed" });
         }
+        const parsedUrl = new URL(url);
         const protocol = parsedUrl.protocol === "https:" ? https : http;
 
         const reqUrl = protocol.request(

@@ -69,6 +69,16 @@ function initializeDatabase(DB_PATH) {
       CREATE INDEX IF NOT EXISTS idx_folders_user ON folders(user_id);
       CREATE INDEX IF NOT EXISTS idx_folders_parent ON folders(parent_id);
 
+      CREATE TABLE IF NOT EXISTS refresh_tokens (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        expires_at DATETIME NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+      CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
+      CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires ON refresh_tokens(expires_at);
+
       CREATE TABLE IF NOT EXISTS smart_collections (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,

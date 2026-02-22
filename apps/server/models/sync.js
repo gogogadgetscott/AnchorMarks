@@ -1,5 +1,27 @@
 const { v4: uuidv4 } = require("uuid");
 
+/**
+ * Parse a timestamp (ISO or SQLite datetime) to ms. Returns NaN if invalid.
+ */
+function parseTimestamp(ts) {
+  if (ts == null || ts === "") return NaN;
+  const t = typeof ts === "string" ? ts.trim() : ts;
+  const ms = Date.parse(t);
+  return Number.isFinite(ms) ? ms : NaN;
+}
+
+/**
+ * Last-write-wins: apply client change only if client is newer or equal, or client sent no timestamp (backward compat).
+ * Returns true if server should apply the update.
+ */
+function shouldApplyClientUpdate(clientUpdatedAt, serverUpdatedAt) {
+  const clientMs = parseTimestamp(clientUpdatedAt);
+  const serverMs = parseTimestamp(serverUpdatedAt);
+  if (Number.isNaN(clientMs)) return true; // no client timestamp -> apply (backward compat)
+  if (Number.isNaN(serverMs)) return true; // no server timestamp -> apply
+  return clientMs >= serverMs;
+}
+
 function getStatus(db, userId) {
   const bookmarkCount = db
     .prepare("SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ?")
@@ -19,7 +41,16 @@ function getStatus(db, userId) {
 }
 
 function push(db, userId, { bookmarks = [], folders = [] }) {
-  const results = { created: 0, updated: 0, errors: [] };
+  const results = {
+    created: 0,
+    updated: 0,
+    errors: [],
+    folder_id_map: {},
+    bookmarks_skipped: 0,
+    folders_skipped: 0,
+  };
+  /** Map client-provided folder id -> server-generated id for folders created in this push */
+  const clientFolderIdToServerId = {};
 
   if (folders && folders.length) {
     for (const folder of folders) {
@@ -29,20 +60,39 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
           .get(folder.id, userId);
 
         if (existing) {
+          if (
+            !shouldApplyClientUpdate(folder.updated_at, existing.updated_at)
+          ) {
+            results.folders_skipped++;
+            continue;
+          }
+          const resolvedParentId =
+            folder.parent_id != null &&
+            clientFolderIdToServerId[folder.parent_id] !== undefined
+              ? clientFolderIdToServerId[folder.parent_id]
+              : folder.parent_id;
           db.prepare(
             "UPDATE folders SET name = ?, color = ?, parent_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-          ).run(folder.name, folder.color, folder.parent_id, folder.id);
+          ).run(folder.name, folder.color, resolvedParentId, folder.id);
           results.updated++;
         } else {
+          const serverFolderId = uuidv4();
+          const resolvedParentId =
+            folder.parent_id != null &&
+            clientFolderIdToServerId[folder.parent_id] !== undefined
+              ? clientFolderIdToServerId[folder.parent_id]
+              : folder.parent_id;
           db.prepare(
             "INSERT INTO folders (id, user_id, name, color, parent_id) VALUES (?, ?, ?, ?, ?)",
           ).run(
-            folder.id || uuidv4(),
+            serverFolderId,
             userId,
             folder.name,
             folder.color || "#6366f1",
-            folder.parent_id,
+            resolvedParentId,
           );
+          clientFolderIdToServerId[folder.id] = serverFolderId;
+          results.folder_id_map[folder.id] = serverFolderId;
           results.created++;
         }
       } catch (_err) {
@@ -50,6 +100,11 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
       }
     }
   }
+
+  const resolveFolderId = (clientId) =>
+    clientFolderIdToServerId[clientId] !== undefined
+      ? clientFolderIdToServerId[clientId]
+      : clientId;
 
   if (bookmarks && bookmarks.length) {
     for (const bm of bookmarks) {
@@ -59,9 +114,14 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
           .get(bm.url, userId);
 
         if (existing) {
+          if (!shouldApplyClientUpdate(bm.updated_at, existing.updated_at)) {
+            results.bookmarks_skipped++;
+            continue;
+          }
+          const resolvedFolderId = resolveFolderId(bm.folder_id);
           db.prepare(
             "UPDATE bookmarks SET title = ?, folder_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-          ).run(bm.title, bm.folder_id, existing.id);
+          ).run(bm.title, resolvedFolderId, existing.id);
           if (bm.tags) {
             const tagsString = Array.isArray(bm.tags)
               ? bm.tags.join(",")
@@ -81,13 +141,14 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
         } else {
           const id = uuidv4();
           const faviconUrl = null;
+          const resolvedFolderId = resolveFolderId(bm.folder_id);
 
           db.prepare(
             "INSERT INTO bookmarks (id, user_id, folder_id, title, url, favicon) VALUES (?, ?, ?, ?, ?, ?)",
           ).run(
             id,
             userId,
-            bm.folder_id,
+            resolvedFolderId,
             bm.title || bm.url,
             bm.url,
             faviconUrl,

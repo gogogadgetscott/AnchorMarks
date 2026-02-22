@@ -140,15 +140,24 @@ Each log entry includes:
 - Endpoint and HTTP method
 - Additional context details (sanitized, no passwords/tokens)
 
+### Audit log retention and rotation (policy)
+
+- **Retention period:** Audit entries (database and file) are retained for a configurable number of days (default **90 days**). Older entries are removed by a daily retention job.
+- **What is rotated:**
+  - **Database:** Rows in `security_audit_log` older than the retention period are deleted.
+  - **File logs:** When file logging is enabled, logs are written to date-based files (`security-audit-YYYY-MM-DD.log`). Files older than the retention period are deleted by the same daily job.
+- **Schedule:** Retention cleanup runs once per day (time is server-dependent; typically shortly after process start and then every 24 hours).
+- **Compliance:** If you need longer retention for CRITICAL events or compliance (e.g. 1 year), increase `SECURITY_LOG_RETENTION_DAYS` or retain exports/backups of the audit log outside the application.
+
 ### Configuration
 
 Environment variables:
 
 ```bash
-# Enable file logging (in addition to database)
+# Enable file logging (in addition to database). Logs are written to date-based files and rotated by retention.
 SECURITY_LOG_FILE=true
 
-# Log retention period in days (default: 90)
+# Audit log retention period in days (default: 90). Database rows and log files older than this are removed daily.
 SECURITY_LOG_RETENTION_DAYS=90
 ```
 

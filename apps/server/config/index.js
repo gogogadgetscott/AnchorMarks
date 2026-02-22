@@ -60,6 +60,9 @@ function resolveCorsOrigin() {
 const crypto = require("crypto");
 const JWT_SECRET =
   process.env.JWT_SECRET || crypto.randomBytes(64).toString("hex");
+// Short-lived access token; refresh token rotation extends sessions (defaults: 15m access, 7d refresh)
+const JWT_ACCESS_EXPIRY = process.env.JWT_ACCESS_EXPIRY || "15m";
+const JWT_REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY || "7d";
 // Resolve DB_PATH so relative paths (e.g. ./apps/database/anchormarks.db) are
 // relative to project root, not process cwd (fixes Docker when cwd is /apps/server).
 const projectRoot = path.join(__dirname, "..", "..", "..");
@@ -131,6 +134,8 @@ module.exports = {
   SSL_CERT,
   SSL_ENABLED,
   JWT_SECRET,
+  JWT_ACCESS_EXPIRY,
+  JWT_REFRESH_EXPIRY,
   DB_PATH,
   ENABLE_BACKGROUND_JOBS,
   ENABLE_FAVICON_BACKGROUND_JOBS,

@@ -1,6 +1,8 @@
 const { v4: uuidv4 } = require("uuid");
 const { broadcast } = require("../helpers/websocket");
 
+const { validateBody, schemas } = require("../validation");
+
 function setupFoldersRoutes(app, db, helpers = {}) {
   const { authenticateTokenMiddleware, validateCsrfTokenMiddleware } = helpers;
   const folderModel = require("../models/folder");
@@ -59,10 +61,9 @@ function setupFoldersRoutes(app, db, helpers = {}) {
     "/api/folders",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    validateBody(schemas.folderCreate),
     (req, res) => {
-      const { name, parent_id, color, icon } = req.body;
-      if (!name || !name.trim())
-        return res.status(400).json({ error: "Folder name is required" });
+      const { name, parent_id, color, icon } = req.validated;
       try {
         const id = uuidv4();
         const maxPos = db
@@ -127,25 +128,35 @@ function setupFoldersRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Folder updated successfully
    */
-  app.put("/api/folders/:id", authenticateTokenMiddleware, (req, res) => {
-    const { name, parent_id, color, icon, position } = req.body;
-    try {
-      folderModel.updateFolder(db, req.params.id, req.user.id, {
-        name,
-        parent_id,
-        color,
-        icon,
-        position,
-      });
-      const folder = folderModel.getFolderById(db, req.params.id, req.user.id);
-      if (!folder) return res.status(404).json({ error: "Folder not found" });
-      broadcast(req.user.id, { type: "folders:changed" });
-      res.json(folder);
-    } catch (err) {
-      console.error("Error updating folder:", err);
-      res.status(500).json({ error: "Failed to update folder" });
-    }
-  });
+  app.put(
+    "/api/folders/:id",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    validateBody(schemas.folderUpdate),
+    (req, res) => {
+      const { name, parent_id, color, icon, position } = req.validated;
+      try {
+        folderModel.updateFolder(db, req.params.id, req.user.id, {
+          name,
+          parent_id,
+          color,
+          icon,
+          position,
+        });
+        const folder = folderModel.getFolderById(
+          db,
+          req.params.id,
+          req.user.id,
+        );
+        if (!folder) return res.status(404).json({ error: "Folder not found" });
+        broadcast(req.user.id, { type: "folders:changed" });
+        res.json(folder);
+      } catch (err) {
+        console.error("Error updating folder:", err);
+        res.status(500).json({ error: "Failed to update folder" });
+      }
+    },
+  );
 
   /**
    * @swagger

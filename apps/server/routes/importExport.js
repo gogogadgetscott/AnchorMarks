@@ -3,11 +3,17 @@ const { parseBookmarkHtml } = require("../helpers/import");
 const { parseTagsDetailed } = require("../helpers/tags");
 const { generateBookmarkHtml } = require("../helpers/html");
 const { queueMetadataFetch } = require("../helpers/metadata-queue");
+const { schemas } = require("../validation");
 
 function setupImportExportRoutes(
   app,
   db,
-  { authenticateTokenMiddleware, validateCsrfTokenMiddleware },
+  {
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    validateBody,
+    validateQuery,
+  },
 ) {
   /**
    * @swagger
@@ -35,9 +41,10 @@ function setupImportExportRoutes(
     "/api/import/html",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    ...(validateBody ? [validateBody(schemas.importHtml)] : []),
     async (req, res) => {
       try {
-        const { html } = req.body;
+        const { html } = req.validated || req.body;
         const { bookmarks, folders } = await parseBookmarkHtml(html);
         const result = importExportModel.importJson(db, req.user.id, {
           bookmarks,
@@ -94,9 +101,10 @@ function setupImportExportRoutes(
     "/api/import/json",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    ...(validateBody ? [validateBody(schemas.importJson)] : []),
     (req, res) => {
       try {
-        const { bookmarks = [], folders = [] } = req.body;
+        const { bookmarks = [], folders = [] } = req.validated || req.body;
         const result = importExportModel.importJson(db, req.user.id, {
           bookmarks,
           folders,
@@ -140,28 +148,33 @@ function setupImportExportRoutes(
    *       200:
    *         description: Export data
    */
-  app.get("/api/export", authenticateTokenMiddleware, (req, res) => {
-    try {
-      const { format } = req.query;
-      const data = importExportModel.exportData(db, req.user.id);
-      data.bookmarks.forEach((b) => {
-        b.tags_detailed = parseTagsDetailed(b.tags_detailed);
-      });
-      if (format === "html") {
-        res.setHeader("Content-Type", "text/html");
-        res.setHeader(
-          "Content-Disposition",
-          "attachment; filename=anchormarks-bookmarks.html",
-        );
-        res.send(generateBookmarkHtml(data.bookmarks, data.folders));
-      } else {
-        res.json({ bookmarks: data.bookmarks, folders: data.folders });
+  app.get(
+    "/api/export",
+    authenticateTokenMiddleware,
+    ...(validateQuery ? [validateQuery(schemas.exportQuery)] : []),
+    (req, res) => {
+      try {
+        const { format } = req.validatedQuery || req.query;
+        const data = importExportModel.exportData(db, req.user.id);
+        data.bookmarks.forEach((b) => {
+          b.tags_detailed = parseTagsDetailed(b.tags_detailed);
+        });
+        if (format === "html") {
+          res.setHeader("Content-Type", "text/html");
+          res.setHeader(
+            "Content-Disposition",
+            "attachment; filename=anchormarks-bookmarks.html",
+          );
+          res.send(generateBookmarkHtml(data.bookmarks, data.folders));
+        } else {
+          res.json({ bookmarks: data.bookmarks, folders: data.folders });
+        }
+      } catch (err) {
+        console.error("Export error:", err);
+        res.status(500).json({ error: "Failed to export data" });
       }
-    } catch (err) {
-      console.error("Export error:", err);
-      res.status(500).json({ error: "Failed to export data" });
-    }
-  });
+    },
+  );
 }
 
 module.exports = setupImportExportRoutes;

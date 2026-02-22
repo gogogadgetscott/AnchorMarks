@@ -2,6 +2,7 @@ const { v4: uuidv4 } = require("uuid");
 const bookmarkModel = require("../models/bookmark");
 const tagHelpers = require("../helpers/tag-helpers");
 const tagParseHelpers = require("../helpers/tags");
+const { validateBody, validateQuery, schemas } = require("../validation");
 
 function setupTagsRoutes(app, db, helpers = {}) {
   const { authenticateTokenMiddleware, validateCsrfTokenMiddleware } = helpers;
@@ -63,10 +64,9 @@ function setupTagsRoutes(app, db, helpers = {}) {
     "/api/tags",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    validateBody(schemas.tagCreate),
     (req, res) => {
-      const { name, color, icon } = req.body;
-      if (!name || !name.trim())
-        return res.status(400).json({ error: "Tag name is required" });
+      const { name, color, icon } = req.validated;
       const id = uuidv4();
       const maxPos = db
         .prepare("SELECT MAX(position) as max FROM tags WHERE user_id = ?")
@@ -131,8 +131,9 @@ function setupTagsRoutes(app, db, helpers = {}) {
     "/api/tags/:id",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    validateBody(schemas.tagUpdate),
     (req, res) => {
-      const { name, color, icon, position } = req.body;
+      const { name, color, icon, position } = req.validated;
       try {
         tagModel.updateTag(db, req.params.id, req.user.id, {
           name,
@@ -215,106 +216,111 @@ function setupTagsRoutes(app, db, helpers = {}) {
    *       200:
    *         description: A list of suggested tags
    */
-  app.get("/api/tags/suggest", authenticateTokenMiddleware, (req, res) => {
-    const { url } = req.query;
-    if (!url) return res.json([]);
+  app.get(
+    "/api/tags/suggest",
+    authenticateTokenMiddleware,
+    validateQuery(schemas.tagsSuggestQuery),
+    (req, res) => {
+      const { url } = req.validatedQuery;
+      if (!url) return res.json([]);
 
-    try {
-      const urlObj = new URL(url);
-      const hostname = urlObj.hostname.replace(/^www\./, "");
-      const counts = {};
-      const bump = (tag, weight = 1) => {
-        if (!tag) return;
-        const key = tag.toLowerCase();
-        counts[key] = (counts[key] || 0) + weight;
-      };
+      try {
+        const urlObj = new URL(url);
+        const hostname = urlObj.hostname.replace(/^www\./, "");
+        const counts = {};
+        const bump = (tag, weight = 1) => {
+          if (!tag) return;
+          const key = tag.toLowerCase();
+          counts[key] = (counts[key] || 0) + weight;
+        };
 
-      const allRows = bookmarkModel.getSampleForSuggestion(
-        db,
-        req.user.id,
-        800,
-      );
+        const allRows = bookmarkModel.getSampleForSuggestion(
+          db,
+          req.user.id,
+          800,
+        );
 
-      const docFreq = {};
-      const tokenizer = (text) => {
-        return (text || "")
-          .toLowerCase()
-          .replace(/[^a-z0-9\s\-/]/g, " ")
-          .split(/\s+/)
-          .map((t) => t.trim())
-          .filter((t) => t.length > 2 && t.length < 30);
-      };
+        const docFreq = {};
+        const tokenizer = (text) => {
+          return (text || "")
+            .toLowerCase()
+            .replace(/[^a-z0-9\s\-/]/g, " ")
+            .split(/\s+/)
+            .map((t) => t.trim())
+            .filter((t) => t.length > 2 && t.length < 30);
+        };
 
-      allRows.forEach((row) => {
-        const tokens = new Set(tokenizer(row.title));
-        tokens.forEach((tok) => {
-          docFreq[tok] = (docFreq[tok] || 0) + 1;
-        });
-      });
-
-      const totalDocs = allRows.length || 1;
-
-      allRows.forEach((row) => {
-        const urlMatch = row.url && row.url.includes(hostname);
-        if (urlMatch) {
-          parseTags(row.tags).forEach((t) => bump(t, 2.5));
-          try {
-            const rowHost = new URL(row.url).hostname.replace(/^www\./, "");
-            if (rowHost === hostname) {
-              parseTags(row.tags).forEach((t) => bump(t, 3.5));
-            }
-          } catch {}
-        }
-
-        const tfCounts = {};
-        tokenizer(row.title).forEach((tok) => {
-          tfCounts[tok] = (tfCounts[tok] || 0) + 1;
-        });
-        Object.entries(tfCounts).forEach(([tok, tf]) => {
-          const df = docFreq[tok] || 1;
-          const idf = Math.log((totalDocs + 1) / (df + 1)) + 1;
-          const weight = tf * idf;
-          if (urlMatch) bump(tok, weight * 1.2);
-          else bump(tok, weight * 0.6);
-        });
-      });
-
-      const stopwords = new Set([
-        "www",
-        "com",
-        "net",
-        "org",
-        "app",
-        "io",
-        "dev",
-        "ai",
-      ]);
-      hostname.split(".").forEach((part) => {
-        if (part && part.length > 2 && !stopwords.has(part)) bump(part, 1.5);
-      });
-
-      urlObj.pathname
-        .split("/")
-        .map((p) => p.trim())
-        .filter((p) => p && p.length > 2 && p.length < 40)
-        .slice(0, 4)
-        .forEach((part) => {
-          const clean = part.replace(/[-_]+/g, " ").toLowerCase();
-          clean.split(" ").forEach((seg) => {
-            if (seg && seg.length > 2) bump(seg, 1);
+        allRows.forEach((row) => {
+          const tokens = new Set(tokenizer(row.title));
+          tokens.forEach((tok) => {
+            docFreq[tok] = (docFreq[tok] || 0) + 1;
           });
         });
 
-      const suggestions = Object.entries(counts)
-        .sort((a, b) => b[1] - a[1])
-        .map(([name]) => name)
-        .slice(0, 15);
+        const totalDocs = allRows.length || 1;
 
-      res.json(suggestions);
-    } catch {
-      res.json([]);
-    }
-  });
+        allRows.forEach((row) => {
+          const urlMatch = row.url && row.url.includes(hostname);
+          if (urlMatch) {
+            parseTags(row.tags).forEach((t) => bump(t, 2.5));
+            try {
+              const rowHost = new URL(row.url).hostname.replace(/^www\./, "");
+              if (rowHost === hostname) {
+                parseTags(row.tags).forEach((t) => bump(t, 3.5));
+              }
+            } catch {}
+          }
+
+          const tfCounts = {};
+          tokenizer(row.title).forEach((tok) => {
+            tfCounts[tok] = (tfCounts[tok] || 0) + 1;
+          });
+          Object.entries(tfCounts).forEach(([tok, tf]) => {
+            const df = docFreq[tok] || 1;
+            const idf = Math.log((totalDocs + 1) / (df + 1)) + 1;
+            const weight = tf * idf;
+            if (urlMatch) bump(tok, weight * 1.2);
+            else bump(tok, weight * 0.6);
+          });
+        });
+
+        const stopwords = new Set([
+          "www",
+          "com",
+          "net",
+          "org",
+          "app",
+          "io",
+          "dev",
+          "ai",
+        ]);
+        hostname.split(".").forEach((part) => {
+          if (part && part.length > 2 && !stopwords.has(part)) bump(part, 1.5);
+        });
+
+        urlObj.pathname
+          .split("/")
+          .map((p) => p.trim())
+          .filter((p) => p && p.length > 2 && p.length < 40)
+          .slice(0, 4)
+          .forEach((part) => {
+            const clean = part.replace(/[-_]+/g, " ").toLowerCase();
+            clean.split(" ").forEach((seg) => {
+              if (seg && seg.length > 2) bump(seg, 1);
+            });
+          });
+
+        const suggestions = Object.entries(counts)
+          .sort((a, b) => b[1] - a[1])
+          .map(([name]) => name)
+          .slice(0, 15);
+
+        res.json(suggestions);
+      } catch {
+        res.json([]);
+      }
+    },
+  );
 
   /**
    * @swagger
@@ -369,13 +375,9 @@ function setupTagsRoutes(app, db, helpers = {}) {
     "/api/tags/bulk-add",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    validateBody(schemas.tagsBulkAddRemove),
     (req, res) => {
-      const { bookmark_ids, tags } = req.body;
-      if (!Array.isArray(bookmark_ids) || bookmark_ids.length === 0 || !tags) {
-        return res
-          .status(400)
-          .json({ error: "bookmark_ids and tags are required" });
-      }
+      const { bookmark_ids, tags } = req.validated;
 
       const normalizedTags = parseTags(tags);
       const updated = [];
@@ -430,13 +432,9 @@ function setupTagsRoutes(app, db, helpers = {}) {
     "/api/tags/bulk-remove",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    validateBody(schemas.tagsBulkAddRemove),
     (req, res) => {
-      const { bookmark_ids, tags } = req.body;
-      if (!Array.isArray(bookmark_ids) || bookmark_ids.length === 0 || !tags) {
-        return res
-          .status(400)
-          .json({ error: "bookmark_ids and tags are required" });
-      }
+      const { bookmark_ids, tags } = req.validated;
 
       const removeSet = new Set(parseTags(tags).map((t) => t.toLowerCase()));
       const updated = [];
@@ -503,10 +501,9 @@ function setupTagsRoutes(app, db, helpers = {}) {
     "/api/tags/rename",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    validateBody(schemas.tagsRename),
     (req, res) => {
-      const { from, to } = req.body;
-      if (!from || !to)
-        return res.status(400).json({ error: "from and to are required" });
+      const { from, to } = req.validated;
       try {
         const result = tagHelpers.renameOrMergeTag(db, req.user.id, from, to);
         if (result.error === "not_found")

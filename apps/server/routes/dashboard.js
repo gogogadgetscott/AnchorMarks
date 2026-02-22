@@ -1,5 +1,11 @@
+const { schemas } = require("../validation");
+
 module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
-  const { authenticateTokenMiddleware, validateCsrfTokenMiddleware } = helpers;
+  const {
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    validateBody,
+  } = helpers;
   const dashboardModel = require("../models/dashboard");
   const userSettingsModel = require("../models/userSettings");
 
@@ -17,11 +23,10 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
     "/api/dashboard/views",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    ...(validateBody ? [validateBody(schemas.dashboardViewCreate)] : []),
     (req, res) => {
       try {
-        const { name, config } = req.body;
-        if (!name || !config)
-          return res.status(400).json({ error: "Name and config required" });
+        const { name, config } = req.validated || req.body;
         const view = dashboardModel.createDashboardView(
           db,
           req.user.id,
@@ -40,9 +45,10 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
     "/api/dashboard/views/:id",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    ...(validateBody ? [validateBody(schemas.dashboardViewUpdate)] : []),
     (req, res) => {
       try {
-        const { name, config, position } = req.body;
+        const { name, config, position } = req.validated || req.body;
         const view = dashboardModel.updateDashboardView(
           db,
           req.params.id,

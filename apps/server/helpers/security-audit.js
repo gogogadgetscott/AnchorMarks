@@ -106,6 +106,53 @@ function getClientIp(req) {
  * @param {object} options - Configuration options
  * @returns {object} - Logger instance with log methods
  */
+/**
+ * Get the date-based log file path for today (for rotation: one file per day).
+ * @param {string} logDir - Directory for audit log files
+ * @returns {string} - Path to today's log file
+ */
+function getDailyLogFilePath(logDir) {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, "0");
+  const d = String(today.getDate()).padStart(2, "0");
+  return path.join(logDir, `security-audit-${y}-${m}-${d}.log`);
+}
+
+/**
+ * Delete audit log files older than retention days.
+ * Expects filenames: security-audit-YYYY-MM-DD.log
+ * @param {string} logDir - Directory containing rotated log files
+ * @param {number} retentionDays - Remove files older than this many days
+ * @returns {number} - Number of files deleted
+ */
+function purgeOldLogFiles(logDir, retentionDays) {
+  if (!fs.existsSync(logDir)) return 0;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - retentionDays);
+  const prefix = "security-audit-";
+  const suffix = ".log";
+  const re = new RegExp(`^${prefix}(\\d{4})-(\\d{2})-(\\d{2})${suffix}$`);
+  let deleted = 0;
+  try {
+    const entries = fs.readdirSync(logDir, { withFileTypes: true });
+    for (const e of entries) {
+      if (!e.isFile()) continue;
+      const m = e.name.match(re);
+      if (!m) continue;
+      const fileDate = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      if (fileDate < cutoff) {
+        const full = path.join(logDir, e.name);
+        fs.unlinkSync(full);
+        deleted++;
+      }
+    }
+  } catch (err) {
+    console.error("Failed to purge old security audit log files:", err);
+  }
+  return deleted;
+}
+
 function createSecurityAuditLogger(db, options = {}) {
   const {
     enableFileLogging = process.env.SECURITY_LOG_FILE === "true",
@@ -113,9 +160,10 @@ function createSecurityAuditLogger(db, options = {}) {
     retentionDays = 90,
   } = options;
 
+  const logDir = path.dirname(logFilePath);
+
   // Ensure log directory exists if file logging is enabled
   if (enableFileLogging) {
-    const logDir = path.dirname(logFilePath);
     if (!fs.existsSync(logDir)) {
       fs.mkdirSync(logDir, { recursive: true });
     }
@@ -163,7 +211,7 @@ function createSecurityAuditLogger(db, options = {}) {
         success ? 1 : 0,
       );
 
-      // Write to file if enabled
+      // Write to file if enabled (date-based rotation: one file per day)
       if (enableFileLogging) {
         const logEntry = {
           timestamp: new Date().toISOString(),
@@ -177,7 +225,8 @@ function createSecurityAuditLogger(db, options = {}) {
           details: sanitizedDetails,
           success,
         };
-        fs.appendFileSync(logFilePath, JSON.stringify(logEntry) + "\n");
+        const dailyPath = getDailyLogFilePath(logDir);
+        fs.appendFileSync(dailyPath, JSON.stringify(logEntry) + "\n");
       }
 
       // Console log for critical events
@@ -268,8 +317,9 @@ function createSecurityAuditLogger(db, options = {}) {
   }
 
   /**
-   * Cleanup old audit logs
+   * Cleanup old audit logs (database only)
    * @param {number} days - Delete logs older than this many days
+   * @returns {number} - Number of rows deleted
    */
   function cleanup(days = retentionDays) {
     const result = db
@@ -282,6 +332,18 @@ function createSecurityAuditLogger(db, options = {}) {
       .run(days);
 
     return result.changes;
+  }
+
+  /**
+   * Run full retention: delete old DB rows and purge old rotated log files.
+   * Call this on a daily schedule (e.g. from app startup and setInterval).
+   * @param {number} days - Retention period in days (default: options.retentionDays)
+   * @returns {{ dbDeleted: number, filesDeleted: number }}
+   */
+  function runRetentionCleanup(days = retentionDays) {
+    const dbDeleted = cleanup(days);
+    const filesDeleted = enableFileLogging ? purgeOldLogFiles(logDir, days) : 0;
+    return { dbDeleted, filesDeleted };
   }
 
   /**
@@ -316,6 +378,7 @@ function createSecurityAuditLogger(db, options = {}) {
     query,
     getFailedLoginAttempts,
     cleanup,
+    runRetentionCleanup,
     getStats,
 
     // Convenience logging methods
@@ -400,6 +463,8 @@ function createSecurityAuditLogger(db, options = {}) {
 module.exports = {
   initializeAuditLog,
   createSecurityAuditLogger,
+  purgeOldLogFiles,
+  getDailyLogFilePath,
   SecurityEventType,
   Severity,
 };

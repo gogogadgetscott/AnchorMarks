@@ -50,6 +50,8 @@ function normalizeTagColorOverrides(raw, tagMap = {}) {
 
 const { fetchUrlMetadata, detectContentType } = require("../helpers/metadata");
 
+const { validateBody, schemas } = require("../validation");
+
 function setupBookmarksRoutes(app, db, helpers = {}) {
   const {
     authenticateTokenMiddleware,
@@ -275,13 +277,10 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
     "/api/bookmarks/fetch-metadata",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    validateBody(schemas.fetchMetadata),
     async (req, res) => {
-      const { url } = req.body;
-      if (!url) return res.status(400).json({ error: "URL is required" });
+      const { url } = req.validated;
       try {
-        const urlObj = new URL(url);
-        if (!["http:", "https:"].includes(urlObj.protocol))
-          return res.status(400).json({ error: "Invalid URL protocol" });
         if (config.NODE_ENV === "production" && (await isPrivateAddress(url)))
           return res
             .status(403)
@@ -337,11 +336,11 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
     "/api/bookmarks",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    validateBody(schemas.bookmarkCreate),
     async (req, res) => {
-      let { title, url, description, folder_id, tags, color, og_image } =
-        req.body;
+      const raw = req.validated;
+      let { title, url, description, folder_id, tags, color, og_image } = raw;
       const id = uuidv4();
-      if (!url) return res.status(400).json({ error: "URL is required" });
       try {
         // Fetch metadata if title or description is missing, or if we want to ensure we have og_image
         if (!title || !description || !og_image) {
@@ -353,10 +352,12 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
               if (!og_image) og_image = metadata.og_image;
             }
           } catch (metaErr) {
-            console.warn(
-              "Could not fetch metadata during bookmark creation:",
-              metaErr.message,
-            );
+            if (config.NODE_ENV !== "test") {
+              console.warn(
+                "Could not fetch metadata during bookmark creation:",
+                metaErr.message,
+              );
+            }
           }
         }
 
@@ -388,7 +389,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
             returnMap: true,
           });
           const overrides = normalizeTagColorOverrides(
-            req.body.tag_colors || req.body.tagColorOverrides,
+            raw.tag_colors || raw.tagColorOverrides,
             tagResult.tagMap,
           );
           updateBookmarkTags(db, id, tagResult.tagIds, {

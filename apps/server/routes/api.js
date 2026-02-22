@@ -8,6 +8,8 @@ function setupApiRoutes(app, db, helpers) {
     fetchFaviconWrapper,
     config,
     version,
+    validateBody,
+    validateQuery,
   } = helpers;
 
   // Health
@@ -38,6 +40,8 @@ function setupApiRoutes(app, db, helpers) {
     validateCsrfTokenMiddleware,
     fetchFaviconWrapper,
     config,
+    validateBody,
+    validateQuery,
   });
 
   // Bookmarks routes from controllers (includes POST /api/bookmarks)
@@ -45,6 +49,7 @@ function setupApiRoutes(app, db, helpers) {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     fetchFaviconWrapper,
+    validateBody,
   });
 
   // Folders routes (migrated into controller)
@@ -52,6 +57,7 @@ function setupApiRoutes(app, db, helpers) {
   setupFoldersRoutes(app, db, {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    validateBody,
   });
 
   // Tags routes (migrated into controller)
@@ -59,6 +65,7 @@ function setupApiRoutes(app, db, helpers) {
   setupTagsRoutes(app, db, {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    validateBody,
   });
 
   // Save/update user settings
@@ -81,14 +88,17 @@ function setupApiRoutes(app, db, helpers) {
    *       200:
    *         description: Settings updated successfully
    */
+  const { schemas } = require("../validation");
   app.put(
     "/api/settings",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    validateBody(schemas.settingsUpdate),
     (req, res) => {
       try {
-        console.log(`[Settings] Saving for user ${req.user.id}:`, req.body);
-        userSettingsModel.upsertUserSettings(db, req.user.id, req.body);
+        const body = req.validated || req.body;
+        console.log(`[Settings] Saving for user ${req.user.id}:`, body);
+        userSettingsModel.upsertUserSettings(db, req.user.id, body);
 
         const settings = db
           .prepare("SELECT * FROM user_settings WHERE user_id = ?")
@@ -148,6 +158,7 @@ function setupApiRoutes(app, db, helpers) {
       db,
       authenticateTokenMiddleware,
       validateCsrfTokenMiddleware,
+      { validateBody },
     ),
   );
 
@@ -156,6 +167,8 @@ function setupApiRoutes(app, db, helpers) {
   setupImportExportRoutes(app, db, {
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    validateBody,
+    validateQuery,
   });
 
   // Settings API
@@ -404,16 +417,9 @@ function setupApiRoutes(app, db, helpers) {
   app.get(
     "/api/tags/suggest-ai",
     authenticateTokenMiddleware,
+    validateQuery(schemas.tagsSuggestAiQuery),
     async (req, res) => {
-      const { url, limit = 10 } = req.query;
-      if (!url)
-        return res.status(400).json({ error: "URL parameter required" });
-
-      try {
-        new URL(url);
-      } catch {
-        return res.status(400).json({ error: "Invalid URL" });
-      }
+      const { url, limit = 10 } = req.validatedQuery || req.query;
 
       try {
         const userTags = db
@@ -424,7 +430,7 @@ function setupApiRoutes(app, db, helpers) {
           ? config.getAIConfig()
           : { provider: "none" };
         const suggestions = await aiTags.suggestTagsAI(
-          { url, title: null, limit: parseInt(limit), userTags },
+          { url, title: null, limit: Number(limit), userTags },
           aiConfig,
         );
 

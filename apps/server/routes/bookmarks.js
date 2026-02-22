@@ -1,3 +1,5 @@
+const { validateBody, validateQuery, schemas } = require("../validation");
+
 module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
   const {
     authenticateTokenMiddleware,
@@ -61,53 +63,59 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
    *       200:
    *         description: A list of bookmarks
    */
-  app.get("/api/bookmarks", authenticateTokenMiddleware, (req, res) => {
-    try {
-      const {
-        folder_id,
-        search,
-        favorites,
-        tags,
-        tagMode,
-        sort,
-        limit,
-        offset,
-        include_children,
-        archived,
-      } = req.query;
-      const opts = {
-        folder_id,
-        include_children: include_children === "true",
-        favorites,
-        search,
-        tags,
-        tagMode,
-        sort,
-        limit,
-        offset,
-        archived,
-      };
-      const result = bookmarkModel.listBookmarks(db, req.user.id, opts);
-      if (result.total !== undefined) {
+  app.get(
+    "/api/bookmarks",
+    authenticateTokenMiddleware,
+    validateQuery(schemas.bookmarksListQuery),
+    (req, res) => {
+      try {
+        const q = req.validatedQuery;
+        const {
+          folder_id,
+          search,
+          favorites,
+          tags,
+          tagMode,
+          sort,
+          limit,
+          offset,
+          include_children,
+          archived,
+        } = q;
+        const opts = {
+          folder_id,
+          include_children: include_children === true,
+          favorites,
+          search,
+          tags,
+          tagMode,
+          sort,
+          limit,
+          offset,
+          archived,
+        };
+        const result = bookmarkModel.listBookmarks(db, req.user.id, opts);
+        if (result.total !== undefined) {
+          result.bookmarks.forEach((b) => {
+            b.tags_detailed = parseTagsDetailed(b.tags_detailed);
+          });
+          return res.json({
+            bookmarks: result.bookmarks,
+            total: result.total,
+            limit: parseInt(limit) || undefined,
+            offset: parseInt(offset) || 0,
+          });
+        }
         result.bookmarks.forEach((b) => {
           b.tags_detailed = parseTagsDetailed(b.tags_detailed);
         });
-        return res.json({
-          bookmarks: result.bookmarks,
-          total: result.total,
-          limit: parseInt(limit) || undefined,
-          offset: parseInt(offset) || 0,
-        });
+        res.json(result.bookmarks);
+      } catch (err) {
+        console.error("Error listing bookmarks:", err);
+        res.status(500).json({ error: "Failed to list bookmarks" });
       }
-      result.bookmarks.forEach((b) => {
-        b.tags_detailed = parseTagsDetailed(b.tags_detailed);
-      });
-      res.json(result.bookmarks);
-    } catch (err) {
-      console.error("Error listing bookmarks:", err);
-      res.status(500).json({ error: "Failed to list bookmarks" });
-    }
-  });
+    },
+  );
 
   /**
    * @swagger
@@ -244,9 +252,10 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
     "/api/bookmarks/:id",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    validateBody(schemas.bookmarkUpdate),
     (req, res) => {
       try {
-        const fields = req.body;
+        const fields = req.validated;
         bookmarkModel.updateBookmark(db, req.user.id, req.params.id, fields);
 
         if (fields.tags !== undefined) {
@@ -363,10 +372,9 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
     "/api/bookmarks/bulk/archive",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    validateBody(schemas.bulkIds),
     (req, res) => {
-      const { ids } = req.body;
-      if (!Array.isArray(ids))
-        return res.status(400).json({ error: "IDs must be an array" });
+      const { ids } = req.validated;
       try {
         const stmt = db.prepare(
           "UPDATE bookmarks SET is_archived = 1 WHERE id = ? AND user_id = ?",
@@ -389,10 +397,9 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
     "/api/bookmarks/bulk/unarchive",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    validateBody(schemas.bulkIds),
     (req, res) => {
-      const { ids } = req.body;
-      if (!Array.isArray(ids))
-        return res.status(400).json({ error: "IDs must be an array" });
+      const { ids } = req.validated;
       try {
         const stmt = db.prepare(
           "UPDATE bookmarks SET is_archived = 0 WHERE id = ? AND user_id = ?",

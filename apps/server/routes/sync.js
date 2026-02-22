@@ -1,5 +1,6 @@
 const syncModel = require("../models/sync");
 const bookmarkModel = require("../models/bookmark");
+const { schemas } = require("../validation");
 
 function setupSyncRoutes(
   app,
@@ -8,6 +9,7 @@ function setupSyncRoutes(
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
     fetchFaviconWrapper,
+    validateBody,
   },
 ) {
   app.get("/api/sync/status", authenticateTokenMiddleware, (req, res) => {
@@ -23,9 +25,10 @@ function setupSyncRoutes(
     "/api/sync/push",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    ...(validateBody ? [validateBody(schemas.syncPush)] : []),
     (req, res) => {
       try {
-        const { bookmarks, folders } = req.body;
+        const { bookmarks, folders } = req.validated || req.body;
         const results = syncModel.push(db, req.user.id, { bookmarks, folders });
 
         if (bookmarks && bookmarks.length) {

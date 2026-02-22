@@ -1,17 +1,29 @@
-// Config via env: RATE_LIMIT_MAX (default 100), RATE_LIMIT_WINDOW_MS (default 60000),
+// Config via env:
+// General API: RATE_LIMIT_MAX (default 60), RATE_LIMIT_WINDOW_MS (default 60000).
+// Auth (login/register): RATE_LIMIT_AUTH_MAX (default 10), RATE_LIMIT_AUTH_WINDOW_MS (default 60000).
 // RATE_LIMIT_DISABLED=1 to turn off (e.g. when all traffic is one IP behind Docker/proxy).
 const requestCounts = new Map();
+const authRequestCounts = new Map();
+
 const RATE_LIMIT_WINDOW =
   parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 60000; // 1 minute
 const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX, 10);
+const effectiveMax =
+  Number.isNaN(RATE_LIMIT_MAX) || RATE_LIMIT_MAX <= 0 ? 60 : RATE_LIMIT_MAX;
+
+const RATE_LIMIT_AUTH_WINDOW =
+  parseInt(process.env.RATE_LIMIT_AUTH_WINDOW_MS, 10) || 60000; // 1 minute
+const RATE_LIMIT_AUTH_MAX = parseInt(process.env.RATE_LIMIT_AUTH_MAX, 10);
+const effectiveAuthMax =
+  Number.isNaN(RATE_LIMIT_AUTH_MAX) || RATE_LIMIT_AUTH_MAX <= 0
+    ? 10
+    : RATE_LIMIT_AUTH_MAX;
+
 const RATE_LIMIT_DISABLED =
   process.env.RATE_LIMIT_DISABLED === "1" ||
   process.env.RATE_LIMIT_DISABLED === "true";
-const effectiveMax = RATE_LIMIT_DISABLED
-  ? null
-  : Number.isNaN(RATE_LIMIT_MAX) || RATE_LIMIT_MAX <= 0
-    ? 100
-    : RATE_LIMIT_MAX;
+const effectiveMaxOrNull = RATE_LIMIT_DISABLED ? null : effectiveMax;
+
 const CLEANUP_INTERVAL = 300000; // 5 minutes
 
 // Periodic cleanup of expired rate limit entries to prevent memory leak
@@ -19,15 +31,21 @@ function cleanupExpiredEntries() {
   const now = Date.now();
   let cleaned = 0;
   for (const [key, times] of requestCounts.entries()) {
-    // Filter out expired entries
     const recent = times.filter((t) => now - t < RATE_LIMIT_WINDOW);
     if (recent.length === 0) {
-      // Remove entries with no recent activity
       requestCounts.delete(key);
       cleaned++;
     } else if (recent.length < times.length) {
-      // Update with filtered array if some entries were expired
       requestCounts.set(key, recent);
+    }
+  }
+  for (const [key, times] of authRequestCounts.entries()) {
+    const recent = times.filter((t) => now - t < RATE_LIMIT_AUTH_WINDOW);
+    if (recent.length === 0) {
+      authRequestCounts.delete(key);
+      cleaned++;
+    } else if (recent.length < times.length) {
+      authRequestCounts.set(key, recent);
     }
   }
   if (process.env.NODE_ENV === "development" && cleaned > 0) {
@@ -48,9 +66,44 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
+function getClientKey(req) {
+  return (
+    req.ip ||
+    req.headers["x-forwarded-for"] ||
+    (req.connection && req.connection.remoteAddress) ||
+    "anon"
+  );
+}
+
+function sendRateLimitExceeded(res, retryAfterSeconds) {
+  if (retryAfterSeconds > 0 && retryAfterSeconds <= 3600) {
+    res.setHeader("Retry-After", String(Math.ceil(retryAfterSeconds)));
+  }
+  return res.status(429).json({ error: "Rate limit exceeded" });
+}
+
 function rateLimiter(req, res, next) {
   try {
-    if (effectiveMax === null) return next();
+    const now = Date.now();
+    const key = getClientKey(req);
+
+    // Stricter rate limit for login/register (brute-force protection)
+    const isAuthStrict =
+      req.method === "POST" &&
+      (req.path === "/api/auth/login" || req.path === "/api/auth/register");
+    if (isAuthStrict) {
+      const times = authRequestCounts.get(key) || [];
+      const recent = times.filter((t) => now - t < RATE_LIMIT_AUTH_WINDOW);
+      recent.push(now);
+      authRequestCounts.set(key, recent);
+      if (recent.length > effectiveAuthMax) {
+        const retryAfter = (recent[0] + RATE_LIMIT_AUTH_WINDOW - now) / 1000;
+        return sendRateLimitExceeded(res, retryAfter);
+      }
+      return next();
+    }
+
+    if (effectiveMaxOrNull === null) return next();
 
     // Skip rate limiting for static asset requests (favicons, thumbnails, JS/CSS/images)
     if (
@@ -72,9 +125,13 @@ function rateLimiter(req, res, next) {
       return next();
     }
 
-    // Skip rate limiting for auth endpoints (login, register, me check)
-    // These need to be accessible for initial app load
-    if (req.path.startsWith("/api/auth/me") || req.path === "/api/auth/me") {
+    // Skip rate limiting for read-only auth (me, refresh) to avoid blocking normal use
+    if (
+      req.path.startsWith("/api/auth/me") ||
+      req.path === "/api/auth/me" ||
+      req.path.startsWith("/api/auth/refresh") ||
+      req.path === "/api/auth/refresh"
+    ) {
       return next();
     }
 
@@ -88,19 +145,14 @@ function rateLimiter(req, res, next) {
     ) {
       return next();
     }
-    const now = Date.now();
-    const key =
-      req.ip ||
-      req.headers["x-forwarded-for"] ||
-      (req.connection && req.connection.remoteAddress) ||
-      "anon";
+
     const times = requestCounts.get(key) || [];
-    // keep only recent entries
     const recent = times.filter((t) => now - t < RATE_LIMIT_WINDOW);
     recent.push(now);
     requestCounts.set(key, recent);
     if (recent.length > effectiveMax) {
-      return res.status(429).json({ error: "Rate limit exceeded" });
+      const retryAfter = (recent[0] + RATE_LIMIT_WINDOW - now) / 1000;
+      return sendRateLimitExceeded(res, retryAfter);
     }
     next();
   } catch (err) {

@@ -1000,7 +1000,7 @@ Get browser sync status.
 
 ### Push Sync Data
 
-Push bookmarks and folders for browser sync.
+Push bookmarks and folders for browser sync. Uses **last-write-wins** conflict resolution: if the client sends `updated_at` and the server has a newer `updated_at` for the same item, the server skips the update and returns it in `bookmarks_skipped` / `folders_skipped`. If `updated_at` is omitted, the update is always applied (backward compatible).
 
 **Endpoint**: `POST /api/sync/push`  
 **Auth Required**: Yes  
@@ -1016,27 +1016,36 @@ Push bookmarks and folders for browser sync.
       "url": "https://example.com",
       "title": "Example",
       "folder_id": "uuid",
-      "tags": "tag1,tag2"
+      "tags": "tag1,tag2",
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z"
     }
   ],
   "folders": [
     {
       "id": "uuid",
       "name": "Folder",
-      "parent_id": null
+      "parent_id": null,
+      "color": "#6366f1",
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z"
     }
   ]
 }
 ```
 
+- `created_at` / `updated_at` on each item are optional. When present, the server uses them for last-write-wins: it only applies an update if the client's `updated_at` is missing or is greater than or equal to the server's.
+
 **Response** (200 OK):
 
 ```json
 {
-  "bookmarks_created": 5,
-  "bookmarks_updated": 10,
-  "folders_created": 2,
-  "folders_updated": 3
+  "created": 5,
+  "updated": 10,
+  "folder_id_map": {},
+  "bookmarks_skipped": 0,
+  "folders_skipped": 0,
+  "errors": []
 }
 ```
 
@@ -1049,7 +1058,7 @@ Pull all bookmarks and folders for browser sync.
 **Endpoint**: `GET /api/sync/pull`  
 **Auth Required**: Yes
 
-**Response** (200 OK):
+**Response** (200 OK): Each bookmark and folder includes `created_at` and `updated_at` (ISO or SQLite datetime) for use in last-write-wins on the next push.
 
 ```json
 {
@@ -1058,14 +1067,18 @@ Pull all bookmarks and folders for browser sync.
       "id": "uuid",
       "url": "https://example.com",
       "title": "Example",
-      "tags_detailed": []
+      "tags_detailed": [],
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z"
     }
   ],
   "folders": [
     {
       "id": "uuid",
       "name": "Folder",
-      "parent_id": null
+      "parent_id": null,
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z"
     }
   ]
 }
@@ -1258,9 +1271,11 @@ curl -H "X-API-Key: lv_xxxxxxxxxxxxxxxx" \
 
 ## Rate Limiting
 
-- Rate limit: 100 requests per minute per IP address
-- Only enforced in production environment
-- Returns `429 Too Many Requests` when exceeded
+- **General API**: 60 requests per minute per IP (configurable via `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_MS`).
+- **Auth (login/register)**: 10 requests per minute per IP (configurable via `RATE_LIMIT_AUTH_MAX`, `RATE_LIMIT_AUTH_WINDOW_MS`) to reduce brute-force risk.
+- Health, maintenance, static assets, and read-only auth (`/api/auth/me`, `/api/auth/refresh`) are not counted toward the general limit; login and register use the stricter auth limit.
+- Returns `429 Too Many Requests` when exceeded; response may include a `Retry-After` header (seconds until the limit window resets).
+- Set `RATE_LIMIT_DISABLED=1` to disable (e.g. when all traffic is one IP behind a reverse proxy).
 
 ---
 

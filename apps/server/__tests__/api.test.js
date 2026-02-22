@@ -137,4 +137,62 @@ describe("AnchorMarks API", () => {
     expect(attemptDelete.statusCode).toBe(200);
     expect(attemptDelete.body.success).toBe(true);
   });
+
+  it("sync push uses last-write-wins and returns skipped counts", async () => {
+    const url = "https://sync-lww.example.com";
+    const push1 = await agent
+      .post("/api/sync/push")
+      .set("X-CSRF-Token", csrfToken)
+      .send({
+        bookmarks: [{ url, title: "First", folder_id: null }],
+        folders: [],
+      });
+
+    expect(push1.statusCode).toBe(200);
+    expect(push1.body.created).toBe(1);
+    expect(push1.body.updated).toBe(0);
+
+    const pull = await agent
+      .get("/api/sync/pull")
+      .set("X-CSRF-Token", csrfToken);
+    expect(pull.statusCode).toBe(200);
+    const bm = pull.body.bookmarks.find((b) => b.url === url);
+    expect(bm).toBeTruthy();
+    expect(bm.updated_at).toBeTruthy();
+
+    const older = "2000-01-01T00:00:00.000Z";
+    const push2 = await agent
+      .post("/api/sync/push")
+      .set("X-CSRF-Token", csrfToken)
+      .send({
+        bookmarks: [{ url, title: "Older", updated_at: older }],
+        folders: [],
+      });
+
+    expect(push2.statusCode).toBe(200);
+    expect(push2.body.bookmarks_skipped).toBe(1);
+    expect(push2.body.updated).toBe(0);
+
+    const pull2 = await agent
+      .get("/api/sync/pull")
+      .set("X-CSRF-Token", csrfToken);
+    const bm2 = pull2.body.bookmarks.find((b) => b.url === url);
+    expect(bm2.title).toBe("First");
+
+    const push3 = await agent
+      .post("/api/sync/push")
+      .set("X-CSRF-Token", csrfToken)
+      .send({
+        bookmarks: [{ url, title: "Newer", updated_at: bm.updated_at }],
+        folders: [],
+      });
+
+    expect(push3.statusCode).toBe(200);
+    expect(push3.body.updated).toBe(1);
+    const pull3 = await agent
+      .get("/api/sync/pull")
+      .set("X-CSRF-Token", csrfToken);
+    const bm3 = pull3.body.bookmarks.find((b) => b.url === url);
+    expect(bm3.title).toBe("Newer");
+  });
 });

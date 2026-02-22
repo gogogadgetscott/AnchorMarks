@@ -1,5 +1,11 @@
+const { schemas } = require("../validation");
+
 module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
-  const { authenticateTokenMiddleware, validateCsrfTokenMiddleware } = helpers;
+  const {
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    validateBody,
+  } = helpers;
   const smartCollectionsModel = require("../models/smartCollections");
   const { parseTagsDetailed } = require("../helpers/tags");
 
@@ -22,11 +28,10 @@ module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
     "/api/collections",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    ...(validateBody ? [validateBody(schemas.collectionCreate)] : []),
     (req, res) => {
       try {
-        const { name, icon, color, filters } = req.body;
-        if (!name || !filters)
-          return res.status(400).json({ error: "Name and filters required" });
+        const { name, icon, color, filters } = req.validated || req.body;
         const collection = smartCollectionsModel.createCollection(
           db,
           req.user.id,
@@ -44,9 +49,11 @@ module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
     "/api/collections/:id",
     authenticateTokenMiddleware,
     validateCsrfTokenMiddleware,
+    ...(validateBody ? [validateBody(schemas.collectionUpdate)] : []),
     (req, res) => {
       try {
-        const { name, icon, color, filters, position } = req.body;
+        const { name, icon, color, filters, position } =
+          req.validated || req.body;
         const updated = smartCollectionsModel.updateCollection(
           db,
           req.params.id,
