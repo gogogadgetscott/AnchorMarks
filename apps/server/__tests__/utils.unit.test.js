@@ -392,6 +392,9 @@ describe("utils.js - Unit Tests", () => {
         return req;
       };
 
+      const dns = require("dns");
+      vi.spyOn(dns.promises, "lookup").mockResolvedValue([{ address: "93.184.216.34" }]);
+
       const httpsSpy = vi.spyOn(https, "get").mockImplementation(getMock);
       const httpSpy = vi.spyOn(http, "get").mockImplementation(getMock);
 
@@ -417,6 +420,10 @@ describe("utils.js - Unit Tests", () => {
         "/tmp/favicons",
         "development",
       );
+
+      // Allow async isPrivateAddress checks to finish
+      await new Promise(resolve => process.nextTick(resolve));
+      await new Promise(resolve => process.nextTick(resolve));
 
       // Should only make one network call
       expect(callCount).toBe(1);

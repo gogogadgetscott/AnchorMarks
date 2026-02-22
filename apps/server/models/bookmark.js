@@ -36,58 +36,16 @@ function listBookmarks(db, userId, opts = {}) {
     archived,
   } = opts;
 
-  const baseSelect = _baseSelect();
-  let query = `SELECT b.*, COALESCE(tg.tags_joined, '') as tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed ${baseSelect}`;
-  let countQuery = `SELECT COUNT(*) as total ${baseSelect}`;
-  const params = [userId, userId];
-
   const isFavoritesView = favorites === true || favorites === "true";
   const isArchivedView = archived === true || archived === "true";
+  const hasSearch = !!(search && !isFavoritesView && !isArchivedView);
 
-  // Skip folder_id filter for favorites and archived views - show all items regardless of folder
-  if (folder_id && !isFavoritesView && !isArchivedView) {
-    if (include_children) {
-      query += ` AND (folder_id = ? OR folder_id IN (
-                WITH RECURSIVE subfolders AS (
-                    SELECT id FROM folders WHERE parent_id = ?
-                    UNION ALL
-                    SELECT f.id FROM folders f
-                    JOIN subfolders s ON f.parent_id = s.id
-                )
-                SELECT id FROM subfolders
-            ))`;
-      countQuery += ` AND (folder_id = ? OR folder_id IN (
-                WITH RECURSIVE subfolders AS (
-                    SELECT id FROM folders WHERE parent_id = ?
-                    UNION ALL
-                    SELECT f.id FROM folders f
-                    JOIN subfolders s ON f.parent_id = s.id
-                )
-                SELECT id FROM subfolders
-            ))`;
-      params.push(folder_id, folder_id);
-    } else {
-      query += " AND b.folder_id = ?";
-      countQuery += " AND b.folder_id = ?";
-      params.push(folder_id);
-    }
-  }
-
-  if (isFavoritesView) {
-    // Use COALESCE to handle potential NULL values (though schema has DEFAULT 0)
-    query += " AND COALESCE(b.is_favorite, 0) = 1";
-    countQuery += " AND COALESCE(b.is_favorite, 0) = 1";
-  }
-
-  // Skip search and tag filters for favorites and archived views - show all items
-  if (search && !isFavoritesView && !isArchivedView) {
-    // Utilize the FTS5 table for ultra-fast full-text matching and relevance ranking
-    const useFuzzy = opts.fuzzy === true;
-
-    // Instead of using complex LIKE clauses, we're joining against the synchronized FTS5 virtual table
-    let ftsBaseSelect = `
+  // Define the base FROM and JOINs
+  let baseFrom;
+  if (hasSearch) {
+    baseFrom = `
       FROM bookmarks b
-      INNER JOIN bookmarks_fts fts ON fts.id = b.id
+      INNER JOIN bookmarks_fts ON bookmarks_fts.id = b.id
       LEFT JOIN (
         SELECT bt.bookmark_id,
                GROUP_CONCAT(t.name, ', ') as tags_joined,
@@ -103,48 +61,81 @@ function listBookmarks(db, userId, opts = {}) {
         JOIN tags t ON t.id = bt.tag_id
         WHERE t.user_id = ?
         GROUP BY bt.bookmark_id
-      ) tg ON tg.bookmark_id = b.id
-      WHERE b.user_id = ?
-    `;
+      ) tg ON tg.bookmark_id = b.id`;
+  } else {
+    baseFrom = `
+      FROM bookmarks b
+      LEFT JOIN (
+        SELECT bt.bookmark_id,
+               GROUP_CONCAT(t.name, ', ') as tags_joined,
+               json_group_array(
+                 json_object(
+                   'name', t.name,
+                   'tag_id', t.id,
+                   'color', t.color,
+                   'color_override', bt.color_override
+                 )
+               ) as tags_detailed
+        FROM bookmark_tags bt
+        JOIN tags t ON t.id = bt.tag_id
+        WHERE t.user_id = ?
+        GROUP BY bt.bookmark_id
+      ) tg ON tg.bookmark_id = b.id`;
+  }
 
-    // Reset queries with the inner joined base selection
-    query = `SELECT b.*, COALESCE(tg.tags_joined, '') as tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed ${ftsBaseSelect}`;
-    countQuery = `SELECT COUNT(*) as total ${ftsBaseSelect}`;
+  let query = `SELECT b.*, COALESCE(tg.tags_joined, '') as tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed ${baseFrom} WHERE b.user_id = ?`;
+  let countQuery = `SELECT COUNT(*) as total ${baseFrom} WHERE b.user_id = ?`;
+  const params = [userId, userId];
 
-    if (useFuzzy) {
-      // Fuzzy search doesn't natively map to FTS5 strictly without trigrams, so we mix it with MATCH broadly
-      // Format: "word1*" OR "word2*"
-      const searchWords = search
-        .trim()
-        .split(/\s+/)
-        .filter((w) => w.length > 0);
-      const ftsQuery = searchWords
-        .map((w) => `"${w.replace(/"/g, '""')}"*`)
-        .join(" OR ");
-
-      query += " AND fts MATCH ?";
-      countQuery += " AND fts MATCH ?";
-      params.push(ftsQuery);
+  // Handle folder filter
+  if (folder_id && !isFavoritesView && !isArchivedView) {
+    if (include_children) {
+      const folderFilter = ` AND (b.folder_id = ? OR b.folder_id IN (
+        WITH RECURSIVE subfolders AS (
+          SELECT id FROM folders WHERE parent_id = ?
+          UNION ALL
+          SELECT f.id FROM folders f
+          JOIN subfolders s ON f.parent_id = s.id
+        )
+        SELECT id FROM subfolders
+      ))`;
+      query += folderFilter;
+      countQuery += folderFilter;
+      params.push(folder_id, folder_id);
     } else {
-      // Standard multi-word search matching ALL words
-      // Format: "word1"* AND "word2"*
-      const searchWords = search
-        .trim()
-        .split(/\s+/)
-        .filter((w) => w.length > 0);
+      query += " AND b.folder_id = ?";
+      countQuery += " AND b.folder_id = ?";
+      params.push(folder_id);
+    }
+  }
+
+  // Handle favorite filter
+  if (isFavoritesView) {
+    query += " AND COALESCE(b.is_favorite, 0) = 1";
+    countQuery += " AND COALESCE(b.is_favorite, 0) = 1";
+  }
+
+  // Handle search matching
+  if (hasSearch) {
+    const useFuzzy = opts.fuzzy === true;
+    const searchWords = search
+      .trim()
+      .split(/\s+/)
+      .filter((w) => w.length > 0);
+
+    if (searchWords.length > 0) {
       const ftsQuery = searchWords
         .map((w) => `"${w.replace(/"/g, '""')}"*`)
-        .join(" AND ");
+        .join(useFuzzy ? " OR " : " AND ");
 
-      query += " AND fts MATCH ?";
-      countQuery += " AND fts MATCH ?";
+      query += " AND bookmarks_fts MATCH ?";
+      countQuery += " AND bookmarks_fts MATCH ?";
       params.push(ftsQuery);
     }
   }
 
-  // Skip tag filters for favorites and archived views - show all items
+  // Handle tag filtering
   if (tags && !isFavoritesView && !isArchivedView) {
-    // Support multiple tags with AND/OR semantics; match case-insensitively
     const tagArr = String(tags)
       .split(",")
       .map((t) => t.trim())
@@ -152,12 +143,11 @@ function listBookmarks(db, userId, opts = {}) {
     const tagArrLower = tagArr.map((t) => t.toLowerCase());
 
     if (tagArrLower.length > 0) {
-      // Use LOWER(t.name) so "work" matches "Work"
+      const tagPlaceholders = tagArrLower.map(() => "?").join(",");
       if (tagMode && String(tagMode).toLowerCase() === "and") {
-        const tagPlaceholders = tagArrLower.map(() => "?").join(",");
         const tagFilter = `
           AND b.id IN (
-            SELECT DISTINCT bt.bookmark_id
+            SELECT bt.bookmark_id
             FROM bookmark_tags bt
             JOIN tags t ON t.id = bt.tag_id
             WHERE t.user_id = ? AND LOWER(t.name) IN (${tagPlaceholders})
@@ -169,7 +159,6 @@ function listBookmarks(db, userId, opts = {}) {
         countQuery += tagFilter;
         params.push(userId, ...tagArrLower, tagArrLower.length);
       } else {
-        const tagPlaceholders = tagArrLower.map(() => "?").join(",");
         const tagFilter = `
           AND b.id IN (
             SELECT DISTINCT bt.bookmark_id
@@ -187,23 +176,21 @@ function listBookmarks(db, userId, opts = {}) {
 
   // Handle archiving filter
   if (isFavoritesView) {
-    // For favorites view, always exclude archived favorites (server handles all filtering)
     query += " AND b.is_archived = 0";
     countQuery += " AND b.is_archived = 0";
   } else {
-    // For other views, apply archived filter as requested
     if (archived === true || archived === "true") {
       query += " AND b.is_archived = 1";
       countQuery += " AND b.is_archived = 1";
     } else if (archived === "all") {
-      // Show both archived and non-archived
+      // Show all
     } else {
-      // Default: show only non-archived
       query += " AND b.is_archived = 0";
       countQuery += " AND b.is_archived = 0";
     }
   }
 
+  // Sorting and Pagination
   let orderClause = " ORDER BY position, created_at DESC";
   if (sort) {
     switch (String(sort).toLowerCase()) {
@@ -225,14 +212,14 @@ function listBookmarks(db, userId, opts = {}) {
         orderClause = " ORDER BY title COLLATE NOCASE DESC";
         break;
       default:
-        orderClause =
-          search && !isFavoritesView && !isArchivedView
-            ? " ORDER BY fts.rank"
-            : " ORDER BY position, created_at DESC";
+        orderClause = hasSearch
+          ? " ORDER BY rank"
+          : " ORDER BY position, created_at DESC";
     }
-  } else if (search && !isFavoritesView && !isArchivedView) {
-    orderClause = " ORDER BY fts.rank";
+  } else if (hasSearch) {
+    orderClause = " ORDER BY rank";
   }
+
   query += orderClause;
 
   if (limit) {
@@ -284,7 +271,7 @@ function createBookmark(db, userIdOrData, maybeData) {
   const og_image = data.og_image || null;
 
   db.prepare(
-    `INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, position, content_type, color, og_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    "INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, position, content_type, color, og_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
   ).run(
     id,
     userId,
@@ -456,7 +443,7 @@ function incrementClick(db, a, b) {
   }
   return db
     .prepare(
-      `UPDATE bookmarks SET click_count = click_count + 1, last_clicked = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?`,
+      "UPDATE bookmarks SET click_count = click_count + 1, last_clicked = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
     )
     .run(id, userId);
 }
