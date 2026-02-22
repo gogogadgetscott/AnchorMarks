@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require("uuid");
+const { broadcast } = require("../helpers/websocket");
 
 function setupFoldersRoutes(app, db, helpers = {}) {
   const { authenticateTokenMiddleware } = helpers;
@@ -38,6 +39,7 @@ function setupFoldersRoutes(app, db, helpers = {}) {
         parent_id || null, // Added parent_id
       );
       const folder = folderModel.getFolderById(db, id);
+      broadcast(req.user.id, { type: "folders:changed" });
       res.json(folder);
     } catch (err) {
       console.error("Error creating folder:", err);
@@ -56,6 +58,7 @@ function setupFoldersRoutes(app, db, helpers = {}) {
         position,
       });
       const folder = folderModel.getFolderById(db, req.params.id);
+      broadcast(req.user.id, { type: "folders:changed" });
       res.json(folder);
     } catch (err) {
       console.error("Error updating folder:", err);
@@ -66,6 +69,7 @@ function setupFoldersRoutes(app, db, helpers = {}) {
   app.delete("/api/folders/:id", authenticateTokenMiddleware, (req, res) => {
     try {
       folderModel.deleteFolder(db, req.params.id, req.user.id);
+      broadcast(req.user.id, { type: "folders:changed" });
       res.json({ success: true });
     } catch (err) {
       console.error("Error deleting folder:", err);

@@ -4,6 +4,7 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
   const tagHelpers = require("../helpers/tag-helpers");
   const { parseTagsDetailed } = require("../helpers/tags");
   const { isPrivateAddress } = require("../helpers/utils");
+  const { broadcast } = require("../helpers/websocket");
 
   app.get("/api/bookmarks", authenticateTokenMiddleware, (req, res) => {
     try {
@@ -147,6 +148,7 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
         req.params.id,
       );
       bookmark.tags_detailed = parseTagsDetailed(bookmark.tags_detailed);
+      broadcast(req.user.id, { type: "bookmarks:changed" });
       res.json(bookmark);
     } catch (err) {
       console.error("Error updating bookmark:", err);
@@ -177,6 +179,7 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
   app.delete("/api/bookmarks/:id", authenticateTokenMiddleware, (req, res) => {
     try {
       bookmarkModel.deleteBookmark(db, req.user.id, req.params.id);
+      broadcast(req.user.id, { type: "bookmarks:changed" });
       res.json({ success: true });
     } catch (err) {
       console.error("Error deleting bookmark:", err);
