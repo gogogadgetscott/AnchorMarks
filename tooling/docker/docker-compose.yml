@@ -9,8 +9,9 @@ services:
         PORT: ${PORT:-3000}
         HOST: ${HOST:-0.0.0.0}
         DB_PATH: ${DB_PATH:-/apps/database/anchormarks.db}
-        JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-to-a-random-string}
-        CORS_ORIGIN: ${CORS_ORIGIN:-https://yourdomain.com}
+        # No defaults for secrets; set JWT_SECRET and CORS_ORIGIN in .env or host env
+        JWT_SECRET: ${JWT_SECRET}
+        CORS_ORIGIN: ${CORS_ORIGIN}
         SSL_ENABLED: ${SSL_ENABLED}
         SSL_KEY: ${SSL_KEY}
         SSL_CERT: ${SSL_CERT}
@@ -19,8 +20,9 @@ services:
       PORT: ${PORT:-3000}
       HOST: ${HOST:-0.0.0.0}
       DB_PATH: ${DB_PATH:-/apps/database/anchormarks.db}
-      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-to-a-random-string}
-      CORS_ORIGIN: ${CORS_ORIGIN:-https://yourdomain.com}
+      # No defaults for production secrets; app will fail at startup if unset (validateSecurityConfig)
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN}
     container_name: anchormarks
     restart: unless-stopped
     ports:

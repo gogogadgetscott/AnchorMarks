@@ -155,7 +155,6 @@ restart-all: stop-all start-all ## Restart all development processes
 # ============================================================================
 test: test-all ## Run all tests (alias for test-all)
 
-
 test-backend-local: ## Run backend tests on host (requires compatible better-sqlite3 build)
 	@echo "$(BLUE)Running backend tests on host...$(NC)"
 	@cd $(BACKEND_DIR) && npm run test

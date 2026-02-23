@@ -44,7 +44,7 @@ async function isPrivateAddress(url) {
 // Cache for in-progress favicon fetches
 const faviconFetchQueue = new Map();
 
-async function fetchFavicon(url, bookmarkId, db, FAVICONS_DIR, NODE_ENV) {
+async function fetchFavicon(url, bookmarkId, db, FAVICONS_DIR, NODE_ENV, userId) {
   try {
     const urlObj = new URL(url);
     if (!["http:", "https:"].includes(urlObj.protocol)) return null;
@@ -58,11 +58,21 @@ async function fetchFavicon(url, bookmarkId, db, FAVICONS_DIR, NODE_ENV) {
     const localPath = path.join(FAVICONS_DIR, faviconFilename);
     const publicPath = `/favicons/${faviconFilename}`;
 
+    const updateFavicon = (pathVal) => {
+      if (userId != null) {
+        db.prepare(
+          "UPDATE bookmarks SET favicon_local = ?, favicon = ? WHERE id = ? AND user_id = ?",
+        ).run(pathVal, pathVal, bookmarkId, userId);
+      } else {
+        db.prepare(
+          "UPDATE bookmarks SET favicon_local = ?, favicon = ? WHERE id = ?",
+        ).run(pathVal, pathVal, bookmarkId);
+      }
+    };
+
     // Check if already cached locally
     if (fs.existsSync(localPath)) {
-      db.prepare(
-        "UPDATE bookmarks SET favicon_local = ?, favicon = ? WHERE id = ?",
-      ).run(publicPath, publicPath, bookmarkId);
+      updateFavicon(publicPath);
       return publicPath;
     }
 
@@ -86,9 +96,7 @@ async function fetchFavicon(url, bookmarkId, db, FAVICONS_DIR, NODE_ENV) {
       tryFetchFavicon(sources, 0, localPath, (success) => {
         faviconFetchQueue.delete(domain);
         if (success) {
-          db.prepare(
-            "UPDATE bookmarks SET favicon_local = ?, favicon = ? WHERE id = ?",
-          ).run(publicPath, publicPath, bookmarkId);
+          updateFavicon(publicPath);
           resolve(publicPath);
         } else {
           resolve(null);

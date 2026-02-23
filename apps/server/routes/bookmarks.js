@@ -328,7 +328,11 @@ module.exports = function setupBookmarksRoutes(app, db, helpers = {}) {
       bookmarkModel.updateBookmark(db, req.user.id, bookmark.id, {
         favicon: null,
       });
-      const newFavicon = await fetchFaviconWrapper(bookmark.url, bookmark.id);
+      const newFavicon = await fetchFaviconWrapper(
+        bookmark.url,
+        bookmark.id,
+        req.user.id,
+      );
       res.json({ favicon: newFavicon });
     },
   );

@@ -112,7 +112,7 @@ Compose file: tooling/docker/docker-compose.yml. The stack reads variables from 
 
 ### Production Hardening
 
-- Set strong `JWT_SECRET` and a correct `CORS_ORIGIN`.
+- **For production, set `JWT_SECRET` and `CORS_ORIGIN`; never rely on defaults.** Use a strong random value for `JWT_SECRET` and your actual front-end origin(s) for `CORS_ORIGIN` (comma-separated if multiple).
 - Enable rate limiting on auth endpoints.
 - Run behind an SSL-terminating reverse proxy (see tooling/deploy/nginx.conf).
 - Block private/loopback SSRF targets; production code already enforces this.
@@ -121,6 +121,8 @@ Compose file: tooling/docker/docker-compose.yml. The stack reads variables from 
 ## 🔧 Configuration
 
 ### Minimal .env (Production)
+
+**For production, set `JWT_SECRET` and `CORS_ORIGIN`; never rely on defaults.** The app will not start in production without valid values.
 
 ```ini
 # Required (production)

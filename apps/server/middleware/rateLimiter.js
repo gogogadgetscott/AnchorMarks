@@ -1,10 +1,12 @@
 // Config via env:
 // General API: RATE_LIMIT_MAX (default 60), RATE_LIMIT_WINDOW_MS (default 60000).
 // Auth (login/register): RATE_LIMIT_AUTH_MAX (default 10), RATE_LIMIT_AUTH_WINDOW_MS (default 60000).
+// Maintenance: RATE_LIMIT_MAINTENANCE_MAX (default 20), RATE_LIMIT_MAINTENANCE_WINDOW_MS (default 60000).
 // RATE_LIMIT_DISABLED=1 to turn off (e.g. when all traffic is one IP behind Docker/proxy).
 const { logger } = require("../lib/logger");
 const requestCounts = new Map();
 const authRequestCounts = new Map();
+const maintenanceRequestCounts = new Map();
 
 const RATE_LIMIT_WINDOW =
   parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 60000; // 1 minute
@@ -19,6 +21,17 @@ const effectiveAuthMax =
   Number.isNaN(RATE_LIMIT_AUTH_MAX) || RATE_LIMIT_AUTH_MAX <= 0
     ? 10
     : RATE_LIMIT_AUTH_MAX;
+
+const RATE_LIMIT_MAINTENANCE_WINDOW =
+  parseInt(process.env.RATE_LIMIT_MAINTENANCE_WINDOW_MS, 10) || 60000; // 1 minute
+const RATE_LIMIT_MAINTENANCE_MAX = parseInt(
+  process.env.RATE_LIMIT_MAINTENANCE_MAX,
+  10,
+);
+const effectiveMaintenanceMax =
+  Number.isNaN(RATE_LIMIT_MAINTENANCE_MAX) || RATE_LIMIT_MAINTENANCE_MAX <= 0
+    ? 20
+    : RATE_LIMIT_MAINTENANCE_MAX;
 
 const RATE_LIMIT_DISABLED =
   process.env.RATE_LIMIT_DISABLED === "1" ||
@@ -47,6 +60,17 @@ function cleanupExpiredEntries() {
       cleaned++;
     } else if (recent.length < times.length) {
       authRequestCounts.set(key, recent);
+    }
+  }
+  for (const [key, times] of maintenanceRequestCounts.entries()) {
+    const recent = times.filter(
+      (t) => now - t < RATE_LIMIT_MAINTENANCE_WINDOW,
+    );
+    if (recent.length === 0) {
+      maintenanceRequestCounts.delete(key);
+      cleaned++;
+    } else if (recent.length < times.length) {
+      maintenanceRequestCounts.set(key, recent);
     }
   }
   if (process.env.NODE_ENV === "development" && cleaned > 0) {
@@ -116,8 +140,21 @@ function rateLimiter(req, res, next) {
       return next();
     }
 
-    // Skip rate limiting for maintenance operations (bulk updates)
+    // Stricter rate limit for maintenance (check-link, duplicates, optimize) to prevent resource exhaustion
     if (req.path.startsWith("/api/maintenance")) {
+      if (RATE_LIMIT_DISABLED) return next();
+      const mKey = getClientKey(req);
+      const mTimes = maintenanceRequestCounts.get(mKey) || [];
+      const mRecent = mTimes.filter(
+        (t) => now - t < RATE_LIMIT_MAINTENANCE_WINDOW,
+      );
+      mRecent.push(now);
+      maintenanceRequestCounts.set(mKey, mRecent);
+      if (mRecent.length > effectiveMaintenanceMax) {
+        const retryAfter =
+          (mRecent[0] + RATE_LIMIT_MAINTENANCE_WINDOW - now) / 1000;
+        return sendRateLimitExceeded(res, retryAfter);
+      }
       return next();
     }
 

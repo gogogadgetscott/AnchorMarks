@@ -401,7 +401,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
           });
         }
 
-        fetchFaviconWrapper(url, id).catch((e) =>
+        fetchFaviconWrapper(url, id, req.user.id).catch((e) =>
           logger.error("Favicon fetch failed", e),
         );
 
@@ -607,7 +607,11 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
       bookmarkModel.updateBookmark(db, req.user.id, bookmark.id, {
         favicon: null,
       });
-      const newFavicon = await fetchFaviconWrapper(bookmark.url, bookmark.id);
+      const newFavicon = await fetchFaviconWrapper(
+        bookmark.url,
+        bookmark.id,
+        req.user.id,
+      );
       res.json({ favicon: newFavicon });
     },
   );

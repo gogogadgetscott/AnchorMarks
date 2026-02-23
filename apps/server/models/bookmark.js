@@ -378,16 +378,12 @@ function deleteAllForUser(db, userId) {
 }
 
 function setThumbnailLocal(db, bookmarkId, localPath, userId) {
-  if (userId) {
-    return db
-      .prepare(
-        "UPDATE bookmarks SET thumbnail_local = ? WHERE id = ? AND user_id = ?",
-      )
-      .run(localPath, bookmarkId, userId);
-  }
+  if (!userId) throw new Error("setThumbnailLocal requires userId");
   return db
-    .prepare("UPDATE bookmarks SET thumbnail_local = ? WHERE id = ?")
-    .run(localPath, bookmarkId);
+    .prepare(
+      "UPDATE bookmarks SET thumbnail_local = ? WHERE id = ? AND user_id = ?",
+    )
+    .run(localPath, bookmarkId, userId);
 }
 
 function findBookmarkIdByUrl(db, userId, url) {

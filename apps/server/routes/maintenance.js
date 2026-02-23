@@ -44,7 +44,9 @@ module.exports = function (
     validateCsrfToken,
     ...(validateBody ? [validateBody(schemas.checkLink)] : []),
     async (req, res) => {
-      const { url } = req.validated || req.body;
+      const data = req.validated;
+      if (!data) return res.status(400).json({ error: "Validation required" });
+      const { url } = data;
 
       let responded = false;
 

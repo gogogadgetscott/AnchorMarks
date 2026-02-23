@@ -15,13 +15,13 @@ function listFolders(db, userId) {
 }
 
 function getFolderById(db, id, userId) {
-  if (userId !== undefined && userId !== null) {
-    const row = db
-      .prepare("SELECT * FROM folders WHERE id = ? AND user_id = ?")
-      .get(id, userId);
-    return row || null;
+  if (userId === undefined || userId === null) {
+    throw new Error("getFolderById requires userId for tenant isolation");
   }
-  return db.prepare("SELECT * FROM folders WHERE id = ?").get(id);
+  const row = db
+    .prepare("SELECT * FROM folders WHERE id = ? AND user_id = ?")
+    .get(id, userId);
+  return row || null;
 }
 
 function updateFolder(db, id, userId, fields) {

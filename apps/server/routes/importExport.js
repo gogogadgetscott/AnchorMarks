@@ -46,7 +46,9 @@ function setupImportExportRoutes(
     ...(validateBody ? [validateBody(schemas.importHtml)] : []),
     async (req, res) => {
       try {
-        const { html } = req.validated || req.body;
+        const data = req.validated;
+        if (!data) return res.status(400).json({ error: "Validation required" });
+        const { html } = data;
         const { bookmarks, folders } = await parseBookmarkHtml(html);
         const result = importExportModel.importJson(db, req.user.id, {
           bookmarks,
@@ -56,7 +58,7 @@ function setupImportExportRoutes(
         // Queue imported bookmarks for background metadata processing (favicons + thumbnails)
         const bookmarkIds = result.imported.map((b) => b.id);
         if (bookmarkIds.length > 0) {
-          queueMetadataFetch(bookmarkIds);
+          queueMetadataFetch(bookmarkIds, req.user.id);
         }
 
         res.json({
@@ -110,7 +112,9 @@ function setupImportExportRoutes(
     ...(validateBody ? [validateBody(schemas.importJson)] : []),
     (req, res) => {
       try {
-        const { bookmarks = [], folders = [] } = req.validated || req.body;
+        const data = req.validated;
+        if (!data) return res.status(400).json({ error: "Validation required" });
+        const { bookmarks = [], folders = [] } = data;
         const result = importExportModel.importJson(db, req.user.id, {
           bookmarks,
           folders,
@@ -119,7 +123,7 @@ function setupImportExportRoutes(
         // Queue imported bookmarks for background metadata processing (favicons + thumbnails)
         const bookmarkIds = result.imported.map((b) => b.id);
         if (bookmarkIds.length > 0) {
-          queueMetadataFetch(bookmarkIds);
+          queueMetadataFetch(bookmarkIds, req.user.id);
         }
 
         res.json({

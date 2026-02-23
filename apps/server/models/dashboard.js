@@ -24,12 +24,12 @@ function createDashboardView(db, userId, name, config) {
 }
 
 function getDashboardView(db, id, userId) {
-  if (userId !== undefined && userId !== null) {
-    return db
-      .prepare("SELECT * FROM dashboard_views WHERE id = ? AND user_id = ?")
-      .get(id, userId);
+  if (userId === undefined || userId === null) {
+    throw new Error("getDashboardView requires userId for tenant isolation");
   }
-  return db.prepare("SELECT * FROM dashboard_views WHERE id = ?").get(id);
+  return db
+    .prepare("SELECT * FROM dashboard_views WHERE id = ? AND user_id = ?")
+    .get(id, userId);
 }
 
 function updateDashboardView(db, id, userId, fields) {

@@ -85,7 +85,7 @@ function createExampleBookmarks(db, userId, folderId = null, fetchFavicon) {
     }
 
     if (fetchFavicon && process.env.NODE_ENV === "production") {
-      fetchFavicon(bm.url, id).catch((e) =>
+      fetchFavicon(bm.url, id, userId).catch((e) =>
         logger.error("Favicon fetch failed for example bookmark", e),
       );
     }

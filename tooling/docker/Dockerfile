@@ -51,13 +51,14 @@ COPY --from=client-build /client/dist /apps/client/dist
 COPY tooling/docker/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
-# Environment variables
+# Environment variables (non-secret defaults only)
 ARG NODE_ENV=production
 ARG PORT=3000
 ARG HOST=0.0.0.0
 ARG DB_PATH=/apps/database/anchormarks.db
-ARG JWT_SECRET=your-super-secret-jwt-key-change-this-to-a-random-string
-ARG CORS_ORIGIN=*
+# Do not default JWT_SECRET or CORS_ORIGIN
+ARG JWT_SECRET
+ARG CORS_ORIGIN
 ARG SSL_ENABLED=false
 ARG SSL_KEY=/apps/ssl/privkey.pem
 ARG SSL_CERT=/apps/ssl/fullchain.pem

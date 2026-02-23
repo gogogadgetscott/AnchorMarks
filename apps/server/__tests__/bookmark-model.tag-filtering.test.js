@@ -3,7 +3,11 @@ const path = require("path");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 const { initializeDatabase } = require("../models/database");
-const { listBookmarks, createBookmark } = require("../models/bookmark");
+const {
+  listBookmarks,
+  createBookmark,
+  setThumbnailLocal,
+} = require("../models/bookmark");
 const { createTag } = require("../models/tag");
 
 const TEST_DB_PATH = path.join(__dirname, "anchormarks-test-model.db");
@@ -321,5 +325,16 @@ describe("Bookmark Model - listBookmarks with Tag Filtering", () => {
       expect(titles).toContain("A and AB");
       expect(titles.length).toBe(1);
     });
+  });
+});
+
+describe("setThumbnailLocal", () => {
+  it("throws when userId is missing", () => {
+    expect(() =>
+      setThumbnailLocal(db, "any-id", "/path/to/thumb.png", null),
+    ).toThrow("setThumbnailLocal requires userId");
+    expect(() =>
+      setThumbnailLocal(db, "any-id", "/path/to/thumb.png", undefined),
+    ).toThrow("setThumbnailLocal requires userId");
   });
 });

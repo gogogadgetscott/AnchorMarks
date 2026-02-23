@@ -29,7 +29,9 @@ function setupSyncRoutes(
     ...(validateBody ? [validateBody(schemas.syncPush)] : []),
     (req, res) => {
       try {
-        const { bookmarks, folders } = req.validated || req.body;
+        const data = req.validated;
+        if (!data) return res.status(400).json({ error: "Validation required" });
+        const { bookmarks, folders } = data;
         const results = syncModel.push(db, req.user.id, { bookmarks, folders });
 
         if (bookmarks && bookmarks.length) {
@@ -42,7 +44,7 @@ function setupSyncRoutes(
                 bm.url,
               );
               if (id)
-                fetchFaviconWrapper(bm.url, id).catch((e) =>
+                fetchFaviconWrapper(bm.url, id, req.user.id).catch((e) =>
                   logger.warn("Favicon fetch failed during sync", e),
                 );
             } catch (innerErr) {

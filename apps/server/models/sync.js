@@ -73,8 +73,8 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
               ? clientFolderIdToServerId[folder.parent_id]
               : folder.parent_id;
           db.prepare(
-            "UPDATE folders SET name = ?, color = ?, parent_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-          ).run(folder.name, folder.color, resolvedParentId, folder.id);
+            "UPDATE folders SET name = ?, color = ?, parent_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
+          ).run(folder.name, folder.color, resolvedParentId, folder.id, userId);
           results.updated++;
         } else {
           const serverFolderId = uuidv4();
@@ -122,8 +122,8 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
           }
           const resolvedFolderId = resolveFolderId(bm.folder_id);
           db.prepare(
-            "UPDATE bookmarks SET title = ?, folder_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-          ).run(bm.title, resolvedFolderId, existing.id);
+            "UPDATE bookmarks SET title = ?, folder_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
+          ).run(bm.title, resolvedFolderId, existing.id, userId);
           if (bm.tags) {
             const tagsString = Array.isArray(bm.tags)
               ? bm.tags.join(",")

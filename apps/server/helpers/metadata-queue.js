@@ -8,7 +8,7 @@
 
 const { logger } = require("../lib/logger");
 
-// Queue of bookmark IDs awaiting metadata fetch
+// Queue of { bookmarkId, userId } for tenant-scoped metadata fetch (SEC-005)
 let metadataQueue = [];
 
 // Processing state
@@ -38,19 +38,26 @@ function initialize(database, fetchFavicon, captureScreenshot = null) {
 }
 
 /**
- * Queue bookmark IDs for metadata fetching
+ * Queue bookmark IDs for metadata fetching (tenant-scoped; SEC-005)
  * @param {string[]} bookmarkIds - Array of bookmark IDs to process
+ * @param {string} userId - Owner of the bookmarks (required for tenant-scoped processing)
  */
-function queueMetadataFetch(bookmarkIds) {
+function queueMetadataFetch(bookmarkIds, userId) {
+  if (!userId) {
+    logger.warn("MetadataQueue: userId required for queueMetadataFetch, skipping");
+    return;
+  }
   if (!Array.isArray(bookmarkIds)) {
     bookmarkIds = [bookmarkIds];
   }
 
-  // Add to queue (avoid duplicates)
-  const existingIds = new Set(metadataQueue);
-  for (const id of bookmarkIds) {
-    if (!existingIds.has(id)) {
-      metadataQueue.push(id);
+  // Add to queue (avoid duplicates by bookmarkId+userId)
+  const existing = new Set(metadataQueue.map((e) => `${e.bookmarkId}:${e.userId}`));
+  for (const bookmarkId of bookmarkIds) {
+    const key = `${bookmarkId}:${userId}`;
+    if (!existing.has(key)) {
+      existing.add(key);
+      metadataQueue.push({ bookmarkId, userId });
     }
   }
 
@@ -80,16 +87,18 @@ async function processBatch() {
     `MetadataQueue: processing batch of ${batch.length}, remaining: ${metadataQueue.length}`,
   );
 
-  for (const bookmarkId of batch) {
+  const getBookmark = db.prepare(
+    "SELECT id, url FROM bookmarks WHERE id = ? AND user_id = ?",
+  );
+
+  for (const { bookmarkId, userId } of batch) {
     try {
-      // Get bookmark URL from database
-      const bookmark = db
-        .prepare("SELECT id, url FROM bookmarks WHERE id = ?")
-        .get(bookmarkId);
+      // Tenant-scoped lookup (SEC-005): only process if bookmark belongs to this user
+      const bookmark = getBookmark.get(bookmarkId, userId);
 
       if (bookmark && bookmark.url) {
-        // Fetch favicon
-        await fetchFaviconFn(bookmark.url, bookmark.id);
+        // Fetch favicon (pass userId for tenant-scoped UPDATE)
+        await fetchFaviconFn(bookmark.url, bookmark.id, userId);
 
         // Capture thumbnail if enabled
         if (captureScreenshotFn) {

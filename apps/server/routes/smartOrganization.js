@@ -158,7 +158,8 @@ function setupSmartOrganizationRoutes(
     validateCsrfTokenMiddleware,
     ...(validateBody ? [validateBody(schemas.smartCollectionCreate)] : []),
     (req, res) => {
-      const raw = req.validated || req.body;
+      const data = req.validated;
+      if (!data) return res.status(400).json({ error: "Validation required" });
       const {
         name,
         type = "tag_cluster",
@@ -167,7 +168,7 @@ function setupSmartOrganizationRoutes(
         tags,
         domain,
         filters,
-      } = raw;
+      } = data;
       if (type === "tag_cluster" && (!tags || !tags.length))
         return res
           .status(400)

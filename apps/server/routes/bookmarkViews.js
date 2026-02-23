@@ -26,7 +26,9 @@ module.exports = function setupBookmarkViewsRoutes(app, db, helpers = {}) {
     ...(validateBody ? [validateBody(schemas.bookmarkViewCreate)] : []),
     (req, res) => {
       try {
-        const { name, config } = req.validated || req.body;
+        const data = req.validated;
+        if (!data) return res.status(400).json({ error: "Validation required" });
+        const { name, config } = data;
         const view = bookmarkViewModel.createBookmarkView(
           db,
           req.user.id,
@@ -47,7 +49,9 @@ module.exports = function setupBookmarkViewsRoutes(app, db, helpers = {}) {
     ...(validateBody ? [validateBody(schemas.bookmarkViewUpdate)] : []),
     (req, res) => {
       try {
-        const { name, config } = req.validated || req.body;
+        const data = req.validated;
+        if (!data) return res.status(400).json({ error: "Validation required" });
+        const { name, config } = data;
         const updated = bookmarkViewModel.updateBookmarkView(
           db,
           req.params.id,

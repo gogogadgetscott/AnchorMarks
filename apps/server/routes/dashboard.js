@@ -27,7 +27,9 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
     ...(validateBody ? [validateBody(schemas.dashboardViewCreate)] : []),
     (req, res) => {
       try {
-        const { name, config } = req.validated || req.body;
+        const data = req.validated;
+        if (!data) return res.status(400).json({ error: "Validation required" });
+        const { name, config } = data;
         const view = dashboardModel.createDashboardView(
           db,
           req.user.id,
@@ -48,7 +50,9 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
     ...(validateBody ? [validateBody(schemas.dashboardViewUpdate)] : []),
     (req, res) => {
       try {
-        const { name, config, position } = req.validated || req.body;
+        const data = req.validated;
+        if (!data) return res.status(400).json({ error: "Validation required" });
+        const { name, config, position } = data;
         const view = dashboardModel.updateDashboardView(
           db,
           req.params.id,

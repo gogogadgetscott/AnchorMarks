@@ -159,6 +159,7 @@ Choose the installation method that best suits your needs:
 
    ```bash
    nano .env
+   # For production, set JWT_SECRET and CORS_ORIGIN; never rely on defaults.
    # Set: NODE_ENV=production, JWT_SECRET, CORS_ORIGIN, DB_PATH
    ```
 
@@ -320,7 +321,7 @@ cp .env.example .env
 nano .env
 ```
 
-Required configuration:
+**For production, set `JWT_SECRET` and `CORS_ORIGIN`; never rely on defaults.** Required configuration:
 
 ```bash
 NODE_ENV=production

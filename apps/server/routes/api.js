@@ -87,9 +87,10 @@ function setupApiRoutes(app, db, helpers) {
     validateBody(schemas.settingsUpdate),
     (req, res) => {
       try {
-        const body = req.validated || req.body;
-        logger.debug(`Saving settings for user ${req.user.id}`, body);
-        userSettingsModel.upsertUserSettings(db, req.user.id, body);
+        const data = req.validated;
+        if (!data) return res.status(400).json({ error: "Validation required" });
+        logger.debug(`Saving settings for user ${req.user.id}`, data);
+        userSettingsModel.upsertUserSettings(db, req.user.id, data);
 
         const settings = db
           .prepare("SELECT * FROM user_settings WHERE user_id = ?")
@@ -335,7 +336,7 @@ function setupApiRoutes(app, db, helpers) {
 
           // Fetch favicon in background
           if (fetchFaviconWrapper) {
-            fetchFaviconWrapper(bm.url, id).catch((e) =>
+            fetchFaviconWrapper(bm.url, id, userId).catch((e) =>
               logger.warn("Favicon fetch failed during bookmark reset", e),
             );
           }
