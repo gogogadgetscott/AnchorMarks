@@ -125,6 +125,10 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
       headerConfig.rightContent = `
         ${Button("Add Widget", { id: "dashboard-add-widget-btn", variant: "secondary", icon: "plus", data: { action: "toggle-widget-picker" } })}
+        <button type="button" id="views-btn" class="btn btn-secondary" title="Dashboard Views" aria-label="Dashboard views">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          Views
+        </button>
         ${Button("", { id: "dashboard-layout-btn", variant: "icon", icon: "grid", title: "Layout Settings", data: { action: "toggle-layout-settings" } })}
       `;
       headerConfig.bulkActions = ["archive", "move", "tag", "delete"];

@@ -514,8 +514,7 @@ export function renderDashboard(): void {
 
   if (!container) return;
 
-  // Hide view toggle in dashboard
-  document.querySelector(".view-toggle")?.classList.add("hidden");
+  // Hide bulk bar on dashboard (view toggle stays visible)
   bulkBar?.classList.add("hidden");
 
   container.className = "dashboard-freeform";
