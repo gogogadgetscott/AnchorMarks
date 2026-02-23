@@ -5,7 +5,7 @@ const options = {
     openapi: "3.0.0",
     info: {
       title: "AnchorMarks API",
-      version: "1.0.3",
+      version: "1.0.4",
       description:
         "A modern web-based bookmark manager API with browser sync and AI-assisted organization.",
       license: {

@@ -1,6 +1,6 @@
 {
   "name": "anchormarks",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A modern web-based bookmark manager with browser sync, API access, and AI-assisted development",
   "keywords": [
     "bookmarks",
@@ -44,7 +44,8 @@
     "minimatch": ">=10.2.1",
     "glob": ">=11.0.0",
     "swagger-jsdoc": {
-      "glob": "^11.0.0"
+      "glob": "^11.0.0",
+      "minimatch": ">=10.2.1"
     }
   }
 }
