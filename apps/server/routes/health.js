@@ -2,6 +2,8 @@ const statsModel = require("../models/stats");
 const bookmarkModel = require("../models/bookmark");
 const { monitor } = require("../helpers/performance-monitor");
 const { schemas } = require("../validation");
+const { logger } = require("../lib/logger");
+const { reportAndSend } = require("../lib/errors");
 
 function setupHealthRoutes(
   app,
@@ -19,8 +21,7 @@ function setupHealthRoutes(
       const dups = statsModel.findDuplicates(db, req.user.id);
       res.json({ total_duplicates: dups.length, duplicates: dups });
     } catch (err) {
-      console.error("Duplicates error:", err);
-      res.status(500).json({ error: "Failed to list duplicates" });
+      return reportAndSend(res, err, logger, "Duplicates error");
     }
   });
 
@@ -34,8 +35,7 @@ function setupHealthRoutes(
         const result = statsModel.cleanupDuplicates(db, req.user.id);
         res.json(result);
       } catch (err) {
-        console.error("Cleanup duplicates error:", err);
-        res.status(500).json({ error: "Failed to cleanup duplicates" });
+        return reportAndSend(res, err, logger, "Cleanup duplicates error");
       }
     },
   );
@@ -68,8 +68,7 @@ function setupHealthRoutes(
         );
         res.json(result);
       } catch (err) {
-        console.error("Deadlinks error:", err);
-        res.status(500).json({ error: "Failed to run deadlink checks" });
+        return reportAndSend(res, err, logger, "Deadlinks error");
       }
     },
   );
@@ -94,8 +93,7 @@ function setupHealthRoutes(
           .map(([domain, count]) => ({ domain, count }));
         res.json(sorted);
       } catch (err) {
-        console.error("Error computing domains:", err);
-        res.status(500).json({ error: "Failed to compute domains" });
+        return reportAndSend(res, err, logger, "Error computing domains");
       }
     },
   );
@@ -112,8 +110,7 @@ function setupHealthRoutes(
         const stats = monitor.getStats(timeWindow);
         res.json(stats);
       } catch (err) {
-        console.error("Performance stats error:", err);
-        res.status(500).json({ error: "Failed to get performance stats" });
+        return reportAndSend(res, err, logger, "Performance stats error");
       }
     },
   );

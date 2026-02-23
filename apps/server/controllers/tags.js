@@ -3,6 +3,8 @@ const bookmarkModel = require("../models/bookmark");
 const tagHelpers = require("../helpers/tag-helpers");
 const tagParseHelpers = require("../helpers/tags");
 const { validateBody, validateQuery, schemas } = require("../validation");
+const { logger } = require("../lib/logger");
+const { reportAndSend } = require("../lib/errors");
 
 function setupTagsRoutes(app, db, helpers = {}) {
   const { authenticateTokenMiddleware, validateCsrfTokenMiddleware } = helpers;
@@ -29,8 +31,7 @@ function setupTagsRoutes(app, db, helpers = {}) {
       const tags = tagModel.listTags(db, req.user.id);
       res.json(tags);
     } catch (err) {
-      console.error("Error fetching tags:", err);
-      res.status(500).json({ error: "Failed to fetch tags" });
+      return reportAndSend(res, err, logger, "Error fetching tags");
     }
   });
 
@@ -89,7 +90,7 @@ function setupTagsRoutes(app, db, helpers = {}) {
       } catch (err) {
         if (err.message && err.message.includes("UNIQUE"))
           return res.status(409).json({ error: "Tag already exists" });
-        res.status(500).json({ error: "Failed to create tag" });
+        return reportAndSend(res, err, logger, "Error creating tag");
       }
     },
   );
@@ -156,8 +157,7 @@ function setupTagsRoutes(app, db, helpers = {}) {
         broadcast(req.user.id, { type: "tags:changed" });
         res.json(tag);
       } catch (err) {
-        console.error("Error updating tag:", err);
-        res.status(500).json({ error: "Failed to update tag" });
+        return reportAndSend(res, err, logger, "Error updating tag");
       }
     },
   );
@@ -190,8 +190,7 @@ function setupTagsRoutes(app, db, helpers = {}) {
         broadcast(req.user.id, { type: "tags:changed" });
         res.json({ success: true });
       } catch (err) {
-        console.error("Error deleting tag:", err);
-        res.status(500).json({ error: "Failed to delete tag" });
+        return reportAndSend(res, err, logger, "Error deleting tag");
       }
     },
   );
@@ -316,7 +315,8 @@ function setupTagsRoutes(app, db, helpers = {}) {
           .slice(0, 15);
 
         res.json(suggestions);
-      } catch {
+      } catch (err) {
+        logger.warn("Tag suggestion failed", err);
         res.json([]);
       }
     },
@@ -340,8 +340,7 @@ function setupTagsRoutes(app, db, helpers = {}) {
       const cooccurrence = tagHelpers.getTagCooccurrence(db, req.user.id);
       res.json({ success: true, tags, cooccurrence });
     } catch (err) {
-      console.error("Tag analytics error:", err);
-      res.status(500).json({ error: "Failed to compute tag analytics" });
+      return reportAndSend(res, err, logger, "Tag analytics error");
     }
   });
 
@@ -510,8 +509,7 @@ function setupTagsRoutes(app, db, helpers = {}) {
           return res.status(404).json({ error: "Tag not found" });
         res.json({ updated: result.updated });
       } catch (err) {
-        console.error("Tag rename error:", err);
-        res.status(500).json({ error: "Failed to rename/merge tag" });
+        return reportAndSend(res, err, logger, "Tag rename error");
       }
     },
   );

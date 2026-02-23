@@ -1,6 +1,7 @@
 const Database = require("better-sqlite3");
 const path = require("path");
 const fs = require("fs");
+const { logger } = require("../lib/logger");
 
 function initializeDatabase(DB_PATH) {
   const dbDir = path.dirname(DB_PATH);
@@ -15,6 +16,7 @@ function initializeDatabase(DB_PATH) {
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         api_key TEXT UNIQUE,
+        enabled INTEGER DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
@@ -168,17 +170,23 @@ function initializeDatabase(DB_PATH) {
     try {
       const columns = db.prepare("PRAGMA table_info(bookmarks_fts)").all();
       if (columns.length > 0 && !columns.some((c) => c.name === "id")) {
-        console.log(
+        logger.info(
           "Detecting old bookmarks_fts schema (missing id), recreating...",
         );
         recreateFts = true;
       }
-    } catch (_e) {}
+    } catch (ftsErr) {
+      logger.debug(
+        "FTS5 schema check skipped (table may not exist yet)",
+        ftsErr,
+      );
+    }
 
     if (recreateFts) {
       db.exec("DROP TABLE bookmarks_fts");
     }
 
+    // Create standalone FTS5 table (no content= reference to avoid schema mismatch)
     db.exec(`
       CREATE VIRTUAL TABLE IF NOT EXISTS bookmarks_fts USING fts5(
         id UNINDEXED,
@@ -186,87 +194,11 @@ function initializeDatabase(DB_PATH) {
         title,
         url,
         description,
-        tags,
-        content='bookmarks',
-        content_rowid='rowid'
+        tags
       );
-
-      CREATE TRIGGER IF NOT EXISTS bookmarks_fts_insert AFTER INSERT ON bookmarks
-      BEGIN
-        INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
-        VALUES (
-          new.rowid, new.id, new.user_id, new.title, new.url, new.description,
-          COALESCE((SELECT GROUP_CONCAT(t.name, ', ')
-                    FROM bookmark_tags bt
-                    JOIN tags t ON t.id = bt.tag_id
-                    WHERE bt.bookmark_id = new.id), '')
-        );
-      END;
-
-      CREATE TRIGGER IF NOT EXISTS bookmarks_fts_delete AFTER DELETE ON bookmarks
-      BEGIN
-        INSERT INTO bookmarks_fts (bookmarks_fts, rowid) VALUES ('delete', old.rowid);
-      END;
-
-      CREATE TRIGGER IF NOT EXISTS bookmarks_fts_update AFTER UPDATE ON bookmarks
-      BEGIN
-        INSERT INTO bookmarks_fts (bookmarks_fts, rowid) VALUES ('delete', old.rowid);
-        INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
-        VALUES (
-          new.rowid, new.id, new.user_id, new.title, new.url, new.description,
-          COALESCE((SELECT GROUP_CONCAT(t.name, ', ')
-                    FROM bookmark_tags bt
-                    JOIN tags t ON t.id = bt.tag_id
-                    WHERE bt.bookmark_id = new.id), '')
-        );
-      END;
-
-      CREATE TRIGGER IF NOT EXISTS bookmark_tags_sync_insert AFTER INSERT ON bookmark_tags
-      BEGIN
-        INSERT INTO bookmarks_fts (bookmarks_fts, rowid)
-        SELECT 'delete', b.rowid FROM bookmarks b WHERE b.id = new.bookmark_id;
-        INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
-        SELECT b.rowid, b.id, b.user_id, b.title, b.url, b.description,
-               COALESCE((SELECT GROUP_CONCAT(t2.name, ', ')
-                        FROM bookmark_tags bt2
-                        JOIN tags t2 ON t2.id = bt2.tag_id
-                        WHERE bt2.bookmark_id = b.id), '')
-        FROM bookmarks b WHERE b.id = new.bookmark_id;
-      END;
-
-      CREATE TRIGGER IF NOT EXISTS bookmark_tags_sync_delete AFTER DELETE ON bookmark_tags
-      BEGIN
-        INSERT INTO bookmarks_fts (bookmarks_fts, rowid)
-        SELECT 'delete', b.rowid FROM bookmarks b WHERE b.id = old.bookmark_id;
-        INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
-        SELECT b.rowid, b.id, b.user_id, b.title, b.url, b.description,
-               COALESCE((SELECT GROUP_CONCAT(t2.name, ', ')
-                        FROM bookmark_tags bt2
-                        JOIN tags t2 ON t2.id = bt2.tag_id
-                        WHERE bt2.bookmark_id = b.id), '')
-        FROM bookmarks b WHERE b.id = old.bookmark_id;
-      END;
-
-      CREATE TRIGGER IF NOT EXISTS tags_sync_update AFTER UPDATE OF name ON tags
-      BEGIN
-        INSERT INTO bookmarks_fts (bookmarks_fts, rowid)
-        SELECT DISTINCT 'delete', b.rowid
-        FROM bookmarks b
-        JOIN bookmark_tags bt ON bt.bookmark_id = b.id
-        WHERE bt.tag_id = new.id;
-        INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
-        SELECT b.rowid, b.id, b.user_id, b.title, b.url, b.description,
-               COALESCE((SELECT GROUP_CONCAT(t2.name, ', ')
-                        FROM bookmark_tags bt2
-                        JOIN tags t2 ON t2.id = bt2.tag_id
-                        WHERE bt2.bookmark_id = b.id), '')
-        FROM bookmarks b
-        JOIN bookmark_tags bt ON bt.bookmark_id = b.id
-        WHERE bt.tag_id = new.id;
-      END;
     `);
   } catch (err) {
-    console.error(`Failed to initialize database at ${DB_PATH}:`, err);
+    logger.error(`Failed to initialize database at ${DB_PATH}`, err);
     throw err;
   }
 
@@ -290,6 +222,7 @@ function initializeDatabase(DB_PATH) {
   }
 
   const migrations = [
+    { table: "users", column: "enabled", def: "INTEGER DEFAULT 1" },
     {
       table: "user_settings",
       column: "hide_sidebar",
@@ -347,7 +280,7 @@ function initializeDatabase(DB_PATH) {
     }
   }
   if (migrationsRun > 0) {
-    console.log(`[Migrations] Added ${migrationsRun} column(s)`);
+    logger.info(`Migrations: added ${migrationsRun} column(s)`);
   }
 
   // Run formal migrations
@@ -365,7 +298,87 @@ function initializeDatabase(DB_PATH) {
       }
     }
   } catch (err) {
-    console.error("Migration runner failed:", err.message);
+    logger.error("Migration runner failed:", err.message);
+  }
+
+  // Create/recreate FTS5 triggers after migrations (which may drop old ones)
+  try {
+    db.exec(`
+      CREATE TRIGGER IF NOT EXISTS bookmarks_fts_insert AFTER INSERT ON bookmarks
+      BEGIN
+        INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
+        VALUES (
+          new.rowid, new.id, new.user_id, new.title, new.url, new.description,
+          COALESCE((SELECT GROUP_CONCAT(t.name, ', ')
+                    FROM bookmark_tags bt
+                    JOIN tags t ON t.id = bt.tag_id
+                    WHERE bt.bookmark_id = new.id), '')
+        );
+      END;
+
+      CREATE TRIGGER IF NOT EXISTS bookmarks_fts_delete AFTER DELETE ON bookmarks
+      BEGIN
+        DELETE FROM bookmarks_fts WHERE rowid = old.rowid;
+      END;
+
+      CREATE TRIGGER IF NOT EXISTS bookmarks_fts_update AFTER UPDATE ON bookmarks
+      BEGIN
+        DELETE FROM bookmarks_fts WHERE rowid = old.rowid;
+        INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
+        VALUES (
+          new.rowid, new.id, new.user_id, new.title, new.url, new.description,
+          COALESCE((SELECT GROUP_CONCAT(t.name, ', ')
+                    FROM bookmark_tags bt
+                    JOIN tags t ON t.id = bt.tag_id
+                    WHERE bt.bookmark_id = new.id), '')
+        );
+      END;
+
+      CREATE TRIGGER IF NOT EXISTS bookmark_tags_sync_insert AFTER INSERT ON bookmark_tags
+      BEGIN
+        DELETE FROM bookmarks_fts WHERE rowid IN (SELECT b.rowid FROM bookmarks b WHERE b.id = new.bookmark_id);
+        INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
+        SELECT b.rowid, b.id, b.user_id, b.title, b.url, b.description,
+               COALESCE((SELECT GROUP_CONCAT(t2.name, ', ')
+                        FROM bookmark_tags bt2
+                        JOIN tags t2 ON t2.id = bt2.tag_id
+                        WHERE bt2.bookmark_id = b.id), '')
+        FROM bookmarks b WHERE b.id = new.bookmark_id;
+      END;
+
+      CREATE TRIGGER IF NOT EXISTS bookmark_tags_sync_delete AFTER DELETE ON bookmark_tags
+      BEGIN
+        DELETE FROM bookmarks_fts WHERE rowid IN (SELECT b.rowid FROM bookmarks b WHERE b.id = old.bookmark_id);
+        INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
+        SELECT b.rowid, b.id, b.user_id, b.title, b.url, b.description,
+               COALESCE((SELECT GROUP_CONCAT(t2.name, ', ')
+                        FROM bookmark_tags bt2
+                        JOIN tags t2 ON t2.id = bt2.tag_id
+                        WHERE bt2.bookmark_id = b.id), '')
+        FROM bookmarks b WHERE b.id = old.bookmark_id;
+      END;
+
+      CREATE TRIGGER IF NOT EXISTS tags_sync_update AFTER UPDATE OF name ON tags
+      BEGIN
+        DELETE FROM bookmarks_fts WHERE rowid IN (
+          SELECT DISTINCT b.rowid
+          FROM bookmarks b
+          JOIN bookmark_tags bt ON bt.bookmark_id = b.id
+          WHERE bt.tag_id = new.id
+        );
+        INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
+        SELECT b.rowid, b.id, b.user_id, b.title, b.url, b.description,
+               COALESCE((SELECT GROUP_CONCAT(t2.name, ', ')
+                        FROM bookmark_tags bt2
+                        JOIN tags t2 ON t2.id = bt2.tag_id
+                        WHERE bt2.bookmark_id = b.id), '')
+        FROM bookmarks b
+        JOIN bookmark_tags bt ON bt.bookmark_id = b.id
+        WHERE bt.tag_id = new.id;
+      END;
+    `);
+  } catch (err) {
+    logger.error("Failed to create FTS triggers:", err.message);
   }
 
   return db;

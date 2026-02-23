@@ -10,8 +10,23 @@ export function applyTheme(settings: UserSettings) {
 }
 /**
  * AnchorMarks - Global State Module
- * Manages all shared application state
+ * Manages all shared application state with reactive subscriptions
  */
+
+type StateListener = (key: string, value: unknown) => void;
+
+const listeners = new Set<StateListener>();
+
+export function subscribe(listener: StateListener): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function emit(key: string, value: unknown): void {
+  for (const listener of listeners) {
+    listener(key, value);
+  }
+}
 
 import {
   User,
@@ -230,43 +245,57 @@ export let viewToolbarConfig: Record<string, any> = {
 // State setters
 export function setAuthToken(val: string | null) {
   authToken = val;
+  emit("authToken", val);
 }
 export function setCsrfToken(val: string | null) {
   csrfToken = val;
+  emit("csrfToken", val);
 }
 export function setCurrentUser(val: User | null) {
   currentUser = val;
+  emit("currentUser", val);
 }
 export function setIsAuthenticated(val: boolean) {
   isAuthenticated = val;
+  emit("isAuthenticated", val);
 }
 export function setBookmarks(val: Bookmark[]) {
   bookmarks = val;
+  emit("bookmarks", val);
 }
 export function setFolders(val: Folder[]) {
   folders = val;
+  emit("folders", val);
 }
 export function setCollections(val: Collection[]) {
   collections = val;
+  emit("collections", val);
 }
 export function setRenderedBookmarks(val: Bookmark[]) {
   renderedBookmarks = val;
+  emit("renderedBookmarks", val);
 }
 export function setTotalCount(val: number) {
   totalCount = val;
+  emit("totalCount", val);
 }
 export function setWidgetDataCache(id: string, val: Bookmark[]) {
   widgetDataCache[id] = val;
+  emit("widgetDataCache", { id, val });
 }
 export function clearWidgetDataCache() {
   widgetDataCache = {};
+  emit("widgetDataCache", null);
 }
 export function resetPagination() {
   displayedCount = BOOKMARKS_PER_PAGE;
   totalCount = 0;
+  emit("displayedCount", BOOKMARKS_PER_PAGE);
+  emit("totalCount", 0);
 }
 export function setCurrentDashboardTab(val: string | null) {
   currentDashboardTab = val;
+  emit("currentDashboardTab", val);
 }
 export async function setCurrentView(val: string) {
   const prevView = currentView;
@@ -304,6 +333,7 @@ export async function setCurrentView(val: string) {
 
   // Only update view after cleanup and DOM/state prep so state stays consistent
   currentView = val;
+  emit("currentView", val);
 
   // Body classes for view-specific layout overrides
   document.body.classList.toggle("dashboard-active", val === "dashboard");
@@ -312,81 +342,107 @@ export async function setCurrentView(val: string) {
 }
 export function setCurrentFolder(val: string | null) {
   currentFolder = val;
+  emit("currentFolder", val);
 }
 export function setCurrentCollection(val: string | null) {
   currentCollection = val;
+  emit("currentCollection", val);
 }
 export function setViewMode(val: "grid" | "list" | "compact") {
   viewMode = val;
+  emit("viewMode", val);
 }
 export function setTagMetadata(val: Record<string, any>) {
   tagMetadata = val;
+  emit("tagMetadata", val);
 }
 export function setHideFavicons(val: boolean) {
   hideFavicons = val;
+  emit("hideFavicons", val);
 }
 export function setHideSidebar(val: boolean) {
   hideSidebar = val;
+  emit("hideSidebar", val);
 }
 export function setAiSuggestionsEnabled(val: boolean) {
   aiSuggestionsEnabled = val;
+  emit("aiSuggestionsEnabled", val);
 }
 export function setIncludeChildBookmarks(val: boolean) {
   if (includeChildBookmarks !== val) {
     widgetDataCache = {};
+    emit("widgetDataCache", null);
   }
   includeChildBookmarks = val;
+  emit("includeChildBookmarks", val);
 }
 export function setSnapToGrid(val: boolean) {
   snapToGrid = val;
+  emit("snapToGrid", val);
 }
 export function setTourCompleted(val: boolean) {
   tourCompleted = val;
+  emit("tourCompleted", val);
 }
 export function setRichLinkPreviewsEnabled(val: boolean) {
   richLinkPreviewsEnabled = val;
+  emit("richLinkPreviewsEnabled", val);
 }
 export function setTagCloudMaxTags(val: number) {
   tagCloudMaxTags = val;
+  emit("tagCloudMaxTags", val);
 }
 export function setTagCloudDefaultShowAll(val: boolean) {
   tagCloudDefaultShowAll = val;
+  emit("tagCloudDefaultShowAll", val);
 }
 export function setDashboardConfig(val: typeof dashboardConfig) {
   dashboardConfig = val;
+  emit("dashboardConfig", val);
 }
 export function setWidgetOrder(val: Record<string, number>) {
   widgetOrder = val;
+  emit("widgetOrder", val);
 }
 export function setDashboardWidgets(val: DashboardWidget[]) {
   dashboardWidgets = val;
+  emit("dashboardWidgets", val);
 }
 export function setCollapsedSections(val: string[]) {
   collapsedSections = val;
+  emit("collapsedSections", val);
 }
 export function setCurrentDashboardViewName(val: string | null) {
   currentDashboardViewName = val;
+  emit("currentDashboardViewName", val);
 }
 export function setCurrentDashboardViewId(val: string | null) {
   currentDashboardViewId = val;
+  emit("currentDashboardViewId", val);
 }
 export function setDashboardHasUnsavedChanges(val: boolean) {
   dashboardHasUnsavedChanges = val;
+  emit("dashboardHasUnsavedChanges", val);
 }
 export function setSavedDashboardState(val: string | null) {
   savedDashboardState = val;
+  emit("savedDashboardState", val);
 }
 export function setIsFullscreen(val: boolean) {
   isFullscreen = val;
+  emit("isFullscreen", val);
 }
 export function setFilterConfig(val: FilterConfig) {
   filterConfig = val;
+  emit("filterConfig", val);
 }
 export function setLastSelectedIndex(val: number | null) {
   lastSelectedIndex = val;
+  emit("lastSelectedIndex", val);
 }
 export function setBulkMode(val: boolean) {
   bulkMode = val;
+  emit("bulkMode", val);
 }
 export function setTourState(val: {
   active: boolean;
@@ -394,64 +450,83 @@ export function setTourState(val: {
   steps: TourStep[];
 }) {
   tourState = val;
+  emit("tourState", val);
 }
 export function setLastTagRenameAction(
   val: { from: string; to: string } | null,
 ) {
   lastTagRenameAction = val;
+  emit("lastTagRenameAction", val);
 }
 export function setIsInitialLoad(val: boolean) {
   isInitialLoad = val;
+  emit("isInitialLoad", val);
 }
 export function setDisplayedCount(val: number) {
   displayedCount = val;
+  emit("displayedCount", val);
 }
 export function setIsLoadingMore(val: boolean) {
   isLoadingMore = val;
+  emit("isLoadingMore", val);
 }
 export function setIsLoading(val: boolean) {
   isLoading = val;
+  emit("isLoading", val);
 }
 export function setDraggedWidget(val: HTMLElement | null) {
   draggedWidget = val;
+  emit("draggedWidget", val);
 }
 export function setDraggedSidebarItem(val: Folder | Tag | null) {
   draggedSidebarItem = val;
+  emit("draggedSidebarItem", val);
 }
 export function setIsDraggingWidget(val: boolean) {
   isDraggingWidget = val;
+  emit("isDraggingWidget", val);
 }
 export function setDragStartPos(val: { x: number; y: number }) {
   dragStartPos = val;
+  emit("dragStartPos", val);
 }
 export function setWidgetStartPos(val: { x: number; y: number }) {
   widgetStartPos = val;
+  emit("widgetStartPos", val);
 }
 export function setIsResizing(val: boolean) {
   isResizing = val;
+  emit("isResizing", val);
 }
 export function setResizingWidget(val: HTMLElement | null) {
   resizingWidget = val;
+  emit("resizingWidget", val);
 }
 export function setResizeStartSize(val: { w: number; h: number }) {
   resizeStartSize = val;
+  emit("resizeStartSize", val);
 }
 export function setSidebarPopout(val: HTMLElement | null) {
   sidebarPopout = val;
+  emit("sidebarPopout", val);
 }
 export function setPopoutTimeout(val: ReturnType<typeof setTimeout> | null) {
   popoutTimeout = val;
+  emit("popoutTimeout", val);
 }
 export function setTagSuggestTimeout(
   val: ReturnType<typeof setTimeout> | null,
 ) {
   tagSuggestTimeout = val;
+  emit("tagSuggestTimeout", val);
 }
 export function setAllSidebarTags(val: { name: string; count: number }[]) {
   allSidebarTags = val;
+  emit("allSidebarTags", val);
 }
 export function setShowingAllTags(val: boolean) {
   showingAllTags = val;
+  emit("showingAllTags", val);
 }
 export function setViewToolbarConfig(
   view: string,

@@ -1,4 +1,6 @@
 const statsModel = require("../models/stats");
+const { logger } = require("../lib/logger");
+const { reportAndSend } = require("../lib/errors");
 
 function setupStatsRoutes(app, db, { authenticateTokenMiddleware }) {
   /**
@@ -17,8 +19,7 @@ function setupStatsRoutes(app, db, { authenticateTokenMiddleware }) {
     try {
       res.json(statsModel.getStats(db, req.user.id));
     } catch (err) {
-      console.error("Stats error:", err);
-      res.status(500).json({ error: "Failed to compute stats" });
+      return reportAndSend(res, err, logger, "Stats error");
     }
   });
 
@@ -40,8 +41,7 @@ function setupStatsRoutes(app, db, { authenticateTokenMiddleware }) {
       const engagement = statsModel.getEngagement(db, req.user.id);
       res.json({ ...stats, ...engagement });
     } catch (err) {
-      console.error("Advanced stats error:", err);
-      res.status(500).json({ error: "Failed to compute advanced stats" });
+      return reportAndSend(res, err, logger, "Advanced stats error");
     }
   });
 }

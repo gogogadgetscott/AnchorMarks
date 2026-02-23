@@ -2,6 +2,7 @@
 // General API: RATE_LIMIT_MAX (default 60), RATE_LIMIT_WINDOW_MS (default 60000).
 // Auth (login/register): RATE_LIMIT_AUTH_MAX (default 10), RATE_LIMIT_AUTH_WINDOW_MS (default 60000).
 // RATE_LIMIT_DISABLED=1 to turn off (e.g. when all traffic is one IP behind Docker/proxy).
+const { logger } = require("../lib/logger");
 const requestCounts = new Map();
 const authRequestCounts = new Map();
 
@@ -49,7 +50,7 @@ function cleanupExpiredEntries() {
     }
   }
   if (process.env.NODE_ENV === "development" && cleaned > 0) {
-    console.log(`[Rate Limiter] Cleaned up ${cleaned} expired entries`);
+    logger.debug(`Rate limiter: cleaned up ${cleaned} expired entries`);
   }
 }
 
@@ -156,7 +157,7 @@ function rateLimiter(req, res, next) {
     }
     next();
   } catch (err) {
-    console.error("Rate limiter error:", err);
+    logger.error("Rate limiter error", err);
     next();
   }
 }

@@ -1,6 +1,8 @@
 const syncModel = require("../models/sync");
 const bookmarkModel = require("../models/bookmark");
 const { schemas } = require("../validation");
+const { logger } = require("../lib/logger");
+const { reportAndSend } = require("../lib/errors");
 
 function setupSyncRoutes(
   app,
@@ -16,8 +18,7 @@ function setupSyncRoutes(
     try {
       res.json(syncModel.getStatus(db, req.user.id));
     } catch (err) {
-      console.error("Sync status error:", err);
-      res.status(500).json({ error: "Failed to get sync status" });
+      return reportAndSend(res, err, logger, "Sync status error");
     }
   });
 
@@ -40,17 +41,19 @@ function setupSyncRoutes(
                 req.user.id,
                 bm.url,
               );
-              if (id) fetchFaviconWrapper(bm.url, id).catch(console.error);
-            } catch {
-              // ignore
+              if (id)
+                fetchFaviconWrapper(bm.url, id).catch((e) =>
+                  logger.warn("Favicon fetch failed during sync", e),
+                );
+            } catch (innerErr) {
+              logger.debug("Sync favicon lookup failed", innerErr);
             }
           }
         }
 
         res.json(results);
       } catch (err) {
-        console.error("Sync push error:", err);
-        res.status(500).json({ error: "Failed to push sync data" });
+        return reportAndSend(res, err, logger, "Sync push error");
       }
     },
   );
@@ -62,15 +65,14 @@ function setupSyncRoutes(
         if (b.tags_detailed && typeof b.tags_detailed === "string") {
           try {
             b.tags_detailed = JSON.parse(b.tags_detailed);
-          } catch {
-            /* noop */
+          } catch (parseErr) {
+            logger.debug("Sync pull tags_detailed parse failed", parseErr);
           }
         }
       });
       res.json(data);
     } catch (err) {
-      console.error("Sync pull error:", err);
-      res.status(500).json({ error: "Failed to pull sync data" });
+      return reportAndSend(res, err, logger, "Sync pull error");
     }
   });
 }

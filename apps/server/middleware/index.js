@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
+const { logger } = require("../lib/logger");
 
 /**
  * Optional/legacy: full middleware stack (Helmet, CORS, rate limit, static, CSRF).
@@ -69,7 +70,7 @@ function setupMiddleware(app, { config, validateCsrfTokenMiddleware }) {
       }
     }
     if (config.NODE_ENV === "development" && cleaned > 0) {
-      console.log(`[Rate Limiter] Cleaned up ${cleaned} expired entries`);
+      logger.debug(`Rate limiter: cleaned up ${cleaned} expired entries`);
     }
   }
 
@@ -115,7 +116,7 @@ function setupMiddleware(app, { config, validateCsrfTokenMiddleware }) {
   // Request logging
   app.use((req, res, next) => {
     if (config.NODE_ENV === "development") {
-      console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
+      logger.debug(`${req.method} ${req.url}`);
     }
     next();
   });
@@ -157,9 +158,20 @@ function authenticateToken(db) {
         .prepare("SELECT * FROM users WHERE api_key = ?")
         .get(apiKey);
       if (user) {
+        // Check if user account is enabled
+        if (user.enabled === 0) {
+          logger.warn(
+            `API-KEY 403: disabled user ${user.id} attempted ${req.method} ${req.path}`,
+          );
+          return res.status(403).json({
+            error: "Account is disabled.",
+            suggestion: "Contact the administrator to re-enable your account.",
+          });
+        }
+
         if (!isApiKeyAllowed(req)) {
-          console.warn(
-            `[API-KEY 403] User ${user.id} attempted ${req.method} ${req.path} (not whitelisted)`,
+          logger.warn(
+            `API-KEY 403: user ${user.id} attempted ${req.method} ${req.path} (not whitelisted)`,
           );
           return res.status(403).json({
             error: "API key not permitted for this endpoint.",
@@ -172,8 +184,8 @@ function authenticateToken(db) {
         req.authType = "api-key";
         return next();
       } else {
-        console.warn(
-          `[API-KEY 403] Invalid API key received: ${apiKey ? apiKey.substring(0, 6) + "***" : "(empty)"} for ${req.method} ${req.path}`,
+        logger.warn(
+          `API-KEY 403: invalid API key received: ${apiKey ? apiKey.substring(0, 6) + "***" : "(empty)"} for ${req.method} ${req.path}`,
         );
         return res.status(403).json({
           error: "Invalid API key.",
@@ -198,12 +210,20 @@ function authenticateToken(db) {
       if (!req.user) {
         return res.status(401).json({ error: "User not found" });
       }
+      // Check if user account is enabled
+      if (req.user.enabled === 0) {
+        return res.status(403).json({
+          error: "Account is disabled.",
+          suggestion: "Contact the administrator to re-enable your account.",
+        });
+      }
       req.authType = "jwt";
       next();
     } catch (err) {
       if (err.name === "TokenExpiredError") {
         return res.status(401).json({ error: "Access token expired" });
       }
+      logger.error("Auth token verification failed", err);
       res.clearCookie("token");
       return res.status(403).json({ error: "Invalid token" });
     }

@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require("uuid");
+const { logger } = require("../lib/logger");
 
 function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
   const imported = [];
@@ -51,8 +52,8 @@ function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
   // Insert folders in dependency-safe order
   const pending = [...folders];
   let guard = 0;
-  console.log(
-    `[Import] Starting folder insertion for ${pending.length} folders`,
+  logger.info(
+    `Import: starting folder insertion for ${pending.length} folders`,
   );
   while (pending.length && guard < 1000) {
     const next = pending.shift();
@@ -65,21 +66,21 @@ function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
       next.parent_id !== null &&
       parentMapped === undefined
     ) {
-      console.log(
-        `[Import] Re-queueing folder "${next.name}" (waiting for parent ${next.parent_id})`,
+      logger.debug(
+        `Import: re-queueing folder "${next.name}" (waiting for parent ${next.parent_id})`,
       );
       pending.push(next);
     } else {
       const newId = ensureFolder(next);
-      console.log(
-        `[Import] Inserted folder "${next.name}" (Original ID: ${next.id}, New ID: ${newId}, Parent: ${parentMapped})`,
+      logger.info(
+        `Import: inserted folder "${next.name}" (Original ID: ${next.id}, New ID: ${newId}, Parent: ${parentMapped})`,
       );
     }
     guard++;
   }
   if (pending.length > 0) {
-    console.warn(
-      `[Import] Failed to insert ${pending.length} folders due to missing parents after 1000 attempts.`,
+    logger.warn(
+      `Import: failed to insert ${pending.length} folders due to missing parents after 1000 attempts`,
     );
   }
 

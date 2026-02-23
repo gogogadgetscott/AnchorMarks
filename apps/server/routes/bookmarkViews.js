@@ -1,4 +1,6 @@
 const { schemas } = require("../validation");
+const { logger } = require("../lib/logger");
+const { reportAndSend } = require("../lib/errors");
 
 module.exports = function setupBookmarkViewsRoutes(app, db, helpers = {}) {
   const {
@@ -13,8 +15,7 @@ module.exports = function setupBookmarkViewsRoutes(app, db, helpers = {}) {
       const views = bookmarkViewModel.listBookmarkViews(db, req.user.id);
       res.json(views);
     } catch (err) {
-      console.error("Error fetching bookmark views:", err);
-      res.status(500).json({ error: "Failed to fetch bookmark views" });
+      return reportAndSend(res, err, logger, "Error fetching bookmark views");
     }
   });
 
@@ -34,8 +35,7 @@ module.exports = function setupBookmarkViewsRoutes(app, db, helpers = {}) {
         );
         res.json(view);
       } catch (err) {
-        console.error("Error creating bookmark view:", err);
-        res.status(500).json({ error: "Failed to create bookmark view" });
+        return reportAndSend(res, err, logger, "Error creating bookmark view");
       }
     },
   );
@@ -58,8 +58,7 @@ module.exports = function setupBookmarkViewsRoutes(app, db, helpers = {}) {
         if (!updated) return res.status(404).json({ error: "View not found" });
         res.json(updated);
       } catch (err) {
-        console.error("Error updating bookmark view:", err);
-        res.status(500).json({ error: "Failed to update bookmark view" });
+        return reportAndSend(res, err, logger, "Error updating bookmark view");
       }
     },
   );
@@ -79,8 +78,7 @@ module.exports = function setupBookmarkViewsRoutes(app, db, helpers = {}) {
           return res.status(404).json({ error: "View not found" });
         res.json({ success: true });
       } catch (err) {
-        console.error("Error deleting bookmark view:", err);
-        res.status(500).json({ error: "Failed to delete bookmark view" });
+        return reportAndSend(res, err, logger, "Error deleting bookmark view");
       }
     },
   );
@@ -99,8 +97,7 @@ module.exports = function setupBookmarkViewsRoutes(app, db, helpers = {}) {
         if (!view) return res.status(404).json({ error: "View not found" });
         res.json({ success: true, config: JSON.parse(view.config) });
       } catch (err) {
-        console.error("Error restoring bookmark view:", err);
-        res.status(500).json({ error: "Failed to restore bookmark view" });
+        return reportAndSend(res, err, logger, "Error restoring bookmark view");
       }
     },
   );

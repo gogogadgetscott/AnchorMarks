@@ -224,6 +224,28 @@ export async function updateHeaderContent(): Promise<void> {
   const { attachSidebarToggle } = await import("@features/ui/navigation.ts");
   attachSidebarToggle();
 
+  // Dashboard header: direct listeners so Add Widget and Layout buttons work after header replace
+  if (state.currentView === "dashboard") {
+    const addWidgetBtn = document.getElementById("dashboard-add-widget-btn");
+    if (addWidgetBtn) {
+      addWidgetBtn.addEventListener("click", (e: Event) => {
+        e.stopPropagation();
+        import("@features/bookmarks/widget-picker.ts").then(
+          ({ toggleWidgetPicker }) => toggleWidgetPicker(),
+        );
+      });
+    }
+    const layoutBtn = document.getElementById("dashboard-layout-btn");
+    if (layoutBtn) {
+      layoutBtn.addEventListener("click", (e: Event) => {
+        e.stopPropagation();
+        import("@features/bookmarks/dashboard.ts").then(
+          ({ toggleLayoutSettings }) => toggleLayoutSettings(),
+        );
+      });
+    }
+  }
+
   // Re-attach Omnibar listeners since header was replaced
   const { initOmnibarListeners } = await import("@features/ui/omnibar.ts");
   const { initInteractions } = await import("@features/ui/interactions.ts");

@@ -81,7 +81,7 @@ describe("Health API Errors", () => {
       .get("/api/health/duplicates")
       .set("X-CSRF-Token", csrfToken);
     expect(res.status).toBe(500);
-    expect(res.body.error).toMatch(/failed/i);
+    expect(res.body.error).toMatch(/failed|error/i);
   });
 
   it("handles errors in duplicate cleanup", async () => {
@@ -89,7 +89,7 @@ describe("Health API Errors", () => {
       .post("/api/health/duplicates/cleanup")
       .set("X-CSRF-Token", csrfToken);
     expect(res.status).toBe(500);
-    expect(res.body.error).toMatch(/failed/i);
+    expect(res.body.error).toMatch(/failed|error/i);
   });
 
   it("handles errors in deadlink checks", async () => {
@@ -97,7 +97,7 @@ describe("Health API Errors", () => {
       .get("/api/health/deadlinks?check=true")
       .set("X-CSRF-Token", csrfToken);
     expect(res.status).toBe(500);
-    expect(res.body.error).toMatch(/failed/i);
+    expect(res.body.error).toMatch(/failed|error/i);
   });
 
   it("handles errors in domain stats", async () => {
@@ -105,6 +105,6 @@ describe("Health API Errors", () => {
       .get("/api/bookmarks/by-domain")
       .set("X-CSRF-Token", csrfToken);
     expect(res.status).toBe(500);
-    expect(res.body.error).toMatch(/failed/i);
+    expect(res.body.error).toMatch(/failed|error/i);
   });
 });

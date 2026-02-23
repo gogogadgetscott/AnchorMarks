@@ -4,6 +4,8 @@ const bookmarkModel = require("../models/bookmark");
 const smartCollectionsModel = require("../models/smartCollections");
 const statsModel = require("../models/stats");
 const { schemas } = require("../validation");
+const { logger } = require("../lib/logger");
+const { reportAndSend } = require("../lib/errors");
 
 function setupSmartOrganizationRoutes(
   app,
@@ -68,7 +70,13 @@ function setupSmartOrganizationRoutes(
 
         const suggestions = [];
         tagsToScore.forEach((tag) => {
-          const scores = smartOrg.calculateTagScore(db, req.user.id, url, tag, weights);
+          const scores = smartOrg.calculateTagScore(
+            db,
+            req.user.id,
+            url,
+            tag,
+            weights,
+          );
 
           if (scores.score > 0.1) {
             suggestions.push({
@@ -95,7 +103,7 @@ function setupSmartOrganizationRoutes(
           },
         });
       } catch (err) {
-        console.error("Smart tag suggestions error:", err.message || err);
+        logger.error("Smart tag suggestions error", err);
         return res.status(400).json({ error: "Invalid URL" });
       }
     },
@@ -139,8 +147,7 @@ function setupSmartOrganizationRoutes(
         });
         res.json({ collections: unique.slice(0, Number(limit)) });
       } catch (err) {
-        console.error("Smart collections suggest error:", err);
-        return res.status(500).json({ error: "Failed to get suggestions" });
+        return reportAndSend(res, err, logger, "Smart collections suggest");
       }
     },
   );
@@ -190,8 +197,8 @@ function setupSmartOrganizationRoutes(
           filters: filterObj,
           created: true,
         });
-      } catch (_err) {
-        res.status(500).json({ error: "Failed to create collection" });
+      } catch (err) {
+        return reportAndSend(res, err, logger, "Failed to create collection");
       }
     },
   );
@@ -224,8 +231,8 @@ function setupSmartOrganizationRoutes(
           recentBookmarks,
           mostClicked,
         });
-      } catch (_err) {
-        res.status(500).json({ error: "Failed to get domain stats" });
+      } catch (err) {
+        return reportAndSend(res, err, logger, "Failed to get domain stats");
       }
     },
   );
@@ -237,8 +244,8 @@ function setupSmartOrganizationRoutes(
       try {
         const clusters = smartOrg.getTagClusters(db, req.user.id);
         res.json({ clusters });
-      } catch (_err) {
-        res.status(500).json({ error: "Failed to get tag clusters" });
+      } catch (err) {
+        return reportAndSend(res, err, logger, "Failed to get tag clusters");
       }
     },
   );
@@ -272,8 +279,8 @@ function setupSmartOrganizationRoutes(
         },
         suggestions: { create_these_collections: [], organize_these_tags: [] },
       });
-    } catch (_err) {
-      res.status(500).json({ error: "Failed to get smart insights" });
+    } catch (err) {
+      return reportAndSend(res, err, logger, "Failed to get smart insights");
     }
   });
 }

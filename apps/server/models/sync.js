@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require("uuid");
+const { logger } = require("../lib/logger");
 
 /**
  * Parse a timestamp (ISO or SQLite datetime) to ms. Returns NaN if invalid.
@@ -95,7 +96,8 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
           results.folder_id_map[folder.id] = serverFolderId;
           results.created++;
         }
-      } catch (_err) {
+      } catch (err) {
+        logger.error("Sync push folder failed", err, { folder: folder.name });
         results.errors.push({ folder: folder.name, error: "Sync failed" });
       }
     }
@@ -173,7 +175,8 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
           // Trigger favicon fetch is handled by app layer; model returns created ids for caller to act on
           results.created++;
         }
-      } catch (_err) {
+      } catch (err) {
+        logger.error("Sync push bookmark failed", err, { url: bm.url });
         results.errors.push({ url: bm.url, error: "Sync failed" });
       }
     }

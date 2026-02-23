@@ -13,9 +13,13 @@ const optionalString = z
   .optional()
   .transform((s) => (s === "" ? undefined : s));
 const uuidLike = z.string().uuid().optional().or(z.string().min(1));
+const MAX_URL_LENGTH = 2048;
+const MAX_STRING_LENGTH = 10000;
+
 const httpUrl = z
   .string()
   .min(1, "URL is required")
+  .max(MAX_URL_LENGTH, `URL must be less than ${MAX_URL_LENGTH} characters`)
   .refine(
     (s) => {
       try {
@@ -170,10 +174,39 @@ const tagsRename = z
   })
   .strict();
 
+// Validated bookmark for import/sync (ensures URLs are valid) — must be defined before syncPush/importJson
+const importedBookmark = z
+  .object({
+    url: httpUrl,
+    title: optionalString.pipe(
+      z.string().max(500, "Title too long").optional(),
+    ),
+    description: optionalString.pipe(
+      z.string().max(MAX_STRING_LENGTH, "Description too long").optional(),
+    ),
+    tags: optionalString.pipe(z.string().max(500, "Tags too long").optional()),
+    color: optionalString.pipe(z.string().max(20, "Color too long").optional()),
+    favicon: optionalString.pipe(
+      z.string().max(500, "Favicon too long").optional(),
+    ),
+    og_image: optionalString.pipe(
+      z.string().max(500, "OG image too long").optional(),
+    ),
+    is_favorite: z.boolean().optional(),
+    is_archived: z.boolean().optional(),
+    created_at: optionalString,
+    updated_at: optionalString,
+    folder_id: z.string().uuid().nullable().optional(),
+    folder_name: optionalString.pipe(
+      z.string().max(200, "Folder name too long").optional(),
+    ),
+  })
+  .strict();
+
 // ---- Sync ----
 const syncPush = z
   .object({
-    bookmarks: z.array(z.any()).optional().default([]),
+    bookmarks: z.array(importedBookmark).optional().default([]),
     folders: z.array(z.any()).optional().default([]),
   })
   .strict();
@@ -185,7 +218,7 @@ const importHtml = z
 
 const importJson = z
   .object({
-    bookmarks: z.array(z.any()).optional().default([]),
+    bookmarks: z.array(importedBookmark).optional().default([]),
     folders: z.array(z.any()).optional().default([]),
   })
   .strict();
@@ -258,7 +291,10 @@ const checkLink = z.object({ url: httpUrl }).strict();
 const smartCollectionCreate = z
   .object({
     name: z
-      .string({ required_error: "Name is required", invalid_type_error: "Name is required" })
+      .string({
+        required_error: "Name is required",
+        invalid_type_error: "Name is required",
+      })
       .min(1, "Name is required")
       .transform((s) => (s && s.trim()) || undefined),
     type: z.string().min(1, "Type is required").default("tag_cluster"),
@@ -273,7 +309,10 @@ const smartCollectionCreate = z
     (data) =>
       data.type !== "tag_cluster" ||
       (data.tags && Array.isArray(data.tags) && data.tags.length > 0),
-    { message: "Rules are required for tag cluster collections", path: ["tags"] },
+    {
+      message: "Rules are required for tag cluster collections",
+      path: ["tags"],
+    },
   );
 
 // ---- Query schemas (for GET) ----
@@ -318,7 +357,10 @@ const smartOrgSuggestQuery = z
 const domainQuery = z
   .object({
     domain: z
-      .string({ required_error: "Domain parameter required", invalid_type_error: "Domain parameter required" })
+      .string({
+        required_error: "Domain parameter required",
+        invalid_type_error: "Domain parameter required",
+      })
       .min(1, "Domain parameter required"),
   })
   .strict();

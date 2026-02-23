@@ -20,6 +20,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { logger } = require("../lib/logger");
 
 // Event type constants
 const SecurityEventType = {
@@ -148,7 +149,7 @@ function purgeOldLogFiles(logDir, retentionDays) {
       }
     }
   } catch (err) {
-    console.error("Failed to purge old security audit log files:", err);
+    logger.error("Failed to purge old security audit log files", err);
   }
   return deleted;
 }
@@ -231,7 +232,7 @@ function createSecurityAuditLogger(db, options = {}) {
 
       // Console log for critical events
       if (severity === Severity.CRITICAL) {
-        console.error(`[SECURITY CRITICAL] ${eventType}:`, {
+        logger.error(`[SECURITY CRITICAL] ${eventType}`, {
           userId,
           ipAddress,
           endpoint,
@@ -239,7 +240,7 @@ function createSecurityAuditLogger(db, options = {}) {
         });
       }
     } catch (err) {
-      console.error("Failed to write security audit log:", err);
+      logger.error("Failed to write security audit log", err);
     }
   }
 

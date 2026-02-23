@@ -18,6 +18,7 @@ const crypto = require("crypto");
 const INSECURE_SECRETS = [
   "change-this-to-a-secure-secret",
   "your-super-secret-jwt-key-change-this-to-a-random-string",
+  "anchormarks-secret-key-change-in-production",
 ];
 
 function validateSecurityConfig() {

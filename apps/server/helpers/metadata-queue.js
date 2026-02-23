@@ -6,6 +6,8 @@
  * bookmark IDs are queued and processed in the background.
  */
 
+const { logger } = require("../lib/logger");
+
 // Queue of bookmark IDs awaiting metadata fetch
 let metadataQueue = [];
 
@@ -52,8 +54,8 @@ function queueMetadataFetch(bookmarkIds) {
     }
   }
 
-  console.log(
-    `[MetadataQueue] Queued ${bookmarkIds.length} bookmarks. Queue size: ${metadataQueue.length}`,
+  logger.info(
+    `MetadataQueue: queued ${bookmarkIds.length} bookmarks, queue size: ${metadataQueue.length}`,
   );
 }
 
@@ -66,7 +68,7 @@ async function processBatch() {
   }
 
   if (!db || !fetchFaviconFn) {
-    console.warn("[MetadataQueue] Not initialized. Skipping batch.");
+    logger.warn("MetadataQueue: not initialized, skipping batch");
     return;
   }
 
@@ -74,8 +76,8 @@ async function processBatch() {
 
   // Get next batch
   const batch = metadataQueue.splice(0, BATCH_SIZE);
-  console.log(
-    `[MetadataQueue] Processing batch of ${batch.length}. Remaining: ${metadataQueue.length}`,
+  logger.info(
+    `MetadataQueue: processing batch of ${batch.length}, remaining: ${metadataQueue.length}`,
   );
 
   for (const bookmarkId of batch) {
@@ -94,21 +96,21 @@ async function processBatch() {
           try {
             const result = await captureScreenshotFn(bookmark.url, bookmark.id);
             if (result.success) {
-              console.log(
-                `[MetadataQueue] Thumbnail captured for ${bookmarkId}`,
+              logger.debug(
+                `MetadataQueue: thumbnail captured for ${bookmarkId}`,
               );
             } else if (
               result.error &&
               result.error !== "Thumbnail generation is disabled"
             ) {
-              console.warn(
-                `[MetadataQueue] Thumbnail failed for ${bookmarkId}: ${result.error}`,
+              logger.warn(
+                `MetadataQueue: thumbnail failed for ${bookmarkId}: ${result.error}`,
               );
             }
           } catch (thumbnailErr) {
-            console.error(
-              `[MetadataQueue] Thumbnail error for ${bookmarkId}:`,
-              thumbnailErr.message,
+            logger.error(
+              `MetadataQueue: thumbnail error for ${bookmarkId}`,
+              thumbnailErr,
             );
           }
         }
@@ -117,9 +119,9 @@ async function processBatch() {
         await sleep(FETCH_DELAY_MS);
       }
     } catch (err) {
-      console.error(
-        `[MetadataQueue] Error fetching metadata for ${bookmarkId}:`,
-        err.message,
+      logger.error(
+        `MetadataQueue: error fetching metadata for ${bookmarkId}`,
+        err,
       );
     }
   }
@@ -136,7 +138,7 @@ function startProcessor() {
   }
 
   intervalId = setInterval(processBatch, PROCESS_INTERVAL_MS);
-  console.log("[MetadataQueue] Background processor started");
+  logger.info("MetadataQueue: background processor started");
 }
 
 /**
@@ -146,7 +148,7 @@ function stopProcessor() {
   if (intervalId) {
     clearInterval(intervalId);
     intervalId = null;
-    console.log("[MetadataQueue] Background processor stopped");
+    logger.info("MetadataQueue: background processor stopped");
   }
 }
 

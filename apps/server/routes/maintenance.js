@@ -5,6 +5,8 @@ const http = require("http");
 const { URL } = require("url");
 const { isPrivateAddress } = require("../helpers/utils");
 const { schemas } = require("../validation");
+const { logger } = require("../lib/logger");
+const { reportAndSend } = require("../lib/errors");
 
 module.exports = function (
   db,
@@ -85,9 +87,10 @@ module.exports = function (
         });
 
         reqUrl.end();
-      } catch {
+      } catch (err) {
         if (responded) return;
         responded = true;
+        logger.warn("Link check failed for URL", err);
         res.json({ status: 0, ok: false, error: "Invalid URL" });
       }
     },
@@ -121,7 +124,8 @@ module.exports = function (
         .all(req.user.id);
 
       res.json(duplicates);
-    } catch (_err) {
+    } catch (err) {
+      logger.error("Error listing duplicates", err);
       res.status(500).json({ error: "Failed to list duplicates" });
     }
   });
@@ -143,7 +147,8 @@ module.exports = function (
     try {
       db.exec("VACUUM");
       res.json({ success: true, message: "Database optimized" });
-    } catch (_err) {
+    } catch (err) {
+      logger.error("Error optimizing database", err);
       res.status(500).json({ error: "Failed to optimize database" });
     }
   });

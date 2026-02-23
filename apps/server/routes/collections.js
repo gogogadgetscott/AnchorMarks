@@ -1,4 +1,6 @@
 const { schemas } = require("../validation");
+const { logger } = require("../lib/logger");
+const { reportAndSend } = require("../lib/errors");
 
 module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
   const {
@@ -19,8 +21,22 @@ module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
         collections.map((c) => ({ ...c, filters: JSON.parse(c.filters) })),
       );
     } catch (err) {
-      console.error("Error listing smart collections:", err);
-      res.status(500).json({ error: "Failed to list collections" });
+      return reportAndSend(res, err, logger, "Error listing smart collections");
+    }
+  });
+
+  app.get("/api/collections/:id", authenticateTokenMiddleware, (req, res) => {
+    try {
+      const collection = smartCollectionsModel.getCollection(
+        db,
+        req.params.id,
+        req.user.id,
+      );
+      if (!collection)
+        return res.status(404).json({ error: "Collection not found" });
+      res.json({ ...collection, filters: JSON.parse(collection.filters) });
+    } catch (err) {
+      return reportAndSend(res, err, logger, "Error fetching collection");
     }
   });
 
@@ -39,8 +55,7 @@ module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
         );
         res.json({ ...collection, filters: JSON.parse(collection.filters) });
       } catch (err) {
-        console.error("Error creating collection:", err);
-        res.status(500).json({ error: "Failed to create collection" });
+        return reportAndSend(res, err, logger, "Error creating collection");
       }
     },
   );
@@ -64,8 +79,7 @@ module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
           return res.status(404).json({ error: "Collection not found" });
         res.json({ ...updated, filters: JSON.parse(updated.filters) });
       } catch (err) {
-        console.error("Error updating collection:", err);
-        res.status(500).json({ error: "Failed to update collection" });
+        return reportAndSend(res, err, logger, "Error updating collection");
       }
     },
   );
@@ -79,8 +93,7 @@ module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
         smartCollectionsModel.deleteCollection(db, req.params.id, req.user.id);
         res.json({ success: true });
       } catch (err) {
-        console.error("Error deleting collection:", err);
-        res.status(500).json({ error: "Failed to delete collection" });
+        return reportAndSend(res, err, logger, "Error deleting collection");
       }
     },
   );
@@ -107,8 +120,12 @@ module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
         });
         res.json(bookmarks);
       } catch (err) {
-        console.error("Error fetching collection bookmarks:", err);
-        res.status(500).json({ error: "Failed to fetch bookmarks" });
+        return reportAndSend(
+          res,
+          err,
+          logger,
+          "Error fetching collection bookmarks",
+        );
       }
     },
   );

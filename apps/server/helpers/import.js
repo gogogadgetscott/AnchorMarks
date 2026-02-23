@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require("uuid");
 const cheerio = require("cheerio");
 const { parseTags, stringifyTags } = require("./tags");
+const { logger } = require("../lib/logger");
 
 async function parseBookmarkHtml(html) {
   const bookmarks = [];
@@ -104,13 +105,13 @@ async function parseBookmarkHtml(html) {
 
       if (nextDL.length > 0) {
         if (nextH3.length === 0 || nextDL.index() < nextH3.index()) {
-          console.log(
-            `[Import] Found detached sibling DL for folder "${folderName}"`,
+          logger.debug(
+            `Import: found detached sibling DL for folder "${folderName}"`,
           );
           processList(nextDL, folderId);
         }
       } else {
-        console.warn(`[Import] No content DL found for folder "${folderName}"`);
+        logger.warn(`Import: no content DL found for folder "${folderName}"`);
       }
     }
   }
@@ -141,16 +142,16 @@ async function parseBookmarkHtml(html) {
   // Start parsing from the root DL
   const rootDl = $("dl").first();
   if (rootDl.length > 0) {
-    console.log("[Import] Processing root DL");
+    logger.debug("Import: processing root DL");
     processList(rootDl, null);
   } else {
-    console.warn("[Import] No root DL found");
+    logger.warn("Import: no root DL found");
   }
 
   // FALLBACK: If structured parsing found nothing, try distinct strategies
   if (bookmarks.length === 0) {
-    console.log(
-      "[Import] Structured parsing yielded 0 bookmarks. Attempting flat DOM scan...",
+    logger.info(
+      "Import: structured parsing yielded 0 bookmarks, attempting flat DOM scan...",
     );
 
     const links = $("a");
@@ -173,11 +174,11 @@ async function parseBookmarkHtml(html) {
       });
     });
 
-    console.log(`[Import] Flat DOM scan found ${bookmarks.length} bookmarks.`);
+    logger.info(`Import: flat DOM scan found ${bookmarks.length} bookmarks`);
   }
 
-  console.log(
-    `[Import] Completed. Found ${bookmarks.length} bookmarks, ${folders.length} folders.`,
+  logger.info(
+    `Import: completed, found ${bookmarks.length} bookmarks, ${folders.length} folders`,
   );
   return { bookmarks, folders };
 }

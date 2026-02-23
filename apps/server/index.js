@@ -4,6 +4,7 @@ const http = require("http");
 const https = require("https");
 const app = require("./app");
 const config = require("./config");
+const { logger } = require("./lib/logger");
 let version = "unknown";
 try {
   // Attempt to load root package.json (may not be present in some container builds)
@@ -12,7 +13,7 @@ try {
   version = (pkg && pkg.version) || "unknown";
 } catch {
   // Fallback: leave version as 'unknown' and continue
-  console.warn("package.json not found, version unknown");
+  logger.warn("package.json not found, version unknown");
 }
 
 let server;
@@ -40,26 +41,22 @@ if (config.SSL_ENABLED) {
 
     httpRedirectServer
       .listen(httpRedirectPort, config.HOST, () => {
-        console.log(
-          `HTTP → HTTPS redirect server running on port ${httpRedirectPort}`,
+        logger.info(
+          `HTTP -> HTTPS redirect server running on port ${httpRedirectPort}`,
         );
       })
       .on("error", (err) => {
         if (err.code === "EADDRINUSE" || err.code === "EACCES") {
-          console.log(
-            `ℹ️  HTTP redirect port ${httpRedirectPort} not available (${err.code}), skipping redirect server`,
+          logger.info(
+            `HTTP redirect port ${httpRedirectPort} not available (${err.code}), skipping redirect server`,
           );
         } else {
-          console.warn(
-            "⚠️  Failed to start HTTP redirect server:",
-            err.message,
-          );
+          logger.warn(`Failed to start HTTP redirect server: ${err.message}`);
         }
       });
   } catch (err) {
-    console.warn(
-      "⚠️  Failed to read SSL key/cert, falling back to HTTP:",
-      err.message,
+    logger.warn(
+      `Failed to read SSL key/cert, falling back to HTTP: ${err.message}`,
     );
     server = http.createServer(app);
     usingSsl = false;
@@ -159,12 +156,12 @@ server.listen(config.PORT, config.HOST, () => {
   // Format box
   const maxWidth = Math.max(...lines.map((l) => l.length)) + 4;
   const hr = "═".repeat(maxWidth);
-  console.log(`\n╔${hr}╗`);
-  lines.forEach((l) => {
-    const padded = l.padEnd(maxWidth - 4);
-    console.log(`║  ${padded}  ║`);
-  });
-  console.log(`╚${hr}╝\n`);
+  const banner = [
+    `╔${hr}╗`,
+    ...lines.map((l) => `║  ${l.padEnd(maxWidth - 4)}  ║`),
+    `╚${hr}╝`,
+  ].join("\n");
+  logger.info(`\n${banner}\n`);
 });
 
 module.exports = app;

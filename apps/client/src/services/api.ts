@@ -14,22 +14,47 @@ const requestMetadata = new Map<string, { timestamp: number }>();
 // Default timeout for requests (30 seconds)
 const DEFAULT_TIMEOUT_MS = 30000;
 
-// Cleanup interval (5 minutes)
-const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+// Max cache size to prevent memory leaks
+const MAX_CACHE_SIZE = 100;
+
+// Cleanup threshold: remove entries older than this (5 minutes)
+const CLEANUP_THRESHOLD_MS = 5 * 60 * 1000;
 
 let cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
 
+function cleanupCache(): void {
+  const now = Date.now();
+  const keysToDelete: string[] = [];
+
+  // Find expired entries
+  for (const [key, metadata] of requestMetadata.entries()) {
+    if (now - metadata.timestamp > CLEANUP_THRESHOLD_MS) {
+      keysToDelete.push(key);
+    }
+  }
+
+  // If still over limit after expiry cleanup, remove oldest entries
+  if (requestMetadata.size > MAX_CACHE_SIZE) {
+    const sortedEntries = [...requestMetadata.entries()].sort(
+      (a, b) => a[1].timestamp - b[1].timestamp,
+    );
+    const removeCount = requestMetadata.size - MAX_CACHE_SIZE;
+    for (let i = 0; i < removeCount; i++) {
+      keysToDelete.push(sortedEntries[i][0]);
+    }
+  }
+
+  // Remove duplicates and delete
+  const uniqueKeys = [...new Set(keysToDelete)];
+  for (const key of uniqueKeys) {
+    pendingRequests.delete(key);
+    requestMetadata.delete(key);
+  }
+}
+
 function startDedupCleanupInterval(): void {
   if (cleanupIntervalId != null) return;
-  cleanupIntervalId = setInterval(() => {
-    const now = Date.now();
-    for (const [key, metadata] of requestMetadata.entries()) {
-      if (now - metadata.timestamp > CLEANUP_INTERVAL_MS) {
-        pendingRequests.delete(key);
-        requestMetadata.delete(key);
-      }
-    }
-  }, CLEANUP_INTERVAL_MS);
+  cleanupIntervalId = setInterval(cleanupCache, CLEANUP_THRESHOLD_MS);
 }
 
 function stopDedupCleanupInterval(): void {

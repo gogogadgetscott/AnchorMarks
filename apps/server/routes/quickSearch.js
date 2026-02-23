@@ -1,5 +1,7 @@
 const quickSearchModel = require("../models/quickSearch");
 const { schemas } = require("../validation");
+const { logger } = require("../lib/logger");
+const { reportAndSend } = require("../lib/errors");
 
 function setupQuickSearchRoutes(
   app,
@@ -20,8 +22,7 @@ function setupQuickSearchRoutes(
         const bookmarks = quickSearchModel.search(db, req.user.id, q, limit);
         res.json(bookmarks);
       } catch (err) {
-        console.error("Quick search error:", err);
-        res.status(500).json({ error: "Failed to search" });
+        return reportAndSend(res, err, logger, "Quick search error");
       }
     },
   );

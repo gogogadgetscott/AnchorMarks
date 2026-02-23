@@ -1,5 +1,7 @@
 const { v4: uuidv4 } = require("uuid");
 const { broadcast } = require("../helpers/websocket");
+const { logger } = require("../lib/logger");
+const { reportAndSend } = require("../lib/errors");
 
 const { validateBody, schemas } = require("../validation");
 
@@ -24,8 +26,7 @@ function setupFoldersRoutes(app, db, helpers = {}) {
       const folders = folderModel.listFolders(db, req.user.id);
       return res.json(folders);
     } catch (err) {
-      console.error("Error fetching folders:", err);
-      return res.status(500).json({ error: "Failed to fetch folders" });
+      return reportAndSend(res, err, logger, "Error fetching folders");
     }
   });
 
@@ -87,8 +88,7 @@ function setupFoldersRoutes(app, db, helpers = {}) {
         broadcast(req.user.id, { type: "folders:changed" });
         res.json(folder);
       } catch (err) {
-        console.error("Error creating folder:", err);
-        res.status(500).json({ error: "Failed to create folder" });
+        return reportAndSend(res, err, logger, "Error creating folder");
       }
     },
   );
@@ -152,8 +152,7 @@ function setupFoldersRoutes(app, db, helpers = {}) {
         broadcast(req.user.id, { type: "folders:changed" });
         res.json(folder);
       } catch (err) {
-        console.error("Error updating folder:", err);
-        res.status(500).json({ error: "Failed to update folder" });
+        return reportAndSend(res, err, logger, "Error updating folder");
       }
     },
   );
@@ -186,8 +185,7 @@ function setupFoldersRoutes(app, db, helpers = {}) {
         broadcast(req.user.id, { type: "folders:changed" });
         res.json({ success: true });
       } catch (err) {
-        console.error("Error deleting folder:", err);
-        res.status(500).json({ error: "Failed to delete folder" });
+        return reportAndSend(res, err, logger, "Error deleting folder");
       }
     },
   );

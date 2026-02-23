@@ -1,4 +1,6 @@
 const { schemas } = require("../validation");
+const { logger } = require("../lib/logger");
+const { reportAndSend } = require("../lib/errors");
 
 module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
   const {
@@ -14,8 +16,7 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
       const views = dashboardModel.listDashboardViews(db, req.user.id);
       res.json(views);
     } catch (err) {
-      console.error("Error fetching dashboard views:", err);
-      res.status(500).json({ error: "Failed to fetch dashboard views" });
+      return reportAndSend(res, err, logger, "Error fetching dashboard views");
     }
   });
 
@@ -35,8 +36,7 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
         );
         res.json({ ...view, config: JSON.parse(view.config) });
       } catch (err) {
-        console.error("Error creating dashboard view:", err);
-        res.status(500).json({ error: "Failed to create dashboard view" });
+        return reportAndSend(res, err, logger, "Error creating dashboard view");
       }
     },
   );
@@ -58,8 +58,7 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
         if (!view) return res.status(404).json({ error: "View not found" });
         res.json({ ...view, config: JSON.parse(view.config) });
       } catch (err) {
-        console.error("Error updating dashboard view:", err);
-        res.status(500).json({ error: "Failed to update dashboard view" });
+        return reportAndSend(res, err, logger, "Error updating dashboard view");
       }
     },
   );
@@ -73,8 +72,7 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
         dashboardModel.deleteDashboardView(db, req.params.id, req.user.id);
         res.json({ success: true });
       } catch (err) {
-        console.error("Error deleting dashboard view:", err);
-        res.status(500).json({ error: "Failed to delete dashboard view" });
+        return reportAndSend(res, err, logger, "Error deleting dashboard view");
       }
     },
   );
@@ -95,8 +93,12 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
         userSettingsModel.applyDashboardConfigToUser(db, req.user.id, config);
         res.json({ success: true });
       } catch (err) {
-        console.error("Error restoring dashboard view:", err);
-        res.status(500).json({ error: "Failed to restore dashboard view" });
+        return reportAndSend(
+          res,
+          err,
+          logger,
+          "Error restoring dashboard view",
+        );
       }
     },
   );

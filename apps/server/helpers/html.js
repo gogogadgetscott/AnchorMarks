@@ -186,13 +186,6 @@ function generateBookmarkHtml(bookmarks, folders) {
         extraAttrs += ` LAST_VISIT="${Math.floor(new Date(bm.last_clicked).getTime() / 1000)}"`;
       }
 
-      // Debug logging for color
-      if (bm.id === "0aee44e1-9883-4046-bc47-a66e6f5912ec") {
-        console.log(
-          `[Export] Processing target bookmark ${bm.id}. Color: ${bm.color}`,
-        );
-      }
-
       if (bm.color) {
         extraAttrs += ` COLOR="${bm.color}"`;
       }

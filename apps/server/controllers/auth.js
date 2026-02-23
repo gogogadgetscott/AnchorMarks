@@ -6,6 +6,8 @@ const {
   JWT_ACCESS_EXPIRY,
   JWT_REFRESH_EXPIRY,
 } = require("../config");
+const { logger } = require("../lib/logger");
+const { reportAndSend } = require("../lib/errors");
 
 function expiryToMs(expiry) {
   const s = String(expiry);
@@ -83,7 +85,9 @@ function createExampleBookmarks(db, userId, folderId = null, fetchFavicon) {
     }
 
     if (fetchFavicon && process.env.NODE_ENV === "production") {
-      fetchFavicon(bm.url, id).catch(console.error);
+      fetchFavicon(bm.url, id).catch((e) =>
+        logger.error("Favicon fetch failed for example bookmark", e),
+      );
     }
 
     created.push({ id, ...bm, favicon: faviconUrl });
@@ -238,8 +242,7 @@ function setupAuthRoutes(
         if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
           return res.status(400).json({ error: "User already exists" });
         }
-        console.error(err);
-        res.status(500).json({ error: "Server error" });
+        return reportAndSend(res, err, logger, "Registration error");
       }
     },
   );
@@ -330,8 +333,7 @@ function setupAuthRoutes(
           csrfToken,
         });
       } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Server error" });
+        return reportAndSend(res, err, logger, "Login error");
       }
     },
   );
@@ -475,8 +477,8 @@ function setupAuthRoutes(
           .status(401)
           .json({ error: "Refresh token invalid or expired" });
       }
-      console.error("Refresh token error:", err);
-      res.status(500).json({ error: "Server error" });
+      logger.error("Refresh token error", err);
+      return res.status(500).json({ error: "Server error" });
     }
   });
 
@@ -548,8 +550,7 @@ function setupAuthRoutes(
           message: "Account and data deleted successfully",
         });
       } catch (err) {
-        console.error("Delete account error:", err);
-        res.status(500).json({ error: "Failed to delete account" });
+        return reportAndSend(res, err, logger, "Delete account error");
       }
     },
   );
@@ -633,8 +634,7 @@ function setupAuthRoutes(
         ).run(email.toLowerCase(), req.user.id);
         res.json({ success: true, email: email.toLowerCase() });
       } catch (err) {
-        console.error("Update profile error:", err);
-        res.status(500).json({ error: "Failed to update profile" });
+        return reportAndSend(res, err, logger, "Update profile error");
       }
     },
   );
@@ -704,8 +704,7 @@ function setupAuthRoutes(
         });
         res.json({ success: true, csrfToken });
       } catch (err) {
-        console.error("Change password error:", err);
-        res.status(500).json({ error: "Failed to change password" });
+        return reportAndSend(res, err, logger, "Change password error");
       }
     },
   );

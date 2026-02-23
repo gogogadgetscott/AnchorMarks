@@ -18,7 +18,7 @@ try {
   const pkg = require(path.join(__dirname, "..", "..", "package.json"));
   APP_VERSION = (pkg && pkg.version) || "unknown";
 } catch {
-  console.warn("package.json not found, version unknown");
+  logger.warn("package.json not found, version unknown");
 }
 
 const config = require("./config");
@@ -58,17 +58,16 @@ const securityAudit = createSecurityAuditLogger(db, {
 // Audit log retention: run daily (once at startup and then every 24h)
 const AUDIT_RETENTION_INTERVAL_MS = 24 * 60 * 60 * 1000;
 let auditRetentionTimer = null;
+const { logger } = require("./lib/logger");
 if (config.NODE_ENV !== "test") {
   function runAuditRetention() {
     try {
       const { dbDeleted, filesDeleted } = securityAudit.runRetentionCleanup();
       if (dbDeleted > 0 || filesDeleted > 0) {
-        console.log(
-          `[Audit retention] Removed ${dbDeleted} DB row(s), ${filesDeleted} log file(s)`,
-        );
+        logger.info("[Audit retention] Cleanup", { dbDeleted, filesDeleted });
       }
     } catch (err) {
-      console.error("[Audit retention] Cleanup failed:", err);
+      logger.error("[Audit retention] Cleanup failed", err);
     }
   }
   runAuditRetention();
@@ -272,7 +271,7 @@ app.use(cookieParser());
 app.post("/api/csp-report", (req, res) => {
   const report = req.body?.["csp-report"] || req.body;
   if (report && CSP_DIAGNOSTIC) {
-    console.warn("[CSP VIOLATION]", {
+    logger.warn("[CSP VIOLATION]", {
       directive: report["effective-directive"] || report["violated-directive"],
       blocked: report["blocked-uri"],
       document: report["document-uri"],
@@ -403,7 +402,7 @@ const staticDir =
     ? path.join(__dirname, "..", "client", "dist")
     : path.join(__dirname, "..", "client");
 
-console.log(`Serving frontend from: ${staticDir} (${config.NODE_ENV} mode)`);
+logger.info(`Serving frontend from: ${staticDir} (${config.NODE_ENV} mode)`);
 
 // Serve server-side static assets with explicit Content-Type enforcement
 // This prevents potential XSS via MIME type confusion
@@ -442,19 +441,15 @@ app.use(express.static(staticDir));
 const setupStaticRoutes = require("./routes/static");
 setupStaticRoutes(app);
 
-// Global error handler — catches unhandled errors and prevents stack trace leaks
-app.use((err, _req, res, _next) => {
-  if (config.NODE_ENV === "development") {
-    console.error("Unhandled error:", err);
-  }
-  res.status(err.status || 500).json({ error: "Internal Server Error" });
-});
+// Centralized error handler — logs via server logger, consistent JSON response, no stack in production
+const { errorHandler } = require("./middleware/errorHandler");
+app.use(errorHandler);
 
 // Graceful shutdown
 const { closeBrowser } = require("./helpers/thumbnail");
 
 process.on("SIGINT", async () => {
-  console.log("\nShutting down gracefully...");
+  logger.info("Shutting down gracefully (SIGINT)...");
   if (auditRetentionTimer) clearInterval(auditRetentionTimer);
   metadataQueue.stopProcessor();
   await closeBrowser();
@@ -463,7 +458,7 @@ process.on("SIGINT", async () => {
 });
 
 process.on("SIGTERM", async () => {
-  console.log("\nShutting down gracefully...");
+  logger.info("Shutting down gracefully (SIGTERM)...");
   if (auditRetentionTimer) clearInterval(auditRetentionTimer);
   metadataQueue.stopProcessor();
   await closeBrowser();

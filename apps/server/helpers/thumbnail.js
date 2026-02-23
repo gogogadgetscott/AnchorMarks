@@ -7,6 +7,7 @@ const path = require("path");
 const fs = require("fs");
 const config = require("../config");
 const { isPrivateAddress } = require("./utils");
+const { logger } = require("../lib/logger");
 
 let browser = null;
 let browserInitializing = false;
@@ -169,7 +170,7 @@ async function captureScreenshot(url, bookmarkId) {
 
     return { success: true, path: relativePath };
   } catch (err) {
-    console.error(`Failed to capture screenshot for ${url}:`, err.message);
+    logger.error(`Failed to capture screenshot for ${url}`, err);
 
     // Clean up partial file if exists
     if (fs.existsSync(thumbnailPath)) {

@@ -4,6 +4,8 @@ const { parseTagsDetailed } = require("../helpers/tags");
 const { generateBookmarkHtml } = require("../helpers/html");
 const { queueMetadataFetch } = require("../helpers/metadata-queue");
 const { schemas } = require("../validation");
+const { logger } = require("../lib/logger");
+const { reportAndSend } = require("../lib/errors");
 
 function setupImportExportRoutes(
   app,
@@ -64,8 +66,12 @@ function setupImportExportRoutes(
           bookmarks: result.imported,
         });
       } catch (err) {
-        console.error(err);
-        res.status(400).json({ error: "Failed to parse bookmarks" });
+        return reportAndSend(
+          res,
+          err,
+          logger,
+          "Error importing HTML bookmarks",
+        );
       }
     },
   );
@@ -123,8 +129,12 @@ function setupImportExportRoutes(
           bookmarks: result.imported,
         });
       } catch (err) {
-        console.error(err);
-        res.status(400).json({ error: "Failed to import bookmarks" });
+        return reportAndSend(
+          res,
+          err,
+          logger,
+          "Error importing JSON bookmarks",
+        );
       }
     },
   );
@@ -170,8 +180,7 @@ function setupImportExportRoutes(
           res.json({ bookmarks: data.bookmarks, folders: data.folders });
         }
       } catch (err) {
-        console.error("Export error:", err);
-        res.status(500).json({ error: "Failed to export data" });
+        return reportAndSend(res, err, logger, "Export error");
       }
     },
   );

@@ -1,4 +1,6 @@
 const { setupBookmarksRoutes } = require("../controllers/bookmarks");
+const { logger } = require("../lib/logger");
+const { reportAndSend } = require("../lib/errors");
 
 function setupApiRoutes(app, db, helpers) {
   const {
@@ -86,7 +88,7 @@ function setupApiRoutes(app, db, helpers) {
     (req, res) => {
       try {
         const body = req.validated || req.body;
-        console.log(`[Settings] Saving for user ${req.user.id}:`, body);
+        logger.debug(`Saving settings for user ${req.user.id}`, body);
         userSettingsModel.upsertUserSettings(db, req.user.id, body);
 
         const settings = db
@@ -133,8 +135,7 @@ function setupApiRoutes(app, db, helpers) {
           ...extra,
         });
       } catch (err) {
-        console.error("Error saving settings:", err);
-        res.status(500).json({ error: "Failed to save settings" });
+        return reportAndSend(res, err, logger, "Error saving settings");
       }
     },
   );
@@ -233,8 +234,7 @@ function setupApiRoutes(app, db, helpers) {
         ...extra,
       });
     } catch (err) {
-      console.error("Error fetching settings:", err);
-      res.status(500).json({ error: "Failed to fetch settings" });
+      return reportAndSend(res, err, logger, "Error fetching settings");
     }
   });
 
@@ -335,7 +335,9 @@ function setupApiRoutes(app, db, helpers) {
 
           // Fetch favicon in background
           if (fetchFaviconWrapper) {
-            fetchFaviconWrapper(bm.url, id).catch(() => {});
+            fetchFaviconWrapper(bm.url, id).catch((e) =>
+              logger.warn("Favicon fetch failed during bookmark reset", e),
+            );
           }
           bookmarksCreated++;
         }
@@ -346,8 +348,7 @@ function setupApiRoutes(app, db, helpers) {
           message: "Bookmarks reset successfully",
         });
       } catch (err) {
-        console.error("Error resetting bookmarks:", err);
-        res.status(500).json({ error: "Failed to reset bookmarks" });
+        return reportAndSend(res, err, logger, "Error resetting bookmarks");
       }
     },
   );
@@ -436,7 +437,7 @@ function setupApiRoutes(app, db, helpers) {
         ) {
           return res.status(501).json({ error: "AI service not configured" });
         }
-        console.error("AI tag suggestions error:", err);
+        logger.error("AI tag suggestions error", err);
         return res.status(500).json({ error: "Failed to get AI suggestions" });
       }
     },

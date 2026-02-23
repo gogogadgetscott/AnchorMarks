@@ -3,12 +3,14 @@ const {
   ensureTagsExist,
   updateBookmarkTags,
 } = require("../helpers/tag-helpers");
-const { validateBody, validateQuery, schemas } = require("../validation");
+const { validateBody, schemas } = require("../validation");
 const bookmarkModel = require("../models/bookmark");
 const { isPrivateAddress } = require("../helpers/utils");
 const config = require("../config");
 const { broadcast } = require("../helpers/websocket");
 const tagHelpers = require("../helpers/tag-helpers");
+const { logger } = require("../lib/logger");
+const { reportAndSend } = require("../lib/errors");
 
 function parseTagsDetailed(raw) {
   if (!raw) return [];
@@ -151,8 +153,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
       });
       res.json(result.bookmarks);
     } catch (err) {
-      console.error("Error listing bookmarks:", err);
-      res.status(500).json({ error: "Failed to list bookmarks" });
+      return reportAndSend(res, err, logger, "Error listing bookmarks");
     }
   });
 
@@ -208,8 +209,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
         archived: archivedCount,
       });
     } catch (err) {
-      console.error("Error fetching bookmark counts:", err);
-      res.status(500).json({ error: "Failed to fetch counts" });
+      return reportAndSend(res, err, logger, "Error fetching bookmark counts");
     }
   });
 
@@ -246,8 +246,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
       bookmark.tags_detailed = parseTagsDetailed(bookmark.tags_detailed);
       res.json(bookmark);
     } catch (err) {
-      console.error("Error fetching bookmark:", err);
-      res.status(500).json({ error: "Failed to fetch bookmark" });
+      return reportAndSend(res, err, logger, "Error fetching bookmark");
     }
   });
 
@@ -287,10 +286,15 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
             .json({ error: "Cannot fetch metadata from private addresses" });
         const metadata = await fetchUrlMetadata(url);
         res.json(metadata);
-      } catch {
+      } catch (metaErr) {
+        logger.warn("Metadata fetch failed, falling back to hostname", metaErr);
         try {
           res.json({ title: new URL(url).hostname, description: "", url });
-        } catch {
+        } catch (parseErr) {
+          logger.error(
+            "URL parsing also failed for metadata fallback",
+            parseErr,
+          );
           res.status(500).json({ error: "Failed to fetch metadata" });
         }
       }
@@ -353,9 +357,9 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
             }
           } catch (metaErr) {
             if (config.NODE_ENV !== "test") {
-              console.warn(
-                "Could not fetch metadata during bookmark creation:",
-                metaErr.message,
+              logger.warn(
+                "Could not fetch metadata during bookmark creation",
+                metaErr,
               );
             }
           }
@@ -397,15 +401,16 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
           });
         }
 
-        fetchFaviconWrapper(url, id).catch(console.error);
+        fetchFaviconWrapper(url, id).catch((e) =>
+          logger.error("Favicon fetch failed", e),
+        );
 
         const bookmark = bookmarkModel.getBookmarkById(db, req.user.id, id);
         bookmark.tags_detailed = parseTagsDetailed(bookmark.tags_detailed);
         broadcast(req.user.id, { type: "bookmarks:changed" });
         res.json(bookmark);
       } catch (err) {
-        console.error("Error creating bookmark:", err);
-        res.status(500).json({ error: "Failed to create bookmark" });
+        return reportAndSend(res, err, logger, "Error creating bookmark");
       }
     },
   );
@@ -466,10 +471,11 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
           req.user.id,
           req.params.id,
         );
+        if (updated)
+          updated.tags_detailed = parseTagsDetailed(updated.tags_detailed);
         res.json(updated);
       } catch (err) {
-        console.error("Error updating bookmark:", err);
-        res.status(500).json({ error: "Failed to update bookmark" });
+        return reportAndSend(res, err, logger, "Error updating bookmark");
       }
     },
   );
@@ -485,8 +491,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
         broadcast(req.user.id, { type: "bookmarks:changed" });
         res.json({ success: true });
       } catch (err) {
-        console.error("Error deleting bookmark:", err);
-        res.status(500).json({ error: "Failed to delete bookmark" });
+        return reportAndSend(res, err, logger, "Error deleting bookmark");
       }
     },
   );
@@ -511,8 +516,12 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
         transaction(ids, req.user.id);
         res.json({ success: true, archived: ids.length });
       } catch (err) {
-        console.error("Error bulk archiving bookmarks:", err);
-        res.status(500).json({ error: "Failed to bulk archive bookmarks" });
+        return reportAndSend(
+          res,
+          err,
+          logger,
+          "Error bulk archiving bookmarks",
+        );
       }
     },
   );
@@ -535,8 +544,12 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
         transaction(ids, req.user.id);
         res.json({ success: true, unarchived: ids.length });
       } catch (err) {
-        console.error("Error bulk unarchiving bookmarks:", err);
-        res.status(500).json({ error: "Failed to bulk unarchive bookmarks" });
+        return reportAndSend(
+          res,
+          err,
+          logger,
+          "Error bulk unarchiving bookmarks",
+        );
       }
     },
   );
@@ -554,8 +567,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
         broadcast(req.user.id, { type: "bookmarks:changed" });
         res.json({ success: true });
       } catch (err) {
-        console.error("Error archiving bookmark:", err);
-        res.status(500).json({ error: "Failed to archive bookmark" });
+        return reportAndSend(res, err, logger, "Error archiving bookmark");
       }
     },
   );
@@ -573,8 +585,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
         broadcast(req.user.id, { type: "bookmarks:changed" });
         res.json({ success: true });
       } catch (err) {
-        console.error("Error unarchiving bookmark:", err);
-        res.status(500).json({ error: "Failed to unarchive bookmark" });
+        return reportAndSend(res, err, logger, "Error unarchiving bookmark");
       }
     },
   );
@@ -611,8 +622,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
         bookmarkModel.incrementClick(db, req.params.id, req.user.id);
         res.json({ success: true });
       } catch (err) {
-        console.error("Error incrementing click:", err);
-        res.status(500).json({ error: "Failed to update click count" });
+        return reportAndSend(res, err, logger, "Error incrementing click");
       }
     },
   );
@@ -666,8 +676,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
           thumbnail_local: result.path,
         });
       } catch (err) {
-        console.error("Error generating thumbnail:", err);
-        res.status(500).json({ error: "Failed to generate thumbnail" });
+        return reportAndSend(res, err, logger, "Error generating thumbnail");
       }
     },
   );
