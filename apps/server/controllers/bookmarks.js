@@ -3,10 +3,12 @@ const {
   ensureTagsExist,
   updateBookmarkTags,
 } = require("../helpers/tag-helpers");
+const { validateBody, validateQuery, schemas } = require("../validation");
 const bookmarkModel = require("../models/bookmark");
 const { isPrivateAddress } = require("../helpers/utils");
 const config = require("../config");
 const { broadcast } = require("../helpers/websocket");
+const tagHelpers = require("../helpers/tag-helpers");
 
 function parseTagsDetailed(raw) {
   if (!raw) return [];
@@ -49,8 +51,6 @@ function normalizeTagColorOverrides(raw, tagMap = {}) {
 }
 
 const { fetchUrlMetadata, detectContentType } = require("../helpers/metadata");
-
-const { validateBody, schemas } = require("../validation");
 
 function setupBookmarksRoutes(app, db, helpers = {}) {
   const {
@@ -428,6 +428,179 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
    *       200:
    *         description: Click tracked successfully
    */
+  // Update bookmark
+  app.put(
+    "/api/bookmarks/:id",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    validateBody(schemas.bookmarkUpdate),
+    (req, res) => {
+      try {
+        const fields = req.validated;
+        bookmarkModel.updateBookmark(db, req.user.id, req.params.id, fields);
+
+        if (fields.tags !== undefined) {
+          if (fields.tags && fields.tags.trim && fields.tags.trim()) {
+            const tagResult = tagHelpers.ensureTagsExist(
+              db,
+              req.user.id,
+              fields.tags,
+              { returnMap: true },
+            );
+            const overrides =
+              require("../helpers/tags").normalizeTagColorOverrides(
+                fields.tag_colors || fields.tagColorOverrides,
+                tagResult.tagMap,
+              );
+            tagHelpers.updateBookmarkTags(db, req.params.id, tagResult.tagIds, {
+              colorOverridesByTagId: overrides,
+            });
+          } else {
+            tagHelpers.updateBookmarkTags(db, req.params.id, []);
+          }
+          broadcast(req.user.id, { type: "bookmarks:changed" });
+        }
+
+        const updated = bookmarkModel.getBookmarkById(
+          db,
+          req.user.id,
+          req.params.id,
+        );
+        res.json(updated);
+      } catch (err) {
+        console.error("Error updating bookmark:", err);
+        res.status(500).json({ error: "Failed to update bookmark" });
+      }
+    },
+  );
+
+  // Delete bookmark
+  app.delete(
+    "/api/bookmarks/:id",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      try {
+        bookmarkModel.deleteBookmark(db, req.user.id, req.params.id);
+        broadcast(req.user.id, { type: "bookmarks:changed" });
+        res.json({ success: true });
+      } catch (err) {
+        console.error("Error deleting bookmark:", err);
+        res.status(500).json({ error: "Failed to delete bookmark" });
+      }
+    },
+  );
+
+  // Bulk Archive
+  app.post(
+    "/api/bookmarks/bulk/archive",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    validateBody(schemas.bulkIds),
+    (req, res) => {
+      const { ids } = req.validated;
+      try {
+        const stmt = db.prepare(
+          "UPDATE bookmarks SET is_archived = 1 WHERE id = ? AND user_id = ?",
+        );
+        const transaction = db.transaction((ids, userId) => {
+          for (const id of ids) {
+            stmt.run(id, userId);
+          }
+        });
+        transaction(ids, req.user.id);
+        res.json({ success: true, archived: ids.length });
+      } catch (err) {
+        console.error("Error bulk archiving bookmarks:", err);
+        res.status(500).json({ error: "Failed to bulk archive bookmarks" });
+      }
+    },
+  );
+
+  // Bulk Unarchive
+  app.post(
+    "/api/bookmarks/bulk/unarchive",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    validateBody(schemas.bulkIds),
+    (req, res) => {
+      const { ids } = req.validated;
+      try {
+        const stmt = db.prepare(
+          "UPDATE bookmarks SET is_archived = 0 WHERE id = ? AND user_id = ?",
+        );
+        const transaction = db.transaction((ids, userId) => {
+          for (const id of ids) stmt.run(id, userId);
+        });
+        transaction(ids, req.user.id);
+        res.json({ success: true, unarchived: ids.length });
+      } catch (err) {
+        console.error("Error bulk unarchiving bookmarks:", err);
+        res.status(500).json({ error: "Failed to bulk unarchive bookmarks" });
+      }
+    },
+  );
+
+  // Archive single bookmark
+  app.post(
+    "/api/bookmarks/:id/archive",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      try {
+        bookmarkModel.updateBookmark(db, req.user.id, req.params.id, {
+          is_archived: 1,
+        });
+        broadcast(req.user.id, { type: "bookmarks:changed" });
+        res.json({ success: true });
+      } catch (err) {
+        console.error("Error archiving bookmark:", err);
+        res.status(500).json({ error: "Failed to archive bookmark" });
+      }
+    },
+  );
+
+  // Unarchive single bookmark
+  app.post(
+    "/api/bookmarks/:id/unarchive",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    (req, res) => {
+      try {
+        bookmarkModel.updateBookmark(db, req.user.id, req.params.id, {
+          is_archived: 0,
+        });
+        broadcast(req.user.id, { type: "bookmarks:changed" });
+        res.json({ success: true });
+      } catch (err) {
+        console.error("Error unarchiving bookmark:", err);
+        res.status(500).json({ error: "Failed to unarchive bookmark" });
+      }
+    },
+  );
+
+  // Refresh favicon
+  app.post(
+    "/api/bookmarks/:id/refresh-favicon",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    async (req, res) => {
+      const bookmark = bookmarkModel.getBookmarkById(
+        db,
+        req.user.id,
+        req.params.id,
+      );
+      if (!bookmark)
+        return res.status(404).json({ error: "Bookmark not found" });
+
+      bookmarkModel.updateBookmark(db, req.user.id, bookmark.id, {
+        favicon: null,
+      });
+      const newFavicon = await fetchFaviconWrapper(bookmark.url, bookmark.id);
+      res.json({ favicon: newFavicon });
+    },
+  );
+
   // Track click
   app.post(
     "/api/bookmarks/:id/click",
@@ -440,6 +613,61 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
       } catch (err) {
         console.error("Error incrementing click:", err);
         res.status(500).json({ error: "Failed to update click count" });
+      }
+    },
+  );
+
+  // Generate thumbnail screenshot for a bookmark
+  app.post(
+    "/api/bookmarks/:id/thumbnail",
+    authenticateTokenMiddleware,
+    validateCsrfTokenMiddleware,
+    async (req, res) => {
+      try {
+        const bookmark = bookmarkModel.getBookmarkById(
+          db,
+          req.user.id,
+          req.params.id,
+        );
+        if (!bookmark) {
+          return res.status(404).json({ error: "Bookmark not found" });
+        }
+
+        // Check if thumbnail already exists
+        if (bookmark.thumbnail_local) {
+          return res.json({
+            thumbnail_local: bookmark.thumbnail_local,
+          });
+        }
+
+        // Validate URL is not a private address
+        if (isPrivateAddress(bookmark.url)) {
+          return res.status(400).json({
+            error: "Cannot generate thumbnail for private addresses",
+          });
+        }
+
+        const thumbnailService = require("../helpers/thumbnail");
+        const result = await thumbnailService.captureScreenshot(
+          bookmark.url,
+          req.user.id,
+        );
+
+        if (!result.success) {
+          return res.status(500).json({ error: result.error });
+        }
+
+        // Update bookmark with thumbnail path
+        bookmarkModel.updateBookmark(db, req.user.id, bookmark.id, {
+          thumbnail_local: result.path,
+        });
+
+        res.json({
+          thumbnail_local: result.path,
+        });
+      } catch (err) {
+        console.error("Error generating thumbnail:", err);
+        res.status(500).json({ error: "Failed to generate thumbnail" });
       }
     },
   );

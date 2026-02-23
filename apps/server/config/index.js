@@ -13,16 +13,23 @@ const SSL_ENABLED =
   SSL_CERT &&
   fs.existsSync(SSL_KEY) &&
   fs.existsSync(SSL_CERT);
-const DEFAULT_JWT_SECRET = "anchormarks-secret-key-change-in-production";
+const crypto = require("crypto");
+
 const INSECURE_SECRETS = [
-  DEFAULT_JWT_SECRET,
   "change-this-to-a-secure-secret",
   "your-super-secret-jwt-key-change-this-to-a-random-string",
 ];
 
 function validateSecurityConfig() {
   const env = process.env.NODE_ENV || "development";
-  if (env !== "production") return;
+  if (env !== "production") {
+    if (!process.env.JWT_SECRET) {
+      console.warn(
+        "WARNING: JWT_SECRET not set. Using a random secret (sessions will be invalidated on restart).",
+      );
+    }
+    return;
+  }
 
   if (
     !process.env.JWT_SECRET ||
@@ -57,7 +64,6 @@ function resolveCorsOrigin() {
   return origins;
 }
 
-const crypto = require("crypto");
 const JWT_SECRET =
   process.env.JWT_SECRET || crypto.randomBytes(64).toString("hex");
 // Short-lived access token; refresh token rotation extends sessions (defaults: 15m access, 7d refresh)

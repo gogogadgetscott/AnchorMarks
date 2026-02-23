@@ -1,25 +1,26 @@
 /**
  * Migration 001_fts5_bookmarks
  * Adds full-text search capability for bookmarks using FTS5
+ * Note: Removed denormalized bookmarks.tags column - tags are now computed
+ * from normalized bookmark_tags + tags tables for FTS
  */
 
 exports.up = function (db) {
-  // 1. Ensure bookmarks has tags column (denormalized for FTS external content)
+  // 1. Drop old triggers that update denormalized tags column
   try {
-    db.prepare("ALTER TABLE bookmarks ADD COLUMN tags TEXT DEFAULT ''").run();
-  } catch (_e) {
-    /* column may already exist */
-  }
+    db.exec(`
+      DROP TRIGGER IF EXISTS bookmark_tags_sync_insert;
+      DROP TRIGGER IF EXISTS bookmark_tags_sync_delete;
+      DROP TRIGGER IF EXISTS tags_sync_update;
+    `);
+  } catch (_e) {}
 
-  // 2. Populate tags from bookmark_tags for existing rows
-  db.exec(`
-    UPDATE bookmarks SET tags = (
-      SELECT COALESCE(GROUP_CONCAT(t.name, ', '), '')
-      FROM bookmark_tags bt
-      JOIN tags t ON t.id = bt.tag_id
-      WHERE bt.bookmark_id = bookmarks.id
-    );
-  `);
+  // 2. Remove denormalized tags column if it exists (was used for FTS)
+  try {
+    db.exec("ALTER TABLE bookmarks DROP COLUMN tags");
+  } catch (_e) {
+    /* column may not exist */
+  }
 
   // 3. Recreate FTS with external content (content='bookmarks')
   try {
@@ -39,7 +40,7 @@ exports.up = function (db) {
     );
   `);
 
-  // 4. Rebuild FTS index from bookmarks
+  // 4. Rebuild FTS index from bookmarks (tags computed from normalized tables)
   db.exec(`INSERT INTO bookmarks_fts(bookmarks_fts) VALUES('rebuild')`);
 
   // 5. Triggers are created by database.js; migration ensures schema is correct

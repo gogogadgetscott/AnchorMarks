@@ -1,6 +1,6 @@
 /**
  * Tag Features Integration Tests
- * Covers normalized tag system (tags + bookmark_tags) and legacy bookmarks.tags sync.
+ * Covers normalized tag system (tags + bookmark_tags) and FTS5 triggers.
  */
 
 const fs = require("fs");
@@ -257,7 +257,7 @@ describe("Tag features", () => {
     expect((b2After.body.tags || "").toLowerCase()).not.toContain("gamma");
   });
 
-  it("updates and deletes a tag and keeps bookmarks.tags synced", async () => {
+  it("updates and deletes a tag and FTS index stays synced", async () => {
     // Create a bookmark with a manual tag
     const bookmark = await agent
       .post("/api/bookmarks")

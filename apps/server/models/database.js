@@ -52,7 +52,6 @@ function initializeDatabase(DB_PATH) {
         last_checked DATETIME,
         content_type TEXT,
         is_archived INTEGER DEFAULT 0,
-        tags TEXT DEFAULT '',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -195,7 +194,13 @@ function initializeDatabase(DB_PATH) {
       CREATE TRIGGER IF NOT EXISTS bookmarks_fts_insert AFTER INSERT ON bookmarks
       BEGIN
         INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
-        VALUES (new.rowid, new.id, new.user_id, new.title, new.url, new.description, COALESCE(new.tags, ''));
+        VALUES (
+          new.rowid, new.id, new.user_id, new.title, new.url, new.description,
+          COALESCE((SELECT GROUP_CONCAT(t.name, ', ')
+                    FROM bookmark_tags bt
+                    JOIN tags t ON t.id = bt.tag_id
+                    WHERE bt.bookmark_id = new.id), '')
+        );
       END;
 
       CREATE TRIGGER IF NOT EXISTS bookmarks_fts_delete AFTER DELETE ON bookmarks
@@ -207,37 +212,57 @@ function initializeDatabase(DB_PATH) {
       BEGIN
         INSERT INTO bookmarks_fts (bookmarks_fts, rowid) VALUES ('delete', old.rowid);
         INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
-        VALUES (new.rowid, new.id, new.user_id, new.title, new.url, new.description, COALESCE(new.tags, ''));
+        VALUES (
+          new.rowid, new.id, new.user_id, new.title, new.url, new.description,
+          COALESCE((SELECT GROUP_CONCAT(t.name, ', ')
+                    FROM bookmark_tags bt
+                    JOIN tags t ON t.id = bt.tag_id
+                    WHERE bt.bookmark_id = new.id), '')
+        );
       END;
 
       CREATE TRIGGER IF NOT EXISTS bookmark_tags_sync_insert AFTER INSERT ON bookmark_tags
       BEGIN
-        UPDATE bookmarks SET tags = (
-          SELECT COALESCE(GROUP_CONCAT(t.name, ', '), '')
-          FROM bookmark_tags bt
-          JOIN tags t ON t.id = bt.tag_id
-          WHERE bt.bookmark_id = new.bookmark_id
-        ) WHERE id = new.bookmark_id;
+        INSERT INTO bookmarks_fts (bookmarks_fts, rowid)
+        SELECT 'delete', b.rowid FROM bookmarks b WHERE b.id = new.bookmark_id;
+        INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
+        SELECT b.rowid, b.id, b.user_id, b.title, b.url, b.description,
+               COALESCE((SELECT GROUP_CONCAT(t2.name, ', ')
+                        FROM bookmark_tags bt2
+                        JOIN tags t2 ON t2.id = bt2.tag_id
+                        WHERE bt2.bookmark_id = b.id), '')
+        FROM bookmarks b WHERE b.id = new.bookmark_id;
       END;
 
       CREATE TRIGGER IF NOT EXISTS bookmark_tags_sync_delete AFTER DELETE ON bookmark_tags
       BEGIN
-        UPDATE bookmarks SET tags = (
-          SELECT COALESCE(GROUP_CONCAT(t.name, ', '), '')
-          FROM bookmark_tags bt
-          JOIN tags t ON t.id = bt.tag_id
-          WHERE bt.bookmark_id = old.bookmark_id
-        ) WHERE id = old.bookmark_id;
+        INSERT INTO bookmarks_fts (bookmarks_fts, rowid)
+        SELECT 'delete', b.rowid FROM bookmarks b WHERE b.id = old.bookmark_id;
+        INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
+        SELECT b.rowid, b.id, b.user_id, b.title, b.url, b.description,
+               COALESCE((SELECT GROUP_CONCAT(t2.name, ', ')
+                        FROM bookmark_tags bt2
+                        JOIN tags t2 ON t2.id = bt2.tag_id
+                        WHERE bt2.bookmark_id = b.id), '')
+        FROM bookmarks b WHERE b.id = old.bookmark_id;
       END;
 
       CREATE TRIGGER IF NOT EXISTS tags_sync_update AFTER UPDATE OF name ON tags
       BEGIN
-        UPDATE bookmarks SET tags = (
-          SELECT COALESCE(GROUP_CONCAT(t2.name, ', '), '')
-          FROM bookmark_tags bt2
-          JOIN tags t2 ON t2.id = bt2.tag_id
-          WHERE bt2.bookmark_id = bookmarks.id
-        ) WHERE id IN (SELECT bookmark_id FROM bookmark_tags WHERE tag_id = new.id);
+        INSERT INTO bookmarks_fts (bookmarks_fts, rowid)
+        SELECT DISTINCT 'delete', b.rowid
+        FROM bookmarks b
+        JOIN bookmark_tags bt ON bt.bookmark_id = b.id
+        WHERE bt.tag_id = new.id;
+        INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
+        SELECT b.rowid, b.id, b.user_id, b.title, b.url, b.description,
+               COALESCE((SELECT GROUP_CONCAT(t2.name, ', ')
+                        FROM bookmark_tags bt2
+                        JOIN tags t2 ON t2.id = bt2.tag_id
+                        WHERE bt2.bookmark_id = b.id), '')
+        FROM bookmarks b
+        JOIN bookmark_tags bt ON bt.bookmark_id = b.id
+        WHERE bt.tag_id = new.id;
       END;
     `);
   } catch (err) {
@@ -245,78 +270,86 @@ function initializeDatabase(DB_PATH) {
     throw err;
   }
 
-  try {
-    db.prepare(
-      "ALTER TABLE user_settings ADD COLUMN hide_sidebar INTEGER DEFAULT 0",
-    ).run();
-  } catch {}
-  try {
-    db.prepare("ALTER TABLE user_settings ADD COLUMN settings_json TEXT").run();
-  } catch {}
-  try {
-    db.prepare(
-      "ALTER TABLE user_settings ADD COLUMN dashboard_widgets TEXT",
-    ).run();
-  } catch {}
-  try {
-    db.prepare("ALTER TABLE bookmarks ADD COLUMN thumbnail_local TEXT").run();
-  } catch {}
-  try {
-    db.prepare(
-      "ALTER TABLE bookmark_tags ADD COLUMN color_override TEXT",
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      "ALTER TABLE user_settings ADD COLUMN include_child_bookmarks INTEGER DEFAULT 0",
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      "ALTER TABLE user_settings ADD COLUMN dashboard_mode TEXT DEFAULT 'folder'",
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      "ALTER TABLE user_settings ADD COLUMN dashboard_tags TEXT",
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      "ALTER TABLE user_settings ADD COLUMN dashboard_sort TEXT DEFAULT 'recently_added'",
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      "ALTER TABLE user_settings ADD COLUMN collapsed_sections TEXT",
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      "ALTER TABLE user_settings ADD COLUMN current_view TEXT DEFAULT 'all'",
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      "ALTER TABLE user_settings ADD COLUMN snap_to_grid INTEGER DEFAULT 1",
-    ).run();
-  } catch {}
-  try {
-    db.prepare(
-      "ALTER TABLE user_settings ADD COLUMN tour_completed INTEGER DEFAULT 0",
-    ).run();
-  } catch {}
-  try {
-    db.prepare("ALTER TABLE bookmarks ADD COLUMN color TEXT").run();
-  } catch {}
-  try {
-    db.prepare("ALTER TABLE bookmarks ADD COLUMN og_image TEXT").run();
-  } catch {}
-  try {
-    db.prepare(
-      "ALTER TABLE user_settings ADD COLUMN rich_link_previews_enabled INTEGER DEFAULT 0",
-    ).run();
-  } catch {}
+  function columnExists(table, column) {
+    try {
+      const info = db.prepare(`PRAGMA table_info(${table})`).all();
+      return info.some((c) => c.name === column);
+    } catch {
+      return false;
+    }
+  }
+
+  function addColumnIfNotExists(table, column, definition) {
+    if (!columnExists(table, column)) {
+      db.prepare(
+        `ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`,
+      ).run();
+      return true;
+    }
+    return false;
+  }
+
+  const migrations = [
+    {
+      table: "user_settings",
+      column: "hide_sidebar",
+      def: "INTEGER DEFAULT 0",
+    },
+    { table: "user_settings", column: "settings_json", def: "TEXT" },
+    { table: "user_settings", column: "dashboard_widgets", def: "TEXT" },
+    { table: "bookmarks", column: "thumbnail_local", def: "TEXT" },
+    { table: "bookmark_tags", column: "color_override", def: "TEXT" },
+    {
+      table: "user_settings",
+      column: "include_child_bookmarks",
+      def: "INTEGER DEFAULT 0",
+    },
+    {
+      table: "user_settings",
+      column: "dashboard_mode",
+      def: "TEXT DEFAULT 'folder'",
+    },
+    { table: "user_settings", column: "dashboard_tags", def: "TEXT" },
+    {
+      table: "user_settings",
+      column: "dashboard_sort",
+      def: "TEXT DEFAULT 'recently_added'",
+    },
+    { table: "user_settings", column: "collapsed_sections", def: "TEXT" },
+    {
+      table: "user_settings",
+      column: "current_view",
+      def: "TEXT DEFAULT 'all'",
+    },
+    {
+      table: "user_settings",
+      column: "snap_to_grid",
+      def: "INTEGER DEFAULT 1",
+    },
+    {
+      table: "user_settings",
+      column: "tour_completed",
+      def: "INTEGER DEFAULT 0",
+    },
+    { table: "bookmarks", column: "color", def: "TEXT" },
+    { table: "bookmarks", column: "og_image", def: "TEXT" },
+    {
+      table: "user_settings",
+      column: "rich_link_previews_enabled",
+      def: "INTEGER DEFAULT 0",
+    },
+  ];
+
+  let migrationsRun = 0;
+  for (const m of migrations) {
+    if (addColumnIfNotExists(m.table, m.column, m.def)) {
+      migrationsRun++;
+    }
+  }
+  if (migrationsRun > 0) {
+    console.log(`[Migrations] Added ${migrationsRun} column(s)`);
+  }
+
   // Run formal migrations
   try {
     const migrationsDir = path.join(__dirname, "migrations");

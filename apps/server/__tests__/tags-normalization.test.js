@@ -48,12 +48,10 @@ describe("Normalized tags-only storage", () => {
     csrfToken = registerRes.body.csrfToken;
   });
 
-  it("keeps bookmarks.tags as denormalized column for FTS5 full-text search", () => {
+  it("uses normalized tags storage (no denormalized column) for FTS5", () => {
     const schema = app.db.prepare("PRAGMA table_info(bookmarks)").all();
     const tagsCol = schema.find((c) => c.name === "tags");
-    expect(tagsCol).toBeDefined();
-    expect(tagsCol.type).toBe("TEXT");
-    // Tags are synced from bookmark_tags via triggers for FTS5 indexing
+    expect(tagsCol).toBeUndefined();
   });
 
   it("imports JSON bookmarks and normalizes tags", async () => {
