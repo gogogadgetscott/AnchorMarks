@@ -26,7 +26,7 @@ export async function refreshOmnibarBookmarks(): Promise<void> {
 }
 
 // Get all bookmarks (from cache, refresh if stale)
-function getAllBookmarks(): Bookmark[] {
+export function getAllBookmarks(): Bookmark[] {
   const now = Date.now();
 
   // Refresh in background if cache is stale
@@ -293,15 +293,19 @@ export function getOmnibarCommands(filterText: string = ""): Command[] {
     });
   } else if (isBookmarkOnly && searchTerm.length >= 1) {
     // When searching, prioritize bookmarks but show everything that matches
+    // including tag names so e.g. searching "react" finds bookmarks tagged "react"
     const matchingBookmarks = bookmarkCommands.filter((cmd) => {
       const label = cmd.label?.toLowerCase() || "";
       const description = cmd.description?.toLowerCase() || "";
       const url = cmd.url ? String(cmd.url).toLowerCase() : "";
+      const bookmark = allBookmarks.find((b) => b.url === cmd.url);
+      const tags = bookmark?.tags?.toLowerCase() || "";
 
       return (
         label.includes(searchTerm) ||
         description.includes(searchTerm) ||
-        url.includes(searchTerm)
+        url.includes(searchTerm) ||
+        tags.includes(searchTerm)
       );
     });
     const matchingCommands = baseCommands.filter((cmd) =>
@@ -310,6 +314,37 @@ export function getOmnibarCommands(filterText: string = ""): Command[] {
     const matchingFolders = folderCommands.filter((cmd) =>
       cmd.label.toLowerCase().includes(searchTerm),
     );
+
+    // Collect unique tags that match the search term
+    const matchingTagNames = new Set<string>();
+    allBookmarks.forEach((b) => {
+      if (b.tags) {
+        b.tags.split(",").forEach((t) => {
+          const tag = t.trim();
+          if (tag && tag.toLowerCase().includes(searchTerm)) {
+            matchingTagNames.add(tag);
+          }
+        });
+      }
+    });
+
+    // Create "Filter by tag" commands for discovered tags
+    const tagFilterCommands: Command[] = Array.from(matchingTagNames)
+      .slice(0, 5)
+      .map((tagName) => ({
+        label: `Filter by tag: ${tagName}`,
+        action: () => {
+          import("@features/bookmarks/search.ts").then(({ sidebarFilterTag }) =>
+            sidebarFilterTag(tagName),
+          );
+          import("@features/bookmarks/omnibar.ts").then(({ closeOmnibar }) =>
+            closeOmnibar(),
+          );
+        },
+        icon: "#",
+        category: "command" as const,
+        description: `Show all bookmarks tagged "${tagName}"`,
+      }));
 
     const applySearchCommand: Command = {
       label: `Apply "${searchTerm}" to filter`,
@@ -353,8 +388,9 @@ export function getOmnibarCommands(filterText: string = ""): Command[] {
       description: "Apply the current search term as a persistent filter",
     };
 
-    // Show apply command first, then bookmarks, then folders, then commands
+    // Show apply command first, then tag filters, then bookmarks, then folders, then commands
     const resultsArray = [
+      ...tagFilterCommands,
       ...matchingBookmarks.slice(0, 10),
       ...matchingFolders,
       ...matchingCommands,

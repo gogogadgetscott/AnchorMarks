@@ -1,4 +1,5 @@
-require("dotenv").config({ quiet: true });
+const _envPath = require("./env-path");
+require("dotenv").config({ path: _envPath, quiet: true });
 const path = require("path");
 
 const NODE_ENV = process.env.NODE_ENV || "development";

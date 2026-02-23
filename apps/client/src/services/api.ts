@@ -144,21 +144,37 @@ export async function api<T = unknown>(
       if (response.status === 401) {
         // If this was not a refresh call, try refresh-token rotation once
         const isRefreshCall =
-          endpoint === "/api/auth/refresh" ||
-          endpoint.startsWith("/api/auth/refresh");
+          endpoint === "/auth/refresh" ||
+          endpoint.startsWith("/auth/refresh");
         if (!isRefreshCall) {
-          const refreshRes = await fetch(`${state.API_BASE}/api/auth/refresh`, {
+          const refreshRes = await fetch(`${state.API_BASE}/auth/refresh`, {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
           });
           if (refreshRes.ok) {
-            const refreshData = await refreshRes.json();
-            if (refreshData.csrfToken)
+            let refreshData: Record<string, unknown> | null = null;
+            const refreshCt = refreshRes.headers.get("content-type");
+            if (refreshCt?.includes("application/json")) {
+              try {
+                refreshData = await refreshRes.json();
+              } catch {
+                refreshData = null;
+              }
+            }
+            if (refreshData?.csrfToken)
               state.setCsrfToken(refreshData.csrfToken);
-            if (refreshData.user) {
+            if (refreshData?.user) {
               state.setCurrentUser(refreshData.user);
               state.setIsAuthenticated(true);
+            }
+            if (!refreshData) {
+              state.setCsrfToken(null);
+              state.setCurrentUser(null);
+              state.setIsAuthenticated(false);
+              const { showAuthScreen } = await import("@features/auth/auth.ts");
+              showAuthScreen();
+              throw new Error("Session expired");
             }
             // Retry original request once with new cookies
             const retryRes = await fetch(`${state.API_BASE}${endpoint}`, {

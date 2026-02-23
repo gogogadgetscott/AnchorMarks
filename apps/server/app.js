@@ -1,8 +1,8 @@
 const path = require("path");
 
-// Load environment from repository `.env` explicitly so running from
-// project root still picks up the correct file.
-const _envPath = path.join(__dirname, "..", "..", ".env");
+// Load environment from the .env file.  The resolver checks the
+// repository root first, then the Docker-compose mount at /apps/.env.
+const _envPath = require("./config/env-path");
 require("dotenv").config({ path: _envPath, quiet: true });
 
 const express = require("express");

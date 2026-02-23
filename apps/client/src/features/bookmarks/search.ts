@@ -84,13 +84,18 @@ export async function sidebarFilterTag(tag: string): Promise<void> {
   ) as HTMLInputElement;
   if (searchInput) searchInput.value = "";
 
-  // Toggle tag selection
+  // Toggle tag selection and clear any text search so the tag filter
+  // doesn't stack on top of whatever the user typed in the omnibar.
   const idx = state.filterConfig.tags.indexOf(tag);
   const newTags =
     idx === -1
       ? [...state.filterConfig.tags, tag]
       : state.filterConfig.tags.filter((_, i) => i !== idx);
-  state.setFilterConfig({ ...state.filterConfig, tags: newTags });
+  state.setFilterConfig({
+    ...state.filterConfig,
+    tags: newTags,
+    search: undefined,
+  });
 
   // Update view title
   const viewTitle = document.getElementById("view-title");

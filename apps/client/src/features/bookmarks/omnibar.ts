@@ -4,7 +4,10 @@
  */
 
 import * as state from "@features/state.ts";
-import { getOmnibarCommands } from "@features/bookmarks/commands.ts";
+import {
+  getOmnibarCommands,
+  getAllBookmarks,
+} from "@features/bookmarks/commands.ts";
 import type { Command } from "../../types/index";
 import { escapeHtml, safeLocalStorage } from "@utils/index.ts";
 import { Icon } from "@components/index.ts";
@@ -94,7 +97,9 @@ export function removeRecentSearch(query: string): void {
 export function getSuggestedTags(): Array<{ name: string; count: number }> {
   const tagCounts: Record<string, number> = {};
 
-  state.bookmarks.forEach((b) => {
+  // Use the omnibar's full bookmarks cache for complete tag coverage
+  const bookmarks = getAllBookmarks();
+  bookmarks.forEach((b) => {
     if (b.tags) {
       b.tags.split(",").forEach((t) => {
         const tag = t.trim();

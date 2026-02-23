@@ -146,11 +146,8 @@ stop-docker: ## Stop Docker containers
 	@$(DOCKER_CMD) down
 	@echo "$(GREEN)✓ Docker containers stopped$(NC)"
 
-restart-docker: ## Restart Docker containers
-	@echo "$(BLUE)Restarting Docker containers...$(NC)"
-	@$(DOCKER_CMD) restart
-	@echo "$(GREEN)✓ Docker containers restarted$(NC)"
-
+restart-docker: stop-docker run-docker ## Restart Docker containers
+	
 restart-all: stop-all start-all ## Restart all development processes
 
 # ============================================================================
@@ -158,7 +155,6 @@ restart-all: stop-all start-all ## Restart all development processes
 # ============================================================================
 test: test-all ## Run all tests (alias for test-all)
 
-test-backend: test-docker-backend ## Run backend tests (in Docker)
 
 test-backend-local: ## Run backend tests on host (requires compatible better-sqlite3 build)
 	@echo "$(BLUE)Running backend tests on host...$(NC)"
