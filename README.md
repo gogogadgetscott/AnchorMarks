@@ -1,7 +1,7 @@
 # 🔗 AnchorMarks
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Node.js >=18](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](INSTALL.md#system-requirements)
+[![Node.js >=18](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](docs/INSTALL.md#system-requirements)
 [![Docker Compose](https://img.shields.io/badge/docker-compose-blue.svg)](tooling/docker/docker-compose.yml)
 [![Tests: Vitest](https://img.shields.io/badge/tests-Vitest-%2344a833.svg)](apps/server/vitest.config.ts)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -10,10 +10,10 @@
 
 A modern, self-hosted bookmark manager with browser sync, Flow Launcher integration, REST API, and SQLite backend.
 
-> **Note**: This project was built with AI-assisted development using GitHub Copilot.
+> **Note**: This project was built with AI-assisted development using mostly GitHub Copilot but also Claude and Google Antigravity.
 
 <p>
-	<img src="apps/client/public/images/anchormarks_demo.gif" alt="Quick demo" width="720">
+	<img src="apps/server/public/images/anchormarks_demo.gif" alt="Quick demo" width="720">
 </p>
 
 If the animation doesn’t load, see the [Live Tour](#live-tour) below.
@@ -52,13 +52,16 @@ Compared to Linkwarden/Linkding/Shaarli, AnchorMarks emphasizes minimal setup, r
 ## 🎥 Live Tour
 
 - Dashboard: configurable widgets and quick-access favorites.
-  <img src="apps/client/public/images/anchormarks_dashboard_1765737807089.png" width="720" alt="Dashboard">
+
+  <img src="apps/server/public/images/anchormarks_dashboard_1765737807089.png" width="720" alt="Dashboard">
 
 - Search: fast, ranked results with filter bar.
-  <img src="apps/client/public/images/anchormarks_search_1765737823968.png" width="720" alt="Search">
+
+  <img src="apps/server/public/images/anchormarks_search_1765737823968.png" width="720" alt="Search">
 
 - Mobile: responsive layout with the same features on-the-go.
-  <img src="apps/client/public/images/anchormarks_mobile_1765737840238.png" width="360" alt="Mobile">
+
+  <img src="apps/server/public/images/anchormarks_mobile_1765737840238.png" width="360" alt="Mobile">
 
 ### Typical Workflow
 
@@ -116,7 +119,7 @@ Compose file: tooling/docker/docker-compose.yml. The stack reads variables from 
 - Enable rate limiting on auth endpoints.
 - Run behind an SSL-terminating reverse proxy (see tooling/deploy/nginx.conf).
 - Block private/loopback SSRF targets; production code already enforces this.
-  📘 **[View full documentation →](help.html)** · [Installation Guide](INSTALL.md) · [Vite Migration](VITE_MIGRATION.md)
+  📘 **[View full documentation →](help.html)** · [Installation Guide](docs/INSTALL.md) · [Vite Migration](VITE_MIGRATION.md)
 
 ## 🔧 Configuration
 
@@ -143,16 +146,15 @@ Then run:
 make run-prod
 ```
 
-See [INSTALL.md](INSTALL.md) for advanced deployment options.
+See [INSTALL.md](docs/INSTALL.md) for advanced deployment options.
 
 ## 📝 Documentation
 
-- **[Help & Documentation](help.html)** - Complete user guide with all features (in-app)
-- **[INSTALL.md](INSTALL.md)** - Installation and quick start guide
-- **[VITE_MIGRATION.md](VITE_MIGRATION.md)** - ✨ Vite build system and migration guide
+- **[Help & Documentation](apps/server/public/help.html)** - Complete user guide with all features (in-app)
+- **[INSTALL.md](docs/INSTALL.md)** - Installation and quick start guide
 - **[SECURITY.md](SECURITY.md)** - Security policy and best practices
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development guidelines
-- **Auth & CSRF Flow** - Developer reference: [help.html#developer-auth-csrf](help.html#developer-auth-csrf)
+- **Auth & CSRF Flow** - Developer reference: [help.html#developer-auth-csrf](apps/server/public/help.html#developer-auth-csrf)
 
 ### Testing
 
