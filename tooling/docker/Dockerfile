@@ -6,7 +6,7 @@ WORKDIR /client
 
 # Install frontend dependencies
 COPY apps/client/package*.json ./
-RUN npm install --no-audit --no-fund
+RUN npm install --no-fund
 
 # Build frontend
 COPY apps/client .
@@ -37,7 +37,8 @@ COPY apps/server/package*.json /apps/server/
 COPY apps/client/package*.json /apps/client/
 
 # Install production dependencies
-RUN npm install --no-audit --no-fund && \
+RUN npm install --no-fund && \
+    npm audit --audit-level=high && \
     npm rebuild
 
 # Copy application code
