@@ -225,22 +225,29 @@ const swaggerCspDirectives = {
   ],
 };
 
-app.use(
-  "/api/docs",
-  helmet({
-    contentSecurityPolicy: { directives: swaggerCspDirectives },
-    hsts: false,
-    crossOriginOpenerPolicy: false,
-    originAgentCluster: false,
-  }),
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpecs, {
-    customCss: ".swagger-ui .topbar { display: none }", // Hide topbar for cleaner look
-    swaggerOptions: {
-      persistAuthorization: true,
-    },
-  }),
-);
+// In production, require authentication to view API docs — reduces attacker reconnaissance surface.
+// In development, docs are open so local developers can explore the API freely.
+const swaggerHelmet = helmet({
+  contentSecurityPolicy: { directives: swaggerCspDirectives },
+  hsts: false,
+  crossOriginOpenerPolicy: false,
+  originAgentCluster: false,
+});
+const swaggerSetup = swaggerUi.setup(swaggerSpecs, {
+  customCss: ".swagger-ui .topbar { display: none }",
+  swaggerOptions: { persistAuthorization: true },
+});
+if (config.NODE_ENV === "production") {
+  app.use(
+    "/api/docs",
+    swaggerHelmet,
+    authenticateTokenMiddleware,
+    swaggerUi.serve,
+    swaggerSetup,
+  );
+} else {
+  app.use("/api/docs", swaggerHelmet, swaggerUi.serve, swaggerSetup);
+}
 // Additional manual headers for redundancy
 app.use((req, res, next) => {
   res.setHeader("X-Frame-Options", "DENY");
