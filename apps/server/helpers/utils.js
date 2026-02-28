@@ -41,6 +41,27 @@ async function isPrivateAddress(url) {
   }
 }
 
+// Resolves a hostname to a verified public IP, eliminating the TOCTOU window
+// between isPrivateAddress() and the actual HTTP connection (DNS rebinding).
+// Throws if the hostname resolves only to private/loopback addresses.
+async function resolveToPublicIp(hostname) {
+  const bare =
+    hostname.startsWith("[") && hostname.endsWith("]")
+      ? hostname.slice(1, -1)
+      : hostname;
+
+  if (bare === "localhost") throw new Error("Hostname resolves to private address");
+  if (net.isIP(bare)) {
+    if (isPrivateIp(bare)) throw new Error("Hostname resolves to private address");
+    return bare;
+  }
+
+  const records = await dns.lookup(bare, { all: true });
+  const pub = records.find((r) => !isPrivateIp(r.address));
+  if (!pub) throw new Error("Hostname resolves to private address");
+  return pub.address;
+}
+
 // Cache for in-progress favicon fetches
 const faviconFetchQueue = new Map();
 
@@ -151,5 +172,6 @@ function tryFetchFavicon(sources, index, localPath, callback) {
 
 module.exports = {
   isPrivateAddress,
+  resolveToPublicIp,
   fetchFavicon,
 };
