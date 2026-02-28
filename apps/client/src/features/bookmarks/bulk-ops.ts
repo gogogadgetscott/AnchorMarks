@@ -7,7 +7,7 @@ import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { parseTagInput } from "@utils/index.ts";
 import { showToast, updateCounts } from "@utils/ui-helpers.ts";
-import { confirmDialog, promptDialog } from "@features/ui/confirm-dialog.ts";
+import { confirmDialog, tagPickerDialog } from "@features/ui/confirm-dialog.ts";
 
 // Bulk delete
 export async function bulkDelete(): Promise<void> {
@@ -88,13 +88,12 @@ export async function bulkMove(): Promise<void> {
 export async function bulkAddTags(): Promise<void> {
   if (state.selectedBookmarks.size === 0) return;
 
-  const raw = await promptDialog("Add tags (comma separated):", {
+  const tagsToAdd = await tagPickerDialog({
     title: "Bulk Add Tags",
     confirmText: "Add Tags",
-    placeholder: "tag1, tag2",
+    selectionCount: state.selectedBookmarks.size,
   });
-  const tagsToAdd = parseTagInput(raw || "");
-  if (tagsToAdd.length === 0) return;
+  if (!tagsToAdd || tagsToAdd.length === 0) return;
 
   const ids = Array.from(state.selectedBookmarks);
   await api("/tags/bulk-add", {
@@ -128,13 +127,12 @@ export async function bulkAddTags(): Promise<void> {
 export async function bulkRemoveTags(): Promise<void> {
   if (state.selectedBookmarks.size === 0) return;
 
-  const raw = await promptDialog("Remove tags (comma separated):", {
+  const tagsToRemove = await tagPickerDialog({
     title: "Bulk Remove Tags",
     confirmText: "Remove Tags",
-    placeholder: "tag1, tag2",
+    selectionCount: state.selectedBookmarks.size,
   });
-  const tagsToRemove = parseTagInput(raw || "");
-  if (tagsToRemove.length === 0) return;
+  if (!tagsToRemove || tagsToRemove.length === 0) return;
 
   const ids = Array.from(state.selectedBookmarks);
   await api("/tags/bulk-remove", {

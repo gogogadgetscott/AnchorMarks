@@ -81,14 +81,15 @@ export async function loadBookmarks(): Promise<void> {
 
     if (state.currentView === "favorites") params.append("favorites", "true");
     if (state.currentView === "archived") params.append("archived", "true");
-    // Don't send folder_id for favorites, archived, or recent views - show all items regardless of folder
+    // Don't send folder_id for favorites, archived, recent, or most-used views - show all items regardless of folder
     if (
       state.currentFolder &&
       state.currentView !== "dashboard" &&
       state.currentView !== "collection" &&
       state.currentView !== "favorites" &&
       state.currentView !== "archived" &&
-      state.currentView !== "recent"
+      state.currentView !== "recent" &&
+      state.currentView !== "most-used"
     ) {
       params.append("folder_id", state.currentFolder);
       if (state.includeChildBookmarks) {
@@ -99,17 +100,20 @@ export async function loadBookmarks(): Promise<void> {
     // Only add sort params when using /bookmarks endpoint
     if (endpoint === "/bookmarks") {
       const sortOption =
-        state.filterConfig.sort ||
-        state.dashboardConfig.bookmarkSort ||
-        "recently_added";
+        state.currentView === "most-used"
+          ? "most_visited"
+          : state.filterConfig.sort ||
+            state.dashboardConfig.bookmarkSort ||
+            "recently_added";
       params.append("sort", sortOption);
 
-      // Server handles all filtering for favorites, archived, and recent views
+      // Server handles all filtering for favorites, archived, recent, and most-used views
       // Don't send search or tag filters for these views
       if (
         state.currentView !== "favorites" &&
         state.currentView !== "archived" &&
-        state.currentView !== "recent"
+        state.currentView !== "recent" &&
+        state.currentView !== "most-used"
       ) {
         const searchTerm = state.filterConfig.search?.trim();
         if (searchTerm) {
@@ -198,7 +202,8 @@ export async function loadBookmarks(): Promise<void> {
       state.currentView !== "tag-cloud" &&
       state.currentView !== "favorites" &&
       state.currentView !== "recent" &&
-      state.currentView !== "archived"
+      state.currentView !== "archived" &&
+      state.currentView !== "most-used"
     ) {
       initBookmarkViews();
     }
@@ -264,7 +269,8 @@ export function renderBookmarks(): void {
   if (
     state.currentView === "favorites" ||
     state.currentView === "archived" ||
-    state.currentView === "recent"
+    state.currentView === "recent" ||
+    state.currentView === "most-used"
   ) {
     // These views: server handles ALL filtering and sorting
     // Just render what server sends - no client-side filtering needed
@@ -273,6 +279,10 @@ export function renderBookmarks(): void {
     if (state.currentView === "recent") {
       // Recent view: server returns sorted by created_at DESC, limit 20
       filtered = filtered.slice(0, 20);
+    }
+    if (state.currentView === "most-used") {
+      // Most-used view: only show bookmarks that have been clicked at least once
+      filtered = filtered.filter((b) => (b.click_count || 0) > 0);
     }
     // For favorites and archived, use all bookmarks returned by server
 
@@ -566,14 +576,15 @@ export async function loadMoreBookmarks(): Promise<void> {
 
     if (state.currentView === "favorites") params.append("favorites", "true");
     if (state.currentView === "archived") params.append("archived", "true");
-    // Don't send folder_id for favorites, archived, or recent views - show all items regardless of folder
+    // Don't send folder_id for favorites, archived, recent, or most-used views - show all items regardless of folder
     if (
       state.currentFolder &&
       state.currentView !== "dashboard" &&
       state.currentView !== "collection" &&
       state.currentView !== "favorites" &&
       state.currentView !== "archived" &&
-      state.currentView !== "recent"
+      state.currentView !== "recent" &&
+      state.currentView !== "most-used"
     ) {
       params.append("folder_id", state.currentFolder);
       if (state.includeChildBookmarks) {
@@ -584,9 +595,11 @@ export async function loadMoreBookmarks(): Promise<void> {
     // Only add sort params when using /bookmarks endpoint
     if (endpoint === "/bookmarks") {
       const sortOption =
-        state.filterConfig.sort ||
-        state.dashboardConfig.bookmarkSort ||
-        "recently_added";
+        state.currentView === "most-used"
+          ? "most_visited"
+          : state.filterConfig.sort ||
+            state.dashboardConfig.bookmarkSort ||
+            "recently_added";
       params.append("sort", sortOption);
     }
 
@@ -619,6 +632,23 @@ export async function loadMoreBookmarks(): Promise<void> {
   }
 }
 
+// Sequential queue for OG image fetches to avoid rate-limit bursts
+const ogImageQueue: Array<{ id: string; url: string }> = [];
+let ogImageQueueRunning = false;
+
+async function drainOGImageQueue(): Promise<void> {
+  if (ogImageQueueRunning) return;
+  ogImageQueueRunning = true;
+  while (ogImageQueue.length > 0) {
+    const item = ogImageQueue.shift()!;
+    await processOGImageFetch(item.id, item.url);
+    if (ogImageQueue.length > 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, 250));
+    }
+  }
+  ogImageQueueRunning = false;
+}
+
 // Adaptive Lazy Loading for Rich Cards
 async function lazyLoadOGImages(): Promise<void> {
   const container =
@@ -641,7 +671,10 @@ async function lazyLoadOGImages(): Promise<void> {
             const el = entry.target as HTMLElement;
             const id = el.dataset.bookmarkId;
             const url = el.dataset.bookmarkUrl;
-            if (id && url) processOGImageFetch(id, url);
+            if (id && url) {
+              ogImageQueue.push({ id, url });
+              drainOGImageQueue();
+            }
             ogImageObserver?.unobserve(el);
           }
         });
@@ -722,7 +755,7 @@ export function attachBookmarkCardListeners(): void {
     ) as HTMLElement | null;
     if (!card) return;
 
-    if ((e.target as HTMLElement).classList.contains("bookmark-select")) {
+    if ((e.target as HTMLElement).closest(".bookmark-select")) {
       e.stopPropagation();
       toggleBookmarkSelection(
         card.dataset.id || "",
@@ -739,16 +772,6 @@ export function attachBookmarkCardListeners(): void {
     const id = card.dataset.id || "";
     const bookmark = state.bookmarks.find((b) => b.id === id);
     if (!bookmark) return;
-
-    if (state.bulkMode) {
-      toggleBookmarkSelection(
-        id,
-        parseInt(card.dataset.index || "0", 10),
-        (e as MouseEvent).shiftKey,
-        true,
-      );
-      return;
-    }
 
     const url = bookmark.url;
     if (url.startsWith("view:")) {
@@ -1003,10 +1026,28 @@ export async function toggleFavorite(id: string): Promise<void> {
 
 // Track click
 export async function trackClick(id: string): Promise<void> {
+  // Update local state before the API call so the UI feels instant
+  const bookmark = state.bookmarks.find((b) => b.id === id);
+  const wasUntracked = bookmark !== undefined && (bookmark.click_count || 0) === 0;
+  if (bookmark) {
+    bookmark.click_count = (bookmark.click_count || 0) + 1;
+  }
+
   try {
     await api(`/bookmarks/${id}/click`, { method: "POST" });
+
+    // If this was the bookmark's first click, it just entered the most-used set
+    if (wasUntracked) {
+      const badge = document.getElementById("count-most-used");
+      if (badge) {
+        badge.textContent = String(parseInt(badge.textContent || "0", 10) + 1);
+      }
+    }
   } catch (err: unknown) {
-    // Silent fail
+    // Silent fail — revert local click_count on error
+    if (bookmark) {
+      bookmark.click_count = Math.max(0, (bookmark.click_count || 1) - 1);
+    }
   }
 }
 

@@ -671,6 +671,7 @@ export async function updateCounts(): Promise<void> {
       favorites: Number(counts?.favorites) || 0,
       recent: Number(counts?.recent) || 0,
       archived: Number(counts?.archived) || 0,
+      most_used: Number(counts?.most_used) || 0,
     };
 
     // Elements
@@ -678,6 +679,7 @@ export async function updateCounts(): Promise<void> {
     const favCountEl = document.getElementById("fav-count");
     const recentCountEl = document.getElementById("count-recent");
     const archivedCountEl = document.getElementById("count-archived");
+    const mostUsedCountEl = document.getElementById("count-most-used");
 
     // Helper function to update badge with count
     const updateBadge = (el: HTMLElement | null, count: number): void => {
@@ -699,6 +701,14 @@ export async function updateCounts(): Promise<void> {
     updateBadge(favCountEl, safeCounts.favorites);
     updateBadge(recentCountEl, safeCounts.recent);
     updateBadge(archivedCountEl, safeCounts.archived);
+    // For most-used: use the local rendered count when on that view (always accurate,
+    // avoids depending on whether the server has restarted to include the most_used field).
+    // Fall back to the server count on other views.
+    const mostUsedBadgeCount =
+      state.currentView === "most-used"
+        ? state.renderedBookmarks.length
+        : safeCounts.most_used;
+    updateBadge(mostUsedCountEl, mostUsedBadgeCount);
 
     // Calculate dashboard count from widgets
     // Always calculate dashboard count regardless of current view
@@ -768,6 +778,13 @@ export async function updateCounts(): Promise<void> {
           archivedViewCount.textContent = `${safeCounts.archived} archived`;
         }
         break;
+      case "most-used": {
+        const mostUsedViewCount = document.getElementById("most-used-view-count");
+        if (mostUsedViewCount) {
+          mostUsedViewCount.textContent = `${currentViewCount} link${currentViewCount !== 1 ? "s" : ""}`;
+        }
+        break;
+      }
     }
 
     updateStats();
@@ -781,6 +798,7 @@ export async function updateCounts(): Promise<void> {
       "count-recent",
       "dashboard-count",
       "count-archived",
+      "count-most-used",
     ];
     badgeIds.forEach((id) => {
       const el = document.getElementById(id);
@@ -897,6 +915,18 @@ export function getEmptyStateMessage(): string {
                 </svg>
                 <h3>No recent bookmarks</h3>
                 <p>Recently clicked bookmarks will appear here.<br>Start browsing your bookmarks to see them here!</p>
+            </div>
+        `;
+  }
+
+  if (state.currentView === "most-used") {
+    return `
+            <div class="empty-state-content">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;color:var(--text-tertiary);margin-bottom:1rem">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+                <h3>No visits yet</h3>
+                <p>Links you click will appear here, ranked by how often you visit them.</p>
             </div>
         `;
   }

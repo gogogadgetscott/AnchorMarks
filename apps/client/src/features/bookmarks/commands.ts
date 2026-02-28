@@ -15,6 +15,8 @@ const CACHE_DURATION = 30000; // 30 seconds
 
 // Refresh all bookmarks cache in background
 export async function refreshOmnibarBookmarks(): Promise<void> {
+  // Skip if the cache is still fresh to avoid hammering the API on every view switch
+  if (Date.now() - lastBookmarksFetch < CACHE_DURATION) return;
   try {
     const { api } = await import("@services/api.ts");
     const response = await api<Bookmark[]>("/bookmarks?limit=1000");

@@ -122,6 +122,22 @@ export function initTagListeners(): void {
       }
     });
 
+  // Delete tag from modal
+  document
+    .getElementById("delete-tag-btn")
+    ?.addEventListener("click", async () => {
+      const id = (document.getElementById("tag-id") as HTMLInputElement)?.value;
+      const name = (document.getElementById("tag-name") as HTMLInputElement)
+        ?.value;
+      if (!id) return;
+
+      const modal = document.getElementById("tag-modal");
+      if (modal) modal.classList.add("hidden");
+
+      const { deleteTagById } = await import("@features/bookmarks/search.ts");
+      await deleteTagById(id, name || id);
+    });
+
   // Add new tag
   document
     .getElementById("add-new-tag-btn")

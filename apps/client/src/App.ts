@@ -171,6 +171,14 @@ export async function updateHeaderContent(): Promise<void> {
         `;
       break;
 
+    case "most-used":
+      headerConfig.title = "Most Used";
+      headerConfig.countId = "most-used-view-count";
+      headerConfig.countSuffix = "links";
+      headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
+      headerConfig.bulkActions = ["archive", "move", "tag", "delete"];
+      break;
+
     case "archived":
       headerConfig.title = "Archived";
       headerConfig.countId = "archived-view-count";

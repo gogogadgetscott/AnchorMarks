@@ -202,11 +202,20 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
         .get(userId);
       const archivedCount = Number(archivedCountResult?.count || 0);
 
+      // Most used (bookmarks clicked at least once, non-archived)
+      const mostUsedCountResult = db
+        .prepare(
+          "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND click_count > 0 AND is_archived = 0",
+        )
+        .get(userId);
+      const mostUsedCount = Number(mostUsedCountResult?.count || 0);
+
       res.json({
         all: allCount,
         favorites: favoritesCount,
         recent: recentCount,
         archived: archivedCount,
+        most_used: mostUsedCount,
       });
     } catch (err) {
       return reportAndSend(res, err, logger, "Error fetching bookmark counts");
@@ -287,7 +296,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
         const metadata = await fetchUrlMetadata(url);
         res.json(metadata);
       } catch (metaErr) {
-        logger.warn("Metadata fetch failed, falling back to hostname", metaErr);
+        logger.warn(`Metadata fetch failed (${metaErr.message}), falling back to hostname`);
         try {
           res.json({ title: new URL(url).hostname, description: "", url });
         } catch (parseErr) {

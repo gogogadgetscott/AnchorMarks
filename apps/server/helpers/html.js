@@ -22,6 +22,7 @@ function parseHtmlMetadata(html, url) {
     title: "",
     description: "",
     og_image: "",
+    favicon: "",
     url: url,
   };
 
@@ -106,6 +107,28 @@ function parseHtmlMetadata(html, url) {
       metadata.title = new URL(url).hostname;
     } catch {
       metadata.title = url;
+    }
+  }
+
+  const faviconMatch =
+    html.match(
+      /<link\s+[^>]*rel=["'](?:shortcut icon|icon)["'][^>]*href=["']([^"']+)["']/i,
+    ) ||
+    html.match(
+      /<link\s+[^>]*href=["']([^"']+)["'][^>]*rel=["'](?:shortcut icon|icon)["']/i,
+    );
+  if (faviconMatch) {
+    try {
+      metadata.favicon = new URL(faviconMatch[1], url).toString();
+    } catch {
+      // ignore invalid favicon URLs
+    }
+  }
+  if (!metadata.favicon) {
+    try {
+      metadata.favicon = `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=64`;
+    } catch {
+      // ignore
     }
   }
 

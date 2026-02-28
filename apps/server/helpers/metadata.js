@@ -70,7 +70,7 @@ async function fetchUrlMetadata(url, redirectCount = 0) {
       }
 
       if (response.statusCode !== 200) {
-        return reject(new Error(`HTTP ${response.statusCode}`));
+        return reject(new Error(`HTTP ${response.statusCode} for ${url}`));
       }
 
       const contentType = response.headers["content-type"] || "";
