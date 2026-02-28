@@ -1,11 +1,11 @@
 // Config via env:
 // General API: RATE_LIMIT_MAX (default 60), RATE_LIMIT_WINDOW_MS (default 60000).
 // Auth (login/register): RATE_LIMIT_AUTH_MAX (default 10), RATE_LIMIT_AUTH_WINDOW_MS (default 60000).
+//   Auth attempts are persisted in SQLite so the brute-force window survives server restarts.
 // Maintenance: RATE_LIMIT_MAINTENANCE_MAX (default 20), RATE_LIMIT_MAINTENANCE_WINDOW_MS (default 60000).
 // RATE_LIMIT_DISABLED=1 to turn off (e.g. when all traffic is one IP behind Docker/proxy).
 const { logger } = require("../lib/logger");
 const requestCounts = new Map();
-const authRequestCounts = new Map();
 const maintenanceRequestCounts = new Map();
 
 const RATE_LIMIT_WINDOW =
@@ -40,8 +40,26 @@ const effectiveMaxOrNull = RATE_LIMIT_DISABLED ? null : effectiveMax;
 
 const CLEANUP_INTERVAL = 300000; // 5 minutes
 
-// Periodic cleanup of expired rate limit entries to prevent memory leak
-function cleanupExpiredEntries() {
+// SQLite helpers for persistent auth rate limiting (survives server restarts)
+function incrementAuthCount(db, key, windowMs) {
+  const windowStart = Math.floor(Date.now() / windowMs) * windowMs;
+  db.prepare(
+    `INSERT INTO rate_limit_auth_attempts (key, window_start, count) VALUES (?, ?, 1)
+     ON CONFLICT(key, window_start) DO UPDATE SET count = count + 1`,
+  ).run(key, windowStart);
+  return db
+    .prepare(
+      "SELECT count FROM rate_limit_auth_attempts WHERE key = ? AND window_start = ?",
+    )
+    .get(key, windowStart).count;
+}
+
+function getWindowStartMs(windowMs) {
+  return Math.floor(Date.now() / windowMs) * windowMs;
+}
+
+// Periodic cleanup of expired rate limit entries to prevent memory/disk leak
+function cleanupExpiredEntries(db) {
   const now = Date.now();
   let cleaned = 0;
   for (const [key, times] of requestCounts.entries()) {
@@ -51,15 +69,6 @@ function cleanupExpiredEntries() {
       cleaned++;
     } else if (recent.length < times.length) {
       requestCounts.set(key, recent);
-    }
-  }
-  for (const [key, times] of authRequestCounts.entries()) {
-    const recent = times.filter((t) => now - t < RATE_LIMIT_AUTH_WINDOW);
-    if (recent.length === 0) {
-      authRequestCounts.delete(key);
-      cleaned++;
-    } else if (recent.length < times.length) {
-      authRequestCounts.set(key, recent);
     }
   }
   for (const [key, times] of maintenanceRequestCounts.entries()) {
@@ -73,22 +82,29 @@ function cleanupExpiredEntries() {
       maintenanceRequestCounts.set(key, recent);
     }
   }
+  // Purge SQLite auth attempts older than two windows
+  if (db) {
+    const cutoff = now - RATE_LIMIT_AUTH_WINDOW * 2;
+    db.prepare("DELETE FROM rate_limit_auth_attempts WHERE window_start < ?").run(cutoff);
+  }
   if (process.env.NODE_ENV === "development" && cleaned > 0) {
     logger.debug(`Rate limiter: cleaned up ${cleaned} expired entries`);
   }
 }
 
-// Start periodic cleanup
+// Start periodic cleanup — called from createRateLimiter once db is available
 let cleanupInterval = null;
-if (process.env.NODE_ENV === "production") {
-  cleanupInterval = setInterval(cleanupExpiredEntries, CLEANUP_INTERVAL);
-  // Cleanup on process exit
-  process.on("SIGTERM", () => {
-    if (cleanupInterval) clearInterval(cleanupInterval);
-  });
-  process.on("SIGINT", () => {
-    if (cleanupInterval) clearInterval(cleanupInterval);
-  });
+function startCleanup(db) {
+  if (cleanupInterval) return; // already started
+  if (process.env.NODE_ENV === "production") {
+    cleanupInterval = setInterval(() => cleanupExpiredEntries(db), CLEANUP_INTERVAL);
+    process.on("SIGTERM", () => {
+      if (cleanupInterval) clearInterval(cleanupInterval);
+    });
+    process.on("SIGINT", () => {
+      if (cleanupInterval) clearInterval(cleanupInterval);
+    });
+  }
 }
 
 function getClientKey(req) {
@@ -107,22 +123,29 @@ function sendRateLimitExceeded(res, retryAfterSeconds) {
   return res.status(429).json({ error: "Rate limit exceeded" });
 }
 
-function rateLimiter(req, res, next) {
+function createRateLimiter(db) {
+  startCleanup(db);
+
+  return function rateLimiter(req, res, next) {
+    return rateLimiterImpl(db, req, res, next);
+  };
+}
+
+function rateLimiterImpl(db, req, res, next) {
   try {
     const now = Date.now();
     const key = getClientKey(req);
 
-    // Stricter rate limit for login/register (brute-force protection)
+    // Stricter rate limit for login/register (brute-force protection).
+    // Counts are persisted in SQLite so the window survives server restarts.
     const isAuthStrict =
       req.method === "POST" &&
       (req.path === "/api/auth/login" || req.path === "/api/auth/register");
     if (isAuthStrict) {
-      const times = authRequestCounts.get(key) || [];
-      const recent = times.filter((t) => now - t < RATE_LIMIT_AUTH_WINDOW);
-      recent.push(now);
-      authRequestCounts.set(key, recent);
-      if (recent.length > effectiveAuthMax) {
-        const retryAfter = (recent[0] + RATE_LIMIT_AUTH_WINDOW - now) / 1000;
+      const count = incrementAuthCount(db, key, RATE_LIMIT_AUTH_WINDOW);
+      if (count > effectiveAuthMax) {
+        const windowStart = getWindowStartMs(RATE_LIMIT_AUTH_WINDOW);
+        const retryAfter = (windowStart + RATE_LIMIT_AUTH_WINDOW - now) / 1000;
         return sendRateLimitExceeded(res, retryAfter);
       }
       return next();
@@ -199,4 +222,4 @@ function rateLimiter(req, res, next) {
   }
 }
 
-module.exports = rateLimiter;
+module.exports = createRateLimiter;

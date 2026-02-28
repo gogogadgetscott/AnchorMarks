@@ -162,6 +162,13 @@ function initializeDatabase(DB_PATH) {
 
       CREATE INDEX IF NOT EXISTS idx_bookmark_views_user ON bookmark_views(user_id);
       
+      CREATE TABLE IF NOT EXISTS rate_limit_auth_attempts (
+        key TEXT NOT NULL,
+        window_start INTEGER NOT NULL,
+        count INTEGER DEFAULT 1,
+        PRIMARY KEY (key, window_start)
+      );
+
       -- INITIALIZE VIRTUAL FTS5 TABLE AND SYSTEM TRIGGERS --
     `);
 

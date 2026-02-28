@@ -116,8 +116,9 @@ if (config.NODE_ENV !== "test") {
   metadataQueue.startProcessor();
 }
 
-// Rate limiter
-const rateLimiter = require("./middleware/rateLimiter");
+// Rate limiter — factory requires db for persistent auth attempt tracking (SEC-002)
+const createRateLimiter = require("./middleware/rateLimiter");
+const rateLimiter = createRateLimiter(db);
 
 // Performance monitoring
 const { performanceMiddleware } = require("./helpers/performance-monitor");
