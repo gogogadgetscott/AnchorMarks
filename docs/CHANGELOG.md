@@ -1,0 +1,164 @@
+# Changelog
+
+All notable changes to AnchorMarks are documented here.
+
+---
+
+## [Unreleased]
+
+### Security
+- Persist auth rate-limit counters in SQLite so limits survive server restarts
+- Run `npm audit` during Docker production builds to catch vulnerable dependencies
+
+### Changed
+- Moved project documentation to `docs/` directory
+
+---
+
+## [1.0.5] - 2026-02-23
+
+### Fixed
+- Mobile responsiveness and layout issues across views
+- Dashboard view menu display on mobile screens
+
+---
+
+## [1.0.4] - 2026-02-22
+
+### Added
+- **FTS5 full-text search** — SQLite FTS5 index for significantly faster bookmark search
+- **WebSocket real-time updates** — live sync of bookmarks, folders, and tags across tabs
+- **Advanced analytics dashboard** — usage metrics, click tracking, and bookmark insights
+- **OpenAPI/Swagger documentation** — interactive API docs at `/api/docs`
+- **PWA support** — web app manifest, icons, and offline fallback page
+- **Image optimization** — WebP thumbnail generation, cache headers, and progressive loading
+- **Rate limiting** — configurable rate limiting with Docker environment support
+
+### Fixed
+- Security audit vulnerabilities: XSS, SSRF, CSRF token handling, and JWT edge cases
+- CSRF protection extended to authentication routes
+- FTS5 migration: auto-recreate virtual table if `id` column is missing
+- Filter chips: server-side search, single search chip, and case-insensitive tag matching
+- Production favicon handling and security header hardening
+
+### Security
+- CSRF token validation middleware applied across all state-changing routes
+- Enhanced JWT handling with security audit logging
+- CORS origin validation tightened for production environments
+- Eliminated all `any` TypeScript annotations to improve type-safety surface
+
+---
+
+## [1.0.3] - 2026-01-31
+
+### Added
+- **Accessibility** — comprehensive ARIA attributes and focus management throughout the UI
+- **Event listener cleanup** — system to prevent memory leaks on view transitions
+- **HTML sanitization** — utility functions with security audit coverage
+- **Logger integration** — structured logging with API timeout and request cleanup
+- **App version display** — version fetched from API and shown in the UI
+- TypeScript return type annotations added across all exported functions
+
+### Fixed
+- Omnibar filter application now correctly updates the filter menu and switches to bookmarks view
+- Bookmark action handling updated to refresh dashboard widgets after changes
+- Tag filtering normalization made more robust to handle edge cases
+- View state management and filter clearing logic streamlined
+- Duplicate keyboard event listener registrations removed
+
+### Performance
+- Keyboard event handling consolidated to reduce overhead
+- Async sidebar tag filtering to avoid blocking the main thread
+
+---
+
+## [1.0.2] - 2026-01-25
+
+### Added
+- **Bookmarklet** — one-click bookmarking shortcut with prefilled fields for mobile and desktop
+- **Omnibar filter integration** — filters applied via omnibar now update the filter menu and switch views
+- **Tag filtering AND/OR semantics** — toggle between requiring all or any selected tags
+- **Nested folder dropdown** — addbookmark extension popup now shows alphabetically-sorted, indented folder hierarchy
+- **Playwright E2E tests** — tag cloud and filter bar test coverage; E2E targets added to Makefile
+- **API health endpoint** — now includes `database_location` and app `version` fields
+- All npm scripts consolidated into Makefile
+
+### Fixed
+- Omnibar panel no longer overlaps the filter button (centered positioning with max-width)
+- Duplicate filter button removed from individual views (header canonical button used)
+- Duplicate search event listeners prevented
+- Database path doubled in Docker due to relative path handling
+- Absolute database path used in production configuration
+- HTTPS forced-redirect and HSTS behaviour corrected
+
+---
+
+## [1.0.1] - 2026-01-09
+
+### Added
+- **Omnibar command palette** — unified search and command palette with category badges, recent searches, tag suggestions, and Escape-to-close
+- **Bookmark archiving** — archive view, bulk archive/restore actions, and database migration
+- **Rich link previews** — Open Graph card component with `og_image` support, toggle in user settings
+- **Tag Cloud view** — interactive canvas-based tag visualization with controls and sorting
+- **Hierarchical folders** — `parent_id` tree structure with nested display in sidebar and modals
+- **Dashboard widget enhancements** — options menu, widget sorting, and lazy-loaded bookmark lists
+- **Skeleton loading states** — entrance animations for bookmarks and dashboard widgets
+- **User profile menu** — profile dropdown in header with settings and bulk selection UI
+- **Bulk actions** — select multiple bookmarks for delete, archive, tag, and move operations
+- **Favorites toggle** — per-bookmark star button with favorites view in sidebar
+- **Recent view** — dedicated view showing recently added bookmarks, bypassing active filters
+- **Client-side pagination** — virtualized bookmark list with debounced scroll and IntersectionObserver
+- **Thumbnail generation** — Puppeteer-based screenshot capture with background metadata queue
+- **High contrast theme** — added as a selectable theme option alongside light and dark
+- **Multiple color themes** — theme selector with corresponding CSS variables
+- **Import/Export** — Netscape HTML and JSON bookmark import with folder hierarchy, duplicate detection, and auto-tagging; export of bookmark views
+- **API key support** — read-only API key authentication for browser extension and Flow Launcher sync endpoints
+- **CSRF token rotation** — token rotated on each state-changing request for improved security
+- **Flexible user settings** — preferences stored in a JSON blob to avoid schema migrations
+- **Prompt dialog component** — custom prompt for inline folder creation within the bookmark modal
+- **Password manager compatibility** — authentication and profile forms dynamically injected to avoid autofill conflicts
+- **Server-side account deletion** — users can delete their own account from settings
+- **SSL support** — self-signed certificate generation and HTTPS redirect for development
+- **Multi-stage Docker build** — client assets built in a separate stage; Docker environment variable support via build-time ARGs
+- **Automated screenshot pipeline** — Playwright-based UI screenshot capture for documentation
+
+### Fixed
+- Bookmark import HTML parser made robust with case-insensitive regex, sibling `<DL>` handling, and cheerio fallback
+- Import/export routes not registered in API configuration
+- Maintenance module not initialized (broken link checker and favicon refresh buttons)
+- Internal view URLs excluded from dead link checks
+- Sidebar collapsed state correctly synced with server settings
+- Dashboard view shortcuts and sidebar active state after navigation
+- Rate limiter memory leak fixed with periodic cleanup
+- CSP directives consolidated and corrected
+- Cross-browser text truncation using `line-clamp`
+
+### Changed
+- Frontend migrated from JavaScript to **TypeScript** with strict mode
+- Frontend restructured as a Vite client application (`apps/client`) with path aliases
+- App.ts split into modular UI components (Header, Sidebar, Bookmarks, Dashboard, etc.)
+- Server-side tests migrated from Jest to **Vitest**
+- Quick Launch feature removed and replaced by Omnibar
+- Infinite scroll replaced with client-side pagination
+
+---
+
+## [1.0.0] - 2025-12-12
+
+### Added
+- Initial release of AnchorMarks
+- Express.js backend with SQLite (better-sqlite3) in WAL mode
+- JWT authentication with httpOnly cookies and CSRF protection
+- Bookmark CRUD with tags, folders, favorites, and click tracking
+- Normalized tag system with `bookmark_tags` junction table
+- Smart Collections — saved filters with JSON rules
+- Smart Organization API — domain-based tag suggestions and tag co-occurrence analysis
+- Dashboard with configurable widgets
+- Folder management with color and icon support
+- User profile management and tag editing
+- Multiple color themes with theme selector
+- Server status banner on auth screen
+- Docker Compose setup with environment variable support
+- CI configuration with GitHub Actions
+- ESLint configuration for code quality enforcement
+- Comprehensive unit and integration tests for auth, config, smart-organization, and utilities

@@ -152,6 +152,7 @@ See [INSTALL.md](docs/INSTALL.md) for advanced deployment options.
 
 - **[Help & Documentation](apps/server/public/help.html)** - Complete user guide with all features (in-app)
 - **[INSTALL.md](docs/INSTALL.md)** - Installation and quick start guide
+- **[CHANGELOG.md](docs/CHANGELOG.md)** - Release history and notable changes
 - **[SECURITY.md](SECURITY.md)** - Security policy and best practices
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development guidelines
 - **Auth & CSRF Flow** - Developer reference: [help.html#developer-auth-csrf](apps/server/public/help.html#developer-auth-csrf)
