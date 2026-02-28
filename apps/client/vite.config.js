@@ -167,6 +167,16 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      "/icon-192.png": {
+        target: BACKEND_URL,
+        changeOrigin: true,
+        secure: false,
+      },
+      "/icon-512.png": {
+        target: BACKEND_URL,
+        changeOrigin: true,
+        secure: false,
+      },
       "/help.html": {
         target: BACKEND_URL,
         changeOrigin: true,

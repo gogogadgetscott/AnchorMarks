@@ -1,5 +1,5 @@
 # ============================================================================
-# AnchorMarks Makefile - Build, Test, Run & Debug Helper
+# AnchorMarks Makefile - Build, Test, Start & Debug Helper
 # ============================================================================
 # FILE ORGANIZATION NOTE
 # ============================================================================
@@ -11,8 +11,7 @@
 
 .PHONY: help \
 	build-frontend build-docker build-test-docker \
-	run run-backend run-frontend run-all run-docker run-prod \
-	start-backend start-frontend start-all start-docker start-prod stop stop-all restart-all \
+	start start-backend start-frontend start-all start-docker start-prod stop stop-all restart-all \
 	test-backend test-backend-local test-frontend test-frontend-local test-all test-coverage \
 	test-backend-watch test-frontend-watch \
 	test-docker test-docker-backend test-docker-frontend \
@@ -20,7 +19,7 @@
 	lint-code lint-check lint-backend lint-frontend \
 	clean clean-frontend clean-all reinstall-deps \
 	install install-deps install-deploy \
-	run-docker stop-docker restart-docker logs shell logs-docker shell-docker rebuild-docker \
+	stop-docker restart-docker logs shell logs-docker shell-docker rebuild-docker \
 	create-demo-gif capture-screenshots
 
 # Variables
@@ -49,14 +48,14 @@ NC := \033[0m # No Color
 # ============================================================================
 help: ## Display this help screen
 	@echo "$(BLUE)╔════════════════════════════════════════════════════════════════════╗$(NC)"
-	@echo "$(BLUE)║           AnchorMarks - Build, Test, Run & Debug Helper            ║$(NC)"
+	@echo "$(BLUE)║         AnchorMarks - Build, Test, Start & Debug Helper            ║$(NC)"
 	@echo "$(BLUE)╚════════════════════════════════════════════════════════════════════╝$(NC)"
 	@echo ""
 	@echo "$(GREEN)BUILD TARGETS:$(NC)"
 	@grep -E '^[A-Za-z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '^build|^rebuild' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-30s$(NC) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(GREEN)RUN TARGETS:$(NC)"
-	@grep -E '^[A-Za-z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '^run|^start|^stop|^restart' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-30s$(NC) %s\n", $$1, $$2}'
+	@grep -E '^[A-Za-z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '^start|^stop|^restart' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-30s$(NC) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(GREEN)TEST TARGETS:$(NC)"
 	@grep -E '^[A-Za-z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -E '^test' | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-30s$(NC) %s\n", $$1, $$2}'
@@ -96,30 +95,21 @@ rebuild-docker: ## Rebuild Docker containers from scratch (ensures database dir 
 	@echo "$(GREEN)✓ Docker containers rebuilt$(NC)"
 
 # ============================================================================
-# RUN/START/STOP TARGETS
+# START/STOP TARGETS
 # ============================================================================
-run: run-all ## Alias for run-all (run backend and frontend)
+start: start-all ## Alias for start-all (start backend and frontend)
 
-run-backend: ## Run backend server in development mode
+start-backend: ## Start backend server in development mode
 	@echo "$(BLUE)Starting backend server...$(NC)"
 	NODE_ENV=development node $(BACKEND_DIR)
 
-run-frontend: ## Run frontend dev server with Vite
+start-frontend: ## Start frontend dev server with Vite
 	@echo "$(BLUE)Starting Vite dev server...$(NC)"
 	@cd $(FRONTEND_DIR) && npx vite
 
-run-all: ## Run both backend and frontend concurrently
+start-all: ## Start both backend and frontend concurrently
 	@echo "$(BLUE)Starting development environment...$(NC)"
-	@npx concurrently "make run-backend" "make run-frontend"
-
-run-docker: ## Run using Docker Compose (ensures apps/database exists for volume; entrypoint chowns for node user)
-	@echo "$(BLUE)Starting Docker containers...$(NC)"
-	@mkdir -p $(DOCKER_DB_DIR)
-	@$(DOCKER_CMD) up -d --build && $(DOCKER_CMD) logs -f
-
-run-prod: ## Run server in production mode (on host)
-	@echo "$(BLUE)Starting production server...$(NC)"
-	NODE_ENV=production node $(BACKEND_DIR)
+	@npx concurrently "make start-backend" "make start-frontend"
 
 start-docker: ## Start Docker containers in background (no log follow); ensures apps/database exists
 	@echo "$(BLUE)Starting Docker containers in background...$(NC)"
@@ -127,7 +117,9 @@ start-docker: ## Start Docker containers in background (no log follow); ensures 
 	@$(DOCKER_CMD) up -d --build
 	@echo "$(GREEN)✓ Containers started. Use 'make logs-docker' to follow logs.$(NC)"
 
-start-prod: start-docker ## Alias: start Docker production stack in background
+start-prod: ## Start server in production mode (on host)
+	@echo "$(BLUE)Starting production server...$(NC)"
+	NODE_ENV=production node $(BACKEND_DIR)
 
 stop: stop-all ## Alias for stop-all (stop dev processes)
 
@@ -146,8 +138,8 @@ stop-docker: ## Stop Docker containers
 	@$(DOCKER_CMD) down
 	@echo "$(GREEN)✓ Docker containers stopped$(NC)"
 
-restart-docker: stop-docker run-docker ## Restart Docker containers
-	
+restart-docker: stop-docker start-docker ## Restart Docker containers
+
 restart-all: stop-all start-all ## Restart all development processes
 
 # ============================================================================
