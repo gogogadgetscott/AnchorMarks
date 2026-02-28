@@ -3559,6 +3559,7 @@ body.tag-cloud-active .content-body {
 
 .modal-sm .modal-content {
   max-width: 380px;
+  height: auto;
 }
 
 .modal-lg .modal-content {
