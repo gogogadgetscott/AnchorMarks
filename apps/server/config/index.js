@@ -40,6 +40,14 @@ function validateSecurityConfig() {
     throw new Error("JWT_SECRET must be set to a strong value in production");
   }
 
+  if (!process.env.JWT_REFRESH_SECRET) {
+    throw new Error("JWT_REFRESH_SECRET must be set in production");
+  }
+
+  if (process.env.JWT_REFRESH_SECRET === process.env.JWT_SECRET) {
+    throw new Error("JWT_REFRESH_SECRET must differ from JWT_SECRET");
+  }
+
   if (!process.env.CORS_ORIGIN) {
     throw new Error("CORS_ORIGIN must be configured in production");
   }
@@ -66,11 +74,16 @@ function resolveCorsOrigin() {
   return origins;
 }
 
-// In production, use only env value (no fallback) so validation fails if unset
+// In production, use only env value (no fallback) so validation fails if unset.
 const JWT_SECRET =
   NODE_ENV === "production"
     ? process.env.JWT_SECRET
     : process.env.JWT_SECRET || crypto.randomBytes(64).toString("hex");
+// Separate secret for refresh tokens (SEC-006): independent rotation without global logout.
+const JWT_REFRESH_SECRET =
+  NODE_ENV === "production"
+    ? process.env.JWT_REFRESH_SECRET
+    : process.env.JWT_REFRESH_SECRET || crypto.randomBytes(64).toString("hex");
 // Short-lived access token; refresh token rotation extends sessions (defaults: 15m access, 7d refresh)
 const JWT_ACCESS_EXPIRY = process.env.JWT_ACCESS_EXPIRY || "15m";
 const JWT_REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY || "7d";
@@ -144,6 +157,7 @@ module.exports = {
   SSL_CERT,
   SSL_ENABLED,
   JWT_SECRET,
+  JWT_REFRESH_SECRET,
   JWT_ACCESS_EXPIRY,
   JWT_REFRESH_EXPIRY,
   DB_PATH,

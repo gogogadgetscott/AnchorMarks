@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const {
   JWT_SECRET,
+  JWT_REFRESH_SECRET,
   JWT_ACCESS_EXPIRY,
   JWT_REFRESH_EXPIRY,
 } = require("../config");
@@ -212,7 +213,7 @@ function setupAuthRoutes(
         const accessToken = jwt.sign({ userId }, JWT_SECRET, {
           expiresIn: JWT_ACCESS_EXPIRY,
         });
-        const refreshToken = jwt.sign({ userId, jti: refreshJti }, JWT_SECRET, {
+        const refreshToken = jwt.sign({ userId, jti: refreshJti }, JWT_REFRESH_SECRET, {
           expiresIn: JWT_REFRESH_EXPIRY,
         });
         const csrfToken = generateCsrfToken();
@@ -306,7 +307,7 @@ function setupAuthRoutes(
         });
         const refreshToken = jwt.sign(
           { userId: user.id, jti: refreshJti },
-          JWT_SECRET,
+          JWT_REFRESH_SECRET,
           { expiresIn: JWT_REFRESH_EXPIRY },
         );
         const csrfToken = generateCsrfToken();
@@ -403,7 +404,7 @@ function setupAuthRoutes(
         res.clearCookie("csrfToken");
         return res.status(401).json({ error: "Refresh token required" });
       }
-      const decoded = jwt.verify(refreshToken, JWT_SECRET);
+      const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
       const { userId, jti } = decoded;
       if (!userId || !jti) {
         res.clearCookie("token");
@@ -442,7 +443,7 @@ function setupAuthRoutes(
       });
       const newRefreshToken = jwt.sign(
         { userId: user.id, jti: newRefreshJti },
-        JWT_SECRET,
+        JWT_REFRESH_SECRET,
         { expiresIn: JWT_REFRESH_EXPIRY },
       );
       const csrfToken = generateCsrfToken();
