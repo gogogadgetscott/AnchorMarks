@@ -104,22 +104,21 @@ const AI_MODEL = process.env.AI_MODEL || null;
 const AI_API_URL = process.env.AI_API_URL || null; // e.g., https://api.openai.com/v1
 const AI_API_KEY = process.env.AI_API_KEY || null;
 
-// API key scope whitelist (method + path regex)
+// API key scope whitelist (method + path regex).
+// Kept intentionally narrow: reads + single-item creates/updates only.
+// DELETE and bulk operations are excluded — a leaked key must not allow
+// data destruction without a user-initiated CSRF-protected session.
 const API_KEY_WHITELIST = [
-  // Bookmarks sync endpoints
-  { method: "GET", path: /^\/api\/bookmarks(\/.*)?$/ },
-  { method: "POST", path: /^\/api\/bookmarks(\/.*)?$/ },
-  { method: "PUT", path: /^\/api\/bookmarks(\/.*)?$/ },
-  { method: "DELETE", path: /^\/api\/bookmarks(\/.*)?$/ },
-  // Folders sync endpoints
-  { method: "GET", path: /^\/api\/folders(\/.*)?$/ },
-  { method: "POST", path: /^\/api\/folders(\/.*)?$/ },
-  { method: "PUT", path: /^\/api\/folders(\/.*)?$/ },
-  { method: "DELETE", path: /^\/api\/folders(\/.*)?$/ },
-  // Sync endpoints
-  { method: "GET", path: /^\/api\/sync(\/.*)?$/ },
+  // Bookmark reads and single-item write (create / update)
+  { method: "GET",    path: /^\/api\/bookmarks(\/.*)?$/ },
+  { method: "POST",   path: /^\/api\/bookmarks$/ },          // create only (not sub-paths)
+  { method: "PUT",    path: /^\/api\/bookmarks\/[^/]+$/ },   // update single item only
+  // Folder reads only — folder mutations require a browser session
+  { method: "GET",    path: /^\/api\/folders(\/.*)?$/ },
+  // Sync read
+  { method: "GET",    path: /^\/api\/sync(\/.*)?$/ },
   // Quick search
-  { method: "GET", path: /^\/api\/quick-search/ },
+  { method: "GET",    path: /^\/api\/quick-search/ },
 ];
 
 function isApiKeyAllowed(req) {

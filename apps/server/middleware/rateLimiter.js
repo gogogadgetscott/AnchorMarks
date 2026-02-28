@@ -2,10 +2,12 @@
 // General API: RATE_LIMIT_MAX (default 60), RATE_LIMIT_WINDOW_MS (default 60000).
 // Auth (login/register): RATE_LIMIT_AUTH_MAX (default 10), RATE_LIMIT_AUTH_WINDOW_MS (default 60000).
 //   Auth attempts are persisted in SQLite so the brute-force window survives server restarts.
+// API key writes (POST/PUT via API key): RATE_LIMIT_API_KEY_WRITE_MAX (default 30), same window.
 // Maintenance: RATE_LIMIT_MAINTENANCE_MAX (default 20), RATE_LIMIT_MAINTENANCE_WINDOW_MS (default 60000).
 // RATE_LIMIT_DISABLED=1 to turn off (e.g. when all traffic is one IP behind Docker/proxy).
 const { logger } = require("../lib/logger");
 const requestCounts = new Map();
+const apiKeyWriteCounts = new Map();
 const maintenanceRequestCounts = new Map();
 
 const RATE_LIMIT_WINDOW =
@@ -32,6 +34,12 @@ const effectiveMaintenanceMax =
   Number.isNaN(RATE_LIMIT_MAINTENANCE_MAX) || RATE_LIMIT_MAINTENANCE_MAX <= 0
     ? 20
     : RATE_LIMIT_MAINTENANCE_MAX;
+
+const RATE_LIMIT_API_KEY_WRITE_MAX = parseInt(process.env.RATE_LIMIT_API_KEY_WRITE_MAX, 10);
+const effectiveApiKeyWriteMax =
+  Number.isNaN(RATE_LIMIT_API_KEY_WRITE_MAX) || RATE_LIMIT_API_KEY_WRITE_MAX <= 0
+    ? 30
+    : RATE_LIMIT_API_KEY_WRITE_MAX;
 
 const RATE_LIMIT_DISABLED =
   process.env.RATE_LIMIT_DISABLED === "1" ||
@@ -69,6 +77,15 @@ function cleanupExpiredEntries(db) {
       cleaned++;
     } else if (recent.length < times.length) {
       requestCounts.set(key, recent);
+    }
+  }
+  for (const [key, times] of apiKeyWriteCounts.entries()) {
+    const recent = times.filter((t) => now - t < RATE_LIMIT_WINDOW);
+    if (recent.length === 0) {
+      apiKeyWriteCounts.delete(key);
+      cleaned++;
+    } else if (recent.length < times.length) {
+      apiKeyWriteCounts.set(key, recent);
     }
   }
   for (const [key, times] of maintenanceRequestCounts.entries()) {
@@ -204,6 +221,24 @@ function rateLimiterImpl(db, req, res, next) {
       Object.keys(req.body).length === 1 &&
       req.body.favicon
     ) {
+      return next();
+    }
+
+    // Separate, stricter rate limit for API-key write operations.
+    // Check for the x-api-key header directly (rate limiter runs before auth middleware).
+    // A leaked key must not allow rapid data modification without a session CSRF barrier.
+    if (
+      req.headers["x-api-key"] &&
+      (req.method === "POST" || req.method === "PUT")
+    ) {
+      const wTimes = apiKeyWriteCounts.get(key) || [];
+      const wRecent = wTimes.filter((t) => now - t < RATE_LIMIT_WINDOW);
+      wRecent.push(now);
+      apiKeyWriteCounts.set(key, wRecent);
+      if (wRecent.length > effectiveApiKeyWriteMax) {
+        const retryAfter = (wRecent[0] + RATE_LIMIT_WINDOW - now) / 1000;
+        return sendRateLimitExceeded(res, retryAfter);
+      }
       return next();
     }
 
