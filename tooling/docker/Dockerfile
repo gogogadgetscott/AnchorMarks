@@ -80,7 +80,11 @@ ENV NODE_ENV=$NODE_ENV \
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://${HOST}:${PORT}/api/health || exit 1
 
-# Set permissions
+# Set permissions and switch to non-root user.
+# USER node is declared so container orchestrators enforcing runAsNonRoot: true
+# can schedule this image without a security policy exception.
+# The entrypoint uses su-exec for any setup steps that still need root before exec.
 RUN chown -R node:node /apps /node_modules /docker-entrypoint.sh
+USER node
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
