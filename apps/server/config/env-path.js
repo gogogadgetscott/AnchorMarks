@@ -11,8 +11,8 @@
 const path = require("path");
 const fs = require("fs");
 
-// Repository-root relative to apps/server/
-const hostPath = path.join(__dirname, "..", "..", ".env");
+// Repository-root relative to apps/server/config/
+const hostPath = path.join(__dirname, "..", "..", "..", ".env");
 // Docker-compose mount point
 const dockerPath = "/apps/.env";
 

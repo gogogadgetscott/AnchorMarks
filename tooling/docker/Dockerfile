@@ -6,7 +6,7 @@ WORKDIR /client
 
 # Install frontend dependencies
 COPY apps/client/package*.json ./
-RUN npm install --no-audit --no-fund
+RUN npm install --no-fund
 
 # Build frontend
 COPY apps/client .
@@ -37,7 +37,8 @@ COPY apps/server/package*.json /apps/server/
 COPY apps/client/package*.json /apps/client/
 
 # Install production dependencies
-RUN npm install --no-audit --no-fund && \
+RUN npm install --no-fund && \
+    npm audit --audit-level=high && \
     npm rebuild
 
 # Copy application code
@@ -56,8 +57,9 @@ ARG NODE_ENV=production
 ARG PORT=3000
 ARG HOST=0.0.0.0
 ARG DB_PATH=/apps/database/anchormarks.db
-# Do not default JWT_SECRET or CORS_ORIGIN
+# Do not default JWT_SECRET, JWT_REFRESH_SECRET, or CORS_ORIGIN
 ARG JWT_SECRET
+ARG JWT_REFRESH_SECRET
 ARG CORS_ORIGIN
 ARG SSL_ENABLED=false
 ARG SSL_KEY=/apps/ssl/privkey.pem
@@ -68,6 +70,7 @@ ENV NODE_ENV=$NODE_ENV \
     HOST=$HOST \
     DB_PATH=$DB_PATH \
     JWT_SECRET=$JWT_SECRET \
+    JWT_REFRESH_SECRET=$JWT_REFRESH_SECRET \
     CORS_ORIGIN=$CORS_ORIGIN \
     SSL_ENABLED=$SSL_ENABLED \
     SSL_CERT=$SSL_CERT \
@@ -77,7 +80,11 @@ ENV NODE_ENV=$NODE_ENV \
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://${HOST}:${PORT}/api/health || exit 1
 
-# Set permissions
+# Set permissions and switch to non-root user.
+# USER node is declared so container orchestrators enforcing runAsNonRoot: true
+# can schedule this image without a security policy exception.
+# The entrypoint uses su-exec for any setup steps that still need root before exec.
 RUN chown -R node:node /apps /node_modules /docker-entrypoint.sh
+USER node
 
 ENTRYPOINT ["/docker-entrypoint.sh"]

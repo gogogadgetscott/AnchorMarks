@@ -315,7 +315,7 @@ export async function setCurrentView(val: string) {
   }
 
   // Clear filters and search inputs before updating view so no handler sees new view + old input
-  if (val === "favorites" || val === "recent") {
+  if (val === "favorites" || val === "recent" || val === "most-used") {
     setFilterConfig({
       ...filterConfig,
       tags: [],

@@ -40,6 +40,14 @@ function validateSecurityConfig() {
     throw new Error("JWT_SECRET must be set to a strong value in production");
   }
 
+  if (!process.env.JWT_REFRESH_SECRET) {
+    throw new Error("JWT_REFRESH_SECRET must be set in production");
+  }
+
+  if (process.env.JWT_REFRESH_SECRET === process.env.JWT_SECRET) {
+    throw new Error("JWT_REFRESH_SECRET must differ from JWT_SECRET");
+  }
+
   if (!process.env.CORS_ORIGIN) {
     throw new Error("CORS_ORIGIN must be configured in production");
   }
@@ -66,11 +74,16 @@ function resolveCorsOrigin() {
   return origins;
 }
 
-// In production, use only env value (no fallback) so validation fails if unset
+// In production, use only env value (no fallback) so validation fails if unset.
 const JWT_SECRET =
   NODE_ENV === "production"
     ? process.env.JWT_SECRET
     : process.env.JWT_SECRET || crypto.randomBytes(64).toString("hex");
+// Separate secret for refresh tokens (SEC-006): independent rotation without global logout.
+const JWT_REFRESH_SECRET =
+  NODE_ENV === "production"
+    ? process.env.JWT_REFRESH_SECRET
+    : process.env.JWT_REFRESH_SECRET || crypto.randomBytes(64).toString("hex");
 // Short-lived access token; refresh token rotation extends sessions (defaults: 15m access, 7d refresh)
 const JWT_ACCESS_EXPIRY = process.env.JWT_ACCESS_EXPIRY || "15m";
 const JWT_REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY || "7d";
@@ -104,22 +117,21 @@ const AI_MODEL = process.env.AI_MODEL || null;
 const AI_API_URL = process.env.AI_API_URL || null; // e.g., https://api.openai.com/v1
 const AI_API_KEY = process.env.AI_API_KEY || null;
 
-// API key scope whitelist (method + path regex)
+// API key scope whitelist (method + path regex).
+// Kept intentionally narrow: reads + single-item creates/updates only.
+// DELETE and bulk operations are excluded — a leaked key must not allow
+// data destruction without a user-initiated CSRF-protected session.
 const API_KEY_WHITELIST = [
-  // Bookmarks sync endpoints
-  { method: "GET", path: /^\/api\/bookmarks(\/.*)?$/ },
-  { method: "POST", path: /^\/api\/bookmarks(\/.*)?$/ },
-  { method: "PUT", path: /^\/api\/bookmarks(\/.*)?$/ },
-  { method: "DELETE", path: /^\/api\/bookmarks(\/.*)?$/ },
-  // Folders sync endpoints
-  { method: "GET", path: /^\/api\/folders(\/.*)?$/ },
-  { method: "POST", path: /^\/api\/folders(\/.*)?$/ },
-  { method: "PUT", path: /^\/api\/folders(\/.*)?$/ },
-  { method: "DELETE", path: /^\/api\/folders(\/.*)?$/ },
-  // Sync endpoints
-  { method: "GET", path: /^\/api\/sync(\/.*)?$/ },
+  // Bookmark reads and single-item write (create / update)
+  { method: "GET",    path: /^\/api\/bookmarks(\/.*)?$/ },
+  { method: "POST",   path: /^\/api\/bookmarks$/ },          // create only (not sub-paths)
+  { method: "PUT",    path: /^\/api\/bookmarks\/[^/]+$/ },   // update single item only
+  // Folder reads only — folder mutations require a browser session
+  { method: "GET",    path: /^\/api\/folders(\/.*)?$/ },
+  // Sync read
+  { method: "GET",    path: /^\/api\/sync(\/.*)?$/ },
   // Quick search
-  { method: "GET", path: /^\/api\/quick-search/ },
+  { method: "GET",    path: /^\/api\/quick-search/ },
 ];
 
 function isApiKeyAllowed(req) {
@@ -145,6 +157,7 @@ module.exports = {
   SSL_CERT,
   SSL_ENABLED,
   JWT_SECRET,
+  JWT_REFRESH_SECRET,
   JWT_ACCESS_EXPIRY,
   JWT_REFRESH_EXPIRY,
   DB_PATH,

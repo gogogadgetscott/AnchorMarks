@@ -3,23 +3,41 @@ const https = require("https");
 const { parseHtmlMetadata } = require("./html");
 
 const config = require("../config");
-const { isPrivateAddress } = require("./utils.js");
+const { resolveToPublicIp } = require("./utils.js");
 
 async function fetchUrlMetadata(url, redirectCount = 0) {
   if (redirectCount > 5) {
     throw new Error("Too many redirects");
   }
 
-  // SSRF guard: check before initiating the request (prevents TOCTOU / DNS rebinding)
-  if (config.NODE_ENV === "production" && (await isPrivateAddress(url))) {
-    return null;
+  // SSRF guard: resolve once and connect directly to the IP, eliminating the
+  // TOCTOU window where a DNS rebinding attack could flip the record between
+  // our isPrivateAddress check and the actual TCP connect (SEC-004).
+  // resolveToPublicIp throws if the hostname resolves to a private address.
+  let resolvedIp = null;
+  if (config.NODE_ENV === "production") {
+    try {
+      const urlObj = new URL(url);
+      resolvedIp = await resolveToPublicIp(urlObj.hostname);
+    } catch {
+      return null;
+    }
   }
 
   return new Promise((resolve, reject) => {
-    const protocol = url.startsWith("https") ? https : http;
+    const urlObj = new URL(url);
+    const isHttps = urlObj.protocol === "https:";
+    const protocol = isHttps ? https : http;
+
     const options = {
+      // Connect directly to the pre-validated IP; set Host header for SNI/vhosts.
+      // In non-production (dev/test), resolvedIp is null so hostname is used as-is.
+      hostname: resolvedIp || urlObj.hostname,
+      port: urlObj.port || (isHttps ? 443 : 80),
+      path: urlObj.pathname + urlObj.search,
       timeout: 5000,
       headers: {
+        Host: urlObj.host,
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         Accept:
@@ -27,11 +45,11 @@ async function fetchUrlMetadata(url, redirectCount = 0) {
         "Accept-Language": "en-US,en;q=0.5",
       },
     };
-    if (url.startsWith("https") && config.NODE_ENV === "test") {
+    if (isHttps && config.NODE_ENV === "test") {
       options.agent = new https.Agent({ rejectUnauthorized: false });
     }
 
-    const request = protocol.get(url, options, (response) => {
+    const request = protocol.request(options, (response) => {
       // Follow redirects
       if (
         response.statusCode >= 300 &&
@@ -52,7 +70,7 @@ async function fetchUrlMetadata(url, redirectCount = 0) {
       }
 
       if (response.statusCode !== 200) {
-        return reject(new Error(`HTTP ${response.statusCode}`));
+        return reject(new Error(`HTTP ${response.statusCode} for ${url}`));
       }
 
       const contentType = response.headers["content-type"] || "";
@@ -93,6 +111,8 @@ async function fetchUrlMetadata(url, redirectCount = 0) {
       request.destroy();
       reject(new Error("Request timeout"));
     });
+
+    request.end();
   });
 }
 

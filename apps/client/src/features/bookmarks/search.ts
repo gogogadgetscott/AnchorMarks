@@ -551,8 +551,11 @@ function renderTagStatsList(tags: TagStatItem[]): void {
                     </div>
                     <div style="display:flex; align-items:center; gap:0.5rem;">
                          ${Badge(t.count)}
-                         <button class="btn-icon btn-sm edit-tag-btn" data-id="${t.id}" data-name="${escapeHtml(t.name)}" data-color="${t.color || ""}" title="Edit Tag">
+                         <button class="btn-icon btn-sm edit-tag-btn" data-id="${t.id}" data-name="${escapeHtml(t.name)}" data-color="${t.color || ""}" title="Edit tag">
                             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                         </button>
+                         <button class="btn-icon btn-sm delete-tag-btn" data-id="${t.id}" data-name="${escapeHtml(t.name)}" title="Delete tag" style="color: var(--danger)">
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
                          </button>
                     </div>
                 </div>`;
@@ -563,14 +566,40 @@ function renderTagStatsList(tags: TagStatItem[]): void {
   tagStatsList.querySelectorAll(".edit-tag-btn").forEach((btn: Element) => {
     const el = btn as HTMLElement;
     el.addEventListener("click", () => {
-      const tag = {
-        id: el.dataset.id,
-        name: el.dataset.name,
-        color: el.dataset.color,
-      };
-      openTagModal(tag);
+      openTagModal({ id: el.dataset.id, name: el.dataset.name, color: el.dataset.color });
     });
   });
+
+  // Add listeners for delete buttons
+  tagStatsList.querySelectorAll(".delete-tag-btn").forEach((btn: Element) => {
+    const el = btn as HTMLElement;
+    el.addEventListener("click", () => {
+      deleteTagById(el.dataset.id!, el.dataset.name!);
+    });
+  });
+}
+
+// Delete a tag by ID
+export async function deleteTagById(id: string, name: string): Promise<void> {
+  const { confirmDialog } = await import("@features/ui/confirm-dialog.ts");
+  if (
+    !(await confirmDialog(
+      `Delete tag "${name}"? It will be removed from all bookmarks.`,
+      { title: "Delete Tag" },
+    ))
+  )
+    return;
+
+  try {
+    await api(`/tags/${id}`, { method: "DELETE" });
+    await loadTagStats();
+    renderSidebarTags();
+    const event = new CustomEvent("tag-updated");
+    window.dispatchEvent(event);
+    showToast(`Tag "${name}" deleted`, "success");
+  } catch (err: unknown) {
+    showToast((err as Error).message || "Failed to delete tag", "error");
+  }
 }
 
 // Filter tag stats based on search term
@@ -824,4 +853,5 @@ export default {
   openTagModal,
   handleTagSubmit,
   createNewTag,
+  deleteTagById,
 };

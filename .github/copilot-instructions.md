@@ -253,11 +253,11 @@ You must act as a Senior Developer who strictly follows the Feature Branch Workf
 ## Before Making Changes
 
 1. **Git Workflow Policy** - Follow the Feature Branch Workflow.
-2. **Read ROADMAP.md** – Understand planned features and blocked tasks
+2. **Read docs/ROADMAP.md** – Understand planned features and blocked tasks
 3. **Read CONTRIBUTING.md** – Code style, commit conventions
 4. **Run `make test`** – Verify existing tests pass
 5. **Plan changes** – List files to touch, functions to add/modify
-6. **Update PROGRESS.md** – Document task, files, and summary after completion
+6. **Update docs/PROGRESS.md** – Document task, files, and summary after completion
 7. **Test thoroughly** – Add tests for new endpoints; run `make test` + `make dev-full` + manual UI testing
 8. **Run `make lint`** – Validate code style before committing
 9. **Update help documentation** – After adding new features or making changes, update [apps/server/public/help.html](apps/server/public/help.html) to reflect the changes
@@ -267,6 +267,6 @@ You must act as a Senior Developer who strictly follows the Feature Branch Workf
 - **Missing user_id filter** – Always check user owns bookmark/folder before responding
 - **Forgetting CSRF validation** – POST/PUT/DELETE without token → 403
 - **Hardcoded secrets** – Use `process.env.*`; check for `JWT_SECRET` in production
-- **Breaking existing API endpoints** – Check ROADMAP.md before renaming routes
+- **Breaking existing API endpoints** – Check docs/ROADMAP.md before renaming routes
 - **Frontend state divergence** – After API call, reload from server; don't assume local state matches DB
 - **SQL injection** – Always use parameterized queries (`db.prepare().run(...)`), never string concatenation
