@@ -47,7 +47,8 @@ function setupImportExportRoutes(
     async (req, res) => {
       try {
         const data = req.validated;
-        if (!data) return res.status(400).json({ error: "Validation required" });
+        if (!data)
+          return res.status(400).json({ error: "Validation required" });
         const { html } = data;
         const { bookmarks, folders } = await parseBookmarkHtml(html);
         const result = importExportModel.importJson(db, req.user.id, {
@@ -113,7 +114,8 @@ function setupImportExportRoutes(
     (req, res) => {
       try {
         const data = req.validated;
-        if (!data) return res.status(400).json({ error: "Validation required" });
+        if (!data)
+          return res.status(400).json({ error: "Validation required" });
         const { bookmarks = [], folders = [] } = data;
         const result = importExportModel.importJson(db, req.user.id, {
           bookmarks,

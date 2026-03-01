@@ -48,7 +48,8 @@ module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
     (req, res) => {
       try {
         const data = req.validated;
-        if (!data) return res.status(400).json({ error: "Validation required" });
+        if (!data)
+          return res.status(400).json({ error: "Validation required" });
         const { name, icon, color, filters } = data;
         const collection = smartCollectionsModel.createCollection(
           db,
@@ -70,7 +71,8 @@ module.exports = function setupCollectionsRoutes(app, db, helpers = {}) {
     (req, res) => {
       try {
         const data = req.validated;
-        if (!data) return res.status(400).json({ error: "Validation required" });
+        if (!data)
+          return res.status(400).json({ error: "Validation required" });
         const { name, icon, color, filters, position } = data;
         const updated = smartCollectionsModel.updateCollection(
           db,

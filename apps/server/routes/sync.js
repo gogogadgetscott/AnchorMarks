@@ -30,7 +30,8 @@ function setupSyncRoutes(
     (req, res) => {
       try {
         const data = req.validated;
-        if (!data) return res.status(400).json({ error: "Validation required" });
+        if (!data)
+          return res.status(400).json({ error: "Validation required" });
         const { bookmarks, folders } = data;
         const results = syncModel.push(db, req.user.id, { bookmarks, folders });
 

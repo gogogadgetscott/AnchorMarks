@@ -144,8 +144,7 @@ export async function api<T = unknown>(
       if (response.status === 401) {
         // If this was not a refresh call, try refresh-token rotation once
         const isRefreshCall =
-          endpoint === "/auth/refresh" ||
-          endpoint.startsWith("/auth/refresh");
+          endpoint === "/auth/refresh" || endpoint.startsWith("/auth/refresh");
         if (!isRefreshCall) {
           const refreshRes = await fetch(`${state.API_BASE}/auth/refresh`, {
             method: "POST",

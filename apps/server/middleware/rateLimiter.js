@@ -63,9 +63,7 @@ function cleanupExpiredEntries() {
     }
   }
   for (const [key, times] of maintenanceRequestCounts.entries()) {
-    const recent = times.filter(
-      (t) => now - t < RATE_LIMIT_MAINTENANCE_WINDOW,
-    );
+    const recent = times.filter((t) => now - t < RATE_LIMIT_MAINTENANCE_WINDOW);
     if (recent.length === 0) {
       maintenanceRequestCounts.delete(key);
       cleaned++;

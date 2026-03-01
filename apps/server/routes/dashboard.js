@@ -28,7 +28,8 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
     (req, res) => {
       try {
         const data = req.validated;
-        if (!data) return res.status(400).json({ error: "Validation required" });
+        if (!data)
+          return res.status(400).json({ error: "Validation required" });
         const { name, config } = data;
         const view = dashboardModel.createDashboardView(
           db,
@@ -51,7 +52,8 @@ module.exports = function setupDashboardRoutes(app, db, helpers = {}) {
     (req, res) => {
       try {
         const data = req.validated;
-        if (!data) return res.status(400).json({ error: "Validation required" });
+        if (!data)
+          return res.status(400).json({ error: "Validation required" });
         const { name, config, position } = data;
         const view = dashboardModel.updateDashboardView(
           db,

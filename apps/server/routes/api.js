@@ -88,7 +88,8 @@ function setupApiRoutes(app, db, helpers) {
     (req, res) => {
       try {
         const data = req.validated;
-        if (!data) return res.status(400).json({ error: "Validation required" });
+        if (!data)
+          return res.status(400).json({ error: "Validation required" });
         logger.debug(`Saving settings for user ${req.user.id}`, data);
         userSettingsModel.upsertUserSettings(db, req.user.id, data);
 

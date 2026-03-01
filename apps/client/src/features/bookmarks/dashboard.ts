@@ -253,6 +253,8 @@ async function showViewsMenu(): Promise<void> {
   // Attach event listeners to view items
   dropdown.querySelectorAll(".view-item").forEach((item: Element) => {
     const viewId = (item as HTMLElement).dataset.viewId;
+    if (!viewId) return;
+
     const nameSpan = item.querySelector(".view-name");
     const viewName = nameSpan?.textContent || null;
     const deleteBtn = item.querySelector(".delete-view-btn");
@@ -392,10 +394,12 @@ export async function deleteView(id: string): Promise<void> {
   }
 }
 
-// Restore View
+/**
+ * Restore View
+ */
 export async function restoreView(
   id: string,
-  viewName?: string,
+  viewName: string | null = null,
 ): Promise<void> {
   // Warn about unsaved changes
   if (!(await confirmViewSwitch())) return;
@@ -407,8 +411,8 @@ export async function restoreView(
 
     // Track the loaded view
     state.setCurrentDashboardViewId(id);
-    state.setCurrentDashboardViewName(viewName || null);
-    updateViewNameBadge(viewName || null);
+    state.setCurrentDashboardViewName(viewName);
+    updateViewNameBadge(viewName);
 
     // Reload settings to get updated dashboard config
     const { loadSettings, saveSettings } =

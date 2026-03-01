@@ -44,7 +44,14 @@ async function isPrivateAddress(url) {
 // Cache for in-progress favicon fetches
 const faviconFetchQueue = new Map();
 
-async function fetchFavicon(url, bookmarkId, db, FAVICONS_DIR, NODE_ENV, userId) {
+async function fetchFavicon(
+  url,
+  bookmarkId,
+  db,
+  FAVICONS_DIR,
+  NODE_ENV,
+  userId,
+) {
   try {
     const urlObj = new URL(url);
     if (!["http:", "https:"].includes(urlObj.protocol)) return null;

@@ -6,7 +6,10 @@ const { initializeDatabase } = require("../models/database");
 const folderModel = require("../models/folder");
 const dashboardModel = require("../models/dashboard");
 
-const TEST_DB_PATH = path.join(__dirname, "anchormarks-test-tenant-isolation.db");
+const TEST_DB_PATH = path.join(
+  __dirname,
+  "anchormarks-test-tenant-isolation.db",
+);
 let db;
 let userId;
 let folderId;
@@ -26,7 +29,15 @@ beforeAll(() => {
     "hashed",
   );
   folderId = uuidv4();
-  folderModel.createFolder(db, folderId, userId, "Test", "#6366f1", "folder", 0);
+  folderModel.createFolder(
+    db,
+    folderId,
+    userId,
+    "Test",
+    "#6366f1",
+    "folder",
+    0,
+  );
   viewId = uuidv4();
   db.prepare(
     "INSERT INTO dashboard_views (id, user_id, name, config, position) VALUES (?, ?, ?, ?, ?)",
@@ -56,9 +67,9 @@ describe("getFolderById requires userId for tenant isolation", () => {
   });
 
   it("throws when userId is undefined", () => {
-    expect(() =>
-      folderModel.getFolderById(db, folderId, undefined),
-    ).toThrow("getFolderById requires userId for tenant isolation");
+    expect(() => folderModel.getFolderById(db, folderId, undefined)).toThrow(
+      "getFolderById requires userId for tenant isolation",
+    );
   });
 
   it("returns folder when userId is provided and matches", () => {

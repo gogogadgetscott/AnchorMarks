@@ -83,10 +83,9 @@ function listBookmarks(db, userId, opts = {}) {
       ) tg ON tg.bookmark_id = b.id`;
   }
 
-  const tagsSelect =
-    hasSearch
-      ? "COALESCE(tg.tags_joined, '') as _tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed"
-      : "COALESCE(tg.tags_joined, '') as tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed";
+  const tagsSelect = hasSearch
+    ? "COALESCE(tg.tags_joined, '') as _tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed"
+    : "COALESCE(tg.tags_joined, '') as tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed";
   let query = `SELECT b.*, ${tagsSelect} ${baseFrom} WHERE b.user_id = ?`;
   let countQuery = `SELECT COUNT(*) as total ${baseFrom} WHERE b.user_id = ?`;
   const params = [userId, userId];
@@ -236,12 +235,20 @@ function listBookmarks(db, userId, opts = {}) {
     query += " LIMIT ? OFFSET ?";
     params.push(safeLimit, safeOffset);
     let bookmarks = db.prepare(query).all(...params);
-    if (hasSearch) bookmarks = bookmarks.map((b) => { const { _tags, ...rest } = b; return { ...rest, tags: _tags }; });
+    if (hasSearch)
+      bookmarks = bookmarks.map((b) => {
+        const { _tags, ...rest } = b;
+        return { ...rest, tags: _tags };
+      });
     return { bookmarks, total };
   }
 
   let bookmarks = db.prepare(query).all(...params);
-  if (hasSearch) bookmarks = bookmarks.map((b) => { const { _tags, ...rest } = b; return { ...rest, tags: _tags }; });
+  if (hasSearch)
+    bookmarks = bookmarks.map((b) => {
+      const { _tags, ...rest } = b;
+      return { ...rest, tags: _tags };
+    });
   return { bookmarks };
 }
 

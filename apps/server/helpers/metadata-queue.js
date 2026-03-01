@@ -44,7 +44,9 @@ function initialize(database, fetchFavicon, captureScreenshot = null) {
  */
 function queueMetadataFetch(bookmarkIds, userId) {
   if (!userId) {
-    logger.warn("MetadataQueue: userId required for queueMetadataFetch, skipping");
+    logger.warn(
+      "MetadataQueue: userId required for queueMetadataFetch, skipping",
+    );
     return;
   }
   if (!Array.isArray(bookmarkIds)) {
@@ -52,7 +54,9 @@ function queueMetadataFetch(bookmarkIds, userId) {
   }
 
   // Add to queue (avoid duplicates by bookmarkId+userId)
-  const existing = new Set(metadataQueue.map((e) => `${e.bookmarkId}:${e.userId}`));
+  const existing = new Set(
+    metadataQueue.map((e) => `${e.bookmarkId}:${e.userId}`),
+  );
   for (const bookmarkId of bookmarkIds) {
     const key = `${bookmarkId}:${userId}`;
     if (!existing.has(key)) {
