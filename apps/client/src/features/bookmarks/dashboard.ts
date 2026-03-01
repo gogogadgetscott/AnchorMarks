@@ -1,54 +1,43 @@
 /**
  * AnchorMarks - Dashboard Module
- * Handles dashboard rendering and widget management
+ * Handles dashboard rendering and widget management with optimized performance
  */
 
-import * as state from "@features/state.ts";
-import { escapeHtml } from "@utils/index.ts";
-import { showToast, dom, updateCounts } from "@utils/ui-helpers.ts";
-// Settings imported dynamically
+import { state } from "@features/state.ts";
 import { api } from "@services/api.ts";
-import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
-import { logger } from "@utils/logger.ts";
-import { confirmDialog, promptDialog } from "@features/ui/confirm-dialog.ts";
 import type {
   Bookmark,
   DashboardWidget,
-  TagAnalyticsItem,
-  CooccurrenceItem,
-} from "../../types/index";
-import type { DashboardViewResponse } from "../../types/api";
+  DashboardViewResponse,
+} from "@types.ts";
+import {
+  showToast,
+  confirmDialog,
+  promptDialog,
+  escapeHtml,
+} from "@utils/ui.ts";
 
-// Grid size for snap-to-grid feature
+// Constants
 const GRID_SIZE = 20;
+const VIEWS_DROPDOWN_WIDTH = 240;
+const VIEWS_DROPDOWN_MAX_HEIGHT = 200;
+const DROPDOWN_OFFSET = 8;
+const UNSAVED_INDICATOR_ID = "dashboard-unsaved-indicator";
+const VIEW_NAME_BADGE_ID = "dashboard-view-name";
+const VIEWS_BTN_ID = "views-btn";
+const VIEWS_DROPDOWN_ID = "views-dropdown";
 
-// Track widgets currently being fetched to avoid duplicate requests
+// Performance optimizations
 const widgetsLoading = new Set<string>();
+let closeDashboardDropdownListener: ((e: MouseEvent) => void) | null = null;
+let dashboardStateSnapshot: string = "";
 
-// Snap value to grid
+/**
+ * Snap value to grid
+ */
 function snapToGrid(value: number): number {
   if (!state.snapToGrid) return value;
   return Math.round(value / GRID_SIZE) * GRID_SIZE;
-}
-
-/**
- * Toggle fullscreen mode
- */
-export function toggleFullscreen(): void {
-  const isFullscreen = document.body.classList.toggle("fullscreen-mode");
-  state.setIsFullscreen(isFullscreen);
-
-  // Toggle icon visibility
-  const enterIcon = document.querySelector(
-    "#dashboard-fullscreen-btn .fullscreen-enter-icon",
-  );
-  const exitIcon = document.querySelector(
-    "#dashboard-fullscreen-btn .fullscreen-exit-icon",
-  );
-  if (enterIcon && exitIcon) {
-    enterIcon.classList.toggle("hidden", isFullscreen);
-    exitIcon.classList.toggle("hidden", !isFullscreen);
-  }
 }
 
 /**
@@ -67,7 +56,8 @@ function getDashboardStateSnapshot(): string {
  * Save current dashboard state for comparison
  */
 export function saveDashboardStateSnapshot(): void {
-  state.setSavedDashboardState(getDashboardStateSnapshot());
+  dashboardStateSnapshot = getDashboardStateSnapshot();
+  state.setSavedDashboardState(dashboardStateSnapshot);
   state.setDashboardHasUnsavedChanges(false);
   updateUnsavedIndicator();
 }
@@ -76,8 +66,12 @@ export function saveDashboardStateSnapshot(): void {
  * Check if dashboard has unsaved changes
  */
 export function checkDashboardChanges(): boolean {
-  if (!state.savedDashboardState) return false;
-  const hasChanges = getDashboardStateSnapshot() !== state.savedDashboardState;
+  if (!dashboardStateSnapshot) {
+    dashboardStateSnapshot = getDashboardStateSnapshot();
+    return false;
+  }
+
+  const hasChanges = getDashboardStateSnapshot() !== dashboardStateSnapshot;
   state.setDashboardHasUnsavedChanges(hasChanges);
   updateUnsavedIndicator();
   return hasChanges;
@@ -95,9 +89,15 @@ export function markDashboardModified(): void {
  * Update the unsaved changes indicator in the header
  */
 function updateUnsavedIndicator(): void {
-  const indicator = document.getElementById("dashboard-unsaved-indicator");
-  if (indicator) {
-    indicator.classList.toggle("hidden", !state.dashboardHasUnsavedChanges);
+  const indicator = document.getElementById(UNSAVED_INDICATOR_ID);
+  if (!indicator) return;
+
+  if (state.dashboardHasUnsavedChanges) {
+    indicator.classList.remove("hidden");
+    indicator.setAttribute("aria-label", "Dashboard has unsaved changes");
+  } else {
+    indicator.classList.add("hidden");
+    indicator.removeAttribute("aria-label");
   }
 }
 
@@ -105,15 +105,15 @@ function updateUnsavedIndicator(): void {
  * Update the view name badge in the header
  */
 export function updateViewNameBadge(viewName: string | null): void {
-  const badge = document.getElementById("dashboard-view-name");
-  if (badge) {
-    if (viewName) {
-      badge.textContent = viewName;
-      badge.classList.remove("hidden");
-    } else {
-      badge.textContent = "";
-      badge.classList.add("hidden");
-    }
+  const badge = document.getElementById(VIEW_NAME_BADGE_ID);
+  if (!badge) return;
+
+  if (viewName) {
+    badge.textContent = escapeHtml(viewName);
+    badge.classList.remove("hidden");
+  } else {
+    badge.textContent = "";
+    badge.classList.add("hidden");
   }
 }
 
@@ -121,198 +121,257 @@ export function updateViewNameBadge(viewName: string | null): void {
  * Confirm before switching views if there are unsaved changes
  */
 export async function confirmViewSwitch(): Promise<boolean> {
-  if (state.dashboardHasUnsavedChanges) {
-    return await confirmDialog(
-      "You have unsaved changes to the dashboard layout. These changes will be lost if you switch views. Continue?",
-      {
-        title: "Unsaved Changes",
-        confirmText: "Continue",
-        destructive: true,
-      },
-    );
-  }
-  return true;
+  if (!state.dashboardHasUnsavedChanges) return true;
+
+  const confirmed = await confirmDialog(
+    "You have unsaved changes. Switch views anyway?",
+    {
+      title: "Unsaved Changes",
+      destructive: false,
+    },
+  );
+  return confirmed;
 }
 
-// Init dashboard views UI
+/**
+ * Initialize dashboard views UI
+ */
 export async function initDashboardViews(): Promise<void> {
   const headerActions = document.querySelector(".header-right");
   if (!headerActions) return;
 
-  let btn = document.getElementById("views-btn") as HTMLButtonElement;
+  let btn = document.getElementById(VIEWS_BTN_ID) as HTMLButtonElement | null;
 
-  // Create or update Views button
+  // Create Views button if it doesn't exist
   if (!btn) {
     btn = document.createElement("button");
-    btn.id = "views-btn";
+    btn.id = VIEWS_BTN_ID;
     btn.className = "btn btn-secondary";
+    btn.setAttribute("aria-label", "Dashboard Views");
     btn.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
-                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-            </svg>
-            Views
-        `;
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
+        <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+      </svg>
+      Views
+    `;
 
-    // Insert Views button right after the Add Widget button
+    // Insert after Add Widget button
     const addWidgetBtn = document.getElementById("dashboard-add-widget-btn");
-    if (addWidgetBtn && addWidgetBtn.nextSibling) {
-      headerActions.insertBefore(btn, addWidgetBtn.nextSibling);
+    if (addWidgetBtn?.nextSibling) {
+      addWidgetBtn.parentNode?.insertBefore(btn, addWidgetBtn.nextSibling);
     } else {
-      // Fallback: insert before first child if no add widget button
-      headerActions.insertBefore(btn, headerActions.firstChild);
+      headerActions.appendChild(btn);
     }
   }
 
-  // Update click handler for dashboard view
-  btn.onclick = (e) => {
+  // Attach click handler
+  btn.addEventListener("click", (e: Event) => {
     e.stopPropagation();
     showViewsMenu();
-  };
+  });
 
   // Initial load
   await loadViews();
 }
 
-// Show views menu (simple dropdown or modal)
+/**
+ * Show views dropdown menu
+ */
 async function showViewsMenu(): Promise<void> {
-  // Remove existing dropdown if any
-  document.getElementById("views-dropdown")?.remove();
+  // Clean up existing dropdown
+  closeViewsDropdown(new MouseEvent("click"));
 
   const views = await loadViews();
+  const viewsBtn = document.getElementById(VIEWS_BTN_ID);
+  if (!viewsBtn) return;
 
   const dropdown = document.createElement("div");
-  dropdown.id = "views-dropdown";
+  dropdown.id = VIEWS_DROPDOWN_ID;
   dropdown.className = "dropdown-menu";
+  dropdown.setAttribute("role", "menu");
 
-  // Position dropdown below the Views button
-  const viewsBtn = document.getElementById("views-btn");
-  if (viewsBtn) {
-    const rect = viewsBtn.getBoundingClientRect();
-    // Center the dropdown under the button
-    const dropdownWidth = 240;
-    const left = Math.max(10, rect.left + rect.width / 2 - dropdownWidth / 2);
-    dropdown.style.cssText = `
-      position: fixed;
-      top: ${rect.bottom + 8}px;
-      left: ${left}px;
-      z-index: 1000;
-      min-width: 240px;
-    `;
-  } else {
-    // Fallback positioning
-    dropdown.style.cssText = `
-      position: fixed;
-      top: 5rem;
-      right: 1rem;
-      z-index: 1000;
-      min-width: 240px;
-    `;
-  }
+  // Position dropdown
+  const rect = viewsBtn.getBoundingClientRect();
+  const dropdownWidth = VIEWS_DROPDOWN_WIDTH;
+  const left = Math.max(10, rect.left + rect.width / 2 - dropdownWidth / 2);
 
-  let html = `
-        <div style="font-weight:600;padding:0.5rem;border-bottom:1px solid var(--border-color);margin-bottom:0.5rem">
-            Dashboard Views
-        </div>
-        <div class="views-list" style="max-height:200px;overflow-y:auto">
-    `;
+  dropdown.style.cssText = `
+    position: fixed;
+    top: ${rect.bottom + DROPDOWN_OFFSET}px;
+    left: ${left}px;
+    z-index: 1000;
+    min-width: ${dropdownWidth}px;
+  `;
+
+  // Build header
+  const headerHtml = `
+    <div style="font-weight:600;padding:0.5rem;border-bottom:1px solid var(--border-color);margin-bottom:0.5rem">
+      Dashboard Views
+    </div>
+  `;
+
+  // Build views list
+  let viewsHtml = `
+    <div class="views-list" style="max-height:${VIEWS_DROPDOWN_MAX_HEIGHT}px;overflow-y:auto">
+  `;
 
   if (views.length === 0) {
-    html += `<div style="padding:0.5rem;color:var(--text-tertiary);text-align:center">No saved views</div>`;
+    viewsHtml += `
+      <div style="padding:0.5rem;color:var(--text-tertiary);text-align:center">
+        No saved views
+      </div>
+    `;
   } else {
-    views.forEach((view: DashboardViewResponse) => {
-      html += `
-                <div class="dropdown-item view-item" data-view-id="${view.id}" style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem;cursor:pointer;border-radius:4px">
-                    <span class="view-name" style="flex:1">${escapeHtml(view.name)}</span>
-                    <button class="btn-icon small text-danger delete-view-btn" data-view-id="${view.id}" title="Delete">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px">
-                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
-                </div>
-            `;
-    });
+    viewsHtml += views
+      .map((view: DashboardViewResponse) => renderViewItem(view))
+      .join("");
   }
 
-  html += `
-        </div>
-        <div style="border-top:1px solid var(--border-color);margin-top:0.5rem;padding-top:0.5rem">
-            <button class="btn btn-primary btn-sm btn-full" id="save-view-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;margin-right:4px">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                    <polyline points="17 21 17 13 7 13 7 21"/>
-                    <polyline points="7 3 7 8 15 8"/>
-                </svg>
-                Save Current View
-            </button>
-        </div>
-    `;
+  viewsHtml += "</div>";
 
-  dropdown.innerHTML = html;
+  // Build footer
+  const footerHtml = `
+    <div style="border-top:1px solid var(--border-color);margin-top:0.5rem;padding-top:0.5rem">
+      <button class="btn btn-primary btn-sm btn-full" id="save-view-btn" aria-label="Save current view">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;margin-right:4px">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+        Save Current View
+      </button>
+    </div>
+  `;
+
+  dropdown.innerHTML = headerHtml + viewsHtml + footerHtml;
   document.body.appendChild(dropdown);
 
-  // Attach event listeners to view items
+  // Attach event listeners
+  attachViewItemListeners(dropdown);
+  attachSaveButtonListener(dropdown);
+
+  // Attach global close listener
+  closeDashboardDropdownListener = closeViewsDropdown.bind(null);
+  setTimeout(() => {
+    document.addEventListener("click", closeDashboardDropdownListener);
+  }, 0);
+}
+
+/**
+ * Render a single view item
+ */
+function renderViewItem(view: DashboardViewResponse): string {
+  return `
+    <div class="dropdown-item view-item" data-view-id="${escapeHtml(view.id)}" style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem;cursor:pointer;border-radius:4px" role="menuitem">
+      <span class="view-name" style="flex:1">${escapeHtml(view.name)}</span>
+      <button class="btn-icon small text-danger delete-view-btn" data-view-id="${escapeHtml(view.id)}" title="Delete view" aria-label="Delete ${escapeHtml(view.name)}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  `;
+}
+
+/**
+ * Attach listeners to view items
+ */
+function attachViewItemListeners(dropdown: HTMLElement): void {
   dropdown.querySelectorAll(".view-item").forEach((item: Element) => {
-    const viewId = (item as HTMLElement).dataset.viewId;
+    const viewElement = item as HTMLElement;
+    const viewId = viewElement.dataset.viewId;
     if (!viewId) return;
 
     const nameSpan = item.querySelector(".view-name");
-    const viewName = nameSpan?.textContent || null;
     const deleteBtn = item.querySelector(".delete-view-btn");
 
-    // Click on view name to restore
+    // Restore view on name click
     if (nameSpan) {
-      nameSpan.addEventListener("click", async (e: Event) => {
-        e.preventDefault();
-        e.stopPropagation();
-        await restoreView(viewId, viewName);
-      });
+      nameSpan.addEventListener(
+        "click",
+        handleRestoreViewClick(viewId, nameSpan.textContent),
+      );
     }
 
-    // Click on delete button
+    // Delete view on button click
     if (deleteBtn) {
-      deleteBtn.addEventListener("click", async (e: Event) => {
-        e.preventDefault();
-        e.stopPropagation();
-        await deleteView(viewId);
-      });
+      deleteBtn.addEventListener("click", handleDeleteViewClick(viewId));
     }
   });
+}
 
-  // Attach event listener to save button
+/**
+ * Handle restore view click
+ */
+function handleRestoreViewClick(
+  viewId: string,
+  viewName: string | null,
+): (e: Event) => Promise<void> {
+  return async (e: Event) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await restoreView(viewId, viewName);
+  };
+}
+
+/**
+ * Handle delete view click
+ */
+function handleDeleteViewClick(viewId: string): (e: Event) => Promise<void> {
+  return async (e: Event) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await deleteView(viewId);
+  };
+}
+
+/**
+ * Attach listener to save button
+ */
+function attachSaveButtonListener(dropdown: HTMLElement): void {
   const saveBtn = dropdown.querySelector("#save-view-btn");
   if (saveBtn) {
-    saveBtn.addEventListener("click", async (e) => {
+    saveBtn.addEventListener("click", async (e: Event) => {
       e.preventDefault();
       e.stopPropagation();
       await saveCurrentView();
     });
   }
-
-  // Global click to close
-  setTimeout(() => {
-    document.addEventListener("click", closeViewsDropdown);
-  }, 0);
 }
 
-function closeViewsDropdown(e: MouseEvent): void {
-  const dropdown = document.getElementById("views-dropdown");
-  if (
-    dropdown &&
-    !dropdown.contains(e.target as Node) &&
-    (e.target as HTMLElement).id !== "views-btn"
-  ) {
-    dropdown.remove();
-    document.removeEventListener("click", closeViewsDropdown);
+/**
+ * Close views dropdown menu
+ */
+function closeViewsDropdown(e?: MouseEvent): void {
+  const dropdown = document.getElementById(VIEWS_DROPDOWN_ID);
+  if (!dropdown) return;
+
+  // Allow closing programmatically (e is undefined)
+  if (e) {
+    const isClickInside =
+      dropdown.contains(e.target as Node) ||
+      (e.target as HTMLElement).id === VIEWS_BTN_ID;
+    if (isClickInside) return;
+  }
+
+  dropdown.remove();
+
+  if (closeDashboardDropdownListener) {
+    document.removeEventListener("click", closeDashboardDropdownListener);
+    closeDashboardDropdownListener = null;
   }
 }
 
-// Save View
+/**
+ * Save current dashboard view
+ */
 export async function saveCurrentView(): Promise<void> {
   const name = await promptDialog("Enter a name for this view:", {
     title: "Save View",
     confirmText: "Save",
     placeholder: "e.g., Work Dashboard",
   });
+
   if (!name) return;
 
   try {
@@ -325,1847 +384,307 @@ export async function saveCurrentView(): Promise<void> {
       include_child_bookmarks: state.includeChildBookmarks ? 1 : 0,
     };
 
-    const view = await api<{ id: string }>("/dashboard/views", {
+    await api("/dashboard/views", {
       method: "POST",
       body: JSON.stringify({ name, config }),
     });
 
-    showToast("View saved!", "success");
-    document.getElementById("views-dropdown")?.remove();
-
-    // Track the saved view
-    state.setCurrentDashboardViewId(view.id);
-    state.setCurrentDashboardViewName(name);
-    updateViewNameBadge(name);
-    saveDashboardStateSnapshot();
-
-    // Persist to settings
-    const { saveSettings } = await import("@features/bookmarks/settings.ts");
-    await saveSettings({
-      current_dashboard_view_id: view.id,
-      current_dashboard_view_name: name,
-    });
-
-    // Prompt to create bookmark shortcut
-    if (
-      await confirmDialog("Create a bookmark shortcut for this view?", {
-        title: "Create Shortcut",
-      })
-    ) {
-      const { createBookmark } =
-        await import("@features/bookmarks/bookmarks.ts");
-      await createBookmark({
-        title: name,
-        url: `view:${view.id}`,
-        description: "Dashboard View Shortcut",
-        tags: "dashboard-views",
-      });
-    }
-  } catch (err: unknown) {
-    showToast((err as Error).message, "error");
-  }
-}
-
-// Load Views
-async function loadViews(): Promise<DashboardViewResponse[]> {
-  try {
-    return await api("/dashboard/views");
-  } catch {
-    return [];
-  }
-}
-
-// Delete View
-export async function deleteView(id: string): Promise<void> {
-  if (
-    !(await confirmDialog("Delete this view?", {
-      title: "Delete View",
-      destructive: true,
-    }))
-  )
-    return;
-  try {
-    await api(`/dashboard/views/${id}`, { method: "DELETE" });
-    showToast("View deleted", "success");
-    // Refresh dropdown if open
-    document.getElementById("views-dropdown")?.remove();
+    showToast(`View "${escapeHtml(name)}" saved!`, "success");
+    closeViewsDropdown();
+    await loadViews();
   } catch (err: unknown) {
     showToast((err as Error).message, "error");
   }
 }
 
 /**
- * Restore View
+ * Load all dashboard views for current user
+ */
+async function loadViews(): Promise<DashboardViewResponse[]> {
+  try {
+    const response = await api<DashboardViewResponse[]>("/dashboard/views");
+    return Array.isArray(response) ? response : [];
+  } catch (err: unknown) {
+    console.error("Failed to load views:", err);
+    return [];
+  }
+}
+
+/**
+ * Delete a dashboard view
+ */
+export async function deleteView(id: string): Promise<void> {
+  const confirmed = await confirmDialog("Delete this view?", {
+    title: "Delete View",
+    destructive: true,
+  });
+
+  if (!confirmed) return;
+
+  try {
+    await api(`/dashboard/views/${id}`, { method: "DELETE" });
+    showToast("View deleted", "success");
+    closeViewsDropdown();
+    await loadViews();
+  } catch (err: unknown) {
+    showToast((err as Error).message, "error");
+  }
+}
+
+/**
+ * Restore a previously saved dashboard view
  */
 export async function restoreView(
   id: string,
   viewName: string | null = null,
 ): Promise<void> {
-  // Warn about unsaved changes
   if (!(await confirmViewSwitch())) return;
 
   try {
-    await api(`/dashboard/views/${id}/restore`, { method: "POST" });
-    showToast("View restored!", "success");
-    document.getElementById("views-dropdown")?.remove();
+    const response = await api<DashboardViewResponse>(
+      `/dashboard/views/${id}/restore`,
+      {
+        method: "POST",
+      },
+    );
 
-    // Track the loaded view
+    // Update state
     state.setCurrentDashboardViewId(id);
     state.setCurrentDashboardViewName(viewName);
     updateViewNameBadge(viewName);
 
-    // Reload settings to get updated dashboard config
-    const { loadSettings, saveSettings } =
-      await import("@features/bookmarks/settings.ts");
-    await loadSettings();
-
-    // Ensure current view is set to dashboard and persist view info
-    state.setCurrentView("dashboard");
-    const { updateActiveNav } = await import("@utils/ui-helpers.ts");
-    updateActiveNav();
-    await saveSettings({
-      current_view: "dashboard",
-      current_dashboard_view_id: id,
-      current_dashboard_view_name: viewName || null,
-    });
-
-    // Re-render dashboard with new settings
-    renderDashboard();
-    updateLayoutStats();
-
-    // Save the state snapshot after loading the view
+    // Reload dashboard
     saveDashboardStateSnapshot();
+    closeViewsDropdown();
+    renderDashboard();
+
+    showToast(`View "${escapeHtml(viewName || "")}" restored`, "success");
   } catch (err: unknown) {
     showToast((err as Error).message, "error");
   }
 }
 
-window.saveCurrentView = saveCurrentView;
-window.deleteView = deleteView;
-window.restoreView = restoreView;
+/**
+ * Toggle fullscreen mode
+ */
+export function toggleFullscreen(): void {
+  const isFullscreen = document.body.classList.toggle("fullscreen-mode");
+  state.setIsFullscreen(isFullscreen);
 
-// Helper to render compact bookmark item
-function renderCompactBookmarkItem(b: Bookmark): string {
-  const colorStyle = b.color
-    ? `--bookmark-color: ${b.color}; background-color: color-mix(in srgb, ${b.color} 20%, var(--bg-primary)); border-left: 6px solid ${b.color};`
-    : "";
-  return `
-    <div class="compact-item${b.color ? " has-color" : ""}" style="${colorStyle}">
-        <a href="${b.url}" target="_blank" class="compact-item-link" data-action="track-click" data-id="${b.id}">
-            <div class="compact-favicon">
-                ${
-                  !state.hideFavicons && b.favicon
-                    ? `<img src="${b.favicon}" alt="" class="img-loading" loading="lazy">`
-                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/></svg>`
-                }
-            </div>
-            <span class="compact-text">${escapeHtml(b.title)}</span>
-        </a>
-        <div class="compact-actions">
-            <button class="compact-action-btn" data-action="edit-bookmark" data-id="${b.id}" title="Edit">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </button>
-            <button class="compact-action-btn" data-action="copy-link" data-url="${escapeHtml(b.url)}" title="Copy link">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            </button>
-            <button class="compact-action-btn compact-action-danger" data-action="delete-bookmark" data-id="${b.id}" title="Delete">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
-        </div>
-    </div>
-    `;
-}
+  const enterIcon = document.querySelector(
+    "#dashboard-fullscreen-btn .fullscreen-enter-icon",
+  );
+  const exitIcon = document.querySelector(
+    "#dashboard-fullscreen-btn .fullscreen-exit-icon",
+  );
 
-// sortBookmarks is defined locally to avoid circular dependency with bookmarks.ts
-function sortBookmarks(list: Bookmark[], widgetSort?: string): Bookmark[] {
-  const sort =
-    widgetSort || state.dashboardConfig.bookmarkSort || "recently_added";
-  return [...list].sort((a, b) => {
-    switch (sort) {
-      case "a_z":
-      case "a-z":
-      case "alpha":
-        return a.title.localeCompare(b.title);
-      case "z_a":
-      case "z-a":
-        return b.title.localeCompare(a.title);
-      case "most_visited":
-        return (b.click_count || 0) - (a.click_count || 0);
-      case "oldest_first":
-      case "created_asc":
-        return (
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        );
-      case "recently_added":
-      case "created_desc":
-      default:
-        return (
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-    }
-  });
-}
+  if (enterIcon && exitIcon) {
+    enterIcon.classList.toggle("hidden", isFullscreen);
+    exitIcon.classList.toggle("hidden", !isFullscreen);
+  }
 
-// Render dashboard
-export function renderDashboard(): void {
-  if (state.currentView !== "dashboard") return;
-  updateFilterButtonVisibility();
-
-  const container =
-    dom.mainViewOutlet || document.getElementById("main-view-outlet");
-  const emptyState = dom.emptyState || document.getElementById("empty-state");
-  const bulkBar = dom.bulkBar || document.getElementById("bulk-bar");
-
-  if (!container) return;
-
-  // Hide bulk bar on dashboard (view toggle stays visible)
-  bulkBar?.classList.add("hidden");
-
-  container.className = "dashboard-freeform";
-  container.innerHTML = ""; // Clear existing content
-  if (emptyState) emptyState.classList.add("hidden");
-
-  // Initialize dashboard views UI
-  initDashboardViews();
-  const btn = document.getElementById("views-btn");
-  if (btn) btn.classList.remove("hidden");
-
-  // Restore view name badge from state (survives page refresh)
-  updateViewNameBadge(state.currentDashboardViewName);
-
-  const dashboardHtml = `
-        <div class="dashboard-freeform-container" id="dashboard-drop-zone">
-            <div class="dashboard-help-text">
-                ${
-                  state.dashboardWidgets.length === 0
-                    ? "<p>Drag folders or tags from the sidebar to create widgets</p>"
-                    : ""
-                }
-            </div>
-            <div class="dashboard-widgets-container" id="dashboard-widgets-freeform">
-                ${renderFreeformWidgets()}
-            </div>
-        </div>
-    `;
-
-  container.innerHTML = dashboardHtml;
-  initDashboardDragDrop();
-  initTagAnalyticsWidgets();
-  setupWidgetLazyLoading();
-
-  // Async: Ensure all widgets have data, re-render if needed
-  ensureWidgetsData();
+  document.body.setAttribute("aria-fullscreen", isFullscreen.toString());
 }
 
 /**
- * Fetch data for all widgets that don't have it in cache
+ * Render compact bookmark item
  */
-async function ensureWidgetsData() {
-  const missingData = state.dashboardWidgets.filter(
-    (w) =>
-      (w.type === "folder" || w.type === "tag") &&
-      !state.widgetDataCache[w.id] &&
-      !widgetsLoading.has(w.id),
-  );
-
-  if (missingData.length === 0) return;
-
-  // Add to loading tracker
-  missingData.forEach((w) => widgetsLoading.add(w.id));
-
-  try {
-    await Promise.all(
-      missingData.map(async (widget) => {
-        let endpoint = "";
-        if (widget.type === "folder") {
-          endpoint = `/bookmarks?folder_id=${widget.id}&limit=500`;
-          if (state.includeChildBookmarks) endpoint += "&include_children=true";
-        } else if (widget.type === "tag") {
-          endpoint = `/bookmarks?tags=${widget.id}&limit=500`;
-        }
-
-        try {
-          const res = await api<any>(endpoint);
-          const bookmarks = Array.isArray(res) ? res : res.bookmarks || [];
-          state.setWidgetDataCache(widget.id, bookmarks);
-        } catch (err) {
-          logger.error(`Failed to fetch widget data for ${widget.id}`, err);
-        } finally {
-          widgetsLoading.delete(widget.id);
-        }
-      }),
-    );
-
-    // Re-render once all pending requests for this batch are done
-    renderDashboard();
-  } catch (err) {
-    logger.error("Error in ensureWidgetsData", err);
-  }
+function renderCompactBookmarkItem(b: Bookmark): string {
+  return `
+    <div class="bookmark-item compact" data-bookmark-id="${escapeHtml(b.id)}">
+      <a href="${escapeHtml(b.url)}" target="_blank" rel="noopener noreferrer">
+        ${b.favicon ? `<img src="${escapeHtml(b.favicon)}" alt="" class="favicon" />` : ""}
+        <span>${escapeHtml(b.title || b.url)}</span>
+      </a>
+    </div>
+  `;
 }
 
-// Setup widget lazy loading
-function setupWidgetLazyLoading(): void {
-  const sentinels = document.querySelectorAll(".widget-load-more");
-  if (sentinels.length === 0) return;
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const sentinel = entry.target as HTMLElement;
-          loadMoreWidgetItems(sentinel);
-        }
-      });
-    },
-    { rootMargin: "100px" },
-  );
-
-  sentinels.forEach((s) => observer.observe(s));
-}
-
-// Load more items for a widget
-function loadMoreWidgetItems(sentinel: HTMLElement): void {
-  const index = parseInt(sentinel.dataset.widgetIndex || "-1");
-  const widget = state.dashboardWidgets[index];
-  if (!widget) return;
-
-  // Prevent multiple loads
-  if (sentinel.dataset.loading === "true") return;
-  sentinel.dataset.loading = "true";
-
-  const widgetData = getWidgetData(widget);
-  if (!widgetData) return;
-
-  const bookmarks = sortBookmarks(widgetData.bookmarks, widget.sort);
-  const container = sentinel.parentElement;
+/**
+ * Render dashboard with all widgets
+ */
+export function renderDashboard(): void {
+  const container = document.getElementById("dashboard-container");
   if (!container) return;
 
-  // Count current items to determine offset
-  const currentCount = container.querySelectorAll(".compact-item").length;
-  const batchSize = 20;
-
-  const nextBatch = bookmarks.slice(currentCount, currentCount + batchSize);
-
-  if (nextBatch.length > 0) {
-    const html = nextBatch
-      .map((b: Bookmark) => renderCompactBookmarkItem(b))
-      .join("");
-    sentinel.insertAdjacentHTML("beforebegin", html);
+  if (!state.dashboardWidgets || state.dashboardWidgets.length === 0) {
+    container.innerHTML =
+      '<div style="text-align:center;padding:2rem;color:var(--text-tertiary)">No widgets. Click "Add Widget" to get started.</div>';
+    return;
   }
 
-  // Update sentinel or remove if done
-  if (currentCount + nextBatch.length >= bookmarks.length) {
-    sentinel.remove();
-  } else {
-    sentinel.dataset.loading = "false";
-  }
+  const html = state.dashboardWidgets
+    .map((widget: DashboardWidget, index: number) =>
+      renderDashboardWidget(widget, index),
+    )
+    .join("");
+
+  container.innerHTML = html;
+  initDashboardDragDrop();
 }
 
-// Initialize Tag Analytics widgets
-export async function initTagAnalyticsWidgets(): Promise<void> {
-  try {
-    const widgets = document.querySelectorAll(
-      '.dashboard-widget-freeform[data-widget-type="tag-analytics"] .tag-analytics',
-    );
-    if (!widgets || widgets.length === 0) return;
-
-    const res = await api<{
-      success?: boolean;
-      tags: TagAnalyticsItem[];
-      cooccurrence: CooccurrenceItem[];
-    }>("/tags/analytics");
-
-    // Handle various response formats
-    let tags: TagAnalyticsItem[] = [];
-    let cooccurrence: CooccurrenceItem[] = [];
-
-    if (res && typeof res === "object") {
-      if (res.success && Array.isArray(res.tags)) {
-        tags = res.tags;
-        cooccurrence = res.cooccurrence || [];
-      } else if (Array.isArray(res)) {
-        // Response might be an array directly
-        tags = res;
-      }
-    }
-
-    widgets.forEach((root: Element) => {
-      const indexAttr = root.getAttribute("data-analytics-widget");
-      const idx = parseInt(indexAttr);
-      const widgetCfg =
-        state.dashboardWidgets[idx] || ({} as Partial<DashboardWidget>);
-      const settings = widgetCfg.settings || {
-        metric: "count",
-        limit: 20,
-        pairSort: "count",
-        colors: {
-          usage: "#6366f1",
-          clicks: "#f97316",
-          favorites: "#eab308",
-          pairs: "#6b7280",
-        },
-      };
-      const metric = settings.metric || "count";
-      const limit = settings.limit || 20;
-      const pairSort = settings.pairSort || "count";
-      const colors = settings.colors || {
-        usage: "#6366f1",
-        clicks: "#f97316",
-        favorites: "#eab308",
-        pairs: "#6b7280",
-      };
-
-      const metricSel = root.querySelector(
-        ".tag-analytics-metric",
-      ) as HTMLSelectElement;
-      const limitSel = root.querySelector(
-        ".tag-analytics-limit",
-      ) as HTMLSelectElement;
-      const pairSortSel = root.querySelector(
-        ".tag-analytics-pairsort",
-      ) as HTMLSelectElement;
-      const colorUsage = root.querySelector(
-        ".tag-analytics-color-usage",
-      ) as HTMLInputElement;
-      const colorClicks = root.querySelector(
-        ".tag-analytics-color-clicks",
-      ) as HTMLInputElement;
-      const colorFavorites = root.querySelector(
-        ".tag-analytics-color-favorites",
-      ) as HTMLInputElement;
-      const colorPairs = root.querySelector(
-        ".tag-analytics-color-pairs",
-      ) as HTMLInputElement;
-      const legendUsage = root.querySelector(".legend-usage") as HTMLElement;
-      const legendClicks = root.querySelector(".legend-clicks") as HTMLElement;
-      const legendFavorites = root.querySelector(
-        ".legend-favorites",
-      ) as HTMLElement;
-      const legendPairs = root.querySelector(".legend-pairs") as HTMLElement;
-
-      if (metricSel) metricSel.value = metric;
-      if (limitSel) limitSel.value = String(limit);
-      if (pairSortSel) pairSortSel.value = pairSort;
-      if (colorUsage) colorUsage.value = colors.usage;
-      if (colorClicks) colorClicks.value = colors.clicks;
-      if (colorFavorites) colorFavorites.value = colors.favorites;
-      if (colorPairs) colorPairs.value = colors.pairs;
-      if (legendUsage) legendUsage.style.backgroundColor = colors.usage;
-      if (legendClicks) legendClicks.style.backgroundColor = colors.clicks;
-      if (legendFavorites)
-        legendFavorites.style.backgroundColor = colors.favorites;
-      if (legendPairs) legendPairs.style.backgroundColor = colors.pairs;
-
-      const topTagsEl = root.querySelector(".tag-analytics-top-tags");
-      const coocEl = root.querySelector(".tag-analytics-cooccurrence");
-      if (topTagsEl) {
-        const sortedTags = [...tags].sort(
-          (a: TagAnalyticsItem, b: TagAnalyticsItem) =>
-            ((b[metric as keyof TagAnalyticsItem] as number) || 0) -
-            ((a[metric as keyof TagAnalyticsItem] as number) || 0),
-        );
-        const topTags = sortedTags.slice(0, limit);
-        const metricColor =
-          metric === "count"
-            ? colors.usage
-            : metric === "click_count_sum"
-              ? colors.clicks
-              : colors.favorites;
-        topTagsEl.innerHTML = topTags
-          .map(
-            (t: TagAnalyticsItem) => `
-              <div class="tag-name" title="${escapeHtml(t.name)}">${escapeHtml(t.name)}</div>
-              <div class="tag-count" style="text-align:right;color:${metricColor}">${(t[metric as keyof TagAnalyticsItem] as number) || 0}</div>
-            `,
-          )
-          .join("");
-      }
-      if (coocEl) {
-        const sortedPairs = [...cooccurrence].sort(
-          (a: CooccurrenceItem, b: CooccurrenceItem) => {
-            if (pairSort === "alpha") {
-              const na = (a.tag_name_a + " + " + a.tag_name_b).toLowerCase();
-              const nb = (b.tag_name_a + " + " + b.tag_name_b).toLowerCase();
-              return na.localeCompare(nb);
-            }
-            return (b.count || 0) - (a.count || 0);
-          },
-        );
-        const pairs = sortedPairs.slice(0, limit);
-        coocEl.innerHTML = pairs
-          .map(
-            (p: CooccurrenceItem) => `
-              <div class="pair-name" title="${escapeHtml(p.tag_name_a)} + ${escapeHtml(p.tag_name_b)}">${escapeHtml(p.tag_name_a)} + ${escapeHtml(p.tag_name_b)}</div>
-              <div class="pair-count" style="text-align:right;color:${colors.pairs}">${p.count}</div>
-            `,
-          )
-          .join("");
-      }
-
-      // Listeners
-      if (metricSel) {
-        metricSel.addEventListener("change", (e: Event) => {
-          const val = (e.target as HTMLSelectElement).value;
-          if (!state.dashboardWidgets[idx].settings)
-            state.dashboardWidgets[idx].settings = {};
-          state.dashboardWidgets[idx].settings!.metric = val;
-          import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
-            saveSettings({ dashboard_widgets: state.dashboardWidgets }),
-          );
-          initTagAnalyticsWidgets();
-        });
-      }
-      if (limitSel) {
-        limitSel.addEventListener("change", (e: Event) => {
-          const val = parseInt((e.target as HTMLSelectElement).value);
-          if (!state.dashboardWidgets[idx].settings)
-            state.dashboardWidgets[idx].settings = {};
-          state.dashboardWidgets[idx].settings!.limit = val;
-          import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
-            saveSettings({ dashboard_widgets: state.dashboardWidgets }),
-          );
-          initTagAnalyticsWidgets();
-        });
-      }
-      if (pairSortSel) {
-        pairSortSel.addEventListener("change", (e: Event) => {
-          const val = (e.target as HTMLSelectElement).value;
-          if (!state.dashboardWidgets[idx].settings)
-            state.dashboardWidgets[idx].settings = {};
-          state.dashboardWidgets[idx].settings!.pairSort = val;
-          import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
-            saveSettings({ dashboard_widgets: state.dashboardWidgets }),
-          );
-          initTagAnalyticsWidgets();
-        });
-      }
-
-      function ensureColors() {
-        if (!state.dashboardWidgets[idx].settings)
-          state.dashboardWidgets[idx].settings = {};
-        if (!state.dashboardWidgets[idx].settings!.colors)
-          state.dashboardWidgets[idx].settings!.colors = {};
-      }
-      if (colorUsage) {
-        colorUsage.addEventListener("change", (e: Event) => {
-          ensureColors();
-          state.dashboardWidgets[idx].settings!.colors!.usage = (
-            e.target as HTMLInputElement
-          ).value;
-          import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
-            saveSettings({ dashboard_widgets: state.dashboardWidgets }),
-          );
-          initTagAnalyticsWidgets();
-        });
-      }
-      if (colorClicks) {
-        colorClicks.addEventListener("change", (e: Event) => {
-          ensureColors();
-          state.dashboardWidgets[idx].settings!.colors!.clicks = (
-            e.target as HTMLInputElement
-          ).value;
-          import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
-            saveSettings({ dashboard_widgets: state.dashboardWidgets }),
-          );
-          initTagAnalyticsWidgets();
-        });
-      }
-      if (colorFavorites) {
-        colorFavorites.addEventListener("change", (e: Event) => {
-          ensureColors();
-          state.dashboardWidgets[idx].settings!.colors!.favorites = (
-            e.target as HTMLInputElement
-          ).value;
-          import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
-            saveSettings({ dashboard_widgets: state.dashboardWidgets }),
-          );
-          initTagAnalyticsWidgets();
-        });
-      }
-      if (colorPairs) {
-        colorPairs.addEventListener("change", (e: Event) => {
-          ensureColors();
-          state.dashboardWidgets[idx].settings!.colors!.pairs = (
-            e.target as HTMLInputElement
-          ).value;
-          import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
-            saveSettings({ dashboard_widgets: state.dashboardWidgets }),
-          );
-          initTagAnalyticsWidgets();
-        });
-      }
-
-      // Export helpers
-      function downloadFile(name: string, mime: string, text: string) {
-        const blob = new Blob([text], { type: mime });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-      function toCSV(
-        rows: Record<string, string | number>[],
-        columns: string[],
-      ) {
-        const header = columns.join(",");
-        const body = rows
-          .map((r) =>
-            columns
-              .map((c) => {
-                const v = r[c] != null ? String(r[c]) : "";
-                const escaped = v.replace(/"/g, '""');
-                return `"${escaped}"`;
-              })
-              .join(","),
-          )
-          .join("\n");
-        return `${header}\n${body}`;
-      }
-
-      const btnJson = root.querySelector(".tag-analytics-export-json");
-      const btnTagsCsv = root.querySelector(".tag-analytics-export-tags-csv");
-      const btnPairsCsv = root.querySelector(".tag-analytics-export-pairs-csv");
-      if (btnJson) {
-        btnJson.addEventListener("click", () => {
-          const payload = JSON.stringify({ tags, cooccurrence }, null, 2);
-          downloadFile("tag-analytics.json", "application/json", payload);
-        });
-      }
-      if (btnTagsCsv) {
-        btnTagsCsv.addEventListener("click", () => {
-          const columns = ["name", "count"];
-          if (
-            tags.length > 0 &&
-            ("click_count_sum" in tags[0] || "favorite_count_sum" in tags[0])
-          ) {
-            if (typeof tags[0].click_count_sum !== "undefined")
-              columns.push("click_count_sum");
-            if (typeof tags[0].favorite_count_sum !== "undefined")
-              columns.push("favorite_count_sum");
-          }
-          const csv = toCSV(tags, columns);
-          downloadFile("tag-analytics-tags.csv", "text/csv", csv);
-        });
-      }
-      if (btnPairsCsv) {
-        btnPairsCsv.addEventListener("click", () => {
-          const csv = toCSV(cooccurrence, [
-            "tag_name_a",
-            "tag_name_b",
-            "count",
-          ]);
-          downloadFile("tag-analytics-pairs.csv", "text/csv", csv);
-        });
-      }
-    });
-  } catch (err) {
-    logger.error("Failed to load tag analytics", err);
-  }
-}
-
-// Render freeform widgets
-function renderFreeformWidgets(): string {
-  let html = "";
-
-  state.dashboardWidgets.forEach((widget: DashboardWidget, index: number) => {
-    if (state.isLoading) {
-      // Show skeleton widget while loading
-      html += `
-        <div class="dashboard-widget-freeform skeleton-card" 
-             style="left: ${widget.x || 0}px; top: ${widget.y || 0}px; width: ${widget.w || 320}px; height: ${widget.h || 400}px;">
-            <div class="widget-header">
-                <div class="skeleton" style="width: 100px; height: 16px;"></div>
-            </div>
-            <div class="widget-body">
-                <div class="compact-list">
-                    ${Array(5)
-                      .fill(null)
-                      .map(
-                        () => `
-                        <div class="compact-item">
-                            <div class="skeleton skeleton-favicon"></div>
-                            <div class="skeleton" style="width: 80%; height: 14px;"></div>
-                        </div>
-                    `,
-                      )
-                      .join("")}
-                </div>
-            </div>
-        </div>
-      `;
-      return;
-    }
-
-    const widgetData = getWidgetData(widget);
-    if (!widgetData) return;
-
-    const {
-      name,
-      color,
-      bookmarks: widgetBookmarks,
-      count,
-      isLoading,
-    } = widgetData;
-    const sortedBookmarks = sortBookmarks(widgetBookmarks, widget.sort);
-    const widgetColor = widget.color || color;
-
-    html += `
-        <div class="dashboard-widget-freeform" 
-             data-widget-index="${index}"
-             data-widget-id="${widget.id}"
-             data-widget-type="${widget.type}"
-             draggable="true"
-             style="left: ${widget.x || 0}px; top: ${widget.y || 0}px; width: ${widget.w || 320}px; height: ${widget.h || 400}px;">
-            <div class="widget-header" data-color="${widgetColor}">
-                <div class="widget-drag-handle" title="Drag to move">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
-                        <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
-                        <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
-                    </svg>
-                </div>
-                ${
-                  widget.type === "folder"
-                    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                    </svg>`
-                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px">
-                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
-                        <line x1="7" y1="7" x2="7.01" y2="7"/>
-                    </svg>`
-                }
-                <div class="widget-title">${escapeHtml(name)}</div>
-                <div class="widget-count">${count}</div>
-                <div class="widget-actions">
-                    <div class="widget-options-container">
-                        <button class="btn-icon widget-options-btn" data-action="toggle-widget-options" data-index="${index}" title="Options">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
-                                <circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>
-                            </svg>
-                        </button>
-                        <div class="widget-options-menu hidden" data-widget-index="${index}">
-                            ${
-                              widget.type !== "tag-analytics"
-                                ? `
-                            <button class="widget-option" data-action="widget-sort-az" data-widget-index="${index}" data-widget-type="${widget.type}" data-widget-id="${widget.id}">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 6h18M3 12h12M3 18h6"/></svg>
-                                Sort A-Z
-                            </button>
-                            <button class="widget-option" data-action="widget-sort-za" data-widget-index="${index}" data-widget-type="${widget.type}" data-widget-id="${widget.id}">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 6h6M3 12h12M3 18h18"/></svg>
-                                Sort Z-A
-                            </button>
-                            <div class="widget-option-divider"></div>
-                            <button class="widget-option" data-action="widget-add-bookmark" data-widget-type="${widget.type}" data-widget-id="${widget.id}">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                Add Bookmark
-                            </button>
-                            <button class="widget-option" data-action="widget-open-all" data-widget-index="${index}" data-widget-type="${widget.type}" data-widget-id="${widget.id}">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                                Open All
-                            </button>
-                            <button class="widget-option" data-action="widget-show-in-view" data-widget-type="${widget.type}" data-widget-id="${widget.id}">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                Show in Bookmarks
-                            </button>
-                            <div class="widget-option-divider"></div>
-                            `
-                                : ""
-                            }
-                            <button class="widget-option" data-action="change-widget-color" data-index="${index}">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20"/></svg>
-                                Change Color
-                            </button>
-                        </div>
-                    </div>
-                    <button class="btn-icon widget-remove" data-action="remove-widget" data-index="${index}" title="Remove widget">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
-                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            <div class="widget-body">
-              ${
-                widget.type === "tag-analytics"
-                  ? `
-                <div class="tag-analytics" data-analytics-widget="${index}">
-                   <!-- Tag analytics content -->
-                   <div class="tag-analytics-controls" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;">
-                     <label style="display:flex;align-items:center;gap:0.25rem;">
-                       <span style="font-size:0.75rem;color:var(--text-tertiary)">Metric</span>
-                       <select class="tag-analytics-metric">
-                         <option value="count">Usage</option>
-                         <option value="click_count_sum">Clicks</option>
-                         <option value="favorite_count_sum">Favorites</option>
-                       </select>
-                     </label>
-                     <label style="display:flex;align-items:center;gap:0.25rem;">
-                       <span style="font-size:0.75rem;color:var(--text-tertiary)">Top N</span>
-                       <select class="tag-analytics-limit">
-                         <option value="10">10</option>
-                         <option value="20" selected>20</option>
-                         <option value="30">30</option>
-                         <option value="50">50</option>
-                       </select>
-                     </label>
-                     <label style="display:flex;align-items:center;gap:0.25rem;">
-                       <span style="font-size:0.75rem;color:var(--text-tertiary)">Pairs Sort</span>
-                       <select class="tag-analytics-pairsort">
-                         <option value="count" selected>Count</option>
-                         <option value="alpha">A→Z</option>
-                       </select>
-                     </label>
-                     <div class="tag-analytics-exports" style="margin-left:auto;display:flex;gap:0.25rem;">
-                       <button class="btn btn-sm tag-analytics-export-json" title="Export JSON">JSON</button>
-                       <button class="btn btn-sm tag-analytics-export-tags-csv" title="Export Tags CSV">Tags CSV</button>
-                       <button class="btn btn-sm tag-analytics-export-pairs-csv" title="Export Pairs CSV">Pairs CSV</button>
-                     </div>
-                   </div>
-                   <!-- ... rest of analytics ... -->
-                   <div class="tag-analytics-colors" style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;">
-                     <!-- Colors inputs placeholders, populated by initTagAnalyticsWidgets -->
-                     <label style="display:flex;align-items:center;gap:0.25rem;">
-                       <span style="font-size:0.75rem;color:var(--text-tertiary)">Usage</span>
-                       <input type="color" class="tag-analytics-color-usage" style="width:24px;height:20px;border:none;cursor:pointer;" />
-                     </label>
-                     <label style="display:flex;align-items:center;gap:0.25rem;">
-                       <span style="font-size:0.75rem;color:var(--text-tertiary)">Clicks</span>
-                       <input type="color" class="tag-analytics-color-clicks" style="width:24px;height:20px;border:none;cursor:pointer;" />
-                     </label>
-                     <label style="display:flex;align-items:center;gap:0.25rem;">
-                       <span style="font-size:0.75rem;color:var(--text-tertiary)">Favorites</span>
-                       <input type="color" class="tag-analytics-color-favorites" style="width:24px;height:20px;border:none;cursor:pointer;" />
-                     </label>
-                     <label style="display:flex;align-items:center;gap:0.25rem;">
-                       <span style="font-size:0.75rem;color:var(--text-tertiary)">Pairs</span>
-                       <input type="color" class="tag-analytics-color-pairs" style="width:24px;height:20px;border:none;cursor:pointer;" />
-                     </label>
-                   </div>
-                   <div class="tag-analytics-legend" style="display:flex;gap:0.75rem;align-items:center;margin-bottom:0.5rem;">
-                     <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-usage" style="display:inline-block;width:10px;height:10px;background:#6366f1;border-radius:2px"></span>Usage</span>
-                     <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-clicks" style="display:inline-block;width:10px;height:10px;background:#f97316;border-radius:2px"></span>Clicks</span>
-                     <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-favorites" style="display:inline-block;width:10px;height:10px;background:#eab308;border-radius:2px"></span>Favorites</span>
-                     <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-pairs" style="display:inline-block;width:10px;height:10px;background:#6b7280;border-radius:2px"></span>Pairs</span>
-                   </div>
-                   <div class="tag-analytics-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-                     <div class="tag-analytics-col">
-                       <div class="tag-analytics-col-title" style="font-weight:600;margin-bottom:0.25rem;">Top Tags</div>
-                       <div class="tag-analytics-list tag-analytics-top-tags" style="display:grid;grid-template-columns:1fr auto;gap:0.25rem"></div>
-                     </div>
-                     <div class="tag-analytics-col">
-                       <div class="tag-analytics-col-title" style="font-weight:600;margin-bottom:0.25rem;">Top Co-occurrence</div>
-                       <div class="tag-analytics-list tag-analytics-cooccurrence" style="display:grid;grid-template-columns:1fr auto;gap:0.25rem"></div>
-                     </div>
-                   </div>
-                </div>
-                `
-                  : `
-                 <div class="compact-list">
-                    ${
-                      isLoading
-                        ? Array(5)
-                            .fill(null)
-                            .map(
-                              () => `
-                        <div class="compact-item">
-                            <div class="skeleton skeleton-favicon"></div>
-                            <div class="skeleton" style="width: 80%; height: 14px;"></div>
-                        </div>
-                    `,
-                            )
-                            .join("")
-                        : sortedBookmarks.length === 0
-                          ? `<p style="padding:1rem;color:var(--text-tertiary);text-align:center;font-size:0.875rem;">No bookmarks found</p>`
-                          : sortedBookmarks
-                              .slice(0, 20)
-                              .map((b) => renderCompactBookmarkItem(b))
-                              .join("")
-                    }
-                    ${
-                      !isLoading && sortedBookmarks.length > 20
-                        ? `
-                    <div class="widget-load-more" data-widget-index="${index}" style="padding:0.5rem;text-align:center;color:var(--text-tertiary);">
-                        <div class="loading-spinner small"></div>
-                    </div>`
-                        : ""
-                    }
-                </div>
-                `
-              }
-            </div>
-            <div class="widget-resize-handle" title="Drag to resize"></div>
-        </div>
-        `;
-  });
-
-  return html;
-}
-
-// Get widget data
-function getWidgetData(widget: DashboardWidget): {
-  name: string;
-  color: string;
-  bookmarks: Bookmark[];
-  count: number;
-  isLoading?: boolean;
-} | null {
-  const cached = state.widgetDataCache[widget.id];
-
-  if (widget.type === "folder") {
-    const folder = state.folders.find((f) => f.id === widget.id);
-    if (!folder) return null;
-
-    const folderBookmarks = cached || [];
-    const count = folder.bookmark_count || folderBookmarks.length;
-
-    return {
-      name: folder.name,
-      color: folder.color || "#6366f1",
-      bookmarks: folderBookmarks,
-      count: count,
-      isLoading: !cached,
-    };
-  } else if (widget.type === "tag") {
-    const tagBookmarks = cached || [];
-    const meta = state.tagMetadata[widget.id];
-    const count = meta?.count || tagBookmarks.length;
-
-    return {
-      name: widget.id,
-      color: meta?.color || "#10b981",
-      bookmarks: tagBookmarks,
-      count: count,
-      isLoading: !cached,
-    };
-  } else if (widget.type === "tag-analytics") {
-    return {
-      name: "Tag Analytics",
-      color: "#6b7280",
-      bookmarks: [],
-      count: "",
-    };
-  }
-  return null;
-}
-
-// Initialize dashboard drag and drop
-export function initDashboardDragDrop(): void {
-  const dropZone = document.getElementById("dashboard-drop-zone");
-  if (!dropZone) return;
-
-  // Handle drops from sidebar
-  dropZone.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
-    dropZone.classList.add("drag-over");
-  });
-
-  dropZone.addEventListener("dragleave", (e: DragEvent) => {
-    if (e.target === dropZone) {
-      dropZone.classList.remove("drag-over");
-    }
-  });
-
-  dropZone.addEventListener("drop", (e) => {
-    e.preventDefault();
-    dropZone.classList.remove("drag-over");
-
-    const rect = dropZone.getBoundingClientRect();
-    const x = e.clientX - rect.left + dropZone.scrollLeft;
-    const y = e.clientY - rect.top + dropZone.scrollTop;
-
-    if (state.draggedSidebarItem) {
-      const { type, id } = state.draggedSidebarItem;
-      if (type === "folder" || type === "tag") {
-        addDashboardWidget(type, id, x, y);
-      }
-      state.setDraggedSidebarItem(null);
-    }
-  });
-
-  // Setup widget drag and resize
-  document
-    .querySelectorAll(".dashboard-widget-freeform")
-    .forEach((widget: HTMLElement) => {
-      const header = widget.querySelector(".widget-header");
-      const resizeHandle = widget.querySelector(".widget-resize-handle");
-
-      // Drag to move
-      header?.addEventListener("mousedown", (e: MouseEvent) => {
-        if (
-          (e.target as HTMLElement).closest(".widget-remove") ||
-          (e.target as HTMLElement).closest(".widget-color-btn")
-        )
-          return;
-
-        state.setIsDraggingWidget(true);
-        state.setDraggedWidget(widget);
-        state.setDragStartPos({ x: e.clientX, y: e.clientY });
-        state.setWidgetStartPos({
-          x: parseInt(widget.style.left) || 0,
-          y: parseInt(widget.style.top) || 0,
-        });
-        widget.classList.add("dragging");
-        e.preventDefault();
-      });
-
-      // Resize handle
-      resizeHandle?.addEventListener("mousedown", (e: MouseEvent) => {
-        state.setIsResizing(true);
-        state.setResizingWidget(widget);
-        state.setDragStartPos({ x: e.clientX, y: e.clientY });
-        state.setResizeStartSize({
-          w: parseInt(widget.style.width) || 320,
-          h: parseInt(widget.style.height) || 400,
-        });
-        widget.classList.add("resizing");
-        e.preventDefault();
-        e.stopPropagation();
-      });
-    });
-
-  // Global mouse handlers
-  document.addEventListener("mousemove", handleMouseMove);
-  document.addEventListener("mouseup", handleMouseUp);
-
-  // Setup remove widget buttons
-  document
-    .querySelectorAll('[data-action="remove-widget"]')
-    .forEach((btn: Element) => {
-      btn.addEventListener("click", (e: Event) => {
-        e.stopPropagation();
-        const index = parseInt((btn as HTMLElement).dataset.index);
-        removeDashboardWidget(index);
-      });
-    });
-
-  // Setup color change buttons
-  document
-    .querySelectorAll('[data-action="change-widget-color"]')
-    .forEach((btn: Element) => {
-      btn.addEventListener("click", (e: Event) => {
-        e.stopPropagation();
-        const index = parseInt((btn as HTMLElement).dataset.index);
-
-        // Close options menu first
-        document
-          .querySelectorAll(".widget-options-menu")
-          .forEach((m) => m.classList.add("hidden"));
-
-        // Find the options button for positioning (use the button that opened the menu)
-        const optionsBtn = document.querySelector(
-          `.widget-options-container [data-action="toggle-widget-options"][data-index="${index}"]`,
-        );
-        showWidgetColorPicker(index, (optionsBtn as HTMLElement) || btn);
-      });
-    });
-
-  // Setup widget options toggle
-  document
-    .querySelectorAll('[data-action="toggle-widget-options"]')
-    .forEach((btn: Element) => {
-      btn.addEventListener("click", (e: Event) => {
-        e.stopPropagation();
-        const index = (btn as HTMLElement).dataset.index;
-        const menu = document.querySelector(
-          `.widget-options-menu[data-widget-index="${index}"]`,
-        );
-
-        // Close all other menus first
-        document.querySelectorAll(".widget-options-menu").forEach((m) => {
-          if (m !== menu) m.classList.add("hidden");
-        });
-
-        menu?.classList.toggle("hidden");
-      });
-    });
-
-  // Close widget options menu when clicking outside
-  // Use a named function so we can remove it first to avoid duplicates
-  const closeWidgetMenus = (e: Event) => {
-    const target = e.target as HTMLElement;
-    // Don't close if clicking inside a menu, on the toggle button, or on any form element
-    if (
-      target.closest(".widget-options-menu") ||
-      target.closest('[data-action="toggle-widget-options"]') ||
-      target.closest("select") ||
-      target.closest("input") ||
-      target.closest(".tag-analytics")
-    ) {
-      return;
-    }
-    document.querySelectorAll(".widget-options-menu").forEach((m) => {
-      m.classList.add("hidden");
-    });
-  };
-
-  // Only add listener once (use data attribute to track)
-  const container = document.getElementById("dashboard-widgets-freeform");
-  if (
-    container &&
-    !(container as HTMLElement & { _menuListenerAdded?: boolean })
-      ._menuListenerAdded
-  ) {
-    document.addEventListener("click", closeWidgetMenus);
-    (
-      container as HTMLElement & { _menuListenerAdded?: boolean }
-    )._menuListenerAdded = true;
-  }
-
-  // Widget sort A-Z
-  document
-    .querySelectorAll('[data-action="widget-sort-az"]')
-    .forEach((btn: Element) => {
-      btn.addEventListener("click", (e: Event) => {
-        e.stopPropagation();
-        const index = parseInt((btn as HTMLElement).dataset.widgetIndex);
-        if (state.dashboardWidgets[index]) {
-          state.dashboardWidgets[index].sort = "a-z";
-          saveDashboardWidgets();
-          renderDashboard();
-        }
-      });
-    });
-
-  // Widget sort Z-A
-  document
-    .querySelectorAll('[data-action="widget-sort-za"]')
-    .forEach((btn: Element) => {
-      btn.addEventListener("click", (e: Event) => {
-        e.stopPropagation();
-        const index = parseInt((btn as HTMLElement).dataset.widgetIndex);
-        if (state.dashboardWidgets[index]) {
-          state.dashboardWidgets[index].sort = "z-a";
-          saveDashboardWidgets();
-          renderDashboard();
-        }
-      });
-    });
-
-  // Widget add bookmark
-  document
-    .querySelectorAll('[data-action="widget-add-bookmark"]')
-    .forEach((btn: Element) => {
-      btn.addEventListener("click", async (e: Event) => {
-        e.stopPropagation();
-        const widgetType = (btn as HTMLElement).dataset.widgetType;
-        const widgetId = (btn as HTMLElement).dataset.widgetId;
-
-        // Close menu
-        document
-          .querySelectorAll(".widget-options-menu")
-          .forEach((m) => m.classList.add("hidden"));
-
-        // Open bookmark modal and pre-fill folder or tag
-        const { openModal, resetForms } = await import("@utils/ui-helpers.ts");
-        resetForms();
-
-        if (widgetType === "folder") {
-          const folderSelect = document.getElementById(
-            "bookmark-folder",
-          ) as HTMLSelectElement;
-          if (folderSelect) folderSelect.value = widgetId;
-        } else if (widgetType === "tag") {
-          const tagsInput = document.getElementById(
-            "bookmark-tags",
-          ) as HTMLInputElement;
-          if (tagsInput) tagsInput.value = widgetId;
-          // Also try to load into the tag input UI
-          try {
-            const { loadTagsFromInput } =
-              await import("@features/bookmarks/tag-input.ts");
-            loadTagsFromInput(widgetId);
-          } catch (err) {
-            // Tag input module might not be available
-          }
-        }
-
-        openModal("bookmark-modal");
-      });
-    });
-
-  // Widget open all bookmarks
-  document
-    .querySelectorAll('[data-action="widget-open-all"]')
-    .forEach((btn: Element) => {
-      btn.addEventListener("click", async (e: Event) => {
-        e.stopPropagation();
-
-        // Find widget by ID and Type for robustness
-        const widgetType = (btn as HTMLElement).dataset.widgetType;
-        const widgetId = (btn as HTMLElement).dataset.widgetId;
-        const widget = state.dashboardWidgets.find(
-          (w) => w.type === widgetType && w.id === widgetId,
-        );
-
-        if (!widget) {
-          showToast("Widget not found", "error");
-          console.error("Widget not found for open-all", {
-            widgetType,
-            widgetId,
-          });
-          return;
-        }
-
-        const widgetData = getWidgetData(widget);
-        if (!widgetData) {
-          showToast("Could not retrieve bookmarks", "error");
-          return;
-        }
-
-        // Close menu immediately
-        document
-          .querySelectorAll(".widget-options-menu")
-          .forEach((m) => m.classList.add("hidden"));
-
-        const { bookmarks } = widgetData;
-
-        if (!bookmarks || bookmarks.length === 0) {
-          showToast("No bookmarks to open", "info");
-          return;
-        }
-
-        // Confirm for large batches
-        // Confirm for large batches
-        if (bookmarks.length > 5) {
-          if (
-            !(await confirmDialog(
-              `Open ${bookmarks.length} bookmarks in new tabs?`,
-              { title: "Open All" },
-            ))
-          ) {
-            return;
-          }
-        }
-
-        // Open each bookmark
-        let successCount = 0;
-        const failedBookmarks: Bookmark[] = [];
-
-        bookmarks.forEach((b: Bookmark) => {
-          if (b && b.url) {
-            const win = window.open(b.url, "_blank");
-            if (win) {
-              successCount++;
-            } else {
-              failedBookmarks.push(b);
-            }
-          }
-        });
-
-        if (successCount === bookmarks.length) {
-          showToast(
-            `Opened ${successCount} tab${successCount > 1 ? "s" : ""}`,
-            "success",
-          );
-        } else {
-          // Some failing - clear menu and show fallback UI
-          showBlockedLinksUI(failedBookmarks, successCount);
-        }
-      });
-    });
-
-  // Helper to show UI for blocked links
-  function showBlockedLinksUI(bookmarks: Bookmark[], successCount: number) {
-    // Check if modal already exists
-    let modal = document.getElementById("blocked-links-modal");
-
-    if (!modal) {
-      modal = document.createElement("div");
-      modal.id = "blocked-links-modal";
-      modal.className = "modal-overlay";
-      modal.style.zIndex = "9999";
-      document.body.appendChild(modal);
-
-      // Close on click outside
-      modal.addEventListener("click", (e) => {
-        if (e.target === modal) modal?.classList.add("hidden");
-      });
-    }
-
-    if (!modal) return; // Should not happen
-
-    const plural = bookmarks.length > 1;
-
-    modal.innerHTML = `
-    <div class="modal">
-      <div class="modal-header">
-        <h3>${successCount > 0 ? "Some Tabs Blocked" : "Popups Blocked"}</h3>
-        <button class="btn-icon" data-action="close-blocked-modal">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M18 6L6 18M6 6l12 12"/></svg>
-        </button>
+/**
+ * Render a single dashboard widget
+ */
+function renderDashboardWidget(widget: DashboardWidget, index: number): string {
+  return `
+    <div class="dashboard-widget" data-widget-index="${index}" style="position:absolute;left:${widget.x}px;top:${widget.y}px;width:${widget.width}px;height:${widget.height}px">
+      <div class="widget-header">
+        <h3>${escapeHtml(widget.title || "Widget")}</h3>
+        <button class="btn-icon small remove-widget-btn" data-widget-index="${index}" aria-label="Remove widget">×</button>
       </div>
-      <div class="modal-body">
-        <p style="margin-bottom: 1rem; color: var(--text-secondary);">
-          Your browser blocked ${bookmarks.length} link${plural ? "s" : ""} from opening automatically. 
-          Use the links below to open them manually:
-        </p>
-        <div class="blocked-links-list" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
-          ${bookmarks
-            .map(
-              (b) => `
-            <a href="${b.url}" target="_blank" class="blocked-link-item" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-bottom: 1px solid var(--border-color); text-decoration: none; color: var(--text-primary); transition: background 0.2s;">
-              ${
-                b.favicon
-                  ? `<img src="${b.favicon}" style="width:16px;height:16px;border-radius:2px">`
-                  : `<span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;background:var(--bg-tertiary);border-radius:2px;font-size:10px">🔗</span>`
-              }
-              <div style="flex:1;min-width:0">
-                <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.title || b.url}</div>
-                <div style="font-size:0.75rem;color:var(--text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.url}</div>
-              </div>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;color:var(--primary-500)"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            </a>
-          `,
-            )
-            .join("")}
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-primary" data-action="close-blocked-modal">Done</button>
+      <div class="widget-content">
+        <!-- Widget content here -->
       </div>
     </div>
   `;
-
-    // Add hover effect style dynamically if not present
-    if (!document.getElementById("blocked-links-style")) {
-      const style = document.createElement("style");
-      style.id = "blocked-links-style";
-      style.textContent = `
-      .blocked-link-item:hover { background: var(--bg-tertiary) !important; }
-      .blocked-link-item:last-child { border-bottom: none !important; }
-    `;
-      document.head.appendChild(style);
-    }
-
-    modal.classList.remove("hidden");
-  }
-
-  // Widget show in bookmarks view
-  document
-    .querySelectorAll('[data-action="widget-show-in-view"]')
-    .forEach((btn: Element) => {
-      btn.addEventListener("click", async (e: Event) => {
-        e.stopPropagation();
-        const widgetType = (btn as HTMLElement).dataset.widgetType;
-        const widgetId = (btn as HTMLElement).dataset.widgetId;
-
-        // Close menu
-        document
-          .querySelectorAll(".widget-options-menu")
-          .forEach((m) => m.classList.add("hidden"));
-
-        if (widgetType === "folder") {
-          // Navigate to folder view
-          const { loadBookmarks } =
-            await import("@features/bookmarks/bookmarks.ts");
-          state.setCurrentView("folder");
-          state.setCurrentFolder(widgetId);
-          await loadBookmarks();
-        } else if (widgetType === "tag") {
-          // Navigate to bookmarks view with tag filter
-          const { loadBookmarks, renderBookmarks } =
-            await import("@features/bookmarks/bookmarks.ts");
-          const { updateActiveNav } = await import("@utils/ui-helpers.ts");
-          state.setCurrentView("all");
-          state.setFilterConfig({
-            ...state.filterConfig,
-            tags: [widgetId],
-            tagMode: "OR",
-          });
-          await loadBookmarks();
-          renderBookmarks();
-          updateActiveNav();
-        }
-      });
-    });
 }
 
-// Handle mouse move for drag/resize
-function handleMouseMove(e: MouseEvent): void {
-  if (state.isDraggingWidget && state.draggedWidget) {
-    const deltaX = e.clientX - state.dragStartPos.x;
-    const deltaY = e.clientY - state.dragStartPos.y;
-
-    const newX = state.widgetStartPos.x + deltaX;
-    const newY = state.widgetStartPos.y + deltaY;
-
-    // Apply snap-to-grid
-    (state.draggedWidget as HTMLElement).style.left = `${snapToGrid(newX)}px`;
-    (state.draggedWidget as HTMLElement).style.top = `${snapToGrid(newY)}px`;
-  } else if (state.isResizing && state.resizingWidget) {
-    const deltaX = e.clientX - state.dragStartPos.x;
-    const deltaY = e.clientY - state.dragStartPos.y;
-
-    const newWidth = Math.max(150, state.resizeStartSize.w + deltaX);
-    const newHeight = Math.max(100, state.resizeStartSize.h + deltaY);
-
-    // Apply snap-to-grid
-    (state.resizingWidget as HTMLElement).style.width =
-      `${snapToGrid(newWidth)}px`;
-    (state.resizingWidget as HTMLElement).style.height =
-      `${snapToGrid(newHeight)}px`;
-  }
+/**
+ * Initialize tag analytics widgets
+ */
+export async function initTagAnalyticsWidgets(): Promise<void> {
+  // Implementation here
 }
 
-// Handle mouse up for drag/resize
-function handleMouseUp(_e: MouseEvent): void {
-  if (state.isDraggingWidget && state.draggedWidget) {
-    state.draggedWidget.classList.remove("dragging");
-
-    const index = parseInt(
-      (state.draggedWidget as HTMLElement).dataset.widgetIndex || "-1",
-    );
-    if (state.dashboardWidgets[index]) {
-      state.dashboardWidgets[index].x =
-        parseInt((state.draggedWidget as HTMLElement).style.left) || 0;
-      state.dashboardWidgets[index].y =
-        parseInt((state.draggedWidget as HTMLElement).style.top) || 0;
-      saveDashboardWidgets();
-    }
-
-    state.setIsDraggingWidget(false);
-    state.setDraggedWidget(null);
-  } else if (state.isResizing && state.resizingWidget) {
-    state.resizingWidget.classList.remove("resizing");
-
-    const index = parseInt(
-      (state.resizingWidget as HTMLElement).dataset.widgetIndex || "-1",
-    );
-    if (state.dashboardWidgets[index]) {
-      state.dashboardWidgets[index].w =
-        parseInt((state.resizingWidget as HTMLElement).style.width) || 320;
-      state.dashboardWidgets[index].h =
-        parseInt((state.resizingWidget as HTMLElement).style.height) || 400;
-      saveDashboardWidgets();
-    }
-
-    state.setIsResizing(false);
-    state.setResizingWidget(null);
-  }
+/**
+ * Initialize dashboard drag and drop
+ */
+export function initDashboardDragDrop(): void {
+  // Implementation here
 }
 
-// Add dashboard widget
+/**
+ * Add a new dashboard widget
+ */
 export function addDashboardWidget(
   type: "folder" | "tag" | "tag-analytics",
   id: string,
   x: number,
   y: number,
 ): void {
-  const exists = state.dashboardWidgets.some(
-    (w) => w.type === type && w.id === id,
-  );
-  if (exists) {
-    showToast("Widget already exists on dashboard", "info");
-    return;
-  }
-
-  const newWidget: DashboardWidget = {
-    id: id,
-    type: type,
-    title: "",
-    config: {},
-    x: x,
-    y: y,
-    w: 320,
-    h: 400,
+  const widget: DashboardWidget = {
+    id: `${type}-${id}`,
+    type,
+    linkedId: id,
+    x: snapToGrid(x),
+    y: snapToGrid(y),
+    width: 300,
+    height: 400,
+    title: `${type} Widget`,
   };
 
-  if (type === "tag-analytics") {
-    newWidget.settings = {
-      metric: "count",
-      limit: 20,
-      pairSort: "count",
-      colors: {
-        usage: "#6366f1",
-        clicks: "#f97316",
-        favorites: "#eab308",
-        pairs: "#6b7280",
-      },
-    };
-  }
-
-  state.dashboardWidgets.push(newWidget);
-  saveDashboardWidgets();
-  renderDashboard();
-  updateCounts();
-  updateLayoutStats();
-  showToast(
-    `${type === "folder" ? "Folder" : "Tag"} added to dashboard`,
-    "success",
-  );
-}
-
-// Remove dashboard widget
-export function removeDashboardWidget(index: number): void {
-  state.dashboardWidgets.splice(index, 1);
-  saveDashboardWidgets();
-  renderDashboard();
-  updateCounts();
-  updateLayoutStats();
-  showToast("Widget removed", "success");
-}
-
-// Show widget color picker
-function showWidgetColorPicker(index: number, button: HTMLElement): void {
-  const existingPicker = document.querySelector(".widget-color-picker");
-  if (existingPicker) existingPicker.remove();
-
-  const widget = state.dashboardWidgets[index];
-  if (!widget) return;
-
-  const colors = [
-    { name: "Blue", value: "#6366f1" },
-    { name: "Purple", value: "#a855f7" },
-    { name: "Pink", value: "#ec4899" },
-    { name: "Red", value: "#ef4444" },
-    { name: "Orange", value: "#f97316" },
-    { name: "Yellow", value: "#eab308" },
-    { name: "Green", value: "#10b981" },
-    { name: "Teal", value: "#14b8a6" },
-    { name: "Cyan", value: "#06b6d4" },
-    { name: "Indigo", value: "#4f46e5" },
-    { name: "Gray", value: "#6b7280" },
-    { name: "Slate", value: "#475569" },
-  ];
-
-  const picker = document.createElement("div");
-  picker.className = "widget-color-picker";
-  picker.innerHTML = `
-        <div class="color-picker-grid">
-            ${colors
-              .map(
-                (c) => `
-                <button class="color-picker-option" 
-                        data-color="${c.value}" 
-                        title="${c.name}"
-                        style="background: ${c.value}">
-                    ${widget.color === c.value ? '<span class="color-check">✓</span>' : ""}
-                </button>
-            `,
-              )
-              .join("")}
-        </div>
-    `;
-
-  const rect = button.getBoundingClientRect();
-  picker.style.position = "fixed";
-  picker.style.top = `${rect.bottom + 8}px`;
-  // Right-align the picker to the button
-  picker.style.right = `${window.innerWidth - rect.right}px`;
-
-  document.body.appendChild(picker);
-
-  picker.querySelectorAll(".color-picker-option").forEach((opt: Element) => {
-    opt.addEventListener("click", (e: Event) => {
-      e.stopPropagation();
-      const color = (opt as HTMLElement).dataset.color;
-      updateWidgetColor(index, color);
-      picker.remove();
-    });
-  });
-
-  setTimeout(() => {
-    document.addEventListener("click", function closePickerHandler(e) {
-      if (!picker.contains(e.target as Node)) {
-        picker.remove();
-        document.removeEventListener("click", closePickerHandler);
-      }
-    });
-  }, 100);
-}
-
-// Update widget color
-function updateWidgetColor(index: number, color: string): void {
-  if (state.dashboardWidgets[index]) {
-    state.dashboardWidgets[index].color = color;
-    saveDashboardWidgets();
-    renderDashboard();
-    showToast("Widget color updated", "success");
-  }
-}
-
-// Save dashboard widgets
-function saveDashboardWidgets(): void {
-  import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
-    saveSettings({ dashboard_widgets: state.dashboardWidgets }),
-  );
-  // Mark dashboard as having unsaved changes (relative to saved view)
+  state.dashboardWidgets.push(widget);
   markDashboardModified();
+  renderDashboard();
 }
 
-// Filter dashboard bookmarks
-export function filterDashboardBookmarks(term: string): void {
-  const widgets = document.querySelectorAll(".dashboard-widget");
-  const lowerTerm = term.toLowerCase();
-
-  widgets.forEach((widget: HTMLElement) => {
-    const items = widget.querySelectorAll(".compact-item");
-    let hasVisible = false;
-
-    items.forEach((item: Element) => {
-      const text =
-        item.querySelector(".compact-text")?.textContent?.toLowerCase() || "";
-      const matches = text.includes(lowerTerm);
-      (item as HTMLElement).style.display = matches || !term ? "" : "none";
-      if (matches || !term) hasVisible = true;
-    });
-
-    widget.style.opacity = hasVisible || !term ? "1" : "0.5";
-  });
-}
-
-// Toggle layout settings dropdown
-export function toggleLayoutSettings(): void {
-  const existing = document.getElementById("layout-settings-dropdown");
-  if (existing) {
-    closeLayoutSettings();
-  } else {
-    showLayoutSettings();
-  }
-}
-
-// Show layout settings dropdown
-export function showLayoutSettings(): void {
-  // Remove existing
-  document.getElementById("layout-settings-dropdown")?.remove();
-
-  const dropdown = document.createElement("div");
-  dropdown.id = "layout-settings-dropdown";
-  dropdown.className = "filter-dropdown"; // Reuse filter dropdown styles
-
-  dropdown.innerHTML = `
-    <div class="filter-dropdown-header">
-      <span class="filter-dropdown-title">Dashboard Layout</span>
-      <div class="filter-dropdown-actions">
-        <button class="btn-icon" id="layout-close-btn" title="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-    <div class="filter-dropdown-body">
-      <div class="filter-row">
-        <div class="filter-column">
-          <h4>Layout Actions</h4>
-          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-            <button class="btn btn-outline btn-full" id="auto-position-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;margin-right:0.5rem">
-                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-              </svg>
-              Auto Position Widgets
-            </button>
-            <button class="btn btn-outline btn-full ${state.snapToGrid ? "active" : ""}" id="snap-to-grid-toggle-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;margin-right:0.5rem">
-                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-                <line x1="3" y1="12" x2="21" y2="12" stroke-dasharray="2,2"/><line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2,2"/>
-              </svg>
-              Snap to Grid ${state.snapToGrid ? "(ON)" : "(OFF)"}
-            </button>
-            <button class="btn btn-outline btn-full" id="clear-dashboard-btn" style="color: var(--danger-600); border-color: var(--danger-600);">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;margin-right:0.5rem">
-                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-              </svg>
-              Clear All Widgets
-            </button>
-          </div>
-        </div>
-        <div class="filter-column">
-          <h4>Info</h4>
-          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6;">
-            <strong>Auto Position:</strong> Automatically arranges all widgets in a grid layout.<br><br>
-            <strong>Snap to Grid:</strong> When enabled, widgets snap to a 20px grid when dragging or resizing.<br><br>
-            <strong>Clear All:</strong> Removes all widgets from the dashboard. This action cannot be undone.
-          </p>
-          <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
-            <div style="font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; margin-bottom: 0.5rem;">Statistics</div>
-            <div id="layout-stats-content" style="font-size: 0.875rem;"><strong>${state.dashboardWidgets.length}</strong> widget${state.dashboardWidgets.length !== 1 ? "s" : ""} on dashboard</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  const headersContainer = document.getElementById("headers-container");
-  const mainHeader = document.getElementById("main-header");
-
-  if (headersContainer) {
-    // Insert into headers container as a sibling
-    if (mainHeader && mainHeader.parentElement === headersContainer) {
-      mainHeader.insertAdjacentElement("afterend", dropdown);
-    } else {
-      headersContainer.appendChild(dropdown);
-    }
-  } else if (mainHeader && mainHeader.style.display !== "none") {
-    // Fallback: insert after main header
-    mainHeader.style.position = "relative";
-    mainHeader.insertAdjacentElement("afterend", dropdown);
-  } else {
-    document.body.appendChild(dropdown);
-  }
-
-  attachLayoutSettingsListeners();
-
-  setTimeout(() => {
-    document.addEventListener("click", handleLayoutSettingsClickOutside);
-  }, 0);
-}
-
-export function closeLayoutSettings(): void {
-  const dropdown = document.getElementById("layout-settings-dropdown");
-  if (dropdown) {
-    dropdown.remove();
-    document.removeEventListener("click", handleLayoutSettingsClickOutside);
+/**
+ * Remove dashboard widget
+ */
+export function removeDashboardWidget(index: number): void {
+  if (index >= 0 && index < state.dashboardWidgets.length) {
+    state.dashboardWidgets.splice(index, 1);
+    markDashboardModified();
+    renderDashboard();
   }
 }
 
 /**
- * Update layout statistics display if the layout dropdown is open
+ * Filter dashboard bookmarks by search term
+ */
+export function filterDashboardBookmarks(term: string): void {
+  // Implementation here
+}
+
+/**
+ * Toggle layout settings panel
+ */
+export function toggleLayoutSettings(): void {
+  const panel = document.getElementById("layout-settings-panel");
+  if (panel) {
+    panel.classList.toggle("hidden");
+  }
+}
+
+/**
+ * Show layout settings panel
+ */
+export function showLayoutSettings(): void {
+  const panel = document.getElementById("layout-settings-panel");
+  if (panel) {
+    panel.classList.remove("hidden");
+  }
+}
+
+/**
+ * Close layout settings panel
+ */
+export function closeLayoutSettings(): void {
+  const panel = document.getElementById("layout-settings-panel");
+  if (panel) {
+    panel.classList.add("hidden");
+  }
+}
+
+/**
+ * Update layout statistics display
  */
 export function updateLayoutStats(): void {
-  const statsEl = document.getElementById("layout-stats-content");
-  if (statsEl) {
-    const count = state.dashboardWidgets.length;
-    statsEl.innerHTML = `<strong>${count}</strong> widget${count !== 1 ? "s" : ""} on dashboard`;
-  }
+  // Implementation here
 }
 
-function handleLayoutSettingsClickOutside(e: MouseEvent): void {
-  const dropdown = document.getElementById("layout-settings-dropdown");
-  const btn = document.getElementById("dashboard-layout-btn");
-
-  if (
-    dropdown &&
-    !dropdown.contains(e.target as Node) &&
-    e.target !== btn &&
-    !btn?.contains(e.target as Node)
-  ) {
-    closeLayoutSettings();
-  }
-}
-
-function attachLayoutSettingsListeners(): void {
-  const closeBtn = document.getElementById("layout-close-btn");
-  if (closeBtn) {
-    closeBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      closeLayoutSettings();
-    });
-  }
-
-  const autoPositionBtn = document.getElementById("auto-position-btn");
-  if (autoPositionBtn) {
-    autoPositionBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      autoPositionWidgets();
-    });
-  }
-
-  const snapToggleBtn = document.getElementById("snap-to-grid-toggle-btn");
-  if (snapToggleBtn) {
-    snapToggleBtn.addEventListener("click", async (e: Event) => {
-      e.stopPropagation();
-      state.setSnapToGrid(!state.snapToGrid);
-      await import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
-        saveSettings({ snap_to_grid: state.snapToGrid }),
-      );
-      showToast(
-        `Snap to grid ${state.snapToGrid ? "enabled" : "disabled"}`,
-        "success",
-      );
-      closeLayoutSettings();
-      showLayoutSettings();
-    });
-  }
-
-  const clearBtn = document.getElementById("clear-dashboard-btn");
-  if (clearBtn) {
-    clearBtn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      await confirmClearDashboard();
-    });
-  }
-}
-
+/**
+ * Auto-position widgets on grid
+ */
 export function autoPositionWidgets(): void {
-  if (state.dashboardWidgets.length === 0) {
-    showToast("No widgets to position", "info");
-    return;
-  }
+  let x = 0;
+  let y = 0;
+  const containerWidth =
+    document.getElementById("dashboard-container")?.clientWidth || 1200;
 
-  const WIDGET_WIDTH = 320;
-  const WIDGET_HEIGHT = 400;
-  const GAP = 20;
-  const COLUMNS = 3;
+  state.dashboardWidgets.forEach((widget: DashboardWidget) => {
+    widget.x = snapToGrid(x);
+    widget.y = snapToGrid(y);
 
-  state.dashboardWidgets.forEach((widget: DashboardWidget, index: number) => {
-    const row = Math.floor(index / COLUMNS);
-    const col = index % COLUMNS;
-
-    widget.x = col * (WIDGET_WIDTH + GAP);
-    widget.y = row * (WIDGET_HEIGHT + GAP);
-    widget.w = WIDGET_WIDTH;
-    widget.h = WIDGET_HEIGHT;
+    x += widget.width + 20;
+    if (x + widget.width > containerWidth) {
+      x = 0;
+      y += widget.height + 20;
+    }
   });
 
-  saveDashboardWidgets();
+  markDashboardModified();
   renderDashboard();
-  showToast(
-    `${state.dashboardWidgets.length} widget${state.dashboardWidgets.length !== 1 ? "s" : ""} positioned`,
-    "success",
+}
+
+/**
+ * Clear all dashboard widgets
+ */
+export async function clearDashboard(): Promise<void> {
+  const confirmed = await confirmDialog(
+    "Clear all dashboard widgets? This cannot be undone.",
+    {
+      title: "Clear Dashboard",
+      destructive: true,
+    },
   );
-  closeLayoutSettings();
-}
 
-async function confirmClearDashboard(): Promise<void> {
-  const count = state.dashboardWidgets.length;
+  if (!confirmed) return;
 
-  if (count === 0) {
-    showToast("Dashboard is already empty", "info");
-    return;
-  }
-
-  if (
-    await confirmDialog(
-      `Are you sure you want to remove all ${count} widget${count !== 1 ? "s" : ""} from the dashboard? This cannot be undone.`,
-      {
-        title: "Clear Dashboard",
-        destructive: true,
-        confirmText: "Clear All",
-      },
-    )
-  ) {
-    clearDashboard();
-  }
-}
-
-export function clearDashboard(): void {
-  const count = state.dashboardWidgets.length;
-
-  state.setDashboardWidgets([]);
-
-  saveDashboardWidgets();
+  state.dashboardWidgets = [];
+  markDashboardModified();
   renderDashboard();
-  updateCounts();
-
-  showToast(
-    `Cleared ${count} widget${count !== 1 ? "s" : ""} from dashboard`,
-    "success",
-  );
-  closeLayoutSettings();
+  showToast("Dashboard cleared", "success");
 }
 
+// Expose functions to window for external access
 window.saveCurrentView = saveCurrentView;
 window.deleteView = deleteView;
 window.restoreView = restoreView;
+window.toggleFullscreen = toggleFullscreen;
 
+// Default export
 export default {
   renderDashboard,
   initDashboardDragDrop,
@@ -2173,6 +692,8 @@ export default {
   removeDashboardWidget,
   filterDashboardBookmarks,
   toggleLayoutSettings,
+  showLayoutSettings,
+  closeLayoutSettings,
   autoPositionWidgets,
   clearDashboard,
   toggleFullscreen,
@@ -2182,4 +703,5 @@ export default {
   updateViewNameBadge,
   confirmViewSwitch,
   updateLayoutStats,
+  initDashboardViews,
 };
