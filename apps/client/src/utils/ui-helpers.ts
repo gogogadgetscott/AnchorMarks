@@ -801,14 +801,7 @@ export async function updateCounts(): Promise<void> {
     updateBadge(favCountEl, safeCounts.favorites);
     updateBadge(recentCountEl, safeCounts.recent);
     updateBadge(archivedCountEl, safeCounts.archived);
-    // For most-used: use the local rendered count when on that view (always accurate,
-    // avoids depending on whether the server has restarted to include the most_used field).
-    // Fall back to the server count on other views.
-    const mostUsedBadgeCount =
-      state.currentView === "most-used"
-        ? state.renderedBookmarks.length
-        : safeCounts.most_used;
-    updateBadge(mostUsedCountEl, mostUsedBadgeCount);
+    updateBadge(mostUsedCountEl, safeCounts.most_used);
 
     // Calculate dashboard count from widgets
     // Always calculate dashboard count regardless of current view

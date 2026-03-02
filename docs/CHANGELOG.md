@@ -11,6 +11,10 @@ All notable changes to AnchorMarks are documented here.
 - Persist auth rate-limit counters in SQLite so limits survive server restarts
 - Run `npm audit` during Docker production builds to catch vulnerable dependencies
 
+### Fixed
+
+- Most-used badge count now always reflects the true server total (bookmarks with at least one click) instead of switching to the rendered page count when on the most-used view, which was capped at the 50-item page size
+
 ### Changed
 
 - Moved project documentation to `docs/` directory
