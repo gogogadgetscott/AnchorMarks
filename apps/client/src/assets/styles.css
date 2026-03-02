@@ -494,7 +494,9 @@ textarea {
   cursor: pointer;
   position: relative;
   text-decoration: none;
-  transition: color var(--transition-fast), transform var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .feature[data-tooltip]:hover {
@@ -613,10 +615,18 @@ textarea {
   transition: background var(--transition-fast);
 }
 
-.strength-segment.weak   { background: #ef4444; }
-.strength-segment.fair   { background: #f97316; }
-.strength-segment.good   { background: #eab308; }
-.strength-segment.strong { background: #22c55e; }
+.strength-segment.weak {
+  background: #ef4444;
+}
+.strength-segment.fair {
+  background: #f97316;
+}
+.strength-segment.good {
+  background: #eab308;
+}
+.strength-segment.strong {
+  background: #22c55e;
+}
 
 .strength-label {
   font-size: 0.7rem;
@@ -625,10 +635,18 @@ textarea {
   text-align: right;
 }
 
-.strength-label.weak   { color: #ef4444; }
-.strength-label.fair   { color: #f97316; }
-.strength-label.good   { color: #eab308; }
-.strength-label.strong { color: #22c55e; }
+.strength-label.weak {
+  color: #ef4444;
+}
+.strength-label.fair {
+  color: #f97316;
+}
+.strength-label.good {
+  color: #eab308;
+}
+.strength-label.strong {
+  color: #22c55e;
+}
 
 /* Confirm password mismatch error */
 .confirm-password-error {

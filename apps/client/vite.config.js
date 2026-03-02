@@ -15,6 +15,12 @@ const BACKEND_PORT = process.env.PORT || 3000;
 // Project root directory (one level up from apps/client)
 const projectRoot = path.resolve(__dirname, "..", "..");
 
+// Expose app version from root package.json for use in index.html via %VITE_APP_VERSION%
+const { version: APP_VERSION } = JSON.parse(
+  fs.readFileSync(path.resolve(projectRoot, "package.json"), "utf-8"),
+);
+process.env.VITE_APP_VERSION = APP_VERSION;
+
 // Detect if SSL is enabled by checking if SSL_KEY and SSL_CERT are set AND files exist
 // This matches the Express server fallback behavior in apps/server/index.js
 // Resolve relative paths from project root, not from Vite's client directory
@@ -77,12 +83,43 @@ const httpRedirectPlugin = () => ({
   },
 });
 
+// Vite plugin to inject APP_VERSION into public/sw.js
+const swVersionPlugin = () => ({
+  name: "sw-version",
+  // Dev: intercept /sw.js requests and replace the version placeholder
+  configureServer(server) {
+    server.middlewares.use((req, res, next) => {
+      if (req.url !== "/sw.js") return next();
+      const src = fs.readFileSync(
+        path.resolve(__dirname, "public", "sw.js"),
+        "utf-8",
+      );
+      const processed = src.replace(
+        /anchormarks-v[\d.]+/g,
+        `anchormarks-v${APP_VERSION}`,
+      );
+      res.setHeader("Content-Type", "application/javascript");
+      res.end(processed);
+    });
+  },
+  // Build: rewrite the copied sw.js in dist after Vite copies public/
+  closeBundle() {
+    const swDist = path.resolve(__dirname, "dist", "sw.js");
+    if (!fs.existsSync(swDist)) return;
+    const src = fs.readFileSync(swDist, "utf-8");
+    fs.writeFileSync(
+      swDist,
+      src.replace(/anchormarks-v[\d.]+/g, `anchormarks-v${APP_VERSION}`),
+    );
+  },
+});
+
 // https://vitejs.dev/config/
 export default defineConfig({
   root: __dirname,
   base: "/",
   publicDir: "public",
-  plugins: [httpRedirectPlugin()],
+  plugins: [httpRedirectPlugin(), swVersionPlugin()],
   build: {
     outDir: path.resolve(__dirname, "dist"),
     emptyOutDir: true,

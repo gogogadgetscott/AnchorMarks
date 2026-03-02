@@ -1090,7 +1090,6 @@ export function updateBulkUI(): void {
       count.textContent = `${state.selectedBookmarks.size} selected`;
     });
   }
-
 }
 
 export default {

@@ -4,7 +4,7 @@ All notable changes to AnchorMarks are documented here.
 
 ---
 
-## [Unreleased]
+## [1.0.6] - 2026-03-02
 
 ### Added
 

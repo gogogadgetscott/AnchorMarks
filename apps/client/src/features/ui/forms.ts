@@ -62,9 +62,14 @@ function initAuthForms(): void {
   registerPasswordEl?.addEventListener("input", checkMatch);
 
   // Forgot password
-  document.getElementById("forgot-password-btn")?.addEventListener("click", () => {
-    showToast("Password reset is not yet available. Contact your admin.", "info");
-  });
+  document
+    .getElementById("forgot-password-btn")
+    ?.addEventListener("click", () => {
+      showToast(
+        "Password reset is not yet available. Contact your admin.",
+        "info",
+      );
+    });
 
   // Login form
   document

@@ -41,7 +41,10 @@ export function loadComponents(): void {
 
   // Sidebar
   const sidebarTemp = document.createElement("div");
-  sidebarTemp.innerHTML = sidebar;
+  sidebarTemp.innerHTML = sidebar.replace(
+    "%VITE_APP_VERSION%",
+    import.meta.env.VITE_APP_VERSION ?? "",
+  );
   if (sidebarTemp.firstElementChild) {
     mainApp.appendChild(sidebarTemp.firstElementChild);
   }
