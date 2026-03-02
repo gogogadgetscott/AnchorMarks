@@ -153,7 +153,7 @@ export function applyFaviconSetting(): void {
   const toggle = document.getElementById(
     "hide-favicons-toggle",
   ) as HTMLInputElement;
-  if (toggle) toggle.checked = state.hideFavicons;
+  if (toggle) toggle.checked = !state.hideFavicons;
 
   const richToggle = document.getElementById(
     "rich-link-previews-toggle",
@@ -171,9 +171,9 @@ export function toggleFavicons(): void {
   const toggle = document.getElementById(
     "hide-favicons-toggle",
   ) as HTMLInputElement;
-  const newValue = toggle?.checked || false;
-  state.setHideFavicons(newValue);
-  saveSettings({ hide_favicons: newValue });
+  const enabled = toggle?.checked || false;
+  state.setHideFavicons(!enabled);
+  saveSettings({ hide_favicons: !enabled });
 }
 
 // Toggle AI suggestions

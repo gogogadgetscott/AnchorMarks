@@ -452,7 +452,7 @@ function attachSettingsTabListeners(): void {
   const faviconToggleInit = document.getElementById(
     "hide-favicons-toggle",
   ) as HTMLInputElement | null;
-  if (faviconToggleInit) faviconToggleInit.checked = state.hideFavicons;
+  if (faviconToggleInit) faviconToggleInit.checked = !state.hideFavicons;
 
   const richPreviewToggleInit = document.getElementById(
     "rich-link-previews-toggle",
@@ -472,11 +472,11 @@ function attachSettingsTabListeners(): void {
   if (faviconToggle) {
     faviconToggle.addEventListener("change", async (e) => {
       const { saveSettings } = await import("@features/bookmarks/settings.ts");
-      const hideFavicons = (e.target as HTMLInputElement).checked;
-      await saveSettings({ hide_favicons: hideFavicons });
+      const enabled = (e.target as HTMLInputElement).checked;
+      await saveSettings({ hide_favicons: !enabled });
 
       // Apply the change immediately
-      state.setHideFavicons(hideFavicons);
+      state.setHideFavicons(!enabled);
 
       const { renderBookmarks } =
         await import("@features/bookmarks/bookmarks.ts");
