@@ -2,7 +2,6 @@ import { Header, Omnibar, Icon } from "../components/index.ts";
 import authScreen from "./fragments/auth-screen.html?raw";
 import sidebar from "./fragments/sidebar.html?raw";
 import mainContent from "./fragments/main-content.html?raw";
-import bulkBar from "./fragments/bulk-bar.html?raw";
 import emptyState from "./fragments/empty-state.html?raw";
 import bookmarkModal from "./fragments/bookmark-modal.html?raw";
 import tagModal from "./fragments/tag-modal.html?raw";
@@ -72,12 +71,6 @@ export function loadComponents(): void {
       import("@/App.ts").then(({ attachViewToggleListeners }) =>
         attachViewToggleListeners(),
       );
-    }
-
-    // Inject Bulk Bar
-    const bulkBarContainer = mainContentEl.querySelector("#bulk-bar-container");
-    if (bulkBarContainer) {
-      bulkBarContainer.innerHTML = bulkBar;
     }
 
     // Inject Empty State

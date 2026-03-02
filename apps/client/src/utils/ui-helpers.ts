@@ -106,9 +106,6 @@ export const dom: {
   searchInput: HTMLInputElement | null;
   viewTitle: HTMLElement | null;
   viewCount: HTMLElement | null;
-  bulkBar: HTMLElement | null;
-  bulkMoveSelect: HTMLSelectElement | null;
-  bulkCount: HTMLElement | null;
   bookmarkUrlInput: HTMLInputElement | null;
   bookmarkTagsInput: HTMLInputElement | null;
   tagSuggestions: HTMLElement | null;
@@ -128,9 +125,6 @@ export const dom: {
   searchInput: null,
   viewTitle: null,
   viewCount: null,
-  bulkBar: null,
-  bulkMoveSelect: null,
-  bulkCount: null,
   bookmarkUrlInput: null,
   bookmarkTagsInput: null,
   tagSuggestions: null,
@@ -155,11 +149,6 @@ export function initDom(): void {
   dom.searchInput = document.getElementById("search-input") as HTMLInputElement;
   dom.viewTitle = document.getElementById("view-title");
   dom.viewCount = document.getElementById("view-count");
-  dom.bulkBar = document.getElementById("bulk-bar");
-  dom.bulkMoveSelect = document.getElementById(
-    "bulk-move-select",
-  ) as HTMLSelectElement;
-  dom.bulkCount = document.getElementById("bulk-count");
   dom.bookmarkUrlInput = document.getElementById(
     "bookmark-url",
   ) as HTMLInputElement;
@@ -1094,10 +1083,6 @@ export function updateBulkUI(): void {
     });
   }
 
-  // Hide old bulk bar if it exists
-  if (dom.bulkBar) {
-    dom.bulkBar.classList.add("hidden");
-  }
 }
 
 export default {

@@ -19,6 +19,53 @@ export function initFormListeners(): void {
  * Handle Login and Registration forms
  */
 function initAuthForms(): void {
+  // Password show/hide toggles
+  document.querySelectorAll(".password-toggle").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const target = (btn as HTMLElement).dataset.target;
+      const input = document.getElementById(target!) as HTMLInputElement;
+      if (!input) return;
+      const isHidden = input.type === "password";
+      input.type = isHidden ? "text" : "password";
+      btn.querySelector(".eye-icon")?.classList.toggle("hidden", isHidden);
+      btn.querySelector(".eye-off-icon")?.classList.toggle("hidden", !isHidden);
+      (btn as HTMLButtonElement).setAttribute(
+        "aria-label",
+        isHidden ? "Hide password" : "Show password",
+      );
+    });
+  });
+
+  // Password strength indicator
+  const registerPasswordEl = document.getElementById(
+    "register-password",
+  ) as HTMLInputElement;
+  registerPasswordEl?.addEventListener("input", () => {
+    updatePasswordStrength(registerPasswordEl.value);
+  });
+
+  // Confirm password match
+  const confirmEl = document.getElementById(
+    "register-confirm-password",
+  ) as HTMLInputElement;
+  const errorEl = document.getElementById("confirm-password-error");
+  const checkMatch = () => {
+    if (!confirmEl.value) {
+      errorEl?.classList.add("hidden");
+      return;
+    }
+    const matches = confirmEl.value === registerPasswordEl?.value;
+    errorEl?.classList.toggle("hidden", matches);
+    confirmEl.setCustomValidity(matches ? "" : "Passwords do not match");
+  };
+  confirmEl?.addEventListener("input", checkMatch);
+  registerPasswordEl?.addEventListener("input", checkMatch);
+
+  // Forgot password
+  document.getElementById("forgot-password-btn")?.addEventListener("click", () => {
+    showToast("Password reset is not yet available. Contact your admin.", "info");
+  });
+
   // Login form
   document
     .getElementById("login-form")
@@ -55,8 +102,16 @@ function initAuthForms(): void {
       const passwordEl = document.getElementById(
         "register-password",
       ) as HTMLInputElement;
+      const confirmPasswordEl = document.getElementById(
+        "register-confirm-password",
+      ) as HTMLInputElement;
       const email = emailEl?.value;
       const password = passwordEl?.value;
+
+      if (confirmPasswordEl?.value !== password) {
+        showToast("Passwords do not match", "error");
+        return;
+      }
 
       const { register } = await import("@features/auth/auth.ts");
       if (await register(email, password)) {
@@ -67,6 +122,39 @@ function initAuthForms(): void {
         await initializeApp();
       }
     });
+}
+
+function updatePasswordStrength(password: string): void {
+  const strengthEl = document.getElementById("register-password-strength");
+  if (!strengthEl) return;
+
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+  score = Math.min(score, 4);
+
+  const labels = ["", "Weak", "Fair", "Good", "Strong"];
+  const levels = ["", "weak", "fair", "good", "strong"];
+
+  const segments = strengthEl.querySelectorAll(".strength-segment");
+  const label = strengthEl.querySelector(".strength-label");
+
+  segments.forEach((seg, i) => {
+    seg.className = "strength-segment";
+    if (password.length > 0 && i < score) {
+      seg.classList.add(levels[score]);
+    }
+  });
+
+  if (label) {
+    label.textContent = password.length > 0 ? labels[score] : "";
+    label.className = `strength-label ${password.length > 0 ? levels[score] : ""}`;
+  }
+
+  strengthEl.classList.toggle("hidden", password.length === 0);
 }
 
 /**

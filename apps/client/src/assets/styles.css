@@ -398,8 +398,8 @@ textarea {
   flex: 1;
   padding: 0.5rem 1rem;
   border-radius: var(--radius-md);
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-weight: 600;
+  color: var(--text-tertiary);
   transition: all var(--transition-fast);
 }
 
@@ -411,6 +411,7 @@ textarea {
   background: var(--bg-primary);
   color: var(--text-primary);
   box-shadow: var(--shadow-sm);
+  font-weight: 700;
 }
 
 .auth-form {
@@ -486,6 +487,158 @@ textarea {
   width: 20px;
   height: 20px;
   color: var(--primary-500);
+}
+
+/* Feature teaser tooltip */
+.feature[data-tooltip] {
+  cursor: pointer;
+  position: relative;
+  text-decoration: none;
+  transition: color var(--transition-fast), transform var(--transition-fast);
+}
+
+.feature[data-tooltip]:hover {
+  color: var(--text-secondary);
+  transform: translateY(-2px);
+}
+
+.feature[data-tooltip]:hover svg {
+  color: var(--primary-600, #4f46e5);
+}
+
+.feature[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-inverse, #1e293b);
+  color: var(--text-inverse, #f8fafc);
+  font-size: 0.7rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  z-index: 10;
+}
+
+.feature[data-tooltip]:hover::after {
+  opacity: 1;
+}
+
+/* Form label row (label + forgot password link) */
+.form-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.forgot-password-link {
+  font-size: 0.75rem;
+  color: var(--primary-500);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-weight: 500;
+  transition: color var(--transition-fast);
+}
+
+.forgot-password-link:hover {
+  color: var(--primary-600, #4f46e5);
+  text-decoration: underline;
+}
+
+/* Password input with toggle */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding-right: 2.75rem !important;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  transition: color var(--transition-fast);
+  line-height: 0;
+}
+
+.password-toggle:hover {
+  color: var(--text-secondary);
+}
+
+.password-toggle svg {
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+}
+
+/* Password strength indicator */
+.password-strength {
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.password-strength.hidden {
+  display: none;
+}
+
+.strength-bar {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+}
+
+.strength-segment {
+  height: 4px;
+  flex: 1;
+  border-radius: 2px;
+  background: var(--border-color);
+  transition: background var(--transition-fast);
+}
+
+.strength-segment.weak   { background: #ef4444; }
+.strength-segment.fair   { background: #f97316; }
+.strength-segment.good   { background: #eab308; }
+.strength-segment.strong { background: #22c55e; }
+
+.strength-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  min-width: 3rem;
+  text-align: right;
+}
+
+.strength-label.weak   { color: #ef4444; }
+.strength-label.fair   { color: #f97316; }
+.strength-label.good   { color: #eab308; }
+.strength-label.strong { color: #22c55e; }
+
+/* Confirm password mismatch error */
+.confirm-password-error {
+  font-size: 0.75rem;
+  color: #ef4444;
+  margin-top: 0.2rem;
+}
+
+.confirm-password-error.hidden {
+  display: none;
 }
 
 @media (max-width: 480px) {
