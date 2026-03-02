@@ -8,7 +8,8 @@ WORKDIR /client
 COPY apps/client/package*.json ./
 RUN npm install --no-fund
 
-# Build frontend
+# Build frontend (root package.json is needed to read the app version)
+COPY package.json /package.json
 COPY apps/client .
 RUN npx vite build && \
     npx esbuild src/shared/folders-utils-browser.ts \
