@@ -205,6 +205,12 @@
                   >
                 </li>
                 <li>
+                  <a href="#ai-provider"
+                    ><span class="nav-icon" aria-hidden="true">🤖</span
+                    ><span class="nav-text">AI Tag Suggestions</span></a
+                  >
+                </li>
+                <li>
                   <a href="#security-auth"
                     ><span class="nav-icon" aria-hidden="true">🔐</span
                     ><span class="nav-text">Security &amp; Auth</span></a
@@ -1983,6 +1989,103 @@
                 verify restores
               </li>
             </ul>
+
+            <h3 class="help-anchor" id="ai-provider">
+              <span class="section-icon" aria-hidden="true">🤖</span>AI Tag
+              Suggestions
+            </h3>
+            <p class="help-at-a-glance">
+              <span class="callout-icon" aria-hidden="true">👁️</span
+              ><strong>At a glance:</strong> AnchorMarks can suggest tags for
+              your bookmarks using an AI provider. The feature is
+              <strong>disabled by default</strong> and requires a few
+              environment variables to enable.
+            </p>
+
+            <h4>Supported Providers</h4>
+            <ul>
+              <li>
+                <strong><code>none</code> (default):</strong> AI tag
+                suggestions are disabled. The ✨ AI Suggest button will not
+                appear.
+              </li>
+              <li>
+                <strong><code>openai</code>:</strong> Uses the OpenAI Chat
+                Completions API (or any OpenAI-compatible endpoint). Requires
+                an API key. Default model: <code>gpt-4o-mini</code>.
+              </li>
+              <li>
+                <strong><code>ollama</code>:</strong> Uses a local
+                <a href="https://ollama.com" target="_blank" rel="noopener">Ollama</a>
+                instance — free and private. No API key needed. Default model:
+                <code>llama3.1</code>. Default URL:
+                <code>http://localhost:11434/api/generate</code>.
+              </li>
+            </ul>
+
+            <h4>Configuration (.env)</h4>
+            <p>Set the following variables in your <code>.env</code> file:</p>
+            <div class="code-block">
+              # Choose a provider: none | openai | ollama<br />
+              AI_PROVIDER=openai<br />
+              <br />
+              # Required for openai; not needed for ollama<br />
+              AI_API_KEY=sk-...<br />
+              <br />
+              # Optional: override the model<br />
+              # AI_MODEL=gpt-4o-mini  (openai default)<br />
+              # AI_MODEL=llama3.1     (ollama default)<br />
+              <br />
+              # Optional: override the API endpoint<br />
+              # AI_API_URL=https://api.openai.com/v1/chat/completions (openai default)<br />
+              # AI_API_URL=http://localhost:11434/api/generate        (ollama default)
+            </div>
+
+            <h4>OpenAI-Compatible Endpoints</h4>
+            <p>
+              Set <code>AI_PROVIDER=openai</code> and override
+              <code>AI_API_URL</code> to use any OpenAI-compatible server such
+              as <strong>LM Studio</strong>, <strong>Groq</strong>, or a
+              self-hosted vLLM instance:
+            </p>
+            <div class="code-block">
+              AI_PROVIDER=openai<br />
+              AI_API_KEY=your-key<br />
+              AI_MODEL=your-model-name<br />
+              AI_API_URL=https://api.groq.com/openai/v1/chat/completions
+            </div>
+
+            <h4>Ollama inside Docker</h4>
+            <p>
+              If AnchorMarks runs in Docker and Ollama runs on the host
+              machine, point <code>AI_API_URL</code> at the host:
+            </p>
+            <div class="code-block">
+              AI_PROVIDER=ollama<br />
+              AI_API_URL=http://host.docker.internal:11434/api/generate
+            </div>
+
+            <div class="tip-box">
+              <span class="callout-icon" aria-hidden="true">🔐</span
+              ><strong>Security:</strong> Treat <code>AI_API_KEY</code> like a
+              password. Keep it in <code>.env</code> (which is git-ignored) and
+              never commit it to source control.
+            </div>
+
+            <h4>How It Works</h4>
+            <p>
+              Once a provider is configured, a
+              <strong>✨ AI Suggest</strong> button appears in the Add/Edit
+              Bookmark modal. Click it to fetch tag suggestions for the
+              bookmark's URL. The server calls the configured provider and
+              returns up to 10 lowercase, hyphenated tags. Your existing tags
+              are sent as hints so the AI can prioritize tags you already use.
+            </p>
+            <p>
+              The underlying API endpoint is
+              <code>GET /api/tags/suggest-ai?url=&lt;url&gt;</code> and
+              requires a browser session or an API key.
+            </p>
 
             <h3 class="help-anchor" id="security-auth">
               <span class="section-icon" aria-hidden="true">🔐</span>Security

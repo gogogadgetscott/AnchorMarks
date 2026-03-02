@@ -124,6 +124,7 @@ start-prod: ## Start server in production mode (on host)
 stop: stop-all ## Alias for stop-all (stop dev processes)
 
 stop-all: ## Stop all running development processes
+	@$(MAKE) stop-docker
 	@echo "$(BLUE)Stopping development processes...$(NC)"
 	. $(ENV_FILE) 2>/dev/null || true; \
 	PORT=$$(printf '%s' "$${PORT:-3000}" | tr -d '\r'); \

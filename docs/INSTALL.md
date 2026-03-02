@@ -755,6 +755,67 @@ For more information, see:
 - [ROADMAP.md](ROADMAP.md) - Planned features
 - [PROGRESS.md](PROGRESS.md) - Recent work log
 
+### AI Tag Suggestions (Optional)
+
+AnchorMarks can use an AI provider to suggest tags when you add or edit a bookmark. This feature is **disabled by default** (`AI_PROVIDER=none`).
+
+#### Supported Providers
+
+| Provider | `AI_PROVIDER` | Requires `AI_API_KEY` | Default model |
+|----------|--------------|----------------------|---------------|
+| Disabled | `none` | — | — |
+| OpenAI (or compatible) | `openai` | Yes | `gpt-4o-mini` |
+| Ollama (local) | `ollama` | No | `llama3.1` |
+
+#### OpenAI Setup
+
+```bash
+AI_PROVIDER=openai
+AI_API_KEY=sk-...          # Your OpenAI API key
+# AI_MODEL=gpt-4o-mini    # Optional; this is the default
+```
+
+Treat `AI_API_KEY` like a password — never commit it to source control. Keep it in `.env` (which is git-ignored).
+
+#### Ollama Setup (local, free)
+
+1. [Install Ollama](https://ollama.com) and pull a model:
+
+   ```bash
+   ollama pull llama3.1
+   ```
+
+2. Set in `.env`:
+
+   ```bash
+   AI_PROVIDER=ollama
+   # AI_MODEL=llama3.1       # Optional; this is the default
+   # AI_API_URL=http://localhost:11434/api/generate  # Optional; this is the default
+   ```
+
+   When running inside Docker, change `AI_API_URL` to point to the host machine:
+
+   ```bash
+   AI_API_URL=http://host.docker.internal:11434/api/generate
+   ```
+
+#### OpenAI-Compatible Endpoints (LM Studio, Groq, etc.)
+
+Set `AI_PROVIDER=openai` and override `AI_API_URL` to point at any OpenAI-compatible server:
+
+```bash
+AI_PROVIDER=openai
+AI_API_KEY=your-key-here
+AI_MODEL=your-model-name
+AI_API_URL=https://api.groq.com/openai/v1/chat/completions
+```
+
+#### How It Works
+
+Once configured, a **✨ AI Suggest** button appears in the Add/Edit Bookmark modal. Click it to fetch tag suggestions for the bookmark's URL. The feature calls `GET /api/tags/suggest-ai` (browser-session or API key auth) and returns up to 10 lowercase, hyphenated tags ranked by relevance.
+
+---
+
 ### Note: Flexible user settings (settings_json)
 
 - The server will automatically add a `settings_json` column to the `user_settings` table at startup if it’s missing.
