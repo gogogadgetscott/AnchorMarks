@@ -3154,11 +3154,9 @@ body.tag-cloud-active .content-body {
   font-weight: 600;
   color: var(--text-primary);
   line-height: 1.4;
-  word-break: break-word;
-  line-clamp: 1;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bookmarks-list .bookmark-url {
@@ -3167,6 +3165,10 @@ body.tag-cloud-active .content-body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  font-weight: 450;
+  letter-spacing: 0.01em;
 }
 
 /* Full URL popup on hover (list view) */
@@ -3208,28 +3210,27 @@ body.tag-cloud-active .content-body {
 }
 
 .bookmarks-list .bookmark-description {
-  flex: 1 1 200px;
   display: block;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--text-secondary);
-  margin-top: 0;
-  margin-left: 1rem;
+  margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+  line-height: 1.4;
 }
 
 .bookmarks-list .bookmark-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.375rem;
-  margin-left: auto;
+  gap: 0.3rem;
+  margin-left: 0;
   overflow: hidden;
-  max-width: 45%;
+  max-width: 100%;
   flex-shrink: 1;
-  justify-content: flex-end;
-  padding: 0.25rem 0;
+  justify-content: flex-start;
+  padding: 0;
 }
 
 /* Stack URL and tags under the description in list view and normalize spacing */
@@ -3270,13 +3271,16 @@ body.tag-cloud-active .content-body {
 /* List view: use grid columns for consistent alignment */
 .bookmarks-list .bookmark-card {
   display: grid;
-  grid-template-columns: auto 40px 1fr 1fr auto;
-  gap: 0.5rem;
-  align-items: center;
+  grid-template-columns: 20px 36px 2fr 1.2fr auto;
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0;
 }
 
 .bookmarks-list .bookmark-select {
   grid-column: 1;
+  align-self: center;
 }
 
 .bookmarks-list .bookmark-favicon {
@@ -3284,24 +3288,61 @@ body.tag-cloud-active .content-body {
   width: 32px;
   height: 32px;
   flex-shrink: 0;
+  align-self: center;
 }
 
 .bookmarks-list .bookmark-title-tags {
   grid-column: 3;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 
 .bookmarks-list .bookmark-desc-url {
   grid-column: 4;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-top: 1px;
+}
+
+.bookmarks-list .bookmark-description.empty {
+  display: none;
 }
 
 .bookmarks-list .bookmark-actions {
   grid-column: 5;
+  /* Override base width: 0 / overflow: hidden so grid column always reserves space */
+  width: max-content;
+  overflow: visible;
+  flex-shrink: 0;
+  align-self: center;
 }
 
 .bookmarks-list .bookmark-card:hover .bookmark-actions {
   opacity: 1;
+}
+
+/* Compact action buttons in list view */
+.bookmarks-list .bookmark-action-btn {
+  flex: 0 0 auto;
+  padding: 0.3125rem 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.bookmarks-list .bookmark-action-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.bookmarks-list .bookmark-action-btn.primary span {
+  display: inline;
+}
+
+.bookmarks-list .bookmark-action-btn:not(.primary) span {
+  display: none;
 }
 
 /* Compact List View */
