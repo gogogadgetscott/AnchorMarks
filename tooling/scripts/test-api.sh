@@ -1,11 +1,41 @@
 #!/bin/bash
 
-API_BASE_URL="http://localhost:3000/api"
+# A simple script to test the API endpoints of the AnchorMarks server.
+# You can set the BASE_URL and API_TOKEN environment variables to customize 
+# the API endpoint and authentication
+# Example usage:
+# BASE_URL="http://localhost:3000/api" API_TOKEN="your_token_here" ./test-api.sh
+
+API_BASE_URL="${BASE_URL:-http://localhost:3000/api}"
+API_TOKEN="${API_TOKEN:-${TOKEN:-}}"
+
+# Do not print secrets if script uses xtrace
+set +x 2>/dev/null || true
+
+AUTH_HEADERS=()
+if [[ -n "$API_TOKEN" ]]; then
+  # Server supports API key in header and query param for API-key flows.
+  AUTH_HEADERS+=(-H "X-API-Key: $API_TOKEN" -H "Authorization: Bearer $API_TOKEN")
+fi
+
+api_curl() {
+  local method="$1"
+  local path="$2"
+  shift 2
+
+  local url
+  url="${BASE_URL}${path}"
+
+  curl -sS -X "$method" \
+    "${AUTH_HEADERS[@]}" \
+    "$@" \
+    "$url"
+}
 
 # Function to make a GET request
 function get_request() {
   local endpoint=$1
-  response=$(curl -s -w "%{http_code}" -o /dev/null "$API_BASE_URL/$endpoint")
+  response=$(api_curl GET "/$endpoint")
   echo "GET $endpoint: $response"
 }
 
@@ -13,7 +43,7 @@ function get_request() {
 function post_request() {
   local endpoint=$1
   local data=$2
-  response=$(curl -s -w "%{http_code}" -o /dev/null -X POST -H "Content-Type: application/json" -d "$data" "$API_BASE_URL/$endpoint")
+  response=$(api_curl POST "/$endpoint" -H "Content-Type: application/json" -d "$data")
   echo "POST $endpoint: $response"
 }
 
@@ -21,19 +51,24 @@ function post_request() {
 function put_request() {
   local endpoint=$1
   local data=$2
-  response=$(curl -s -w "%{http_code}" -o /dev/null -X PUT -H "Content-Type: application/json" -d "$data" "$API_BASE_URL/$endpoint")
+  response=$(api_curl PUT "/$endpoint" -H "Content-Type: application/json" -d "$data")
   echo "PUT $endpoint: $response"
 }
 
 # Function to make a DELETE request
 function delete_request() {
   local endpoint=$1
-  response=$(curl -s -w "%{http_code}" -o /dev/null -X DELETE "$API_BASE_URL/$endpoint")
+  response=$(api_curl DELETE "/$endpoint")
   echo "DELETE $endpoint: $response"
 }
 
 # Example usage
-get_request "bookmarks"
-post_request "bookmarks" '{"url": "http://example.com", "title": "Example Bookmark", "tags": []}'
-put_request "bookmarks/1" '{"title": "Updated Bookmark"}'
-delete_request "bookmarks/1"
+# get_request "health"
+# get_request "bookmarks"
+# get_request "bookmarks/counts"
+# get_request "quick-search?q=home"
+get_request "tags/suggest-ai"
+# post_request "bookmarks" '{"url": "https://www.help.com/", "title": "Help Bookmark", "tags": "test1,test2"}'
+# get_request "bookmarks/1"
+# put_request "bookmarks/1" '{"title": "Updated Bookmark"}'
+# delete_request "bookmarks/1"
