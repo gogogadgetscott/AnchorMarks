@@ -24,6 +24,7 @@ describe("server/config", () => {
     const config = loadConfigWithEnv({
       NODE_ENV: "production",
       JWT_SECRET: "",
+      JWT_REFRESH_SECRET: "refresh-secret",
       CORS_ORIGIN: "https://example.com",
     });
     expect(() => config.validateSecurityConfig()).toThrow(/JWT_SECRET/i);
@@ -33,15 +34,39 @@ describe("server/config", () => {
     const config = loadConfigWithEnv({
       NODE_ENV: "production",
       JWT_SECRET: "anchormarks-secret-key-change-in-production",
+      JWT_REFRESH_SECRET: "refresh-secret",
       CORS_ORIGIN: "https://example.com",
     });
     expect(() => config.validateSecurityConfig()).toThrow(/JWT_SECRET/i);
+  });
+
+  it("validateSecurityConfig throws if JWT_REFRESH_SECRET missing in production", () => {
+    const config = loadConfigWithEnv({
+      NODE_ENV: "production",
+      JWT_SECRET: "super-secure",
+      JWT_REFRESH_SECRET: "",
+      CORS_ORIGIN: "https://example.com",
+    });
+    expect(() => config.validateSecurityConfig()).toThrow(
+      /JWT_REFRESH_SECRET/i,
+    );
+  });
+
+  it("validateSecurityConfig throws if JWT refresh secret equals JWT secret", () => {
+    const config = loadConfigWithEnv({
+      NODE_ENV: "production",
+      JWT_SECRET: "same-secret",
+      JWT_REFRESH_SECRET: "same-secret",
+      CORS_ORIGIN: "https://example.com",
+    });
+    expect(() => config.validateSecurityConfig()).toThrow(/must differ/i);
   });
 
   it("validateSecurityConfig throws if CORS_ORIGIN missing in production", () => {
     const config = loadConfigWithEnv({
       NODE_ENV: "production",
       JWT_SECRET: "super-secure",
+      JWT_REFRESH_SECRET: "refresh-secret",
       CORS_ORIGIN: "",
     });
     expect(() => config.validateSecurityConfig()).toThrow(/CORS_ORIGIN/i);
@@ -51,6 +76,7 @@ describe("server/config", () => {
     const config = loadConfigWithEnv({
       NODE_ENV: "production",
       JWT_SECRET: "super-secure",
+      JWT_REFRESH_SECRET: "refresh-secret",
       CORS_ORIGIN: "https://example.com",
     });
     expect(() => config.validateSecurityConfig()).not.toThrow();
@@ -98,7 +124,7 @@ describe("server/config", () => {
 
     expect(
       config.isApiKeyAllowed({ method: "DELETE", path: "/api/bookmarks/123" }),
-    ).toBe(true);
+    ).toBe(false);
     expect(config.isApiKeyAllowed({ method: "GET", path: "/api/tags" })).toBe(
       false,
     );

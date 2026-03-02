@@ -3,19 +3,13 @@
  * Handles dashboard rendering and widget management with optimized performance
  */
 
-import { state } from "@features/state.ts";
+import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
-import type {
-  Bookmark,
-  DashboardWidget,
-  DashboardViewResponse,
-} from "@types.ts";
-import {
-  showToast,
-  confirmDialog,
-  promptDialog,
-  escapeHtml,
-} from "@utils/ui.ts";
+import type { Bookmark, DashboardWidget } from "@types";
+import type { DashboardViewResponse } from "../../types/api";
+import { showToast } from "@utils/ui-helpers.ts";
+import { confirmDialog, promptDialog } from "@features/ui/confirm-dialog.ts";
+import { escapeHtml } from "@utils/index.ts";
 
 // Constants
 const GRID_SIZE = 20;
@@ -27,10 +21,16 @@ const VIEW_NAME_BADGE_ID = "dashboard-view-name";
 const VIEWS_BTN_ID = "views-btn";
 const VIEWS_DROPDOWN_ID = "views-dropdown";
 
+type DashboardWidgetLegacy = DashboardWidget & {
+  width?: number;
+  height?: number;
+  linkedId?: string;
+};
+
 // Performance optimizations
-const widgetsLoading = new Set<string>();
 let closeDashboardDropdownListener: ((e: MouseEvent) => void) | null = null;
 let dashboardStateSnapshot: string = "";
+const widgetsLoading = new Set<string>();
 
 /**
  * Snap value to grid
@@ -38,6 +38,42 @@ let dashboardStateSnapshot: string = "";
 function snapToGrid(value: number): number {
   if (!state.snapToGrid) return value;
   return Math.round(value / GRID_SIZE) * GRID_SIZE;
+}
+
+function getWidgetWidth(widget: DashboardWidget): number {
+  const legacyWidget = widget as DashboardWidgetLegacy;
+  return widget.w ?? legacyWidget.width ?? 320;
+}
+
+function getWidgetHeight(widget: DashboardWidget): number {
+  const legacyWidget = widget as DashboardWidgetLegacy;
+  return widget.h ?? legacyWidget.height ?? 400;
+}
+
+function getWidgetLinkedId(widget: DashboardWidget): string | undefined {
+  const legacyWidget = widget as DashboardWidgetLegacy;
+  const explicitLinkedId =
+    (widget.config?.linkedId as string | undefined) ?? legacyWidget.linkedId;
+
+  if (explicitLinkedId) return explicitLinkedId;
+
+  if (widget.type === "folder" || widget.type === "tag") {
+    return widget.id;
+  }
+
+  return undefined;
+}
+
+function getWidgetCacheKey(widget: DashboardWidget): string {
+  const linkedId = getWidgetLinkedId(widget) || widget.id;
+  return `${widget.type}:${linkedId}`;
+}
+
+function getWidgetBookmarks(widget: DashboardWidget): Bookmark[] {
+  const cacheKey = getWidgetCacheKey(widget);
+  const cached = state.widgetDataCache[cacheKey];
+  if (Array.isArray(cached)) return cached;
+  return [];
 }
 
 /**
@@ -164,11 +200,11 @@ export async function initDashboardViews(): Promise<void> {
     }
   }
 
-  // Attach click handler
-  btn.addEventListener("click", (e: Event) => {
+  // Attach click handler (idempotent across header re-renders)
+  btn.onclick = (e: MouseEvent) => {
     e.stopPropagation();
     showViewsMenu();
-  });
+  };
 
   // Initial load
   await loadViews();
@@ -252,9 +288,9 @@ async function showViewsMenu(): Promise<void> {
 
   // Attach global close listener
   closeDashboardDropdownListener = closeViewsDropdown.bind(null);
-  setTimeout(() => {
+  if (closeDashboardDropdownListener) {
     document.addEventListener("click", closeDashboardDropdownListener);
-  }, 0);
+  }
 }
 
 /**
@@ -441,22 +477,33 @@ export async function restoreView(
   if (!(await confirmViewSwitch())) return;
 
   try {
-    const response = await api<DashboardViewResponse>(
-      `/dashboard/views/${id}/restore`,
-      {
-        method: "POST",
-      },
-    );
+    await api<DashboardViewResponse>(`/dashboard/views/${id}/restore`, {
+      method: "POST",
+    });
+
+    const { loadSettings, saveSettings } =
+      await import("@features/bookmarks/settings.ts");
+    await loadSettings();
+
+    if (state.currentView !== "dashboard") {
+      await state.setCurrentView("dashboard");
+    }
+
+    await saveSettings({
+      current_view: "dashboard",
+      current_dashboard_view_id: id,
+      current_dashboard_view_name: viewName,
+    });
 
     // Update state
     state.setCurrentDashboardViewId(id);
     state.setCurrentDashboardViewName(viewName);
     updateViewNameBadge(viewName);
 
-    // Reload dashboard
-    saveDashboardStateSnapshot();
+    // Reload dashboard using restored settings
     closeViewsDropdown();
     renderDashboard();
+    saveDashboardStateSnapshot();
 
     showToast(`View "${escapeHtml(viewName || "")}" restored`, "success");
   } catch (err: unknown) {
@@ -487,71 +534,388 @@ export function toggleFullscreen(): void {
 }
 
 /**
- * Render compact bookmark item
- */
-function renderCompactBookmarkItem(b: Bookmark): string {
-  return `
-    <div class="bookmark-item compact" data-bookmark-id="${escapeHtml(b.id)}">
-      <a href="${escapeHtml(b.url)}" target="_blank" rel="noopener noreferrer">
-        ${b.favicon ? `<img src="${escapeHtml(b.favicon)}" alt="" class="favicon" />` : ""}
-        <span>${escapeHtml(b.title || b.url)}</span>
-      </a>
-    </div>
-  `;
-}
-
-/**
  * Render dashboard with all widgets
  */
 export function renderDashboard(): void {
-  const container = document.getElementById("dashboard-container");
-  if (!container) return;
+  if (state.currentView !== "dashboard") return;
 
-  if (!state.dashboardWidgets || state.dashboardWidgets.length === 0) {
-    container.innerHTML =
-      '<div style="text-align:center;padding:2rem;color:var(--text-tertiary)">No widgets. Click "Add Widget" to get started.</div>';
+  const outlet = document.getElementById("main-view-outlet");
+  if (!outlet) return;
+
+  /*
+   * New layout markup: the CSS introduced during the recent refactor
+   * relies on a couple of wrappers in order to apply the free‑form
+   * positioning rules (position:relative on the container) and to
+   * show the helpful empty‑state text.  Previously we were simply
+   * swapping the `className` on the outlet and shoving absolute
+   * widgets directly into it, which meant none of the new styles
+   * took effect and widgets floated outside of the visible area.  The
+   * result was what the user described as a "broken" dashboard.
+   */
+
+  // switch the outer container class to the new freeform view
+  outlet.className = "dashboard-freeform";
+
+  const widgets = state.dashboardWidgets || [];
+
+  if (widgets.length === 0) {
+    outlet.innerHTML = `
+      <div class="dashboard-freeform-container" id="dashboard-drop-zone">
+        <div class="dashboard-help-text">
+          No widgets. Click &quot;Add Widget&quot; to get started.
+        </div>
+      </div>
+    `;
+    initDashboardDragDrop();
     return;
   }
 
-  const html = state.dashboardWidgets
+  const widgetsHtml = widgets
     .map((widget: DashboardWidget, index: number) =>
       renderDashboardWidget(widget, index),
     )
     .join("");
 
-  container.innerHTML = html;
+  outlet.innerHTML = `
+    <div class="dashboard-freeform-container" id="dashboard-drop-zone">
+      <div class="dashboard-widgets-container">
+        ${widgetsHtml}
+      </div>
+    </div>
+  `;
+
   initDashboardDragDrop();
+  attachWidgetEventListeners();
+  void ensureWidgetsData();
 }
 
 /**
  * Render a single dashboard widget
  */
 function renderDashboardWidget(widget: DashboardWidget, index: number): string {
+  // freeform widgets use a different base class so the CSS selectors for
+  // dragging/resizing/etc. apply correctly.  We kept the old
+  // `dashboard-widget` name around for grid-oriented layouts (still
+  // present in the stylesheet) but in this branch the only layout we
+  // actually render is freeform.
+  const widgetData = getWidgetDisplayData(widget);
+
+  const width = getWidgetWidth(widget);
+  const height = getWidgetHeight(widget);
+
   return `
-    <div class="dashboard-widget" data-widget-index="${index}" style="position:absolute;left:${widget.x}px;top:${widget.y}px;width:${widget.width}px;height:${widget.height}px">
+    <div class="dashboard-widget-freeform" 
+         data-widget-index="${index}" 
+         data-widget-id="${escapeHtml(widget.id)}"
+         data-widget-type="${escapeHtml(widget.type)}"
+         style="position:absolute;left:${widget.x || 0}px;top:${widget.y || 0}px;width:${width}px;height:${height}px">
       <div class="widget-header">
-        <h3>${escapeHtml(widget.title || "Widget")}</h3>
-        <button class="btn-icon small remove-widget-btn" data-widget-index="${index}" aria-label="Remove widget">×</button>
+        <div class="widget-drag-handle" title="Drag to move">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+            <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
+            <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
+          </svg>
+        </div>
+        <h3>${escapeHtml(widgetData.title)}</h3>
+        <span class="widget-count">${widgetData.count}</span>
+        <button class="btn-icon small remove-widget-btn" data-widget-index="${index}" aria-label="Remove widget">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
       </div>
-      <div class="widget-content">
-        <!-- Widget content here -->
+      <div class="widget-body">
+        ${renderWidgetContent(widget, widgetData)}
       </div>
     </div>
   `;
 }
 
 /**
+ * Get display data for a widget
+ */
+function getWidgetDisplayData(widget: DashboardWidget): {
+  title: string;
+  count: number;
+  bookmarks: Bookmark[];
+} {
+  const linkedId = getWidgetLinkedId(widget);
+  const cachedBookmarks = getWidgetBookmarks(widget);
+
+  if (widget.type === "folder" && linkedId) {
+    const folder = state.folders.find((f) => f.id === linkedId);
+    if (folder) {
+      return {
+        title: folder.name,
+        count: folder.bookmark_count || cachedBookmarks.length,
+        bookmarks: cachedBookmarks,
+      };
+    }
+  } else if (widget.type === "tag" && linkedId) {
+    return {
+      title: linkedId,
+      count: cachedBookmarks.length,
+      bookmarks: cachedBookmarks,
+    };
+  }
+
+  // Fallback for unknown or misconfigured widgets
+  return {
+    title: widget.title || "Widget",
+    count: 0,
+    bookmarks: [],
+  };
+}
+
+/**
+ * Render widget content based on type
+ */
+function renderWidgetContent(
+  widget: DashboardWidget,
+  widgetData: { title: string; count: number; bookmarks: Bookmark[] },
+): string {
+  if (widget.type === "tag-analytics") {
+    return '<div style="padding:1rem;text-align:center;color:var(--text-secondary)">Tag analytics coming soon</div>';
+  }
+
+  if (widgetData.bookmarks.length === 0) {
+    return '<div style="padding:1rem;text-align:center;color:var(--text-secondary)">No bookmarks</div>';
+  }
+
+  const sortedBookmarks = sortWidgetBookmarks(
+    widgetData.bookmarks,
+    widget.sort,
+  );
+
+  return `
+    <div class="compact-list">
+      ${sortedBookmarks
+        .map(
+          (b) => `
+        <div class="compact-item" data-bookmark-id="${escapeHtml(b.id)}">
+          <a class="compact-item-link" href="${escapeHtml(b.url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(b.title || b.url)}">
+            <span class="compact-favicon">
+              ${b.favicon ? `<img src="${escapeHtml(b.favicon)}" alt="" />` : '<span class="favicon-placeholder">🔗</span>'}
+            </span>
+            <span class="compact-text">
+              ${escapeHtml(b.title || b.url)}
+            </span>
+          </a>
+        </div>
+      `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+/**
+ * Sort bookmarks for widget display
+ */
+function sortWidgetBookmarks(
+  bookmarks: Bookmark[],
+  sort?: "a-z" | "z-a" | "recent" | "most_visited",
+): Bookmark[] {
+  const sorted = [...bookmarks];
+
+  switch (sort) {
+    case "a-z":
+      sorted.sort((a, b) => (a.title || a.url).localeCompare(b.title || b.url));
+      break;
+    case "z-a":
+      sorted.sort((a, b) => (b.title || b.url).localeCompare(a.title || a.url));
+      break;
+    case "most_visited":
+      sorted.sort((a, b) => (b.click_count || 0) - (a.click_count || 0));
+      break;
+    case "recent":
+    default:
+      sorted.sort(
+        (a, b) =>
+          new Date(b.created_at || 0).getTime() -
+          new Date(a.created_at || 0).getTime(),
+      );
+      break;
+  }
+
+  return sorted;
+}
+
+/**
  * Initialize tag analytics widgets
  */
 export async function initTagAnalyticsWidgets(): Promise<void> {
-  // Implementation here
+  // tag analytics widgets may require async data loading in the future.
+  // for now this is a no-op stub so callers can safely await it.
+  return;
+}
+
+async function ensureWidgetsData(): Promise<void> {
+  const widgetsToLoad = state.dashboardWidgets.filter((widget) => {
+    if (widget.type !== "folder" && widget.type !== "tag") return false;
+    const cacheKey = getWidgetCacheKey(widget);
+    return !state.widgetDataCache[cacheKey] && !widgetsLoading.has(cacheKey);
+  });
+
+  if (widgetsToLoad.length === 0) return;
+
+  widgetsToLoad.forEach((widget) => {
+    widgetsLoading.add(getWidgetCacheKey(widget));
+  });
+
+  await Promise.all(
+    widgetsToLoad.map(async (widget) => {
+      const linkedId = getWidgetLinkedId(widget);
+      const cacheKey = getWidgetCacheKey(widget);
+
+      if (!linkedId) {
+        widgetsLoading.delete(cacheKey);
+        return;
+      }
+
+      let endpoint = "";
+      if (widget.type === "folder") {
+        endpoint = `/bookmarks?folder_id=${encodeURIComponent(linkedId)}&limit=500`;
+        if (state.includeChildBookmarks) endpoint += "&include_children=true";
+      } else if (widget.type === "tag") {
+        endpoint = `/bookmarks?tags=${encodeURIComponent(linkedId)}&limit=500`;
+      }
+
+      try {
+        const response = await api<Bookmark[] | { bookmarks?: Bookmark[] }>(
+          endpoint,
+        );
+        const bookmarks = Array.isArray(response)
+          ? response
+          : Array.isArray(response?.bookmarks)
+            ? response.bookmarks
+            : [];
+        state.setWidgetDataCache(cacheKey, bookmarks);
+      } catch (err) {
+        console.error("Failed to load dashboard widget data", err);
+      } finally {
+        widgetsLoading.delete(cacheKey);
+      }
+    }),
+  );
+
+  if (state.currentView === "dashboard") {
+    renderDashboard();
+  }
 }
 
 /**
  * Initialize dashboard drag and drop
  */
 export function initDashboardDragDrop(): void {
-  // Implementation here
+  const outlet = document.getElementById("main-view-outlet");
+  if (!outlet) return;
+
+  // remove any existing listeners by cloning the node (simpler than
+  // tracking them individually). this avoids duplicate handlers when
+  // renderDashboard is called repeatedly.
+  const newOutlet = outlet.cloneNode(true) as HTMLElement;
+  outlet.parentNode?.replaceChild(newOutlet, outlet);
+
+  const dropZone = newOutlet.querySelector(
+    "#dashboard-drop-zone",
+  ) as HTMLElement | null;
+  if (dropZone) {
+    dropZone.addEventListener("dragover", (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+      dropZone.classList.add("drag-over");
+    });
+
+    dropZone.addEventListener("dragleave", (e: DragEvent) => {
+      if (e.target === dropZone) {
+        dropZone.classList.remove("drag-over");
+      }
+    });
+
+    dropZone.addEventListener("drop", (e: DragEvent) => {
+      e.preventDefault();
+      dropZone.classList.remove("drag-over");
+
+      const dragged = state.draggedSidebarItem;
+      if (!dragged) return;
+
+      const rect = dropZone.getBoundingClientRect();
+      const x = e.clientX - rect.left + dropZone.scrollLeft;
+      const y = e.clientY - rect.top + dropZone.scrollTop;
+
+      if (dragged.type === "folder" || dragged.type === "tag") {
+        addDashboardWidget(dragged.type, dragged.id, x, y);
+      }
+
+      state.setDraggedSidebarItem(null);
+    });
+  }
+
+  newOutlet
+    .querySelectorAll<HTMLElement>(".dashboard-widget-freeform .widget-header")
+    .forEach((header) => {
+      header.addEventListener("mousedown", (e: MouseEvent) => {
+        if ((e.target as HTMLElement).closest(".remove-widget-btn")) return;
+
+        const widgetEl = (e.currentTarget as HTMLElement).closest(
+          ".dashboard-widget-freeform",
+        ) as HTMLElement;
+        if (!widgetEl) return;
+
+        const index = Number(widgetEl.dataset.widgetIndex);
+        if (isNaN(index)) return;
+
+        state.setDraggedWidget(widgetEl);
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const origLeft = parseInt(widgetEl.style.left || "0", 10);
+        const origTop = parseInt(widgetEl.style.top || "0", 10);
+
+        function onMouseMove(moveEv: MouseEvent) {
+          const dx = moveEv.clientX - startX;
+          const dy = moveEv.clientY - startY;
+          const newX = snapToGrid(origLeft + dx);
+          const newY = snapToGrid(origTop + dy);
+          widgetEl.style.left = newX + "px";
+          widgetEl.style.top = newY + "px";
+          const widgetState = state.dashboardWidgets[index];
+          if (widgetState) {
+            widgetState.x = newX;
+            widgetState.y = newY;
+          }
+        }
+
+        function onMouseUp() {
+          document.removeEventListener("mousemove", onMouseMove);
+          document.removeEventListener("mouseup", onMouseUp);
+          state.setDraggedWidget(null);
+          markDashboardModified();
+        }
+
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+        e.preventDefault();
+      });
+    });
+}
+
+/**
+ * Attach event listeners to widget buttons
+ */
+function attachWidgetEventListeners(): void {
+  // Remove widget buttons
+  document
+    .querySelectorAll<HTMLElement>(".remove-widget-btn")
+    .forEach((btn) => {
+      btn.addEventListener("click", (e: Event) => {
+        e.stopPropagation();
+        const index = parseInt(btn.dataset.widgetIndex || "", 10);
+        if (!isNaN(index)) {
+          removeDashboardWidget(index);
+        }
+      });
+    });
 }
 
 /**
@@ -563,15 +927,24 @@ export function addDashboardWidget(
   x: number,
   y: number,
 ): void {
+  // Get display name for the widget
+  let title = `${type} Widget`;
+  if (type === "folder") {
+    const folder = state.folders.find((f) => f.id === id);
+    if (folder) title = folder.name;
+  } else if (type === "tag") {
+    title = id;
+  }
+
   const widget: DashboardWidget = {
-    id: `${type}-${id}`,
+    id: `${type}-${id}-${Date.now()}`,
     type,
-    linkedId: id,
+    config: { linkedId: id },
     x: snapToGrid(x),
     y: snapToGrid(y),
-    width: 300,
-    height: 400,
-    title: `${type} Widget`,
+    w: 320,
+    h: 400,
+    title,
   };
 
   state.dashboardWidgets.push(widget);
@@ -593,8 +966,18 @@ export function removeDashboardWidget(index: number): void {
 /**
  * Filter dashboard bookmarks by search term
  */
-export function filterDashboardBookmarks(term: string): void {
-  // Implementation here
+export function filterDashboardBookmarks(term: string): Promise<void> {
+  // Currently dashboard widgets render based on state.dashboardWidgets,
+  // but some widgets may probe state.bookmarks or trigger network calls
+  // when filters change.  Update the global search term and invoke the
+  // standard bookmark loader.  Returning the promise allows callers/tests
+  // to wait for the import to finish.
+  state.setFilterConfig({ ...state.filterConfig, search: term });
+  return import("@features/bookmarks/bookmarks.ts").then(
+    ({ loadBookmarks }) => {
+      return loadBookmarks();
+    },
+  );
 }
 
 /**
@@ -631,7 +1014,20 @@ export function closeLayoutSettings(): void {
  * Update layout statistics display
  */
 export function updateLayoutStats(): void {
-  // Implementation here
+  const statsEl = document.getElementById("layout-stats");
+  if (!statsEl) return;
+
+  const widgets = state.dashboardWidgets;
+  const count = widgets.length;
+  const totalArea = widgets.reduce(
+    (sum, widget) => sum + getWidgetWidth(widget) * getWidgetHeight(widget),
+    0,
+  );
+
+  statsEl.textContent = `${count} widget${count === 1 ? "" : "s"}`;
+  if (totalArea > 0) {
+    statsEl.textContent += `, total area ${totalArea}px²`;
+  }
 }
 
 /**
@@ -641,16 +1037,16 @@ export function autoPositionWidgets(): void {
   let x = 0;
   let y = 0;
   const containerWidth =
-    document.getElementById("dashboard-container")?.clientWidth || 1200;
+    document.getElementById("main-view-outlet")?.clientWidth || 1200;
 
   state.dashboardWidgets.forEach((widget: DashboardWidget) => {
     widget.x = snapToGrid(x);
     widget.y = snapToGrid(y);
 
-    x += widget.width + 20;
-    if (x + widget.width > containerWidth) {
+    x += getWidgetWidth(widget) + 20;
+    if (x + getWidgetWidth(widget) > containerWidth) {
       x = 0;
-      y += widget.height + 20;
+      y += getWidgetHeight(widget) + 20;
     }
   });
 
@@ -672,17 +1068,11 @@ export async function clearDashboard(): Promise<void> {
 
   if (!confirmed) return;
 
-  state.dashboardWidgets = [];
+  state.setDashboardWidgets([]);
   markDashboardModified();
   renderDashboard();
   showToast("Dashboard cleared", "success");
 }
-
-// Expose functions to window for external access
-window.saveCurrentView = saveCurrentView;
-window.deleteView = deleteView;
-window.restoreView = restoreView;
-window.toggleFullscreen = toggleFullscreen;
 
 // Default export
 export default {

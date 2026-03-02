@@ -1,29 +1,29 @@
 "use strict";
 (() => {
   var d = Object.defineProperty;
-  var h = Object.getOwnPropertyDescriptor;
-  var w = Object.getOwnPropertyNames;
+  var w = Object.getOwnPropertyDescriptor;
+  var h = Object.getOwnPropertyNames;
   var b = Object.prototype.hasOwnProperty;
   var v = (r, e, t, o) => {
     if ((e && typeof e == "object") || typeof e == "function")
-      for (let n of w(e))
+      for (let n of h(e))
         !b.call(r, n) &&
           n !== t &&
           d(r, n, {
             get: () => e[n],
-            enumerable: !(o = h(e, n)) || o.enumerable,
+            enumerable: !(o = w(e, n)) || o.enumerable,
           });
     return r;
   };
   var L = (r) => v(d({}, "__esModule", { value: !0 }), r);
   var x = {};
-  var f = {},
+  var g = {},
     u = class {
       isDevelopment() {
         return (
-          f.env.DEV ||
-          f.env.MODE === "development" ||
-          g.getItem("anchormarks_debug") === "true"
+          g.env.DEV ||
+          g.env.MODE === "development" ||
+          f.getItem("anchormarks_debug") === "true"
         );
       }
       shouldLog(e) {
@@ -60,7 +60,7 @@
     let e = document.createElement("div");
     return ((e.textContent = r), e.innerHTML);
   }
-  var g = {
+  var f = {
     getItem(r) {
       try {
         return localStorage.getItem(r);

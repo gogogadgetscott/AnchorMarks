@@ -55,15 +55,15 @@ make run-docker            # Start via Docker Compose
 
 ### Data Model
 
-| Table | Key columns |
-|-------|-------------|
-| `users` | id, username, email, password (bcrypt), api_key |
-| `bookmarks` | id, user_id, folder_id, url, title, tags (JSON), favicon, is_favorite, click_count |
-| `folders` | id, user_id, parent_id, name, color, icon, position |
-| `tags` | id, user_id, name, color, icon |
-| `bookmark_tags` | bookmark_id, tag_id (junction) |
-| `smart_collections` | id, user_id, name, rules (JSON) |
-| `user_settings` | user_id, theme, view_mode, dashboard_config (JSON) |
+| Table               | Key columns                                                                        |
+| ------------------- | ---------------------------------------------------------------------------------- |
+| `users`             | id, username, email, password (bcrypt), api_key                                    |
+| `bookmarks`         | id, user_id, folder_id, url, title, tags (JSON), favicon, is_favorite, click_count |
+| `folders`           | id, user_id, parent_id, name, color, icon, position                                |
+| `tags`              | id, user_id, name, color, icon                                                     |
+| `bookmark_tags`     | bookmark_id, tag_id (junction)                                                     |
+| `smart_collections` | id, user_id, name, rules (JSON)                                                    |
+| `user_settings`     | user_id, theme, view_mode, dashboard_config (JSON)                                 |
 
 ### Authentication & Security
 
@@ -105,9 +105,12 @@ app.post("/api/bookmarks", requireAuth, validateCsrf, (req, res) => {
 import { api } from "@services/api.ts";
 import type { Bookmark } from "@types.ts";
 
-const result = await api<Bookmark>("/bookmarks", { method: "POST", body: JSON.stringify(data) });
-await loadBookmarks();   // reload from server
-renderBookmarks();       // re-render
+const result = await api<Bookmark>("/bookmarks", {
+  method: "POST",
+  body: JSON.stringify(data),
+});
+await loadBookmarks(); // reload from server
+renderBookmarks(); // re-render
 ```
 
 ## Testing Patterns
@@ -120,6 +123,7 @@ renderBookmarks();       // re-render
 ## Git Workflow
 
 Use the **Feature Branch Workflow**:
+
 - `feature/description` — new features
 - `bugfix/description` — bug fixes
 - `chore/description` — maintenance

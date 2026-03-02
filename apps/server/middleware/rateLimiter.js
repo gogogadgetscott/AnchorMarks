@@ -35,9 +35,13 @@ const effectiveMaintenanceMax =
     ? 20
     : RATE_LIMIT_MAINTENANCE_MAX;
 
-const RATE_LIMIT_API_KEY_WRITE_MAX = parseInt(process.env.RATE_LIMIT_API_KEY_WRITE_MAX, 10);
+const RATE_LIMIT_API_KEY_WRITE_MAX = parseInt(
+  process.env.RATE_LIMIT_API_KEY_WRITE_MAX,
+  10,
+);
 const effectiveApiKeyWriteMax =
-  Number.isNaN(RATE_LIMIT_API_KEY_WRITE_MAX) || RATE_LIMIT_API_KEY_WRITE_MAX <= 0
+  Number.isNaN(RATE_LIMIT_API_KEY_WRITE_MAX) ||
+  RATE_LIMIT_API_KEY_WRITE_MAX <= 0
     ? 30
     : RATE_LIMIT_API_KEY_WRITE_MAX;
 
@@ -100,7 +104,9 @@ function cleanupExpiredEntries(db) {
   // Purge SQLite auth attempts older than two windows
   if (db) {
     const cutoff = now - RATE_LIMIT_AUTH_WINDOW * 2;
-    db.prepare("DELETE FROM rate_limit_auth_attempts WHERE window_start < ?").run(cutoff);
+    db.prepare(
+      "DELETE FROM rate_limit_auth_attempts WHERE window_start < ?",
+    ).run(cutoff);
   }
   if (process.env.NODE_ENV === "development" && cleaned > 0) {
     logger.debug(`Rate limiter: cleaned up ${cleaned} expired entries`);
@@ -112,7 +118,10 @@ let cleanupInterval = null;
 function startCleanup(db) {
   if (cleanupInterval) return; // already started
   if (process.env.NODE_ENV === "production") {
-    cleanupInterval = setInterval(() => cleanupExpiredEntries(db), CLEANUP_INTERVAL);
+    cleanupInterval = setInterval(
+      () => cleanupExpiredEntries(db),
+      CLEANUP_INTERVAL,
+    );
     process.on("SIGTERM", () => {
       if (cleanupInterval) clearInterval(cleanupInterval);
     });

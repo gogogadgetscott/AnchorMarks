@@ -33,6 +33,14 @@ export { createBookmarkCard };
 
 import { confirmDialog, promptDialog } from "@features/ui/confirm-dialog.ts";
 
+// Tag metadata cache — avoid re-fetching on every page switch
+let tagMetadataLoadedAt = 0;
+const TAG_METADATA_TTL_MS = 60_000;
+
+export function invalidateTagMetadataCache(): void {
+  tagMetadataLoadedAt = 0;
+}
+
 /**
  * Render skeletons while loading
  */
@@ -137,7 +145,21 @@ export async function loadBookmarks(): Promise<void> {
     const query = params.toString();
     if (query) endpoint += `?${query}`;
 
-    const response = await api<any>(endpoint);
+    const now = Date.now();
+    const shouldFetchTags =
+      tagMetadataLoadedAt === 0 ||
+      now - tagMetadataLoadedAt > TAG_METADATA_TTL_MS;
+
+    // Fetch bookmarks and (if needed) tag metadata in parallel
+    const [response, tags] = await Promise.all([
+      api<any>(endpoint),
+      shouldFetchTags
+        ? api<any[]>("/tags").catch((err: unknown) => {
+            logger.error("Failed to load tag metadata", err);
+            return null;
+          })
+        : Promise.resolve(null),
+    ]);
 
     if (response && typeof response === "object" && "bookmarks" in response) {
       state.setBookmarks(response.bookmarks);
@@ -153,24 +175,18 @@ export async function loadBookmarks(): Promise<void> {
       );
     }
 
-    // Load tags metadata for color/icon rendering
-    try {
-      const tags = await api<any[]>("/tags");
-      // Create a lookup map for quick access
+    if (tags) {
       const tagMap: Record<string, any> = {};
-      tags.forEach((tag: Tag) => {
+      (tags as Tag[]).forEach((tag: Tag) => {
         tagMap[tag.name] = {
           color: tag.color || "#f59e0b",
-          icon: tag.icon || "tag",
+          icon: (tag as any).icon || "tag",
           id: tag.id,
           count: tag.count || 0,
         };
       });
-      // Store in state for use in rendering
       state.setTagMetadata(tagMap);
-    } catch (err) {
-      logger.error("Failed to load tag metadata", err);
-      // Continue without tag metadata
+      tagMetadataLoadedAt = now;
     }
 
     // Refresh omnibar bookmarks cache in background (for unfiltered search)
@@ -467,7 +483,8 @@ export function renderBookmarks(): void {
 
   targetBookmarks.forEach((b, i) => {
     let el = existingNodesMap.get(b.id);
-    const html = cardRenderer(b, startIndex + i);
+    const bookmarkForCard = b as Bookmark & Record<string, unknown>;
+    const html = cardRenderer(bookmarkForCard, startIndex + i);
     const stableHTML = el
       ? html.replace(/entrance-animation|delay-\d+/g, "")
       : html;
@@ -1028,7 +1045,8 @@ export async function toggleFavorite(id: string): Promise<void> {
 export async function trackClick(id: string): Promise<void> {
   // Update local state before the API call so the UI feels instant
   const bookmark = state.bookmarks.find((b) => b.id === id);
-  const wasUntracked = bookmark !== undefined && (bookmark.click_count || 0) === 0;
+  const wasUntracked =
+    bookmark !== undefined && (bookmark.click_count || 0) === 0;
   if (bookmark) {
     bookmark.click_count = (bookmark.click_count || 0) + 1;
   }

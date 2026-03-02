@@ -6,7 +6,6 @@ const { URL } = require("url");
 const { isPrivateAddress } = require("../helpers/utils");
 const { schemas } = require("../validation");
 const { logger } = require("../lib/logger");
-const { reportAndSend } = require("../lib/errors");
 
 module.exports = function (
   db,
@@ -145,15 +144,20 @@ module.exports = function (
    *       200:
    *         description: Database optimized
    */
-  router.post("/optimize", authenticateToken, validateCsrfToken, (req, res) => {
-    try {
-      db.exec("VACUUM");
-      res.json({ success: true, message: "Database optimized" });
-    } catch (err) {
-      logger.error("Error optimizing database", err);
-      res.status(500).json({ error: "Failed to optimize database" });
-    }
-  });
+  router.post(
+    "/optimize",
+    authenticateToken,
+    validateCsrfToken,
+    (_req, res) => {
+      try {
+        db.exec("VACUUM");
+        res.json({ success: true, message: "Database optimized" });
+      } catch (err) {
+        logger.error("Error optimizing database", err);
+        res.status(500).json({ error: "Failed to optimize database" });
+      }
+    },
+  );
 
   return router;
 };

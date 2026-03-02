@@ -486,61 +486,61 @@
         </div>
       </div>
 
-      <div class=”settings-panel” id=”settings-tags”>
+      <div class="settings-panel" id="settings-tags">
         <!-- Tag List -->
-        <div class=”setting-item” style=”display: block”>
-          <div class=”setting-info” style=”margin-bottom: 10px”>
+        <div class="setting-item" style="display: block">
+          <div class="setting-info" style="margin-bottom: 10px">
             <h4>All Tags</h4>
             <p>View, edit, or delete your tags</p>
           </div>
           <input
-            type=”text”
-            id=”tag-search-input”
-            class=”form-input”
-            placeholder=”Search tags…”
-            style=”margin-bottom: 10px”
+            type="text"
+            id="tag-search-input"
+            class="form-input"
+            placeholder="Search tags…"
+            style="margin-bottom: 10px"
           />
-          <div id=”tag-stats-list” class=”tag-stats-list”></div>
+          <div id="tag-stats-list" class="tag-stats-list"></div>
         </div>
 
         <!-- Add New Tag -->
-        <div class=”setting-item” style=”display: block”>
-          <div class=”setting-info” style=”margin-bottom: 0.75rem”>
+        <div class="setting-item" style="display: block">
+          <div class="setting-info" style="margin-bottom: 0.75rem">
             <h4>Add New Tag</h4>
             <p>Create a new tag to organize your bookmarks</p>
           </div>
           <div
-            style=”
+            style="
               display: flex;
               gap: 0.5rem;
               align-items: center;
               flex-wrap: wrap;
-            “
+            "
           >
             <input
-              type=”text”
-              id=”new-tag-name”
-              class=”form-input”
-              placeholder=”Tag name”
-              style=”width: 200px”
+              type="text"
+              id="new-tag-name"
+              class="form-input"
+              placeholder="Tag name"
+              style="width: 200px"
             />
             <input
-              type=”color”
-              id=”new-tag-color”
-              class=”form-input”
-              value=”#f59e0b”
-              style=”width: 60px; height: 38px; padding: 2px”
+              type="color"
+              id="new-tag-color"
+              class="form-input"
+              value="#f59e0b"
+              style="width: 60px; height: 38px; padding: 2px"
             />
-            <button class=”btn btn-primary” id=”add-new-tag-btn”>
+            <button class="btn btn-primary" id="add-new-tag-btn">
               <svg
-                viewBox=”0 0 24 24”
-                fill=”none”
-                stroke=”currentColor”
-                stroke-width=”2”
-                style=”width: 16px; height: 16px”
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                style="width: 16px; height: 16px"
               >
-                <line x1=”12” y1=”5” x2=”12” y2=”19” />
-                <line x1=”5” y1=”12” x2=”19” y2=”12” />
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
               Add Tag
             </button>
@@ -548,125 +548,121 @@
         </div>
 
         <!-- Rename / Merge Tag -->
-        <div class=”setting-item” style=”display: block”>
-          <div class=”setting-info” style=”margin-bottom: 0.75rem”>
+        <div class="setting-item" style="display: block">
+          <div class="setting-info" style="margin-bottom: 0.75rem">
             <h4>Rename / Merge Tag</h4>
             <p>
-              Move all uses of one tag to another (use “parent/child” for
+              Move all uses of one tag to another (use "parent/child" for
               hierarchy)
             </p>
           </div>
-          <div class=”form-row”>
-            <div class=”form-group”>
-              <label for=”tag-rename-from”>From</label>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="tag-rename-from">From</label>
               <input
-                type=”text”
-                id=”tag-rename-from”
-                class=”form-input”
-                placeholder=”old tag”
+                type="text"
+                id="tag-rename-from"
+                class="form-input"
+                placeholder="old tag"
               />
             </div>
-            <div class=”form-group”>
-              <label for=”tag-rename-to”>To</label>
+            <div class="form-group">
+              <label for="tag-rename-to">To</label>
               <input
-                type=”text”
-                id=”tag-rename-to”
-                class=”form-input”
-                placeholder=”new tag (can be nested)”
+                type="text"
+                id="tag-rename-to"
+                class="form-input"
+                placeholder="new tag (can be nested)"
               />
             </div>
           </div>
           <div
-            style=”
+            style="
               display: flex;
               gap: 0.5rem;
               align-items: center;
               flex-wrap: wrap;
               margin-top: 0.5rem;
-            “
+            "
           >
-            <button class=”btn btn-primary” id=”tag-rename-btn”>
+            <button class="btn btn-primary" id="tag-rename-btn">
               Rename / Merge
             </button>
-            <button class=”btn btn-ghost” id=”tag-rename-undo-btn” disabled>
+            <button class="btn btn-ghost" id="tag-rename-undo-btn" disabled>
               Undo last rename
             </button>
-            <span class=”text-tertiary” style=”font-size: 0.9rem”
+            <span class="text-tertiary" style="font-size: 0.9rem"
               >Example: dev/js → dev/frontend/js</span
             >
           </div>
         </div>
 
         <!-- AI Tag Suggestions -->
-        <div class=”setting-item”>
-          <div class=”setting-info”>
+        <div class="setting-item">
+          <div class="setting-info">
             <h4>AI Tag Suggestions</h4>
             <p>Use AI-powered tag suggestions when adding bookmarks</p>
           </div>
-          <label class=”toggle”>
-            <input type=”checkbox” id=”ai-suggestions-toggle” />
-            <span class=”toggle-slider”></span>
+          <label class="toggle">
+            <input type="checkbox" id="ai-suggestions-toggle" />
+            <span class="toggle-slider"></span>
           </label>
         </div>
 
         <!-- Sort Tags -->
-        <div class=”setting-item”>
-          <div class=”setting-info”>
+        <div class="setting-item">
+          <div class="setting-info">
             <h4>Sort Tags</h4>
             <p>Choose your preferred order for the tag list.</p>
           </div>
-          <select
-            id=”settings-tag-sort”
-            class=”form-input”
-            style=”width: auto”
-          >
-            <option value=”count_desc”>Most used first</option>
-            <option value=”count_asc”>Least used first</option>
-            <option value=”name_asc”>A → Z</option>
-            <option value=”name_desc”>Z → A</option>
+          <select id="settings-tag-sort" class="form-input" style="width: auto">
+            <option value="count_desc">Most used first</option>
+            <option value="count_asc">Least used first</option>
+            <option value="name_asc">A → Z</option>
+            <option value="name_desc">Z → A</option>
           </select>
         </div>
 
         <!-- Tag Cloud -->
-        <div class=”setting-item”>
-          <div class=”setting-info”>
+        <div class="setting-item">
+          <div class="setting-info">
             <h4>Tag Cloud</h4>
             <p>Control how many tags are shown in the Tag Cloud.</p>
           </div>
           <div
-            style=”
+            style="
               display: flex;
               gap: 0.75rem;
               align-items: center;
               flex-wrap: wrap;
-            “
+            "
           >
             <label
-              for=”tag-cloud-max-tags”
-              class=”text-tertiary”
-              style=”font-size: 0.9rem”
+              for="tag-cloud-max-tags"
+              class="text-tertiary"
+              style="font-size: 0.9rem"
               >Max tags (desktop)</label
             >
             <input
-              type=”number”
-              id=”tag-cloud-max-tags”
-              class=”form-input”
-              min=”20”
-              max=”500”
-              step=”10”
-              style=”width: 110px”
+              type="number"
+              id="tag-cloud-max-tags"
+              class="form-input"
+              min="20"
+              max="500"
+              step="10"
+              style="width: 110px"
             />
-            <label class=”toggle” style=”margin-left: 0.5rem”>
-              <input type=”checkbox” id=”tag-cloud-default-show-all” />
-              <span class=”toggle-slider”></span>
+            <label class="toggle" style="margin-left: 0.5rem">
+              <input type="checkbox" id="tag-cloud-default-show-all" />
+              <span class="toggle-slider"></span>
             </label>
-            <span class=”text-tertiary” style=”font-size: 0.9rem”
+            <span class="text-tertiary" style="font-size: 0.9rem"
               >Show all tags by default</span
             >
           </div>
           <p
-            class=”text-tertiary”
-            style=”margin-top: 0.5rem; font-size: 0.85rem”
+            class="text-tertiary"
+            style="margin-top: 0.5rem; font-size: 0.85rem"
           >
             On smaller screens, this limit scales down automatically.
           </p>

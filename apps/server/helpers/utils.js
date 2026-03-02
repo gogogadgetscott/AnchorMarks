@@ -50,9 +50,11 @@ async function resolveToPublicIp(hostname) {
       ? hostname.slice(1, -1)
       : hostname;
 
-  if (bare === "localhost") throw new Error("Hostname resolves to private address");
+  if (bare === "localhost")
+    throw new Error("Hostname resolves to private address");
   if (net.isIP(bare)) {
-    if (isPrivateIp(bare)) throw new Error("Hostname resolves to private address");
+    if (isPrivateIp(bare))
+      throw new Error("Hostname resolves to private address");
     return bare;
   }
 

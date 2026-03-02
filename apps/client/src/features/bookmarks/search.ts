@@ -5,7 +5,7 @@
 
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
-import { escapeHtml, parseTagInput } from "@utils/index.ts";
+import { escapeHtml, parseTagInput, pluralize } from "@utils/index.ts";
 import { showToast, updateActiveNav } from "@utils/ui-helpers.ts";
 import { Badge, Icon } from "@components/index.ts";
 import type { Collection, Tag } from "../../types/index";
@@ -473,8 +473,11 @@ export async function renameTagAcross(from: string, to: string): Promise<void> {
     }),
   );
 
-  import("@features/bookmarks/bookmarks.ts").then(({ renderBookmarks }) =>
-    renderBookmarks(),
+  import("@features/bookmarks/bookmarks.ts").then(
+    ({ renderBookmarks, invalidateTagMetadataCache }) => {
+      invalidateTagMetadataCache();
+      renderBookmarks();
+    },
   );
   renderSidebarTags();
   await loadTagStats();
@@ -566,7 +569,11 @@ function renderTagStatsList(tags: TagStatItem[]): void {
   tagStatsList.querySelectorAll(".edit-tag-btn").forEach((btn: Element) => {
     const el = btn as HTMLElement;
     el.addEventListener("click", () => {
-      openTagModal({ id: el.dataset.id, name: el.dataset.name, color: el.dataset.color });
+      openTagModal({
+        id: el.dataset.id,
+        name: el.dataset.name,
+        color: el.dataset.color,
+      });
     });
   });
 
@@ -592,6 +599,9 @@ export async function deleteTagById(id: string, name: string): Promise<void> {
 
   try {
     await api(`/tags/${id}`, { method: "DELETE" });
+    import("@features/bookmarks/bookmarks.ts").then(
+      ({ invalidateTagMetadataCache }) => invalidateTagMetadataCache(),
+    );
     await loadTagStats();
     renderSidebarTags();
     const event = new CustomEvent("tag-updated");
@@ -703,6 +713,7 @@ export async function renderTagsForFilter(
     el.addEventListener("click", async (e: Event) => {
       e.stopPropagation();
       const tagName = el.dataset.tag;
+      if (!tagName) return;
 
       // Toggle tag filter
       const currentTags = [...state.filterConfig.tags];
@@ -765,8 +776,11 @@ export function openTagModal(tag: {
     }
   });
 
-  modal.classList.remove("hidden");
-  tagNameInput.focus();
+  // Use openModal to properly attach event listeners (including close button)
+  import("@utils/ui-helpers.ts").then(({ openModal }) => {
+    openModal("tag-modal");
+    tagNameInput.focus();
+  });
 }
 
 export async function handleTagSubmit(e: Event): Promise<void> {

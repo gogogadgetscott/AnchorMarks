@@ -296,7 +296,9 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
         const metadata = await fetchUrlMetadata(url);
         res.json(metadata);
       } catch (metaErr) {
-        logger.warn(`Metadata fetch failed (${metaErr.message}), falling back to hostname`);
+        logger.warn(
+          `Metadata fetch failed (${metaErr.message}), falling back to hostname`,
+        );
         try {
           res.json({ title: new URL(url).hostname, description: "", url });
         } catch (parseErr) {

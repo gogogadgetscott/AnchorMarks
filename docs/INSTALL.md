@@ -755,7 +755,6 @@ For more information, see:
 - [ROADMAP.md](ROADMAP.md) - Planned features
 - [PROGRESS.md](PROGRESS.md) - Recent work log
 
-
 ### Note: Flexible user settings (settings_json)
 
 - The server will automatically add a `settings_json` column to the `user_settings` table at startup if it’s missing.

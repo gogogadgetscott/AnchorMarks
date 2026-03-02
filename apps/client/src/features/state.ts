@@ -314,6 +314,28 @@ export async function setCurrentView(val: string) {
     }
   }
 
+  // Ensure dashboard markup and UI are hidden immediately when leaving dashboard
+  if (prevView === "dashboard" && val !== "dashboard") {
+    document.getElementById("views-dropdown")?.remove();
+
+    const outlet = document.getElementById("main-view-outlet");
+    if (outlet) {
+      // Clear all dashboard content and classes immediately when leaving
+      outlet.className = ""; // Clear all dashboard-specific classes
+      outlet.innerHTML = ""; // Clear dashboard HTML so it's not visible
+    }
+
+    const viewNameBadge = document.getElementById("dashboard-view-name");
+    if (viewNameBadge) {
+      viewNameBadge.textContent = "";
+      viewNameBadge.classList.add("hidden");
+    }
+
+    document
+      .getElementById("dashboard-unsaved-indicator")
+      ?.classList.add("hidden");
+  }
+
   // Clear filters and search inputs before updating view so no handler sees new view + old input
   if (val === "favorites" || val === "recent" || val === "most-used") {
     setFilterConfig({

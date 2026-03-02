@@ -148,17 +148,12 @@ export function setTheme(themeName: string, save = true): void {
   }
 }
 
-// Apply favicon setting
+// Apply favicon setting (General tab controls only)
 export function applyFaviconSetting(): void {
   const toggle = document.getElementById(
     "hide-favicons-toggle",
   ) as HTMLInputElement;
   if (toggle) toggle.checked = state.hideFavicons;
-
-  const aiToggle = document.getElementById(
-    "ai-suggestions-toggle",
-  ) as HTMLInputElement;
-  if (aiToggle) aiToggle.checked = state.aiSuggestionsEnabled;
 
   const richToggle = document.getElementById(
     "rich-link-previews-toggle",

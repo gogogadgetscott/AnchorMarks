@@ -134,8 +134,8 @@ describe("AnchorMarks API", () => {
       .delete(`/api/bookmarks/${apiKeyBookmarkId}`)
       .set("X-API-Key", apiKey);
 
-    expect(attemptDelete.statusCode).toBe(200);
-    expect(attemptDelete.body.success).toBe(true);
+    expect(attemptDelete.statusCode).toBe(403);
+    expect(attemptDelete.body.error).toMatch(/not permitted/i);
   });
 
   it("sync push uses last-write-wins and returns skipped counts", async () => {

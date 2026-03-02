@@ -291,9 +291,20 @@ export function openModal(id: string): void {
 
     // Create focus trap for the modal
     try {
+      // For tag-modal and folder-modal, only close that modal on Escape (don't close parent)
+      // For other modals, close only that modal (not all modals)
+      const isNestableModal = ["tag-modal", "folder-modal"].includes(id);
+      const onEscapeHandler = () => {
+        modal.classList.add("hidden");
+        // Only reset forms for certain modals
+        if (["bookmark-modal", "settings-modal"].includes(id)) {
+          resetForms();
+        }
+      };
+
       createFocusTrap(modal, {
         initialFocus: true,
-        onEscape: () => closeModals(),
+        onEscape: onEscapeHandler,
       });
     } catch (error) {
       logger.warn("Failed to create focus trap for modal", error);
@@ -311,7 +322,15 @@ export function openModal(id: string): void {
     const closeHandler = (e: Event) => {
       e.preventDefault();
       modal.classList.add("hidden");
-      resetForms();
+
+      // Only reset forms for certain modals (not child modals like tag-modal)
+      // tag-modal and folder-modal are ephemeral overlays that don't need form reset
+      const shouldResetForms = ["bookmark-modal", "settings-modal"].includes(
+        id,
+      );
+      if (shouldResetForms) {
+        resetForms();
+      }
     };
 
     // Remove existing listeners to avoid duplicates
@@ -348,6 +367,24 @@ export function openModal(id: string): void {
 
     // Re-attach settings tab listeners if opening settings modal
     if (id === "settings-modal") {
+      // Reset to General tab on every open to prevent stale active-panel state
+      document.querySelectorAll(".settings-panel").forEach((p) => {
+        p.classList.remove("active");
+        (p as HTMLElement).style.display = "none !important";
+      });
+      document
+        .querySelectorAll(".settings-tab")
+        .forEach((t) => t.classList.remove("active"));
+      const generalPanel = document.getElementById("settings-general");
+      if (generalPanel) {
+        generalPanel.classList.add("active");
+        (generalPanel as HTMLElement).style.display = "flex !important";
+      }
+      const generalTab = document.querySelector(
+        '[data-settings-tab="general"]',
+      );
+      if (generalTab) generalTab.classList.add("active");
+
       injectProfileForms(); // Inject profile forms before attaching listeners
       attachSettingsTabListeners();
       attachSettingsModalLogout();
@@ -364,9 +401,8 @@ export function openModal(id: string): void {
 
 // Attach settings tab listeners
 function attachSettingsTabListeners(): void {
-  // Tab switching
-  document.querySelectorAll(".settings-tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
+  const handleTabClick = (tab: Element) => {
+    return () => {
       const tabName = (tab as HTMLElement).dataset.settingsTab;
       if (!tabName) return;
 
@@ -376,6 +412,7 @@ function attachSettingsTabListeners(): void {
       });
       document.querySelectorAll(".settings-panel").forEach((p) => {
         p.classList.remove("active");
+        (p as HTMLElement).style.display = "none !important";
       });
 
       // Add active class to clicked tab and corresponding panel
@@ -384,8 +421,30 @@ function attachSettingsTabListeners(): void {
       const panel = document.getElementById(panelId);
       if (panel) {
         panel.classList.add("active");
+        (panel as HTMLElement).style.display = "flex !important";
       }
-    });
+
+      // Load tag stats when the Tags tab is activated
+      if (tabName === "tags") {
+        import("@features/bookmarks/search.ts").then(({ loadTagStats }) => {
+          loadTagStats();
+        });
+
+        // Initialize tag-specific controls only on tags tab
+        initializeTagControls();
+      }
+    };
+  };
+
+  // Attach click listeners to all settings tabs
+  document.querySelectorAll(".settings-tab").forEach((tab) => {
+    // Remove any previously attached listeners by cloning and replacing
+    const fresh = tab.cloneNode(true) as HTMLElement;
+    if (tab.parentNode) {
+      tab.parentNode.replaceChild(fresh, tab);
+    }
+    // Attach new listener to the fresh clone
+    fresh.addEventListener("click", handleTabClick(fresh));
   });
 
   // Theme selector
@@ -400,47 +459,22 @@ function attachSettingsTabListeners(): void {
     });
   }
 
-  // Populate Tag Cloud controls with current state
-  const maxTagsInput = document.getElementById(
-    "tag-cloud-max-tags",
+  // Initialize General panel toggle values from current state
+  const faviconToggleInit = document.getElementById(
+    "hide-favicons-toggle",
   ) as HTMLInputElement | null;
-  if (maxTagsInput) {
-    maxTagsInput.value = String(state.tagCloudMaxTags || 120);
-    maxTagsInput.addEventListener("change", async () => {
-      const { saveSettings } = await import("@features/bookmarks/settings.ts");
-      const val = Math.max(
-        20,
-        Math.min(500, parseInt(maxTagsInput.value, 10) || 120),
-      );
-      state.setTagCloudMaxTags(val);
-      await saveSettings({ tag_cloud_max_tags: val });
-      if (state.currentView === "tag-cloud") {
-        const { renderTagCloud } =
-          await import("@features/bookmarks/tag-cloud.ts");
-        renderTagCloud();
-      }
-    });
-  }
+  if (faviconToggleInit) faviconToggleInit.checked = state.hideFavicons;
 
-  const showAllToggle = document.getElementById(
-    "tag-cloud-default-show-all",
+  const richPreviewToggleInit = document.getElementById(
+    "rich-link-previews-toggle",
   ) as HTMLInputElement | null;
-  if (showAllToggle) {
-    showAllToggle.checked = !!state.tagCloudDefaultShowAll;
-    showAllToggle.addEventListener("change", async () => {
-      const { saveSettings } = await import("@features/bookmarks/settings.ts");
-      const val = !!showAllToggle.checked;
-      state.setTagCloudDefaultShowAll(val);
-      await saveSettings({ tag_cloud_default_show_all: val ? 1 : 0 });
-      // Also set local preference to match default immediately
-      safeLocalStorage.setItem("anchormarks_tag_cloud_show_all", String(val));
-      if (state.currentView === "tag-cloud") {
-        const { renderTagCloud } =
-          await import("@features/bookmarks/tag-cloud.ts");
-        renderTagCloud();
-      }
-    });
-  }
+  if (richPreviewToggleInit)
+    richPreviewToggleInit.checked = state.richLinkPreviewsEnabled;
+
+  const childToggleInit = document.getElementById(
+    "include-children-toggle",
+  ) as HTMLInputElement | null;
+  if (childToggleInit) childToggleInit.checked = state.includeChildBookmarks;
 
   // Favicons toggle
   const faviconToggle = document.getElementById(
@@ -458,21 +492,6 @@ function attachSettingsTabListeners(): void {
       const { renderBookmarks } =
         await import("@features/bookmarks/bookmarks.ts");
       renderBookmarks();
-    });
-  }
-
-  // AI suggestions toggle
-  const aiToggle = document.getElementById(
-    "ai-suggestions-toggle",
-  ) as HTMLInputElement;
-  if (aiToggle) {
-    aiToggle.addEventListener("change", async (e) => {
-      const { saveSettings } = await import("@features/bookmarks/settings.ts");
-      const enabled = (e.target as HTMLInputElement).checked;
-      await saveSettings({ ai_suggestions_enabled: enabled });
-
-      // Apply the change immediately
-      state.setAiSuggestionsEnabled(enabled);
     });
   }
 
@@ -495,12 +514,93 @@ function attachSettingsTabListeners(): void {
     });
   }
 
+  // Include children toggle
+  const childToggle = document.getElementById(
+    "include-children-toggle",
+  ) as HTMLInputElement;
+  if (childToggle) {
+    childToggle.addEventListener("change", async (e) => {
+      const { saveSettings } = await import("@features/bookmarks/settings.ts");
+      const enabled = (e.target as HTMLInputElement).checked;
+      state.setIncludeChildBookmarks(enabled);
+      await saveSettings({ include_child_bookmarks: enabled ? 1 : 0 });
+      if (state.currentView === "folder" || state.currentView === "dashboard") {
+        const { loadBookmarks } =
+          await import("@features/bookmarks/bookmarks.ts");
+        loadBookmarks();
+      }
+    });
+  }
+
   // Bookmark shortcut (drag-to-bookmarks-bar)
   import("@features/bookmarks/settings.ts").then(
     ({ installBookmarkShortcut }) => {
       installBookmarkShortcut();
     },
   );
+}
+
+// Initialize tag-specific controls (only when tags tab is active)
+function initializeTagControls(): void {
+  // Set AI suggestions toggle state and attach listener
+  const aiToggleEl = document.getElementById(
+    "ai-suggestions-toggle",
+  ) as HTMLInputElement | null;
+  if (aiToggleEl) {
+    aiToggleEl.checked = state.aiSuggestionsEnabled;
+    aiToggleEl.addEventListener("change", async (e) => {
+      const { saveSettings } = await import("@features/bookmarks/settings.ts");
+      const enabled = (e.target as HTMLInputElement).checked;
+      await saveSettings({ ai_suggestions_enabled: enabled });
+      state.setAiSuggestionsEnabled(enabled);
+    });
+  }
+
+  // Initialize tag cloud max tags control
+  const maxTagsInput = document.getElementById(
+    "tag-cloud-max-tags",
+  ) as HTMLInputElement | null;
+  if (maxTagsInput) {
+    maxTagsInput.value = String(state.tagCloudMaxTags || 120);
+    maxTagsInput.addEventListener("change", async () => {
+      const { saveSettings } = await import("@features/bookmarks/settings.ts");
+      const val = Math.max(
+        20,
+        Math.min(500, parseInt(maxTagsInput.value, 10) || 120),
+      );
+      state.setTagCloudMaxTags(val);
+      await saveSettings({ tag_cloud_max_tags: val });
+      if (state.currentView === "tag-cloud") {
+        const { renderTagCloud } =
+          await import("@features/bookmarks/tag-cloud.ts");
+        renderTagCloud();
+      }
+    });
+  }
+
+  // Initialize tag cloud show all toggle
+  const showAllToggle = document.getElementById(
+    "tag-cloud-default-show-all",
+  ) as HTMLInputElement | null;
+  if (showAllToggle) {
+    showAllToggle.checked = !!state.tagCloudDefaultShowAll;
+    showAllToggle.addEventListener("change", async () => {
+      const { saveSettings } = await import("@features/bookmarks/settings.ts");
+      const val = !!showAllToggle.checked;
+      state.setTagCloudDefaultShowAll(val);
+      await saveSettings({ tag_cloud_default_show_all: val ? 1 : 0 });
+      // Also set local preference to match default immediately
+      safeLocalStorage.setItem("anchormarks_tag_cloud_show_all", String(val));
+      if (state.currentView === "tag-cloud") {
+        const { renderTagCloud } =
+          await import("@features/bookmarks/tag-cloud.ts");
+        renderTagCloud();
+      }
+    });
+  }
+
+  // Note: settings-tag-sort and tag-search-input listeners are already
+  // initialized in initTagListeners() from tags.ts, which is called globally
 }
 
 // Attach settings modal logout button listener
@@ -779,7 +879,9 @@ export async function updateCounts(): Promise<void> {
         }
         break;
       case "most-used": {
-        const mostUsedViewCount = document.getElementById("most-used-view-count");
+        const mostUsedViewCount = document.getElementById(
+          "most-used-view-count",
+        );
         if (mostUsedViewCount) {
           mostUsedViewCount.textContent = `${currentViewCount} link${currentViewCount !== 1 ? "s" : ""}`;
         }

@@ -7,10 +7,12 @@ All notable changes to AnchorMarks are documented here.
 ## [Unreleased]
 
 ### Security
+
 - Persist auth rate-limit counters in SQLite so limits survive server restarts
 - Run `npm audit` during Docker production builds to catch vulnerable dependencies
 
 ### Changed
+
 - Moved project documentation to `docs/` directory
 
 ---
@@ -18,6 +20,7 @@ All notable changes to AnchorMarks are documented here.
 ## [1.0.5] - 2026-02-23
 
 ### Fixed
+
 - Mobile responsiveness and layout issues across views
 - Dashboard view menu display on mobile screens
 
@@ -26,6 +29,7 @@ All notable changes to AnchorMarks are documented here.
 ## [1.0.4] - 2026-02-22
 
 ### Added
+
 - **FTS5 full-text search** — SQLite FTS5 index for significantly faster bookmark search
 - **WebSocket real-time updates** — live sync of bookmarks, folders, and tags across tabs
 - **Advanced analytics dashboard** — usage metrics, click tracking, and bookmark insights
@@ -35,6 +39,7 @@ All notable changes to AnchorMarks are documented here.
 - **Rate limiting** — configurable rate limiting with Docker environment support
 
 ### Fixed
+
 - Security audit vulnerabilities: XSS, SSRF, CSRF token handling, and JWT edge cases
 - CSRF protection extended to authentication routes
 - FTS5 migration: auto-recreate virtual table if `id` column is missing
@@ -42,6 +47,7 @@ All notable changes to AnchorMarks are documented here.
 - Production favicon handling and security header hardening
 
 ### Security
+
 - CSRF token validation middleware applied across all state-changing routes
 - Enhanced JWT handling with security audit logging
 - CORS origin validation tightened for production environments
@@ -52,6 +58,7 @@ All notable changes to AnchorMarks are documented here.
 ## [1.0.3] - 2026-01-31
 
 ### Added
+
 - **Accessibility** — comprehensive ARIA attributes and focus management throughout the UI
 - **Event listener cleanup** — system to prevent memory leaks on view transitions
 - **HTML sanitization** — utility functions with security audit coverage
@@ -60,6 +67,7 @@ All notable changes to AnchorMarks are documented here.
 - TypeScript return type annotations added across all exported functions
 
 ### Fixed
+
 - Omnibar filter application now correctly updates the filter menu and switches to bookmarks view
 - Bookmark action handling updated to refresh dashboard widgets after changes
 - Tag filtering normalization made more robust to handle edge cases
@@ -67,6 +75,7 @@ All notable changes to AnchorMarks are documented here.
 - Duplicate keyboard event listener registrations removed
 
 ### Performance
+
 - Keyboard event handling consolidated to reduce overhead
 - Async sidebar tag filtering to avoid blocking the main thread
 
@@ -75,6 +84,7 @@ All notable changes to AnchorMarks are documented here.
 ## [1.0.2] - 2026-01-25
 
 ### Added
+
 - **Bookmarklet** — one-click bookmarking shortcut with prefilled fields for mobile and desktop
 - **Omnibar filter integration** — filters applied via omnibar now update the filter menu and switch views
 - **Tag filtering AND/OR semantics** — toggle between requiring all or any selected tags
@@ -84,6 +94,7 @@ All notable changes to AnchorMarks are documented here.
 - All npm scripts consolidated into Makefile
 
 ### Fixed
+
 - Omnibar panel no longer overlaps the filter button (centered positioning with max-width)
 - Duplicate filter button removed from individual views (header canonical button used)
 - Duplicate search event listeners prevented
@@ -96,6 +107,7 @@ All notable changes to AnchorMarks are documented here.
 ## [1.0.1] - 2026-01-09
 
 ### Added
+
 - **Omnibar command palette** — unified search and command palette with category badges, recent searches, tag suggestions, and Escape-to-close
 - **Bookmark archiving** — archive view, bulk archive/restore actions, and database migration
 - **Rich link previews** — Open Graph card component with `og_image` support, toggle in user settings
@@ -123,6 +135,7 @@ All notable changes to AnchorMarks are documented here.
 - **Automated screenshot pipeline** — Playwright-based UI screenshot capture for documentation
 
 ### Fixed
+
 - Bookmark import HTML parser made robust with case-insensitive regex, sibling `<DL>` handling, and cheerio fallback
 - Import/export routes not registered in API configuration
 - Maintenance module not initialized (broken link checker and favicon refresh buttons)
@@ -134,6 +147,7 @@ All notable changes to AnchorMarks are documented here.
 - Cross-browser text truncation using `line-clamp`
 
 ### Changed
+
 - Frontend migrated from JavaScript to **TypeScript** with strict mode
 - Frontend restructured as a Vite client application (`apps/client`) with path aliases
 - App.ts split into modular UI components (Header, Sidebar, Bookmarks, Dashboard, etc.)
@@ -146,6 +160,7 @@ All notable changes to AnchorMarks are documented here.
 ## [1.0.0] - 2025-12-12
 
 ### Added
+
 - Initial release of AnchorMarks
 - Express.js backend with SQLite (better-sqlite3) in WAL mode
 - JWT authentication with httpOnly cookies and CSRF protection

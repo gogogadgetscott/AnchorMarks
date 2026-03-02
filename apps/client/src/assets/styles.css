@@ -4026,7 +4026,7 @@ body.tag-cloud-active .content-body {
 .settings-panel {
   flex: 1;
   padding: 1.5rem;
-  display: none;
+  display: none !important;
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--bg-secondary);
@@ -4034,7 +4034,7 @@ body.tag-cloud-active .content-body {
 }
 
 .settings-panel.active {
-  display: flex;
+  display: flex !important;
   flex-direction: column;
 }
 
@@ -6094,6 +6094,17 @@ body.dragging-widget .widget-sidebar-overlay {
 .dashboard-widget-freeform .widget-body {
   height: calc(100% - 48px);
   overflow-y: auto;
+}
+
+.dashboard-widget-freeform .compact-list,
+.dashboard-widget-freeform .compact-item,
+.dashboard-widget-freeform .compact-item-link,
+.dashboard-widget-freeform .compact-text {
+  text-align: left;
+}
+
+.dashboard-widget-freeform .compact-item {
+  justify-content: flex-start;
 }
 
 .widget-resize-handle {

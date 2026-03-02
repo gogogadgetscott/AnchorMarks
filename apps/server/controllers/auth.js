@@ -213,9 +213,13 @@ function setupAuthRoutes(
         const accessToken = jwt.sign({ userId }, JWT_SECRET, {
           expiresIn: JWT_ACCESS_EXPIRY,
         });
-        const refreshToken = jwt.sign({ userId, jti: refreshJti }, JWT_REFRESH_SECRET, {
-          expiresIn: JWT_REFRESH_EXPIRY,
-        });
+        const refreshToken = jwt.sign(
+          { userId, jti: refreshJti },
+          JWT_REFRESH_SECRET,
+          {
+            expiresIn: JWT_REFRESH_EXPIRY,
+          },
+        );
         const csrfToken = generateCsrfToken();
         const refreshExpiresAt = new Date(
           Date.now() + expiryToMs(JWT_REFRESH_EXPIRY),

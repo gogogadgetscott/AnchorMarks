@@ -256,6 +256,12 @@ export async function updateHeaderContent(): Promise<void> {
         );
       });
     }
+
+    // views button logic lives in dashboard module; make sure the
+    // component initializes now that the DOM element exists
+    import("@features/bookmarks/dashboard.ts").then(({ initDashboardViews }) =>
+      initDashboardViews(),
+    );
   }
 
   // Re-attach Omnibar listeners since header was replaced
@@ -369,8 +375,12 @@ export async function initializeApp(): Promise<void> {
   await updateHeaderContent();
 
   if (state.currentView === "dashboard") {
-    const { renderDashboard } =
+    const { renderDashboard, initDashboardViews } =
       await import("@features/bookmarks/dashboard.ts");
+    // header has already been built by this point but some callers
+    // (initializeApp) call renderDashboard directly without going
+    // through updateHeaderContent; ensure the views button is wired up
+    await initDashboardViews();
     renderDashboard();
   } else if (state.currentView === "tag-cloud") {
     const { renderTagCloud } = await import("@features/bookmarks/tag-cloud.ts");

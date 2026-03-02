@@ -372,8 +372,13 @@ export class TagPickerDialog {
     if (!normalized || this.selectedTags.includes(normalized)) return;
     this.selectedTags.push(normalized);
     this.renderSelectedTags();
-    const input = document.getElementById("bulk-tags-text-input") as HTMLInputElement;
-    if (input) { input.value = ""; input.focus(); }
+    const input = document.getElementById(
+      "bulk-tags-text-input",
+    ) as HTMLInputElement;
+    if (input) {
+      input.value = "";
+      input.focus();
+    }
     const ac = document.getElementById("bulk-tag-autocomplete") as HTMLElement;
     if (ac) this.hideAutocomplete(ac);
   }
@@ -406,23 +411,35 @@ export class TagPickerDialog {
     });
   }
 
-  private showAutocomplete(searchTerm: string, autocomplete: HTMLElement): void {
+  private showAutocomplete(
+    searchTerm: string,
+    autocomplete: HTMLElement,
+  ): void {
     const allTags = Object.keys(state.tagMetadata || {});
     let matches: string[];
 
     if (!searchTerm) {
       matches = allTags
         .filter((t) => !this.selectedTags.includes(t))
-        .sort((a, b) => ((state.tagMetadata[b] as { count?: number })?.count || 0) - ((state.tagMetadata[a] as { count?: number })?.count || 0))
+        .sort(
+          (a, b) =>
+            ((state.tagMetadata[b] as { count?: number })?.count || 0) -
+            ((state.tagMetadata[a] as { count?: number })?.count || 0),
+        )
         .slice(0, 20);
     } else {
       matches = allTags
-        .filter((t) => t.toLowerCase().includes(searchTerm.toLowerCase()) && !this.selectedTags.includes(t))
+        .filter(
+          (t) =>
+            t.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            !this.selectedTags.includes(t),
+        )
         .slice(0, 12);
     }
 
     const colorDot = (tag: string) => {
-      const color = (state.tagMetadata[tag] as { color?: string })?.color || "#f59e0b";
+      const color =
+        (state.tagMetadata[tag] as { color?: string })?.color || "#f59e0b";
       return `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${escapeHtml(color)};flex-shrink:0;margin-right:0.4rem;"></span>`;
     };
 
@@ -436,7 +453,11 @@ export class TagPickerDialog {
       })
       .join("");
 
-    if (searchTerm && !matches.some((t) => t.toLowerCase() === searchTerm.toLowerCase()) && !this.selectedTags.includes(searchTerm)) {
+    if (
+      searchTerm &&
+      !matches.some((t) => t.toLowerCase() === searchTerm.toLowerCase()) &&
+      !this.selectedTags.includes(searchTerm)
+    ) {
       const isFirst = matches.length === 0;
       html += `<div class="tag-autocomplete-item tag-autocomplete-create ${isFirst ? "active" : ""}" data-tag="${JSON.stringify(searchTerm).slice(1, -1)}">
         <span style="display:flex;align-items:center;gap:0.35rem;">
@@ -446,7 +467,10 @@ export class TagPickerDialog {
         <span class="tag-autocomplete-count" style="background:var(--primary-100,rgba(99,102,241,0.15));color:var(--primary-600);">new</span>
       </div>`;
     } else if (matches.length > 0 && searchTerm) {
-      html = html.replace('class="tag-autocomplete-item', 'class="tag-autocomplete-item active');
+      html = html.replace(
+        'class="tag-autocomplete-item',
+        'class="tag-autocomplete-item active',
+      );
     }
 
     if (!html) {
@@ -474,7 +498,10 @@ export class TagPickerDialog {
     this.autocompleteIndex = -1;
   }
 
-  private navigateAutocomplete(direction: number, autocomplete: HTMLElement): void {
+  private navigateAutocomplete(
+    direction: number,
+    autocomplete: HTMLElement,
+  ): void {
     const items = autocomplete.querySelectorAll(".tag-autocomplete-item");
     if (items.length === 0) return;
     items.forEach((i) => i.classList.remove("active"));
@@ -498,24 +525,39 @@ export class TagPickerDialog {
       this.autocompleteIndex = -1;
 
       const titleEl = this.modalElement.querySelector(".tag-picker-title");
-      const subtitleEl = this.modalElement.querySelector(".tag-picker-subtitle");
-      const okBtn = this.modalElement.querySelector(".tag-picker-ok") as HTMLElement;
-      const cancelBtn = this.modalElement.querySelector(".tag-picker-cancel") as HTMLElement;
-      const cancelXBtn = this.modalElement.querySelector(".tag-picker-cancel-x") as HTMLElement;
+      const subtitleEl = this.modalElement.querySelector(
+        ".tag-picker-subtitle",
+      );
+      const okBtn = this.modalElement.querySelector(
+        ".tag-picker-ok",
+      ) as HTMLElement;
+      const cancelBtn = this.modalElement.querySelector(
+        ".tag-picker-cancel",
+      ) as HTMLElement;
+      const cancelXBtn = this.modalElement.querySelector(
+        ".tag-picker-cancel-x",
+      ) as HTMLElement;
       if (titleEl) titleEl.textContent = options.title || "Tags";
       if (subtitleEl) {
-        subtitleEl.textContent = options.selectionCount != null
-          ? `${options.selectionCount} bookmark${options.selectionCount !== 1 ? "s" : ""} selected`
-          : "";
+        subtitleEl.textContent =
+          options.selectionCount != null
+            ? `${options.selectionCount} bookmark${options.selectionCount !== 1 ? "s" : ""} selected`
+            : "";
       }
       if (okBtn) okBtn.textContent = options.confirmText || "Apply";
       if (cancelBtn) cancelBtn.textContent = options.cancelText || "Cancel";
 
       this.renderSelectedTags();
 
-      const input = this.modalElement.querySelector("#bulk-tags-text-input") as HTMLInputElement;
-      const autocomplete = this.modalElement.querySelector("#bulk-tag-autocomplete") as HTMLElement;
-      const container = this.modalElement.querySelector("#bulk-tags-input-container") as HTMLElement;
+      const input = this.modalElement.querySelector(
+        "#bulk-tags-text-input",
+      ) as HTMLInputElement;
+      const autocomplete = this.modalElement.querySelector(
+        "#bulk-tag-autocomplete",
+      ) as HTMLElement;
+      const container = this.modalElement.querySelector(
+        "#bulk-tags-input-container",
+      ) as HTMLElement;
       if (input) input.value = "";
 
       const cleanup = () => {
@@ -551,7 +593,10 @@ export class TagPickerDialog {
       };
 
       const onInput = (e: Event) => {
-        this.showAutocomplete((e.target as HTMLInputElement).value.trim(), autocomplete);
+        this.showAutocomplete(
+          (e.target as HTMLInputElement).value.trim(),
+          autocomplete,
+        );
       };
 
       const onFocus = () => {
@@ -563,13 +608,19 @@ export class TagPickerDialog {
       const onInputKeydown = (e: KeyboardEvent) => {
         if (e.key === "Enter") {
           e.preventDefault();
-          const activeItem = autocomplete.querySelector(".tag-autocomplete-item.active");
+          const activeItem = autocomplete.querySelector(
+            ".tag-autocomplete-item.active",
+          );
           if (activeItem) {
             this.addTag((activeItem as HTMLElement).dataset.tag || "");
           } else if (input.value.trim()) {
             this.addTag(input.value.trim());
           }
-        } else if (e.key === "Backspace" && input.value === "" && this.selectedTags.length > 0) {
+        } else if (
+          e.key === "Backspace" &&
+          input.value === "" &&
+          this.selectedTags.length > 0
+        ) {
           this.removeTag(this.selectedTags[this.selectedTags.length - 1]);
         } else if (e.key === "ArrowDown") {
           e.preventDefault();

@@ -123,15 +123,15 @@ const AI_API_KEY = process.env.AI_API_KEY || null;
 // data destruction without a user-initiated CSRF-protected session.
 const API_KEY_WHITELIST = [
   // Bookmark reads and single-item write (create / update)
-  { method: "GET",    path: /^\/api\/bookmarks(\/.*)?$/ },
-  { method: "POST",   path: /^\/api\/bookmarks$/ },          // create only (not sub-paths)
-  { method: "PUT",    path: /^\/api\/bookmarks\/[^/]+$/ },   // update single item only
+  { method: "GET", path: /^\/api\/bookmarks(\/.*)?$/ },
+  { method: "POST", path: /^\/api\/bookmarks$/ }, // create only (not sub-paths)
+  { method: "PUT", path: /^\/api\/bookmarks\/[^/]+$/ }, // update single item only
   // Folder reads only — folder mutations require a browser session
-  { method: "GET",    path: /^\/api\/folders(\/.*)?$/ },
+  { method: "GET", path: /^\/api\/folders(\/.*)?$/ },
   // Sync read
-  { method: "GET",    path: /^\/api\/sync(\/.*)?$/ },
+  { method: "GET", path: /^\/api\/sync(\/.*)?$/ },
   // Quick search
-  { method: "GET",    path: /^\/api\/quick-search/ },
+  { method: "GET", path: /^\/api\/quick-search/ },
 ];
 
 function isApiKeyAllowed(req) {

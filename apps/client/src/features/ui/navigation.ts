@@ -6,6 +6,9 @@
 import * as state from "@features/state.ts";
 import { updateActiveNav, closeModals } from "@utils/ui-helpers.ts";
 
+let resizeListenerAttached = false;
+let escapeListenerAttached = false;
+
 /**
  * Attach sidebar toggle listener to dynamically rendered headers
  * Should be called after header re-renders
@@ -35,7 +38,12 @@ export function attachSidebarToggle(): void {
 export function initNavigationListeners(): void {
   // Navigation item clicks (View switching)
   document.querySelectorAll(".nav-item[data-view]").forEach((item) => {
-    item.addEventListener("click", async () => {
+    const navItem = item as HTMLElement & {
+      _navViewListenerAttached?: boolean;
+    };
+    if (navItem._navViewListenerAttached) return;
+
+    navItem.addEventListener("click", async () => {
       const view = (item as HTMLElement).dataset.view || "all";
       await state.setCurrentView(view);
 
@@ -61,11 +69,13 @@ export function initNavigationListeners(): void {
         const { renderAnalytics } = await import("@features/analytics.ts");
         await renderAnalytics();
       } else {
-        const { loadBookmarks } =
+        const { renderSkeletons, loadBookmarks } =
           await import("@features/bookmarks/bookmarks.ts");
+        renderSkeletons();
         await loadBookmarks();
       }
     });
+    navItem._navViewListenerAttached = true;
   });
 
   // Sidebar toggle buttons (now just one toggle for the main header)
@@ -78,60 +88,94 @@ export function initNavigationListeners(): void {
   ];
 
   sidebarToggleIds.forEach((id) => {
-    document.getElementById(id)?.addEventListener("click", async () => {
+    const btn = document.getElementById(id) as
+      | (HTMLElement & { _sidebarToggleListenerAttached?: boolean })
+      | null;
+    if (!btn || btn._sidebarToggleListenerAttached) return;
+
+    btn.addEventListener("click", async () => {
       const { toggleSidebar } = await import("@features/bookmarks/settings.ts");
       toggleSidebar();
     });
+    btn._sidebarToggleListenerAttached = true;
   });
 
   // Attach sidebar toggle for dynamically rendered headers
   attachSidebarToggle();
 
   // Mobile sidebar backdrop
-  document.getElementById("sidebar-backdrop")?.addEventListener("click", () => {
-    if (window.innerWidth <= 1024) {
-      document.body.classList.remove("mobile-sidebar-open");
-    }
-  });
-
-  // Close mobile sidebar when clicking on navigation items
-  document.querySelectorAll(".sidebar .nav-item").forEach((item) => {
-    item.addEventListener("click", () => {
+  const backdrop = document.getElementById("sidebar-backdrop") as
+    | (HTMLElement & { _mobileBackdropListenerAttached?: boolean })
+    | null;
+  if (backdrop && !backdrop._mobileBackdropListenerAttached) {
+    backdrop.addEventListener("click", () => {
       if (window.innerWidth <= 1024) {
         document.body.classList.remove("mobile-sidebar-open");
       }
     });
+    backdrop._mobileBackdropListenerAttached = true;
+  }
+
+  // Close mobile sidebar when clicking on navigation items
+  document.querySelectorAll(".sidebar .nav-item").forEach((item) => {
+    const navItem = item as HTMLElement & {
+      _mobileNavCloseListenerAttached?: boolean;
+    };
+    if (navItem._mobileNavCloseListenerAttached) return;
+
+    navItem.addEventListener("click", () => {
+      if (window.innerWidth <= 1024) {
+        document.body.classList.remove("mobile-sidebar-open");
+      }
+    });
+    navItem._mobileNavCloseListenerAttached = true;
   });
 
   // Section Toggles
   document.querySelectorAll("[data-toggle-section]").forEach((header) => {
-    header.addEventListener("click", async () => {
+    const toggleHeader = header as HTMLElement & {
+      _toggleSectionListenerAttached?: boolean;
+    };
+    if (toggleHeader._toggleSectionListenerAttached) return;
+
+    toggleHeader.addEventListener("click", async () => {
       const { toggleSection } = await import("@features/bookmarks/settings.ts");
       toggleSection((header as HTMLElement).dataset.toggleSection || "");
     });
+    toggleHeader._toggleSectionListenerAttached = true;
   });
 
   // Tour next button
-  document
-    .getElementById("tour-next-btn")
-    ?.addEventListener("click", async () => {
+  const tourNextBtn = document.getElementById("tour-next-btn") as
+    | (HTMLElement & { _tourNextListenerAttached?: boolean })
+    | null;
+  if (tourNextBtn && !tourNextBtn._tourNextListenerAttached) {
+    tourNextBtn.addEventListener("click", async () => {
       const { nextTourStep } = await import("@features/bookmarks/tour.ts");
       nextTourStep();
     });
+    tourNextBtn._tourNextListenerAttached = true;
+  }
 
   // Global resize listener for mobile sidebar state
-  window.addEventListener("resize", () => {
-    if (window.innerWidth > 1024) {
-      document.body.classList.remove("mobile-sidebar-open");
-    }
-  });
+  if (!resizeListenerAttached) {
+    window.addEventListener("resize", () => {
+      if (window.innerWidth > 1024) {
+        document.body.classList.remove("mobile-sidebar-open");
+      }
+    });
+    resizeListenerAttached = true;
+  }
 
   // Close overlays on Escape (Mobile sidebar + Modals)
-  document.addEventListener("keydown", (e: KeyboardEvent) => {
-    if (e.key !== "Escape") return;
-    if (window.innerWidth <= 1024) {
-      document.body.classList.remove("mobile-sidebar-open");
-    }
-    closeModals();
-  });
+  if (!escapeListenerAttached) {
+    document.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (window.innerWidth <= 1024) {
+        document.body.classList.remove("mobile-sidebar-open");
+      }
+      closeModals();
+    });
+    escapeListenerAttached = true;
+  }
 }

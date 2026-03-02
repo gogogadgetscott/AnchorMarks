@@ -67,10 +67,17 @@ export function RichBookmarkCard(bookmark: Bookmark, index: number): string {
         .join("")}</div>`
     : "";
 
-  const faviconHtml =
-    !state.hideFavicons && bookmark.favicon
-      ? `<img src="${bookmark.favicon}" alt="" class="bookmark-favicon-img img-loading" data-fallback="true" loading="lazy">`
-      : Icon("link", { size: 16 });
+  const shouldUseFaviconImage =
+    !state.hideFavicons &&
+    !!bookmark.favicon &&
+    !bookmark.favicon.includes("t2.gstatic.com/faviconV2");
+
+  const faviconHtml = shouldUseFaviconImage
+    ? `<span class="bookmark-favicon-wrap">
+           <img src="${bookmark.favicon}" alt="" class="bookmark-favicon-img img-loading" data-fallback="true" loading="lazy" onerror="this.onerror=null;this.style.display='none';if(this.nextElementSibling){this.nextElementSibling.style.display='inline-flex';}">
+           <span class="bookmark-favicon-fallback" style="display:none;align-items:center;justify-content:center;">${Icon("link", { size: 16 })}</span>
+         </span>`
+    : Icon("link", { size: 16 });
 
   const delayClass = `delay-${index % 10}`;
 
