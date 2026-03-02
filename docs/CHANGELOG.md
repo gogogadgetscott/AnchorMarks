@@ -6,17 +6,36 @@ All notable changes to AnchorMarks are documented here.
 
 ## [Unreleased]
 
-### Security
+### Added
 
-- Persist auth rate-limit counters in SQLite so limits survive server restarts
-- Run `npm audit` during Docker production builds to catch vulnerable dependencies
+- **Favicon display in bookmarks list** — favicons are fetched and shown inline; a per-bookmark refresh button lets users update stale icons
+- **Most-used view** — dedicated sidebar view showing bookmarks ranked by click count
+- **Tag picker dialog** — inline dialog for quickly applying tags without opening the full bookmark modal
+- **Registration form improvements** — password visibility toggle and real-time password-strength indicator
+- **Enhanced modal behaviour** — modals track dirty state, prompt before discarding unsaved changes, and persist user preferences across sessions
 
 ### Fixed
 
 - Most-used badge count now always reflects the true server total (bookmarks with at least one click) instead of switching to the rendered page count when on the most-used view, which was capped at the 50-item page size
+- Modal height set to `auto` for better responsiveness on smaller screens
+- DOM reference handling in render functions to prevent stale-element errors
+- `userId` validation added to metadata fetch and route handlers to prevent unauthorised access
+
+### Security
+
+- Persist auth rate-limit counters in SQLite so limits survive server restarts
+- Run `npm audit` during Docker production builds to catch vulnerable dependencies
+- Gate Swagger API docs behind authentication in production (`fix(sec-003)`)
+- Eliminate SSRF DNS-rebinding TOCTOU window in metadata fetch (`fix(sec-004)`)
+- Narrow API key scope and add a dedicated write rate-limit tier (`fix(sec-005)`)
+- Sign refresh tokens with a separate `JWT_REFRESH_SECRET` (`fix(sec-006)`)
+- Run server process as an unprivileged `node` user in Docker (`fix(sec-007)`)
 
 ### Changed
 
+- Bookmarks list layout and styling overhauled for improved readability
+- Login form UI refreshed; `updateCounts` logic streamlined
+- Favicon settings UI text updated for clarity
 - Moved project documentation to `docs/` directory
 
 ---
