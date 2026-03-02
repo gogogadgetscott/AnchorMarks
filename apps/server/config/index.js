@@ -130,6 +130,8 @@ const API_KEY_WHITELIST = [
   { method: "GET", path: /^\/api\/folders(\/.*)?$/ },
   // Sync read
   { method: "GET", path: /^\/api\/sync(\/.*)?$/ },
+  // Tag read
+  { method: "GET", path: /^\/api\/tags(\/.*)?$/ },
   // Quick search
   { method: "GET", path: /^\/api\/quick-search/ },
 ];

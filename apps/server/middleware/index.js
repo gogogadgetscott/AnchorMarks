@@ -176,7 +176,7 @@ function authenticateToken(db) {
           return res.status(403).json({
             error: "API key not permitted for this endpoint.",
             suggestion:
-              "Check allowed endpoints and methods in server config. Only GET /api/bookmarks, POST /api/bookmarks, GET /api/folders, and GET /api/quick-search are permitted by API key.",
+              "Check allowed endpoints and methods in server config. Only GET /api/bookmarks, POST /api/bookmarks, GET /api/folders, GET /api/tags, and GET /api/quick-search are permitted by API key.",
             tip: "Use 'x-api-key' (all lowercase) as the header name.",
           });
         }
