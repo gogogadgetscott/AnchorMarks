@@ -9,8 +9,9 @@ services:
         PORT: ${PORT:-3000}
         HOST: ${HOST:-0.0.0.0}
         DB_PATH: ${DB_PATH:-/apps/database/anchormarks.db}
-        # No defaults for secrets; set JWT_SECRET and CORS_ORIGIN in .env or host env
+        # No defaults for secrets; set JWT_SECRET, JWT_REFRESH_SECRET, and CORS_ORIGIN in .env or host env
         JWT_SECRET: ${JWT_SECRET}
+        JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
         CORS_ORIGIN: ${CORS_ORIGIN}
         SSL_ENABLED: ${SSL_ENABLED}
         SSL_KEY: ${SSL_KEY}
@@ -22,6 +23,7 @@ services:
       DB_PATH: ${DB_PATH:-/apps/database/anchormarks.db}
       # No defaults for production secrets; app will fail at startup if unset (validateSecurityConfig)
       JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN}
     container_name: anchormarks
     restart: unless-stopped
