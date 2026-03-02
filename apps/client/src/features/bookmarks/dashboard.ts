@@ -7,7 +7,7 @@ import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import type { Bookmark, DashboardWidget } from "@types";
 import type { DashboardViewResponse } from "../../types/api";
-import { showToast } from "@utils/ui-helpers.ts";
+import { showToast, dom } from "@utils/ui-helpers.ts";
 import { confirmDialog, promptDialog } from "@features/ui/confirm-dialog.ts";
 import { escapeHtml } from "@utils/index.ts";
 
@@ -816,6 +816,9 @@ export function initDashboardDragDrop(): void {
   // renderDashboard is called repeatedly.
   const newOutlet = outlet.cloneNode(true) as HTMLElement;
   outlet.parentNode?.replaceChild(newOutlet, outlet);
+  // Keep the cached DOM reference in sync so renderBookmarks/renderSkeletons
+  // never render into the now-detached old node when the user switches views.
+  dom.mainViewOutlet = newOutlet;
 
   const dropZone = newOutlet.querySelector(
     "#dashboard-drop-zone",

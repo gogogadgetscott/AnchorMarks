@@ -46,7 +46,8 @@ export function invalidateTagMetadataCache(): void {
  */
 export function renderSkeletons(): void {
   const container =
-    dom.mainViewOutlet || document.getElementById("main-view-outlet");
+    (dom.mainViewOutlet?.isConnected ? dom.mainViewOutlet : null) ||
+    document.getElementById("main-view-outlet");
   if (!container) return;
 
   // Set container class based on view mode
@@ -257,7 +258,8 @@ export function renderBookmarks(): void {
   updateFilterButtonVisibility();
 
   const container =
-    dom.mainViewOutlet || document.getElementById("main-view-outlet");
+    (dom.mainViewOutlet?.isConnected ? dom.mainViewOutlet : null) ||
+    document.getElementById("main-view-outlet");
   const emptyState = dom.emptyState || document.getElementById("empty-state");
   const searchInput =
     dom.searchInput || document.getElementById("search-input");
