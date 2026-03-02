@@ -1,6 +1,6 @@
 const https = require("https");
 const http = require("http");
-const { isPrivateAddress } = require("../helpers/utils");
+const { isPrivateAddress } = require("../utils/ssrfUtils");
 
 function getStats(db, userId) {
   const bookmarkCount = db

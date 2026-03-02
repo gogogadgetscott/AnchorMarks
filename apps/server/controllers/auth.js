@@ -47,11 +47,11 @@ function setTokenCookies(res, accessToken, refreshToken, csrfToken) {
 const {
   ensureTagsExist,
   updateBookmarkTags,
-} = require("../helpers/tag-helpers");
+} = require("../services/tagService");
 const {
   EXAMPLE_BOOKMARKS,
   STARTER_FOLDER,
-} = require("../helpers/example-bookmarks");
+} = require("../utils/exampleBookmarks");
 
 function generateCsrfToken() {
   return uuidv4().replace(/-/g, "");

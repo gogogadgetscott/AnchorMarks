@@ -1,5 +1,5 @@
 const { v4: uuidv4 } = require("uuid");
-const { broadcast } = require("../helpers/websocket");
+const { broadcast } = require("../services/websocketService");
 const { logger } = require("../lib/logger");
 const { reportAndSend } = require("../lib/errors");
 

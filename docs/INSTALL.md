@@ -761,11 +761,11 @@ AnchorMarks can use an AI provider to suggest tags when you add or edit a bookma
 
 #### Supported Providers
 
-| Provider | `AI_PROVIDER` | Requires `AI_API_KEY` | Default model |
-|----------|--------------|----------------------|---------------|
-| Disabled | `none` | — | — |
-| OpenAI (or compatible) | `openai` | Yes | `gpt-4o-mini` |
-| Ollama (local) | `ollama` | No | `llama3.1` |
+| Provider               | `AI_PROVIDER` | Requires `AI_API_KEY` | Default model |
+| ---------------------- | ------------- | --------------------- | ------------- |
+| Disabled               | `none`        | —                     | —             |
+| OpenAI (or compatible) | `openai`      | Yes                   | `gpt-4o-mini` |
+| Ollama (local)         | `ollama`      | No                    | `llama3.1`    |
 
 #### OpenAI Setup
 

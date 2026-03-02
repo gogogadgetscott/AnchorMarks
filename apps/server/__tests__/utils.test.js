@@ -7,41 +7,41 @@ describe("server/utils.js", () => {
     });
 
     it("treats localhost as private", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("http://localhost")).resolves.toBe(true);
     });
 
     it("treats loopback ip as private", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("http://127.0.0.1")).resolves.toBe(true);
     });
 
     it("allows public IPs without DNS lookup", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("http://93.184.216.34")).resolves.toBe(
         false,
       );
     });
 
     it("treats IPv6 loopback as private", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("http://[::1]")).resolves.toBe(true);
     });
 
     it("blocks non-http(s) protocols", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("ftp://example.com")).resolves.toBe(true);
     });
 
     it("returns false for invalid URL in non-production", async () => {
       process.env.NODE_ENV = "test";
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("not-a-url")).resolves.toBe(false);
     });
 
     it("returns true for invalid URL in production (conservative)", async () => {
       process.env.NODE_ENV = "production";
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("not-a-url")).resolves.toBe(true);
     });
 
@@ -52,7 +52,7 @@ describe("server/utils.js", () => {
         .spyOn(dns.promises, "lookup")
         .mockResolvedValue([{ address: "10.0.0.1" }]);
 
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("https://example.com")).resolves.toBe(true);
 
       lookupSpy.mockRestore();
@@ -61,7 +61,7 @@ describe("server/utils.js", () => {
 
   describe("fetchFavicon", () => {
     it("returns null for non-http(s) bookmark URL", async () => {
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
       const db = { prepare: () => ({ run: () => {} }) };
       await expect(
         fetchFavicon("ftp://example.com", "id", db, "/tmp", "test"),
@@ -69,7 +69,7 @@ describe("server/utils.js", () => {
     });
 
     it("returns null for private targets in production (SSRF guard)", async () => {
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
       const db = { prepare: () => ({ run: () => {} }) };
       await expect(
         fetchFavicon("http://127.0.0.1", "id", db, "/tmp", "production"),
@@ -88,7 +88,7 @@ describe("server/utils.js", () => {
         prepare: vi.fn(() => ({ run: updateRun })),
       };
 
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
 
       const result = await fetchFavicon(
         "https://example.com/some/path",
@@ -111,7 +111,7 @@ describe("server/utils.js", () => {
     });
 
     it("returns null for invalid URL input", async () => {
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
       const db = { prepare: () => ({ run: () => {} }) };
       await expect(
         fetchFavicon("not-a-url", "id", db, "/tmp", "development"),
@@ -168,7 +168,7 @@ describe("server/utils.js", () => {
         prepare: vi.fn(() => ({ run: updateRun })),
       };
 
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
       const result = await fetchFavicon(
         "https://example.com/some/path",
         "bookmark-id",
@@ -239,7 +239,7 @@ describe("server/utils.js", () => {
         prepare: vi.fn(() => ({ run: updateRun })),
       };
 
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
 
       const p1 = fetchFavicon(
         "https://example.com/one",
@@ -328,7 +328,7 @@ describe("server/utils.js", () => {
         prepare: vi.fn(() => ({ run: updateRun })),
       };
 
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
       const result = await fetchFavicon(
         "https://example.com/some/path",
         "bookmark-id",

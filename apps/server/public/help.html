@@ -2005,18 +2005,19 @@
             <h4>Supported Providers</h4>
             <ul>
               <li>
-                <strong><code>none</code> (default):</strong> AI tag
-                suggestions are disabled. The ✨ AI Suggest button will not
-                appear.
+                <strong><code>none</code> (default):</strong> AI tag suggestions
+                are disabled. The ✨ AI Suggest button will not appear.
               </li>
               <li>
                 <strong><code>openai</code>:</strong> Uses the OpenAI Chat
-                Completions API (or any OpenAI-compatible endpoint). Requires
-                an API key. Default model: <code>gpt-4o-mini</code>.
+                Completions API (or any OpenAI-compatible endpoint). Requires an
+                API key. Default model: <code>gpt-4o-mini</code>.
               </li>
               <li>
                 <strong><code>ollama</code>:</strong> Uses a local
-                <a href="https://ollama.com" target="_blank" rel="noopener">Ollama</a>
+                <a href="https://ollama.com" target="_blank" rel="noopener"
+                  >Ollama</a
+                >
                 instance — free and private. No API key needed. Default model:
                 <code>llama3.1</code>. Default URL:
                 <code>http://localhost:11434/api/generate</code>.
@@ -2033,12 +2034,13 @@
               AI_API_KEY=sk-...<br />
               <br />
               # Optional: override the model<br />
-              # AI_MODEL=gpt-4o-mini  (openai default)<br />
-              # AI_MODEL=llama3.1     (ollama default)<br />
+              # AI_MODEL=gpt-4o-mini (openai default)<br />
+              # AI_MODEL=llama3.1 (ollama default)<br />
               <br />
               # Optional: override the API endpoint<br />
-              # AI_API_URL=https://api.openai.com/v1/chat/completions (openai default)<br />
-              # AI_API_URL=http://localhost:11434/api/generate        (ollama default)
+              # AI_API_URL=https://api.openai.com/v1/chat/completions (openai
+              default)<br />
+              # AI_API_URL=http://localhost:11434/api/generate (ollama default)
             </div>
 
             <h4>OpenAI-Compatible Endpoints</h4>
@@ -2057,8 +2059,8 @@
 
             <h4>Ollama inside Docker</h4>
             <p>
-              If AnchorMarks runs in Docker and Ollama runs on the host
-              machine, point <code>AI_API_URL</code> at the host:
+              If AnchorMarks runs in Docker and Ollama runs on the host machine,
+              point <code>AI_API_URL</code> at the host:
             </p>
             <div class="code-block">
               AI_PROVIDER=ollama<br />
@@ -2083,8 +2085,8 @@
             </p>
             <p>
               The underlying API endpoint is
-              <code>GET /api/tags/suggest-ai?url=&lt;url&gt;</code> and
-              requires a browser session or an API key.
+              <code>GET /api/tags/suggest-ai?url=&lt;url&gt;</code> and requires
+              a browser session or an API key.
             </p>
 
             <h3 class="help-anchor" id="security-auth">

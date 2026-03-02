@@ -244,7 +244,7 @@ function setupApiRoutes(app, db, helpers) {
   const {
     EXAMPLE_BOOKMARKS,
     STARTER_FOLDER,
-  } = require("../helpers/example-bookmarks");
+  } = require("../utils/exampleBookmarks");
 
   /**
    * @swagger
@@ -310,7 +310,7 @@ function setupApiRoutes(app, db, helpers) {
         const {
           ensureTagsExist,
           updateBookmarkTags,
-        } = require("../helpers/tag-helpers");
+        } = require("../services/tagService");
 
         let bookmarksCreated = 0;
         for (const bm of EXAMPLE_BOOKMARKS) {
@@ -356,7 +356,7 @@ function setupApiRoutes(app, db, helpers) {
   );
 
   // AI tag suggestions
-  const aiTags = require("../helpers/ai-tags");
+  const aiTags = require("../services/aiTagService");
 
   /**
    * @swagger

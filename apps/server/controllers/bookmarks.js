@@ -2,13 +2,13 @@ const { v4: uuidv4 } = require("uuid");
 const {
   ensureTagsExist,
   updateBookmarkTags,
-} = require("../helpers/tag-helpers");
+} = require("../services/tagService");
 const { validateBody, schemas } = require("../validation");
 const bookmarkModel = require("../models/bookmark");
-const { isPrivateAddress } = require("../helpers/utils");
+const { isPrivateAddress } = require("../utils/ssrfUtils");
 const config = require("../config");
-const { broadcast } = require("../helpers/websocket");
-const tagHelpers = require("../helpers/tag-helpers");
+const { broadcast } = require("../services/websocketService");
+const tagHelpers = require("../services/tagService");
 const { logger } = require("../lib/logger");
 const { reportAndSend } = require("../lib/errors");
 
@@ -52,7 +52,10 @@ function normalizeTagColorOverrides(raw, tagMap = {}) {
   return overrides;
 }
 
-const { fetchUrlMetadata, detectContentType } = require("../helpers/metadata");
+const {
+  fetchUrlMetadata,
+  detectContentType,
+} = require("../services/metadataService");
 
 function setupBookmarksRoutes(app, db, helpers = {}) {
   const {
@@ -464,7 +467,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
               { returnMap: true },
             );
             const overrides =
-              require("../helpers/tags").normalizeTagColorOverrides(
+              require("../utils/tagUtils").normalizeTagColorOverrides(
                 fields.tag_colors || fields.tagColorOverrides,
                 tagResult.tagMap,
               );
@@ -672,7 +675,7 @@ function setupBookmarksRoutes(app, db, helpers = {}) {
           });
         }
 
-        const thumbnailService = require("../helpers/thumbnail");
+        const thumbnailService = require("../services/thumbnailService");
         const result = await thumbnailService.captureScreenshot(
           bookmark.url,
           req.user.id,

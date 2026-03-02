@@ -128,12 +128,12 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
             const tagsString = Array.isArray(bm.tags)
               ? bm.tags.join(",")
               : bm.tags;
-            const tagIds = require("../helpers/tag-helpers").ensureTagsExist(
+            const tagIds = require("../services/tagService").ensureTagsExist(
               db,
               userId,
               tagsString,
             );
-            require("../helpers/tag-helpers").updateBookmarkTags(
+            require("../services/tagService").updateBookmarkTags(
               db,
               existing.id,
               tagIds,
@@ -160,12 +160,12 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
             const tagsString = Array.isArray(bm.tags)
               ? bm.tags.join(",")
               : bm.tags;
-            const tagIds = require("../helpers/tag-helpers").ensureTagsExist(
+            const tagIds = require("../services/tagService").ensureTagsExist(
               db,
               userId,
               tagsString,
             );
-            require("../helpers/tag-helpers").updateBookmarkTags(
+            require("../services/tagService").updateBookmarkTags(
               db,
               id,
               tagIds,

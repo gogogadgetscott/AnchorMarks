@@ -415,7 +415,7 @@ describe("Smart Organization API", () => {
 
   describe("Smart Organization Module Functions", () => {
     it("should recognize known domains", () => {
-      const smartOrg = require("../helpers/smart-organization.js");
+      const smartOrg = require("../services/smartOrgService");
 
       const githubInfo = smartOrg.getDomainCategory(
         "https://github.com/test/repo",
@@ -428,7 +428,7 @@ describe("Smart Organization API", () => {
     });
 
     it("should handle unknown domains", () => {
-      const smartOrg = require("../helpers/smart-organization.js");
+      const smartOrg = require("../services/smartOrgService");
 
       const unknownInfo = smartOrg.getDomainCategory(
         "https://unknown-domain-12345.com/page",
@@ -439,7 +439,7 @@ describe("Smart Organization API", () => {
     });
 
     it("should tokenize text correctly", () => {
-      const smartOrg = require("../helpers/smart-organization.js");
+      const smartOrg = require("../services/smartOrgService");
 
       const tokens = smartOrg.tokenizeText(
         "This is a test of JavaScript and Node.js",

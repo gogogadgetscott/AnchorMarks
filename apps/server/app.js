@@ -23,14 +23,13 @@ try {
 
 const config = require("./config");
 const { initializeDatabase, ensureDirectories } = require("./models/database");
-const { authenticateToken, validateCsrfToken } = require("./middleware/index");
-const { validateBody, validateQuery } = require("./validation");
-const { setupAuthRoutes } = require("./routes/auth");
-const { isPrivateAddress, fetchFavicon } = require("./helpers/utils.js");
+const { authenticateToken } = require("./middleware/index");
+const mountRoutes = require("./routes");
+const { isPrivateAddress, fetchFavicon } = require("./utils/ssrfUtils.js");
 
 // API Documentation
 const swaggerUi = require("swagger-ui-express");
-const swaggerSpecs = require("./helpers/swagger");
+const swaggerSpecs = require("./utils/swagger");
 
 const app = express();
 config.validateSecurityConfig();
@@ -48,12 +47,14 @@ const { FAVICONS_DIR } = ensureDirectories();
 const {
   initializeAuditLog,
   createSecurityAuditLogger,
-} = require("./helpers/security-audit");
+} = require("./services/securityAuditService");
 initializeAuditLog(db);
 const securityAudit = createSecurityAuditLogger(db, {
   enableFileLogging: process.env.SECURITY_LOG_FILE === "true",
   retentionDays: parseInt(process.env.SECURITY_LOG_RETENTION_DAYS, 10) || 90,
 });
+app.set("securityAudit", securityAudit);
+app.set("appVersion", APP_VERSION);
 
 // Audit log retention: run daily (once at startup and then every 24h)
 const AUDIT_RETENTION_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -77,12 +78,14 @@ if (config.NODE_ENV !== "test") {
   );
 }
 
+// Store shared singletons on app so Router-based controllers can access via req.app.get()
+app.set("db", db);
+
 // Middleware functions
 const authenticateTokenMiddleware = authenticateToken(db);
-const validateCsrfTokenMiddleware = validateCsrfToken(db);
 
-const { makeFetchFaviconWrapper } = require("./helpers/favicon");
-const metadataQueue = require("./helpers/metadata-queue");
+const { makeFetchFaviconWrapper } = require("./services/faviconService");
+const metadataQueue = require("./services/metadataQueueService");
 
 // Background jobs and thumbnail cache are handled in background.js
 const { createBackgroundJobs } = require("./background");
@@ -94,6 +97,7 @@ const fetchFaviconWrapper = makeFetchFaviconWrapper(
   FAVICONS_DIR,
   config.NODE_ENV,
 );
+app.set("fetchFaviconWrapper", fetchFaviconWrapper);
 
 // Background jobs initialization (runs automatically, returns job instance)
 createBackgroundJobs({
@@ -105,7 +109,7 @@ createBackgroundJobs({
 });
 
 // Initialize metadata queue for deferred favicon/thumbnail fetching during import
-const { captureScreenshot } = require("./helpers/thumbnail");
+const { captureScreenshot } = require("./services/thumbnailService");
 
 metadataQueue.initialize(
   db,
@@ -121,7 +125,7 @@ const createRateLimiter = require("./middleware/rateLimiter");
 const rateLimiter = createRateLimiter(db);
 
 // Performance monitoring
-const { performanceMiddleware } = require("./helpers/performance-monitor");
+const { performanceMiddleware } = require("./utils/performanceMonitor");
 
 // Middleware registration
 // CSP violation reporting: enable with CSP_DIAGNOSTIC=true to narrow down which elements trigger script-src-attr violations.
@@ -307,99 +311,11 @@ app.use(rateLimiter);
 // const quickSearchModel = require("./models/quickSearch");
 // const statsModel = require("./models/stats");
 // const bookmarkModel = require("./models/bookmark");
-// const tagHelpersLocal = require("./helpers/tags");
+// const tagHelpers = require("./services/tagService");
 
-// Route groups are delegated to route modules under apps/server/routes/
-const setupDashboardRoutes = require("./routes/dashboard");
-const setupBookmarkViewsRoutes = require("./routes/bookmarkViews");
-const setupCollectionsRoutes = require("./routes/collections");
-const controllerTags = require("./controllers/tags");
-const setupImportExportRoutes = require("./routes/importExport");
-const setupHealthRoutes = require("./routes/health");
-
-// Register authentication routes (login/register/me/logout)
-setupAuthRoutes(
-  app,
-  db,
-  authenticateTokenMiddleware,
-  validateCsrfTokenMiddleware,
-  fetchFaviconWrapper,
-  securityAudit,
-);
-const setupSyncRoutes = require("./routes/sync");
-const { setupApiRoutes } = require("./routes/api");
-
-setupDashboardRoutes(app, db, {
-  authenticateTokenMiddleware,
-  validateCsrfTokenMiddleware,
-  validateBody,
-  validateQuery,
-});
-setupBookmarkViewsRoutes(app, db, {
-  authenticateTokenMiddleware,
-  validateCsrfTokenMiddleware,
-  validateBody,
-});
-setupCollectionsRoutes(app, db, {
-  authenticateTokenMiddleware,
-  validateCsrfTokenMiddleware,
-  validateBody,
-});
-controllerTags.setupTagsRoutes(app, db, {
-  authenticateTokenMiddleware,
-  validateCsrfTokenMiddleware,
-  validateBody,
-  validateQuery,
-});
-setupImportExportRoutes(app, db, {
-  authenticateTokenMiddleware,
-  validateCsrfTokenMiddleware,
-  validateBody,
-  validateQuery,
-});
-setupSyncRoutes(app, db, {
-  authenticateTokenMiddleware,
-  validateCsrfTokenMiddleware,
-  fetchFaviconWrapper,
-  validateBody,
-});
-setupHealthRoutes(app, db, {
-  authenticateTokenMiddleware,
-  validateCsrfTokenMiddleware,
-  fetchFaviconWrapper,
-  validateQuery,
-}); // Must be before setupApiRoutes to avoid /api/bookmarks/by-domain being shadowed
-setupApiRoutes(app, db, {
-  authenticateTokenMiddleware,
-  validateCsrfTokenMiddleware,
-  fetchFaviconWrapper,
-  config,
-  version: APP_VERSION,
-  validateBody,
-  validateQuery,
-});
-
-// Helper functions are imported in route modules as needed
-const { fetchUrlMetadata } = require("./helpers/metadata");
-
-// Route groups moved to dedicated modules
-const setupQuickSearchRoutes = require("./routes/quickSearch");
-const setupStatsRoutes = require("./routes/stats");
-
-setupQuickSearchRoutes(app, db, {
-  authenticateTokenMiddleware,
-  validateQuery,
-});
-setupStatsRoutes(app, db, { authenticateTokenMiddleware });
-
-// Smart organization routes moved to `routes/smartOrganization.js`
-const setupSmartOrganizationRoutes = require("./routes/smartOrganization");
-setupSmartOrganizationRoutes(app, db, {
-  authenticateTokenMiddleware,
-  validateCsrfTokenMiddleware,
-  validateBody,
-  validateQuery,
-});
+// Mount all API routes via aggregator
+const { fetchUrlMetadata } = require("./services/metadataService");
+mountRoutes(app, db);
 
 // Serve frontend assets
 // In development: Vite dev server runs on port 5173, Express serves API on port 3000
@@ -454,7 +370,7 @@ const { errorHandler } = require("./middleware/errorHandler");
 app.use(errorHandler);
 
 // Graceful shutdown
-const { closeBrowser } = require("./helpers/thumbnail");
+const { closeBrowser } = require("./services/thumbnailService");
 
 process.on("SIGINT", async () => {
   logger.info("Shutting down gracefully (SIGINT)...");

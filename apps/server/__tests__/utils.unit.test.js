@@ -21,7 +21,7 @@ describe("utils.js - Unit Tests", () => {
 
   describe("isPrivateIp (internal function tested via isPrivateAddress)", () => {
     it("should detect private IPv4 10.x.x.x", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("http://10.0.0.1")).resolves.toBe(true);
       await expect(isPrivateAddress("http://10.255.255.255")).resolves.toBe(
         true,
@@ -29,7 +29,7 @@ describe("utils.js - Unit Tests", () => {
     });
 
     it("should detect private IPv4 172.16-31.x.x", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("http://172.16.0.1")).resolves.toBe(true);
       await expect(isPrivateAddress("http://172.31.255.255")).resolves.toBe(
         true,
@@ -37,7 +37,7 @@ describe("utils.js - Unit Tests", () => {
     });
 
     it("should detect private IPv4 192.168.x.x", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("http://192.168.1.1")).resolves.toBe(true);
       await expect(isPrivateAddress("http://192.168.255.255")).resolves.toBe(
         true,
@@ -45,7 +45,7 @@ describe("utils.js - Unit Tests", () => {
     });
 
     it("should detect loopback IPv4 127.x.x.x", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("http://127.0.0.1")).resolves.toBe(true);
       await expect(isPrivateAddress("http://127.255.255.255")).resolves.toBe(
         true,
@@ -53,7 +53,7 @@ describe("utils.js - Unit Tests", () => {
     });
 
     it("should detect link-local IPv4 169.254.x.x", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("http://169.254.1.1")).resolves.toBe(true);
       await expect(isPrivateAddress("http://169.254.255.255")).resolves.toBe(
         true,
@@ -61,7 +61,7 @@ describe("utils.js - Unit Tests", () => {
     });
 
     it("should allow public IPv4 addresses", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("http://8.8.8.8")).resolves.toBe(false);
       await expect(isPrivateAddress("http://1.1.1.1")).resolves.toBe(false);
       await expect(isPrivateAddress("http://93.184.216.34")).resolves.toBe(
@@ -70,7 +70,7 @@ describe("utils.js - Unit Tests", () => {
     });
 
     it("should detect private IPv6 fc00::/7", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(
         isPrivateAddress("http://[fc00::1234:5678:90ab:cdef]"),
       ).resolves.toBe(true);
@@ -80,14 +80,14 @@ describe("utils.js - Unit Tests", () => {
     });
 
     it("should detect link-local IPv6 fe80::/10", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(
         isPrivateAddress("http://[fe80::1234:5678:90ab:cdef]"),
       ).resolves.toBe(true);
     });
 
     it("should detect IPv6 loopback ::1", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("http://[::1]")).resolves.toBe(true);
     });
 
@@ -98,7 +98,7 @@ describe("utils.js - Unit Tests", () => {
         .spyOn(dns.promises, "lookup")
         .mockResolvedValue([{ address: "2001:4860:4860::8888" }]);
 
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("http://example.com")).resolves.toBe(false);
       lookupSpy.mockRestore();
     });
@@ -106,7 +106,7 @@ describe("utils.js - Unit Tests", () => {
 
   describe("isPrivateAddress - URL parsing", () => {
     it("should handle URLs with brackets for IPv6", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("http://[::1]")).resolves.toBe(true);
       await expect(
         isPrivateAddress("http://[fe80::1]:8080/path"),
@@ -114,7 +114,7 @@ describe("utils.js - Unit Tests", () => {
     });
 
     it("should handle localhost as private", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("http://localhost")).resolves.toBe(true);
       await expect(isPrivateAddress("https://localhost:3000")).resolves.toBe(
         true,
@@ -122,7 +122,7 @@ describe("utils.js - Unit Tests", () => {
     });
 
     it("should block non-http(s) protocols", async () => {
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("ftp://example.com")).resolves.toBe(true);
       await expect(isPrivateAddress("file:///etc/passwd")).resolves.toBe(true);
       await expect(isPrivateAddress("javascript:alert(1)")).resolves.toBe(true);
@@ -139,7 +139,7 @@ describe("utils.js - Unit Tests", () => {
         .spyOn(dns.promises, "lookup")
         .mockRejectedValue(new Error("DNS lookup failed"));
 
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(
         isPrivateAddress("https://nonexistent-domain-12345.com"),
       ).resolves.toBe(true);
@@ -155,7 +155,7 @@ describe("utils.js - Unit Tests", () => {
         .spyOn(dns.promises, "lookup")
         .mockRejectedValue(new Error("DNS lookup failed"));
 
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(
         isPrivateAddress("https://nonexistent-domain-12345.com"),
       ).resolves.toBe(false);
@@ -173,7 +173,7 @@ describe("utils.js - Unit Tests", () => {
           { address: "10.0.0.1" },
         ]);
 
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(
         isPrivateAddress("https://internal.example.com"),
       ).resolves.toBe(true);
@@ -191,7 +191,7 @@ describe("utils.js - Unit Tests", () => {
           { address: "93.184.216.35" },
         ]);
 
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("https://example.com")).resolves.toBe(
         false,
       );
@@ -207,7 +207,7 @@ describe("utils.js - Unit Tests", () => {
         { address: "10.0.0.1" }, // One private IP in the list
       ]);
 
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("https://mixed.example.com")).resolves.toBe(
         true,
       );
@@ -217,7 +217,7 @@ describe("utils.js - Unit Tests", () => {
 
     it("should handle malformed URLs gracefully", async () => {
       process.env.NODE_ENV = "test";
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("not-a-url")).resolves.toBe(false);
       await expect(isPrivateAddress("")).resolves.toBe(false);
     });
@@ -225,7 +225,7 @@ describe("utils.js - Unit Tests", () => {
     it("should handle malformed URLs in production conservatively", async () => {
       process.env.NODE_ENV = "production";
       vi.resetModules();
-      const { isPrivateAddress } = require("../helpers/utils");
+      const { isPrivateAddress } = require("../utils/ssrfUtils");
       await expect(isPrivateAddress("not-a-url")).resolves.toBe(true);
       await expect(isPrivateAddress("")).resolves.toBe(true);
     });
@@ -243,7 +243,7 @@ describe("utils.js - Unit Tests", () => {
       if (lookupSpy) lookupSpy.mockRestore();
     });
     it("should return null for non-http protocols", async () => {
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
       const db = { prepare: () => ({ run: () => {} }) };
 
       await expect(
@@ -258,7 +258,7 @@ describe("utils.js - Unit Tests", () => {
     });
 
     it("should block private targets in production (SSRF prevention)", async () => {
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
       const db = { prepare: () => ({ run: () => {} }) };
 
       await expect(
@@ -285,7 +285,7 @@ describe("utils.js - Unit Tests", () => {
         prepare: vi.fn(() => ({ run: updateRun })),
       };
 
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
       const result = await fetchFavicon(
         "https://example.com/page",
         "bm-123",
@@ -311,7 +311,7 @@ describe("utils.js - Unit Tests", () => {
       const existsSpy = vi.spyOn(fs, "existsSync").mockReturnValue(false);
 
       const db = { prepare: () => ({ run: () => {} }) };
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
 
       const result = await fetchFavicon(
         "https://example.com/page",
@@ -335,7 +335,7 @@ describe("utils.js - Unit Tests", () => {
         prepare: vi.fn(() => ({ run: updateRun })),
       };
 
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
 
       await fetchFavicon(
         "https://sub-domain.example.com:8080/path",
@@ -355,7 +355,7 @@ describe("utils.js - Unit Tests", () => {
     });
 
     it("should handle invalid URL gracefully", async () => {
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
       const db = { prepare: () => ({ run: () => {} }) };
 
       await expect(
@@ -407,7 +407,7 @@ describe("utils.js - Unit Tests", () => {
         prepare: vi.fn(() => ({ run: updateRun })),
       };
 
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
 
       // Start two concurrent fetches for the same domain
       const p1 = fetchFavicon(
@@ -498,7 +498,7 @@ describe("utils.js - Unit Tests", () => {
         prepare: vi.fn(() => ({ run: updateRun })),
       };
 
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
       const result = await fetchFavicon(
         "https://example.com/page",
         "bm-123",
@@ -542,7 +542,7 @@ describe("utils.js - Unit Tests", () => {
         prepare: vi.fn(() => ({ run: updateRun })),
       };
 
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
       const result = await fetchFavicon(
         "https://example.com/page",
         "bm-123",
@@ -604,7 +604,7 @@ describe("utils.js - Unit Tests", () => {
         prepare: vi.fn(() => ({ run: updateRun })),
       };
 
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
       const result = await fetchFavicon(
         "https://network-error.com/page",
         "bm-123",
@@ -672,7 +672,7 @@ describe("utils.js - Unit Tests", () => {
         prepare: vi.fn(() => ({ run: updateRun })),
       };
 
-      const { fetchFavicon } = require("../helpers/utils");
+      const { fetchFavicon } = require("../utils/ssrfUtils");
       const result = await fetchFavicon(
         "https://write-error.com/page",
         "bm-123",

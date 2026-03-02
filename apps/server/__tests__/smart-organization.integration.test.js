@@ -6,7 +6,7 @@
 const Database = require("better-sqlite3");
 const { v4: uuidv4 } = require("uuid");
 
-const smartOrg = require("../helpers/smart-organization.js");
+const smartOrg = require("../services/smartOrgService");
 
 describe("smart-organization.js - Integration Tests (DB-backed)", () => {
   let db;

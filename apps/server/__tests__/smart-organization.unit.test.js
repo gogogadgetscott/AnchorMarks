@@ -3,7 +3,7 @@
  * Tests for core utilities: tokenizeText, getDomainCategory, getTopSource, calculateTagScore
  */
 
-const smartOrg = require("../helpers/smart-organization.js");
+const smartOrg = require("../services/smartOrgService");
 
 describe("smart-organization.js - Unit Tests", () => {
   describe("tokenizeText", () => {

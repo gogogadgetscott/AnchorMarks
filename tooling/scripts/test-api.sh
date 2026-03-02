@@ -64,11 +64,16 @@ function delete_request() {
 
 # Example usage
 # get_request "health"
+
 # get_request "bookmarks"
 # get_request "bookmarks/counts"
-# get_request "quick-search?q=home"
-get_request "tags/suggest-ai"
 # post_request "bookmarks" '{"url": "https://www.help.com/", "title": "Help Bookmark", "tags": "test1,test2"}'
 # get_request "bookmarks/1"
 # put_request "bookmarks/1" '{"title": "Updated Bookmark"}'
 # delete_request "bookmarks/1"
+
+# get_request "quick-search?q=home"
+
+# get_request "tags"
+get_request "tags/analytics"
+# get_request "tags/suggest-ai"

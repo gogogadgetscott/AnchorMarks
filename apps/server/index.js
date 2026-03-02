@@ -66,7 +66,7 @@ if (config.SSL_ENABLED) {
 }
 
 // Attach WebSocket server for real-time notifications
-const { initWebSocket } = require("./helpers/websocket");
+const { initWebSocket } = require("./services/websocketService");
 initWebSocket(server);
 
 server.listen(config.PORT, config.HOST, () => {

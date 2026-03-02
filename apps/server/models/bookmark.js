@@ -354,12 +354,12 @@ function updateBookmark(db, userId, id, fields = {}) {
   );
 
   if (tags !== undefined) {
-    const tagHelpers = require("../helpers/tag-helpers");
+    const tagHelpers = require("../services/tagService");
     if (tags && tags.trim && tags.trim()) {
       const result = tagHelpers.ensureTagsExist(db, userId, tags, {
         returnMap: true,
       });
-      const overrides = require("../helpers/tags").normalizeTagColorOverrides(
+      const overrides = require("../utils/tagUtils").normalizeTagColorOverrides(
         tag_colors || null,
         result.tagMap,
       );

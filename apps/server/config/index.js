@@ -124,7 +124,7 @@ const AI_API_KEY = process.env.AI_API_KEY || null;
 const API_KEY_WHITELIST = [
   // Bookmark reads and single-item write (create / update)
   { method: "GET", path: /^\/api\/bookmarks(\/.*)?$/ },
-  { method: "POST", path: /^\/api\/bookmarks$/ }, // create only (not sub-paths)
+  { method: "POST", path: /^\/api\/bookmarks\/?$/ }, // create only (not sub-paths)
   { method: "PUT", path: /^\/api\/bookmarks\/[^/]+$/ }, // update single item only
   // Folder reads only — folder mutations require a browser session
   { method: "GET", path: /^\/api\/folders(\/.*)?$/ },
@@ -135,8 +135,9 @@ const API_KEY_WHITELIST = [
 ];
 
 function isApiKeyAllowed(req) {
+  const fullPath = (req.baseUrl || "") + req.path;
   return API_KEY_WHITELIST.some(
-    (rule) => rule.method === req.method && rule.path.test(req.path),
+    (rule) => rule.method === req.method && rule.path.test(fullPath),
   );
 }
 

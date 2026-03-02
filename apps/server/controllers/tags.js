@@ -1,7 +1,7 @@
 const { v4: uuidv4 } = require("uuid");
 const bookmarkModel = require("../models/bookmark");
-const tagHelpers = require("../helpers/tag-helpers");
-const tagParseHelpers = require("../helpers/tags");
+const tagHelpers = require("../services/tagService");
+const tagParseHelpers = require("../utils/tagUtils");
 const { validateBody, validateQuery, schemas } = require("../validation");
 const { logger } = require("../lib/logger");
 const { reportAndSend } = require("../lib/errors");
@@ -10,7 +10,7 @@ function setupTagsRoutes(app, db, helpers = {}) {
   const { authenticateTokenMiddleware, validateCsrfTokenMiddleware } = helpers;
   const tagModel = require("../models/tag");
   const { parseTags, mergeTags, stringifyTags } = tagParseHelpers;
-  const { broadcast } = require("../helpers/websocket");
+  const { broadcast } = require("../services/websocketService");
 
   // --- CRUD (tag entity) ---
 
