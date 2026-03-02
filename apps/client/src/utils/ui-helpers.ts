@@ -686,6 +686,14 @@ export async function resetForms(): Promise<void> {
 
   if (dom.tagSuggestions) dom.tagSuggestions.innerHTML = "";
 
+  // Clear favicon preview
+  const faviconRow = document.getElementById("bookmark-favicon-row");
+  const faviconImg = document.getElementById(
+    "bookmark-favicon-img",
+  ) as HTMLImageElement | null;
+  if (faviconRow) faviconRow.style.display = "none";
+  if (faviconImg) faviconImg.src = "";
+
   // Clear the badge-based tag input
   try {
     const { clearTags } = await import("@features/bookmarks/tag-input.ts");

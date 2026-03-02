@@ -26,7 +26,10 @@
       <input type="hidden" id="bookmark-id" />
       <div class="form-group">
         <label for="bookmark-url">URL *</label>
-        <div style="display: flex; gap: 0.5rem">
+        <div style="display: flex; gap: 0.5rem; align-items: center">
+          <div id="bookmark-favicon-row" style="display: none; flex-shrink: 0; width: 28px; height: 28px; border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-secondary); border: 1px solid var(--border-color); align-items: center; justify-content: center">
+            <img id="bookmark-favicon-img" src="" alt="" style="width: 20px; height: 20px; object-fit: contain; display: block; margin: auto" />
+          </div>
           <input
             type="url"
             id="bookmark-url"

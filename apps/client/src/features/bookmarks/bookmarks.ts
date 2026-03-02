@@ -1105,6 +1105,21 @@ export async function editBookmark(id: string): Promise<void> {
       opt.classList.toggle("active", optColor === (bookmark.color || ""));
     });
 
+  // Show favicon if available
+  const faviconRow = document.getElementById("bookmark-favicon-row");
+  const faviconImg = document.getElementById(
+    "bookmark-favicon-img",
+  ) as HTMLImageElement | null;
+  if (faviconRow && faviconImg) {
+    if (bookmark.favicon) {
+      faviconImg.src = bookmark.favicon;
+      faviconRow.style.display = "flex";
+    } else {
+      faviconRow.style.display = "none";
+      faviconImg.src = "";
+    }
+  }
+
   // Load tags into the new tag input system
   // @ts-ignore
   const { loadTagsFromInput } =

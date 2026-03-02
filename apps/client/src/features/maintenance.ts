@@ -78,13 +78,9 @@ async function refreshFavicons(): Promise<void> {
 
     for (const bookmark of bookmarks) {
       try {
-        // Get favicon URL from Google's service
-        const faviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(new URL(bookmark.url).hostname)}&sz=32`;
-
-        // Update bookmark with new favicon
-        await api(`/bookmarks/${bookmark.id}`, {
-          method: "PUT",
-          body: JSON.stringify({ favicon: faviconUrl }),
+        // Use server-side refresh which downloads and caches the favicon locally
+        await api(`/bookmarks/${bookmark.id}/refresh-favicon`, {
+          method: "POST",
         });
       } catch {
         // Skip individual failures
