@@ -29,6 +29,7 @@ type DashboardWidgetLegacy = DashboardWidget & {
 
 // Performance optimizations
 let closeDashboardDropdownListener: ((e: MouseEvent) => void) | null = null;
+let closeWidgetOptionsListener: ((e: MouseEvent) => void) | null = null;
 let dashboardStateSnapshot: string = "";
 const widgetsLoading = new Set<string>();
 
@@ -593,23 +594,48 @@ export function renderDashboard(): void {
  * Render a single dashboard widget
  */
 function renderDashboardWidget(widget: DashboardWidget, index: number): string {
-  // freeform widgets use a different base class so the CSS selectors for
-  // dragging/resizing/etc. apply correctly.  We kept the old
-  // `dashboard-widget` name around for grid-oriented layouts (still
-  // present in the stylesheet) but in this branch the only layout we
-  // actually render is freeform.
   const widgetData = getWidgetDisplayData(widget);
-
   const width = getWidgetWidth(widget);
   const height = getWidgetHeight(widget);
+  const linkedId = getWidgetLinkedId(widget) ?? widget.id;
+  const colorBg = widget.color
+    ? `;background-color:color-mix(in srgb, ${widget.color} 12%, var(--card-bg))`
+    : "";
+
+  const sortOptions =
+    widget.type !== "tag-analytics"
+      ? `
+        <button class="widget-option" data-action="widget-sort-az" data-widget-index="${index}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 6h18M3 12h12M3 18h6"/></svg>
+          Sort A-Z
+        </button>
+        <button class="widget-option" data-action="widget-sort-za" data-widget-index="${index}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 6h6M3 12h12M3 18h18"/></svg>
+          Sort Z-A
+        </button>
+        <div class="widget-option-divider"></div>
+        <button class="widget-option" data-action="widget-add-bookmark" data-widget-index="${index}" data-widget-type="${escapeHtml(widget.type)}" data-widget-id="${escapeHtml(linkedId)}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Bookmark
+        </button>
+        <button class="widget-option" data-action="widget-open-all" data-widget-index="${index}" data-widget-type="${escapeHtml(widget.type)}" data-widget-id="${escapeHtml(linkedId)}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Open All
+        </button>
+        <button class="widget-option" data-action="widget-show-in-view" data-widget-index="${index}" data-widget-type="${escapeHtml(widget.type)}" data-widget-id="${escapeHtml(linkedId)}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Show in Bookmarks
+        </button>
+        <div class="widget-option-divider"></div>`
+      : "";
 
   return `
-    <div class="dashboard-widget-freeform" 
-         data-widget-index="${index}" 
+    <div class="dashboard-widget-freeform"
+         data-widget-index="${index}"
          data-widget-id="${escapeHtml(widget.id)}"
          data-widget-type="${escapeHtml(widget.type)}"
-         style="position:absolute;left:${widget.x || 0}px;top:${widget.y || 0}px;width:${width}px;height:${height}px">
-      <div class="widget-header">
+         style="position:absolute;left:${widget.x || 0}px;top:${widget.y || 0}px;width:${width}px;height:${height}px${colorBg}">
+      <div class="widget-header" ${widget.color ? `data-color="${widget.color}"` : ""}>
         <div class="widget-drag-handle" title="Drag to move">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
             <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
@@ -618,11 +644,27 @@ function renderDashboardWidget(widget: DashboardWidget, index: number): string {
         </div>
         <h3>${escapeHtml(widgetData.title)}</h3>
         <span class="widget-count">${widgetData.count}</span>
-        <button class="btn-icon small remove-widget-btn" data-widget-index="${index}" aria-label="Remove widget">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+        <div class="widget-actions">
+          <div class="widget-options-container">
+            <button class="btn-icon small widget-options-btn" data-action="toggle-widget-options" data-widget-index="${index}" title="Options">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+                <circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>
+              </svg>
+            </button>
+            <div class="widget-options-menu hidden" data-widget-index="${index}">
+              ${sortOptions}
+              <button class="widget-option" data-action="change-widget-color" data-widget-index="${index}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20"/></svg>
+                Change Color
+              </button>
+            </div>
+          </div>
+          <button class="btn-icon small widget-remove-btn" data-action="remove-widget" data-widget-index="${index}" aria-label="Remove widget">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
       </div>
       <div class="widget-body">
         ${renderWidgetContent(widget, widgetData)}
@@ -690,9 +732,12 @@ function renderWidgetContent(
   return `
     <div class="compact-list">
       ${sortedBookmarks
-        .map(
-          (b) => `
-        <div class="compact-item" data-bookmark-id="${escapeHtml(b.id)}">
+        .map((b) => {
+          const colorStyle = b.color
+            ? `--bookmark-color: ${b.color}; background-color: color-mix(in srgb, ${b.color} 20%, var(--bg-primary)); border-left: 6px solid ${b.color};`
+            : "";
+          return `
+        <div class="compact-item${b.color ? " has-color" : ""}" data-bookmark-id="${escapeHtml(b.id)}" style="${colorStyle}">
           <a class="compact-item-link" href="${escapeHtml(b.url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(b.title || b.url)}">
             <span class="compact-favicon">
               ${b.favicon ? `<img src="${escapeHtml(b.favicon)}" alt="" />` : '<span class="favicon-placeholder">🔗</span>'}
@@ -701,9 +746,17 @@ function renderWidgetContent(
               ${escapeHtml(b.title || b.url)}
             </span>
           </a>
+          <div class="compact-actions">
+            <button class="btn-icon small" data-action="compact-edit-bookmark" data-bookmark-id="${escapeHtml(b.id)}" title="Edit bookmark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="btn-icon small text-danger" data-action="compact-delete-bookmark" data-bookmark-id="${escapeHtml(b.id)}" title="Delete bookmark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </div>
         </div>
-      `,
-        )
+      `;
+        })
         .join("")}
     </div>
   `;
@@ -907,18 +960,331 @@ export function initDashboardDragDrop(): void {
  * Attach event listeners to widget buttons
  */
 function attachWidgetEventListeners(): void {
-  // Remove widget buttons
+  // Remove stale outside-click handler before re-attaching
+  if (closeWidgetOptionsListener) {
+    document.removeEventListener("click", closeWidgetOptionsListener);
+    closeWidgetOptionsListener = null;
+  }
+
+  // Toggle widget options menu
   document
-    .querySelectorAll<HTMLElement>(".remove-widget-btn")
+    .querySelectorAll<HTMLElement>('[data-action="toggle-widget-options"]')
+    .forEach((btn) => {
+      btn.addEventListener("click", (e: Event) => {
+        e.stopPropagation();
+        const index = btn.dataset.widgetIndex;
+        const menu = document.querySelector<HTMLElement>(
+          `.widget-options-menu[data-widget-index="${index}"]`,
+        );
+        document
+          .querySelectorAll(".widget-options-menu")
+          .forEach((m) => { if (m !== menu) m.classList.add("hidden"); });
+        menu?.classList.toggle("hidden");
+      });
+    });
+
+  // Change widget color
+  document
+    .querySelectorAll<HTMLElement>('[data-action="change-widget-color"]')
     .forEach((btn) => {
       btn.addEventListener("click", (e: Event) => {
         e.stopPropagation();
         const index = parseInt(btn.dataset.widgetIndex || "", 10);
+        document
+          .querySelectorAll(".widget-options-menu")
+          .forEach((m) => m.classList.add("hidden"));
         if (!isNaN(index)) {
-          removeDashboardWidget(index);
+          const anchor = document.querySelector<HTMLElement>(
+            `[data-action="toggle-widget-options"][data-widget-index="${index}"]`,
+          );
+          showWidgetColorPicker(index, anchor ?? btn);
         }
       });
     });
+
+  // Sort A-Z
+  document
+    .querySelectorAll<HTMLElement>('[data-action="widget-sort-az"]')
+    .forEach((btn) => {
+      btn.addEventListener("click", (e: Event) => {
+        e.stopPropagation();
+        const index = parseInt(btn.dataset.widgetIndex || "", 10);
+        document
+          .querySelectorAll(".widget-options-menu")
+          .forEach((m) => m.classList.add("hidden"));
+        if (!isNaN(index) && state.dashboardWidgets[index]) {
+          state.dashboardWidgets[index].sort = "a-z";
+          markDashboardModified();
+          renderDashboard();
+        }
+      });
+    });
+
+  // Sort Z-A
+  document
+    .querySelectorAll<HTMLElement>('[data-action="widget-sort-za"]')
+    .forEach((btn) => {
+      btn.addEventListener("click", (e: Event) => {
+        e.stopPropagation();
+        const index = parseInt(btn.dataset.widgetIndex || "", 10);
+        document
+          .querySelectorAll(".widget-options-menu")
+          .forEach((m) => m.classList.add("hidden"));
+        if (!isNaN(index) && state.dashboardWidgets[index]) {
+          state.dashboardWidgets[index].sort = "z-a";
+          markDashboardModified();
+          renderDashboard();
+        }
+      });
+    });
+
+  // Add bookmark pre-filled with widget's folder/tag
+  document
+    .querySelectorAll<HTMLElement>('[data-action="widget-add-bookmark"]')
+    .forEach((btn) => {
+      btn.addEventListener("click", async (e: Event) => {
+        e.stopPropagation();
+        const widgetType = btn.dataset.widgetType;
+        const widgetId = btn.dataset.widgetId;
+        document
+          .querySelectorAll(".widget-options-menu")
+          .forEach((m) => m.classList.add("hidden"));
+
+        const { openModal, resetForms } = await import("@utils/ui-helpers.ts");
+        resetForms();
+
+        if (widgetType === "folder") {
+          const folderSelect = document.getElementById(
+            "bookmark-folder",
+          ) as HTMLSelectElement | null;
+          if (folderSelect && widgetId) folderSelect.value = widgetId;
+        } else if (widgetType === "tag") {
+          const tagsInput = document.getElementById(
+            "bookmark-tags",
+          ) as HTMLInputElement | null;
+          if (tagsInput && widgetId) tagsInput.value = widgetId;
+          try {
+            const { loadTagsFromInput } = await import(
+              "@features/bookmarks/tag-input.ts"
+            );
+            if (widgetId) loadTagsFromInput(widgetId);
+          } catch {
+            // tag-input module may not be available
+          }
+        }
+
+        openModal("bookmark-modal");
+      });
+    });
+
+  // Open all bookmarks in new tabs
+  document
+    .querySelectorAll<HTMLElement>('[data-action="widget-open-all"]')
+    .forEach((btn) => {
+      btn.addEventListener("click", async (e: Event) => {
+        e.stopPropagation();
+        const index = parseInt(btn.dataset.widgetIndex || "", 10);
+        document
+          .querySelectorAll(".widget-options-menu")
+          .forEach((m) => m.classList.add("hidden"));
+
+        if (isNaN(index)) return;
+        const bookmarks = getWidgetBookmarks(state.dashboardWidgets[index]);
+        if (bookmarks.length === 0) {
+          showToast("No bookmarks to open", "info");
+          return;
+        }
+
+        if (
+          bookmarks.length > 5 &&
+          !(await confirmDialog(
+            `Open ${bookmarks.length} bookmarks in new tabs?`,
+            { title: "Open All" },
+          ))
+        ) {
+          return;
+        }
+
+        bookmarks.forEach((b) => { if (b.url) window.open(b.url, "_blank"); });
+        showToast(`Opened ${bookmarks.length} tab${bookmarks.length > 1 ? "s" : ""}`, "success");
+      });
+    });
+
+  // Show widget's content in the main bookmarks view
+  document
+    .querySelectorAll<HTMLElement>('[data-action="widget-show-in-view"]')
+    .forEach((btn) => {
+      btn.addEventListener("click", async (e: Event) => {
+        e.stopPropagation();
+        const widgetType = btn.dataset.widgetType;
+        const widgetId = btn.dataset.widgetId;
+        document
+          .querySelectorAll(".widget-options-menu")
+          .forEach((m) => m.classList.add("hidden"));
+
+        const { loadBookmarks, renderBookmarks } = await import(
+          "@features/bookmarks/bookmarks.ts"
+        );
+
+        if (widgetType === "folder" && widgetId) {
+          state.setCurrentView("folder");
+          state.setCurrentFolder(widgetId);
+          await loadBookmarks();
+        } else if (widgetType === "tag" && widgetId) {
+          const { updateActiveNav } = await import("@utils/ui-helpers.ts");
+          state.setCurrentView("all");
+          state.setFilterConfig({
+            ...state.filterConfig,
+            tags: [widgetId],
+            tagMode: "OR",
+          });
+          await loadBookmarks();
+          renderBookmarks();
+          updateActiveNav();
+        }
+      });
+    });
+
+  // Remove widget
+  document
+    .querySelectorAll<HTMLElement>('[data-action="remove-widget"]')
+    .forEach((btn) => {
+      btn.addEventListener("click", (e: Event) => {
+        e.stopPropagation();
+        const index = parseInt(btn.dataset.widgetIndex || "", 10);
+        document
+          .querySelectorAll(".widget-options-menu")
+          .forEach((m) => m.classList.add("hidden"));
+        if (!isNaN(index)) removeDashboardWidget(index);
+      });
+    });
+
+  // Edit bookmark from compact-item
+  document
+    .querySelectorAll<HTMLElement>('[data-action="compact-edit-bookmark"]')
+    .forEach((btn) => {
+      btn.addEventListener("click", async (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = btn.dataset.bookmarkId;
+        if (!id) return;
+        const { editBookmark } = await import(
+          "@features/bookmarks/bookmarks.ts"
+        );
+        await editBookmark(id);
+      });
+    });
+
+  // Delete bookmark from compact-item
+  document
+    .querySelectorAll<HTMLElement>('[data-action="compact-delete-bookmark"]')
+    .forEach((btn) => {
+      btn.addEventListener("click", async (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = btn.dataset.bookmarkId;
+        if (!id) return;
+        const { deleteBookmark } = await import(
+          "@features/bookmarks/bookmarks.ts"
+        );
+        await deleteBookmark(id);
+      });
+    });
+
+  // Close menus when clicking outside
+  closeWidgetOptionsListener = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (
+      target.closest(".widget-options-menu") ||
+      target.closest('[data-action="toggle-widget-options"]')
+    ) {
+      return;
+    }
+    document
+      .querySelectorAll(".widget-options-menu")
+      .forEach((m) => m.classList.add("hidden"));
+  };
+  document.addEventListener("click", closeWidgetOptionsListener);
+}
+
+/**
+ * Show a color palette picker anchored to a button for a given widget index
+ */
+function showWidgetColorPicker(index: number, button: HTMLElement): void {
+  document.querySelector(".widget-color-picker")?.remove();
+
+  const widget = state.dashboardWidgets[index];
+  if (!widget) return;
+
+  const colors = [
+    { name: "Blue", value: "#6366f1" },
+    { name: "Purple", value: "#a855f7" },
+    { name: "Pink", value: "#ec4899" },
+    { name: "Red", value: "#ef4444" },
+    { name: "Orange", value: "#f97316" },
+    { name: "Yellow", value: "#eab308" },
+    { name: "Green", value: "#10b981" },
+    { name: "Teal", value: "#14b8a6" },
+    { name: "Cyan", value: "#06b6d4" },
+    { name: "Indigo", value: "#4f46e5" },
+    { name: "Gray", value: "#6b7280" },
+    { name: "Slate", value: "#475569" },
+  ];
+
+  const picker = document.createElement("div");
+  picker.className = "widget-color-picker";
+  picker.innerHTML = `
+    <div class="color-picker-grid">
+      ${colors
+        .map(
+          (c) => `
+        <button class="color-picker-option"
+                data-color="${c.value}"
+                title="${c.name}"
+                style="background:${c.value}">
+          ${widget.color === c.value ? '<span class="color-check">✓</span>' : ""}
+        </button>
+      `,
+        )
+        .join("")}
+    </div>
+  `;
+
+  const rect = button.getBoundingClientRect();
+  picker.style.position = "fixed";
+  picker.style.top = `${rect.bottom + 8}px`;
+  picker.style.right = `${window.innerWidth - rect.right}px`;
+  document.body.appendChild(picker);
+
+  picker.querySelectorAll<HTMLElement>(".color-picker-option").forEach((opt) => {
+    opt.addEventListener("click", (e: Event) => {
+      e.stopPropagation();
+      const color = opt.dataset.color;
+      if (color) updateWidgetColor(index, color);
+      picker.remove();
+    });
+  });
+
+  setTimeout(() => {
+    document.addEventListener("click", function closeHandler(e: MouseEvent) {
+      if (!picker.contains(e.target as Node)) {
+        picker.remove();
+        document.removeEventListener("click", closeHandler);
+      }
+    });
+  }, 100);
+}
+
+/**
+ * Apply a color to a widget and re-render
+ */
+function updateWidgetColor(index: number, color: string): void {
+  if (state.dashboardWidgets[index]) {
+    state.dashboardWidgets[index].color = color;
+    markDashboardModified();
+    renderDashboard();
+    showToast("Widget color updated", "success");
+  }
 }
 
 /**
@@ -984,33 +1350,92 @@ export function filterDashboardBookmarks(term: string): Promise<void> {
 }
 
 /**
- * Toggle layout settings panel
+ * Toggle layout settings popup anchored to the layout button
  */
 export function toggleLayoutSettings(): void {
-  const panel = document.getElementById("layout-settings-panel");
-  if (panel) {
-    panel.classList.toggle("hidden");
+  const existing = document.getElementById("layout-settings-panel");
+  if (existing) {
+    existing.remove();
+    return;
   }
+
+  const anchor =
+    document.getElementById("dashboard-layout-btn") ??
+    document.querySelector<HTMLElement>('[data-action="toggle-layout-settings"]');
+  if (!anchor) return;
+
+  const panel = document.createElement("div");
+  panel.id = "layout-settings-panel";
+  panel.className = "widget-options-menu";
+  panel.style.cssText = "display:block;position:fixed;z-index:1100;min-width:180px;";
+
+  const snapChecked = state.snapToGrid ? "checked" : "";
+  panel.innerHTML = `
+    <label class="widget-option" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;">
+      <input type="checkbox" id="layout-snap-toggle" ${snapChecked} style="cursor:pointer;" />
+      Snap to Grid
+    </label>
+    <div class="widget-option-divider"></div>
+    <button class="widget-option" id="layout-auto-position">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Auto-position Widgets
+    </button>
+    <div class="widget-option-divider"></div>
+    <button class="widget-option text-danger" id="layout-clear-dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      Clear Dashboard
+    </button>
+  `;
+
+  document.body.appendChild(panel);
+
+  // Position below the anchor button
+  const rect = anchor.getBoundingClientRect();
+  panel.style.top = `${rect.bottom + 8}px`;
+  panel.style.right = `${window.innerWidth - rect.right}px`;
+
+  // Snap to grid toggle
+  const snapToggle = panel.querySelector<HTMLInputElement>("#layout-snap-toggle");
+  snapToggle?.addEventListener("change", () => {
+    state.setSnapToGrid(snapToggle.checked);
+  });
+
+  // Auto-position
+  panel.querySelector("#layout-auto-position")?.addEventListener("click", () => {
+    panel.remove();
+    autoPositionWidgets();
+  });
+
+  // Clear dashboard
+  panel.querySelector("#layout-clear-dashboard")?.addEventListener("click", () => {
+    panel.remove();
+    clearDashboard();
+  });
+
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener("click", function closeHandler(e: MouseEvent) {
+      if (!panel.contains(e.target as Node) && e.target !== anchor) {
+        panel.remove();
+        document.removeEventListener("click", closeHandler);
+      }
+    });
+  }, 0);
 }
 
 /**
- * Show layout settings panel
+ * Show layout settings panel (no-op — panel is created on demand)
  */
 export function showLayoutSettings(): void {
   const panel = document.getElementById("layout-settings-panel");
-  if (panel) {
-    panel.classList.remove("hidden");
-  }
+  if (!panel) toggleLayoutSettings();
 }
 
 /**
  * Close layout settings panel
  */
 export function closeLayoutSettings(): void {
-  const panel = document.getElementById("layout-settings-panel");
-  if (panel) {
-    panel.classList.add("hidden");
-  }
+  document.getElementById("layout-settings-panel")?.remove();
 }
 
 /**

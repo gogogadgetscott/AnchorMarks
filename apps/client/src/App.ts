@@ -123,6 +123,7 @@ export async function updateHeaderContent(): Promise<void> {
       headerConfig.title = "Dashboard";
       headerConfig.countId = "dashboard-view-name";
       headerConfig.centerContent = `${Omnibar({ id: "search-input" })}`;
+      headerConfig.showViewToggle = false;
       headerConfig.rightContent = `
         ${Button("Add Widget", { id: "dashboard-add-widget-btn", variant: "secondary", icon: "plus", data: { action: "toggle-widget-picker" } })}
         <button type="button" id="views-btn" class="btn btn-secondary" title="Dashboard Views" aria-label="Dashboard views">

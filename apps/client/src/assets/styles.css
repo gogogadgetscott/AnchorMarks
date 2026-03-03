@@ -2906,7 +2906,7 @@ body.tag-cloud-active .content-body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem;
+  padding: 0.25rem 0.5rem;
   transition: background var(--transition-fast);
 }
 
@@ -5843,7 +5843,7 @@ body.dragging-widget .widget-sidebar-overlay {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.3rem 0.75rem;
+  padding: 0.15rem 0.5rem;
   color: var(--text-primary);
   font-size: 0.8125rem;
   text-decoration: none;
@@ -6297,6 +6297,18 @@ body.dragging-widget .widget-sidebar-overlay {
   cursor: grab;
   user-select: none;
   position: relative;
+}
+
+.dashboard-widget-freeform .widget-header h3 {
+  flex: 1;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .dashboard-widget-freeform.dragging .widget-header {
