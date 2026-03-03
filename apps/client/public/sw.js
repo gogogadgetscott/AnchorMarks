@@ -98,15 +98,33 @@ self.addEventListener("fetch", (event) => {
   ) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
+        // Validate Content-Type for JS/CSS so a previously cached HTML fallback
+        // (e.g. from a SPA router catch-all) is not served as a script/stylesheet.
+        if (cachedResponse && url.pathname.match(/\.(js|css)$/)) {
+          const ct = cachedResponse.headers.get("Content-Type") || "";
+          const ok =
+            (url.pathname.endsWith(".js") && (ct.includes("javascript") || ct.includes("ecmascript"))) ||
+            (url.pathname.endsWith(".css") && ct.includes("css"));
+          if (!ok) cachedResponse = null;
+        }
         if (cachedResponse) {
           return cachedResponse;
         }
         return fetch(request).then((response) => {
           if (response.ok) {
-            const responseClone = response.clone();
-            caches.open(RUNTIME_CACHE).then((cache) => {
-              cache.put(request, responseClone);
-            });
+            // Only cache JS/CSS if the response Content-Type is correct.
+            const ct = response.headers.get("Content-Type") || "";
+            const isJsOrCss = url.pathname.match(/\.(js|css)$/);
+            const typeOk =
+              !isJsOrCss ||
+              (url.pathname.endsWith(".js") && (ct.includes("javascript") || ct.includes("ecmascript"))) ||
+              (url.pathname.endsWith(".css") && ct.includes("css"));
+            if (typeOk) {
+              const responseClone = response.clone();
+              caches.open(RUNTIME_CACHE).then((cache) => {
+                cache.put(request, responseClone);
+              });
+            }
           }
           return response;
         });

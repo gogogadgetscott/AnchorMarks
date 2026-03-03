@@ -219,6 +219,16 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      "/help.js": {
+        target: BACKEND_URL,
+        changeOrigin: true,
+        secure: false,
+      },
+      "/help.css": {
+        target: BACKEND_URL,
+        changeOrigin: true,
+        secure: false,
+      },
       "/favicons": {
         target: BACKEND_URL,
         changeOrigin: true,

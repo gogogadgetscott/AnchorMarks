@@ -4,6 +4,25 @@ All notable changes to AnchorMarks are documented here.
 
 ---
 
+## [1.0.7] - 2026-03-02
+
+### Added
+
+- **AI tag suggestions** — Claude-powered endpoint analyses bookmark content and proposes relevant tags; configurable via `ANTHROPIC_API_KEY` in `.env`
+- **Fuzzy search** — server-side fuzzy matching for bookmarks using a custom Levenshtein-distance implementation, improving results for typos and partial queries
+- **Dashboard widget actions** — per-widget options menu with Sort A-Z / Z-A, Add Bookmark, Open All, and Show in Bookmarks actions
+- **Dashboard widget color theming** — widgets now display a subtle background tint derived from their assigned color
+- **Help page dedicated stylesheet** — `help.css` extracted with responsive layout and full theme support (light, dark, high-contrast)
+
+### Changed
+
+- API routes refactored to use Express Router modules; folders and tags controllers merged into their respective route files, eliminating ~2 600 lines of duplication
+- Bookmark modal layout updated for improved field arrangement
+- Docker Compose template updated to document `JWT_REFRESH_SECRET` environment variable
+- Docker entrypoint simplified by removing redundant user-switching logic
+
+---
+
 ## [1.0.6] - 2026-03-02
 
 ### Added
