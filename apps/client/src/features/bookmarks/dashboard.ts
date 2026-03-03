@@ -669,6 +669,7 @@ function renderDashboardWidget(widget: DashboardWidget, index: number): string {
       <div class="widget-body">
         ${renderWidgetContent(widget, widgetData)}
       </div>
+      <div class="widget-resize-handle" title="Drag to resize"></div>
     </div>
   `;
 }
@@ -952,6 +953,53 @@ export function initDashboardDragDrop(): void {
         document.addEventListener("mousemove", onMouseMove);
         document.addEventListener("mouseup", onMouseUp);
         e.preventDefault();
+      });
+    });
+
+  newOutlet
+    .querySelectorAll<HTMLElement>(".widget-resize-handle")
+    .forEach((handle) => {
+      handle.addEventListener("mousedown", (e: MouseEvent) => {
+        const widgetEl = (e.currentTarget as HTMLElement).closest(
+          ".dashboard-widget-freeform",
+        ) as HTMLElement;
+        if (!widgetEl) return;
+
+        const index = Number(widgetEl.dataset.widgetIndex);
+        if (isNaN(index)) return;
+
+        state.setIsResizing(true);
+        state.setResizingWidget(widgetEl);
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const origW = parseInt(widgetEl.style.width || "320", 10);
+        const origH = parseInt(widgetEl.style.height || "400", 10);
+        state.setResizeStartSize({ w: origW, h: origH });
+
+        function onMouseMove(moveEv: MouseEvent) {
+          const newW = snapToGrid(Math.max(160, origW + moveEv.clientX - startX));
+          const newH = snapToGrid(Math.max(120, origH + moveEv.clientY - startY));
+          widgetEl.style.width = newW + "px";
+          widgetEl.style.height = newH + "px";
+          const widgetState = state.dashboardWidgets[index];
+          if (widgetState) {
+            widgetState.w = newW;
+            widgetState.h = newH;
+          }
+        }
+
+        function onMouseUp() {
+          document.removeEventListener("mousemove", onMouseMove);
+          document.removeEventListener("mouseup", onMouseUp);
+          state.setIsResizing(false);
+          state.setResizingWidget(null);
+          markDashboardModified();
+        }
+
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+        e.preventDefault();
+        e.stopPropagation();
       });
     });
 }
