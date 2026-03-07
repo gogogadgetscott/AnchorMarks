@@ -1,7 +1,5 @@
 # AGENTS.md
 
-Universal AI agent instructions for AnchorMarks.
-
 ## 1) Quick Start
 
 AnchorMarks is a self-hosted bookmark manager (Node.js/Express/SQLite backend, Vanilla TS frontend).
@@ -16,11 +14,13 @@ AnchorMarks is a self-hosted bookmark manager (Node.js/Express/SQLite backend, V
 ## 2) Architecture Essentials
 
 ### Backend (`apps/server`)
+
 - **Entry**: `index.js` → `app.js`
 - **DB**: `models/database.js`. **No ORM**; use **parameterized SQL only**.
 - **Pattern**: Routes in `routes/`, handlers in `controllers/`, logic in `models/`, utils in `helpers/`.
 
 ### Frontend (`apps/client`)
+
 - **Entry**: `src/main.ts` → `src/App.ts` (Vanilla TypeScript + DOM).
 - **API**: `src/services/api.ts`.
 - **Aliases**: `@features`, `@components`, `@utils`, `@services`.
@@ -42,9 +42,10 @@ AnchorMarks is a self-hosted bookmark manager (Node.js/Express/SQLite backend, V
 ## 4) Frontend State Rule
 
 After any mutation:
+
 1. Reload data from server.
 2. Re-render UI.
-**Do not assume local state equals DB state.**
+   **Do not assume local state equals DB state.**
 
 ---
 

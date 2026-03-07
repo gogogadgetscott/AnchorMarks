@@ -252,11 +252,15 @@ export async function bulkAutoTag(): Promise<void> {
 
       const smartTags =
         smartResponse.status === "fulfilled"
-          ? (smartResponse.value.suggestions || []).map((s) => s.tag).filter(Boolean)
+          ? (smartResponse.value.suggestions || [])
+              .map((s) => s.tag)
+              .filter(Boolean)
           : [];
       const aiTags =
         aiResponse.status === "fulfilled"
-          ? (aiResponse.value.suggestions || []).map((s) => s.tag).filter(Boolean)
+          ? (aiResponse.value.suggestions || [])
+              .map((s) => s.tag)
+              .filter(Boolean)
           : [];
 
       const tags = Array.from(new Set([...smartTags, ...aiTags]));
@@ -264,7 +268,10 @@ export async function bulkAutoTag(): Promise<void> {
 
       await api("/tags/bulk-add", {
         method: "POST",
-        body: JSON.stringify({ bookmark_ids: [bookmark.id], tags: tags.join(", ") }),
+        body: JSON.stringify({
+          bookmark_ids: [bookmark.id],
+          tags: tags.join(", "),
+        }),
       });
 
       const merged = new Set([...parseTagInput(bookmark.tags || ""), ...tags]);

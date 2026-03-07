@@ -977,8 +977,12 @@ export function initDashboardDragDrop(): void {
         state.setResizeStartSize({ w: origW, h: origH });
 
         function onMouseMove(moveEv: MouseEvent) {
-          const newW = snapToGrid(Math.max(160, origW + moveEv.clientX - startX));
-          const newH = snapToGrid(Math.max(120, origH + moveEv.clientY - startY));
+          const newW = snapToGrid(
+            Math.max(160, origW + moveEv.clientX - startX),
+          );
+          const newH = snapToGrid(
+            Math.max(120, origH + moveEv.clientY - startY),
+          );
           widgetEl.style.width = newW + "px";
           widgetEl.style.height = newH + "px";
           const widgetState = state.dashboardWidgets[index];
@@ -1024,9 +1028,9 @@ function attachWidgetEventListeners(): void {
         const menu = document.querySelector<HTMLElement>(
           `.widget-options-menu[data-widget-index="${index}"]`,
         );
-        document
-          .querySelectorAll(".widget-options-menu")
-          .forEach((m) => { if (m !== menu) m.classList.add("hidden"); });
+        document.querySelectorAll(".widget-options-menu").forEach((m) => {
+          if (m !== menu) m.classList.add("hidden");
+        });
         menu?.classList.toggle("hidden");
       });
     });
@@ -1112,9 +1116,8 @@ function attachWidgetEventListeners(): void {
           ) as HTMLInputElement | null;
           if (tagsInput && widgetId) tagsInput.value = widgetId;
           try {
-            const { loadTagsFromInput } = await import(
-              "@features/bookmarks/tag-input.ts"
-            );
+            const { loadTagsFromInput } =
+              await import("@features/bookmarks/tag-input.ts");
             if (widgetId) loadTagsFromInput(widgetId);
           } catch {
             // tag-input module may not be available
@@ -1153,8 +1156,13 @@ function attachWidgetEventListeners(): void {
           return;
         }
 
-        bookmarks.forEach((b) => { if (b.url) window.open(b.url, "_blank"); });
-        showToast(`Opened ${bookmarks.length} tab${bookmarks.length > 1 ? "s" : ""}`, "success");
+        bookmarks.forEach((b) => {
+          if (b.url) window.open(b.url, "_blank");
+        });
+        showToast(
+          `Opened ${bookmarks.length} tab${bookmarks.length > 1 ? "s" : ""}`,
+          "success",
+        );
       });
     });
 
@@ -1170,9 +1178,8 @@ function attachWidgetEventListeners(): void {
           .querySelectorAll(".widget-options-menu")
           .forEach((m) => m.classList.add("hidden"));
 
-        const { loadBookmarks, renderBookmarks } = await import(
-          "@features/bookmarks/bookmarks.ts"
-        );
+        const { loadBookmarks, renderBookmarks } =
+          await import("@features/bookmarks/bookmarks.ts");
 
         if (widgetType === "folder" && widgetId) {
           state.setCurrentView("folder");
@@ -1216,9 +1223,8 @@ function attachWidgetEventListeners(): void {
         e.stopPropagation();
         const id = btn.dataset.bookmarkId;
         if (!id) return;
-        const { editBookmark } = await import(
-          "@features/bookmarks/bookmarks.ts"
-        );
+        const { editBookmark } =
+          await import("@features/bookmarks/bookmarks.ts");
         await editBookmark(id);
       });
     });
@@ -1232,9 +1238,8 @@ function attachWidgetEventListeners(): void {
         e.stopPropagation();
         const id = btn.dataset.bookmarkId;
         if (!id) return;
-        const { deleteBookmark } = await import(
-          "@features/bookmarks/bookmarks.ts"
-        );
+        const { deleteBookmark } =
+          await import("@features/bookmarks/bookmarks.ts");
         await deleteBookmark(id);
       });
     });
@@ -1304,14 +1309,16 @@ function showWidgetColorPicker(index: number, button: HTMLElement): void {
   picker.style.right = `${window.innerWidth - rect.right}px`;
   document.body.appendChild(picker);
 
-  picker.querySelectorAll<HTMLElement>(".color-picker-option").forEach((opt) => {
-    opt.addEventListener("click", (e: Event) => {
-      e.stopPropagation();
-      const color = opt.dataset.color;
-      if (color) updateWidgetColor(index, color);
-      picker.remove();
+  picker
+    .querySelectorAll<HTMLElement>(".color-picker-option")
+    .forEach((opt) => {
+      opt.addEventListener("click", (e: Event) => {
+        e.stopPropagation();
+        const color = opt.dataset.color;
+        if (color) updateWidgetColor(index, color);
+        picker.remove();
+      });
     });
-  });
 
   setTimeout(() => {
     document.addEventListener("click", function closeHandler(e: MouseEvent) {
@@ -1409,13 +1416,16 @@ export function toggleLayoutSettings(): void {
 
   const anchor =
     document.getElementById("dashboard-layout-btn") ??
-    document.querySelector<HTMLElement>('[data-action="toggle-layout-settings"]');
+    document.querySelector<HTMLElement>(
+      '[data-action="toggle-layout-settings"]',
+    );
   if (!anchor) return;
 
   const panel = document.createElement("div");
   panel.id = "layout-settings-panel";
   panel.className = "widget-options-menu";
-  panel.style.cssText = "display:block;position:fixed;z-index:1100;min-width:180px;";
+  panel.style.cssText =
+    "display:block;position:fixed;z-index:1100;min-width:180px;";
 
   const snapChecked = state.snapToGrid ? "checked" : "";
   panel.innerHTML = `
@@ -1443,22 +1453,28 @@ export function toggleLayoutSettings(): void {
   panel.style.right = `${window.innerWidth - rect.right}px`;
 
   // Snap to grid toggle
-  const snapToggle = panel.querySelector<HTMLInputElement>("#layout-snap-toggle");
+  const snapToggle = panel.querySelector<HTMLInputElement>(
+    "#layout-snap-toggle",
+  );
   snapToggle?.addEventListener("change", () => {
     state.setSnapToGrid(snapToggle.checked);
   });
 
   // Auto-position
-  panel.querySelector("#layout-auto-position")?.addEventListener("click", () => {
-    panel.remove();
-    autoPositionWidgets();
-  });
+  panel
+    .querySelector("#layout-auto-position")
+    ?.addEventListener("click", () => {
+      panel.remove();
+      autoPositionWidgets();
+    });
 
   // Clear dashboard
-  panel.querySelector("#layout-clear-dashboard")?.addEventListener("click", () => {
-    panel.remove();
-    clearDashboard();
-  });
+  panel
+    .querySelector("#layout-clear-dashboard")
+    ?.addEventListener("click", () => {
+      panel.remove();
+      clearDashboard();
+    });
 
   // Close on outside click
   setTimeout(() => {

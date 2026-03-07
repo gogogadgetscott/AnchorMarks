@@ -103,7 +103,8 @@ self.addEventListener("fetch", (event) => {
         if (cachedResponse && url.pathname.match(/\.(js|css)$/)) {
           const ct = cachedResponse.headers.get("Content-Type") || "";
           const ok =
-            (url.pathname.endsWith(".js") && (ct.includes("javascript") || ct.includes("ecmascript"))) ||
+            (url.pathname.endsWith(".js") &&
+              (ct.includes("javascript") || ct.includes("ecmascript"))) ||
             (url.pathname.endsWith(".css") && ct.includes("css"));
           if (!ok) cachedResponse = null;
         }
@@ -117,7 +118,8 @@ self.addEventListener("fetch", (event) => {
             const isJsOrCss = url.pathname.match(/\.(js|css)$/);
             const typeOk =
               !isJsOrCss ||
-              (url.pathname.endsWith(".js") && (ct.includes("javascript") || ct.includes("ecmascript"))) ||
+              (url.pathname.endsWith(".js") &&
+                (ct.includes("javascript") || ct.includes("ecmascript"))) ||
               (url.pathname.endsWith(".css") && ct.includes("css"));
             if (typeOk) {
               const responseClone = response.clone();

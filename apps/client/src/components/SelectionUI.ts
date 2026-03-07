@@ -1,6 +1,12 @@
 import { Icon } from "./Icon.ts";
 
-export type BulkAction = "archive" | "unarchive" | "move" | "tag" | "auto-tag" | "delete";
+export type BulkAction =
+  | "archive"
+  | "unarchive"
+  | "move"
+  | "tag"
+  | "auto-tag"
+  | "delete";
 
 interface SelectionUIOptions {
   actions?: BulkAction[];

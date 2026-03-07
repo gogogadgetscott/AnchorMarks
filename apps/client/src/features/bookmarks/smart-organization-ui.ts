@@ -179,7 +179,12 @@ function renderTagSuggestions(list: string[]): void {
 
 function renderSmartTagSuggestions(
   suggestions: SmartTagSuggestion[],
-  domainInfo: { domain: string; bookmarkCount?: number; bookmark_count?: number; category?: string },
+  domainInfo: {
+    domain: string;
+    bookmarkCount?: number;
+    bookmark_count?: number;
+    category?: string;
+  },
 ): void {
   const tagSuggestions = document.getElementById("tag-suggestions");
   if (!tagSuggestions) return;
@@ -269,9 +274,9 @@ function appendAISuggestions(
     pill.dataset.tag = name;
     pill.title = "AI-generated";
     pill.innerHTML = `<button type="button" class="tag-suggestion-btn"><span class="source-icon">🤖</span><span class="tag-name">${escapeHtml(name)}</span></button>`;
-    pill.querySelector("button")?.addEventListener("click", () =>
-      addTagToInput(name),
-    );
+    pill
+      .querySelector("button")
+      ?.addEventListener("click", () => addTagToInput(name));
     row.appendChild(pill);
   });
   tagSuggestions.appendChild(row);

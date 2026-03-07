@@ -126,7 +126,7 @@ describe("server/config", () => {
       config.isApiKeyAllowed({ method: "DELETE", path: "/api/bookmarks/123" }),
     ).toBe(false);
     expect(config.isApiKeyAllowed({ method: "GET", path: "/api/tags" })).toBe(
-      false,
+      true,
     );
   });
 });

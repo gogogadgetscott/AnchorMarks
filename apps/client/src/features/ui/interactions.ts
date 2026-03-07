@@ -207,14 +207,16 @@ function initGlobalDelegation(): void {
 
   // Global Click Delegation
   document.body.addEventListener("click", async (e: Event) => {
-    const target = (e.target as HTMLElement).closest(
-      "[data-action]",
-    ) as HTMLElement;
+    const clickTarget = e.target as HTMLElement;
+    const target = clickTarget.closest("[data-action]") as HTMLElement;
     if (!target) return;
 
     const action = target.dataset.action;
     const id = target.dataset.id || "";
-    const tag = target.dataset.tag || "";
+    const tag =
+      target.dataset.tag ||
+      target.closest("[data-tag]")?.getAttribute("data-tag") ||
+      "";
     const modal = target.dataset.modalTarget;
 
     switch (action) {
@@ -299,6 +301,7 @@ function initGlobalDelegation(): void {
           );
         break;
       case "filter-by-tag":
+        e.preventDefault();
         e.stopPropagation();
         if (tag)
           import("@features/bookmarks/bookmarks.ts").then(({ filterByTag }) =>
@@ -411,6 +414,7 @@ function initGlobalDelegation(): void {
         );
         break;
       case "toggle-filter-tag":
+        e.preventDefault();
         e.stopPropagation();
         if (tag)
           import("@features/bookmarks/search.ts").then(({ toggleFilterTag }) =>
