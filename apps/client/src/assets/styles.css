@@ -2867,6 +2867,19 @@ body.tag-cloud-active .content-body {
   word-break: break-word;
 }
 
+.bookmark-favorite-indicator {
+  display: inline-flex;
+  vertical-align: text-bottom;
+  margin-right: 0.35rem;
+  color: #f59e0b;
+}
+
+.bookmark-favorite-indicator svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+}
+
 .bookmark-url {
   font-size: 0.75rem;
   color: var(--text-tertiary);

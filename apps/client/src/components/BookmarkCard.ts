@@ -88,6 +88,9 @@ export function BookmarkCard(bookmark: Bookmark, index: number): string {
   const hasColorClass = bookmark.color ? "has-custom-color" : "";
 
   const delayClass = `delay-${index % 10}`;
+  const favoriteIndicator = bookmark.is_favorite
+    ? `<span class="bookmark-favorite-indicator" aria-hidden="true">${Icon("star-filled", { size: 12 })}</span>`
+    : "";
 
   return `
     <div class="bookmark-card ${isSelected ? "selected" : ""} ${hasColorClass} entrance-animation ${delayClass}"
@@ -109,7 +112,7 @@ export function BookmarkCard(bookmark: Bookmark, index: number): string {
         ${faviconHtml}
       </div>
       <div class="bookmark-col bookmark-title-tags">
-        <div class="bookmark-title">${escapeHtml(bookmark.title)}</div>
+        <div class="bookmark-title">${favoriteIndicator}${escapeHtml(bookmark.title)}</div>
         ${tagsHtml}
       </div>
       <div class="bookmark-col bookmark-desc-url">
@@ -123,7 +126,7 @@ export function BookmarkCard(bookmark: Bookmark, index: number): string {
           ${faviconHtml}
         </div>
         <div class="bookmark-info">
-          <div class="bookmark-title">${escapeHtml(bookmark.title)}</div>
+          <div class="bookmark-title">${favoriteIndicator}${escapeHtml(bookmark.title)}</div>
           <div class="bookmark-url" data-full-url="${escapeHtml(bookmark.url)}">${escapeHtml(displayUrl)}</div>
         </div>
       </div>

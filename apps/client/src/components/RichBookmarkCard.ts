@@ -80,6 +80,9 @@ export function RichBookmarkCard(bookmark: Bookmark, index: number): string {
     : Icon("link", { size: 16 });
 
   const delayClass = `delay-${index % 10}`;
+  const favoriteIndicator = bookmark.is_favorite
+    ? `<span class="bookmark-favorite-indicator" aria-hidden="true">${Icon("star-filled", { size: 12 })}</span>`
+    : "";
 
   // Determine which image to show: og_image > thumbnail_local > placeholder
   const imageSrc = escapeHtml(
@@ -104,7 +107,7 @@ export function RichBookmarkCard(bookmark: Bookmark, index: number): string {
           <div class="bookmark-favicon">${faviconHtml}</div>
           <div class="bookmark-url">${escapeHtml(hostname)}</div>
         </div>
-        <div class="bookmark-title">${escapeHtml(bookmark.title)}</div>
+        <div class="bookmark-title">${favoriteIndicator}${escapeHtml(bookmark.title)}</div>
         ${bookmark.description ? `<div class="bookmark-description">${escapeHtml(bookmark.description)}</div>` : ""}
         ${tagsHtml}
         <div class="bookmark-actions">

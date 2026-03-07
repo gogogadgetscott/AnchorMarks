@@ -50,4 +50,10 @@ describe("RichBookmarkCard", () => {
     const html = RichBookmarkCard(mockBookmark, 0);
     expect(html).toContain("A rich description");
   });
+
+  it("shows favorite icon before title when bookmark is favorited", () => {
+    const html = RichBookmarkCard({ ...mockBookmark, is_favorite: true }, 0);
+    expect(html).toContain("bookmark-favorite-indicator");
+    expect(html).toContain("icon-star-filled");
+  });
 });

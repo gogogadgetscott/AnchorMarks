@@ -43,6 +43,17 @@ describe("BookmarkCard", () => {
     expect(html).toContain("background-color: #ff0000");
   });
 
+  it("shows favorite icon before title when bookmark is favorited", () => {
+    const html = BookmarkCard({ ...mockBookmark, is_favorite: true }, 0);
+    expect(html).toContain("bookmark-favorite-indicator");
+    expect(html).toContain("icon-star-filled");
+  });
+
+  it("does not show favorite icon before title when bookmark is not favorited", () => {
+    const html = BookmarkCard({ ...mockBookmark, is_favorite: false }, 0);
+    expect(html).not.toContain("bookmark-favorite-indicator");
+  });
+
   it("in list view: columns and order (title -> tags -> description -> url)", () => {
     setViewMode("list");
     const html = BookmarkCard(mockBookmark, 0);
