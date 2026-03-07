@@ -3,12 +3,16 @@
  * Uses mocks for db and config so no real DB is required. JWT tests use real tokens.
  */
 process.env.JWT_SECRET = "test-jwt-secret-middleware";
+process.env.COOKIE_PREFIX = "test_";
 const jwt = require("jsonwebtoken");
 const mockIsApiKeyAllowed = vi.fn();
 
 vi.mock("../config", () => ({
   get JWT_SECRET() {
     return process.env.JWT_SECRET || "test-jwt-secret-middleware";
+  },
+  get COOKIE_PREFIX() {
+    return process.env.COOKIE_PREFIX || "test_";
   },
   isApiKeyAllowed: (req) => mockIsApiKeyAllowed(req),
 }));
@@ -157,7 +161,7 @@ describe("middleware/index", () => {
       const secret = process.env.JWT_SECRET || "test-jwt-secret-middleware";
       const token = jwt.sign({ userId: "user-1" }, secret, { expiresIn: "1h" });
       const middleware = authenticateToken(db);
-      const req = { headers: {}, cookies: { token } };
+      const req = { headers: {}, cookies: { test_token: token } };
       const res = {
         status: vi.fn().mockReturnThis(),
         json: vi.fn(),
@@ -178,7 +182,7 @@ describe("middleware/index", () => {
       const { authenticateToken } = require("../middleware/index");
       const db = createMockDb();
       const middleware = authenticateToken(db);
-      const req = { headers: {}, cookies: { token: "bad-jwt" } };
+      const req = { headers: {}, cookies: { test_token: "bad-jwt" } };
       const res = {
         status: vi.fn().mockReturnThis(),
         json: vi.fn(),
@@ -188,7 +192,7 @@ describe("middleware/index", () => {
 
       middleware(req, res, next);
 
-      expect(res.clearCookie).toHaveBeenCalledWith("token");
+      expect(res.clearCookie).toHaveBeenCalledWith("test_token");
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({ error: "Invalid token" });
       expect(next).not.toHaveBeenCalled();
@@ -202,7 +206,7 @@ describe("middleware/index", () => {
       const secret = process.env.JWT_SECRET || "test-jwt-secret-middleware";
       const token = jwt.sign({ userId: "user-1" }, secret, { expiresIn: "1h" });
       const middleware = authenticateToken(db);
-      const req = { headers: {}, cookies: { token } };
+      const req = { headers: {}, cookies: { test_token: token } };
       const res = {
         status: vi.fn().mockReturnThis(),
         json: vi.fn(),
@@ -262,7 +266,7 @@ describe("middleware/index", () => {
       const req = {
         method: "POST",
         headers: {},
-        cookies: { csrfToken: "session-csrf" },
+        cookies: { test_csrfToken: "session-csrf" },
       };
       const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
       const next = vi.fn();
@@ -308,7 +312,7 @@ describe("middleware/index", () => {
       const req = {
         method: "POST",
         headers: { "x-csrf-token": "header-csrf" },
-        cookies: { csrfToken: "different-cookie-csrf" },
+        cookies: { test_csrfToken: "different-cookie-csrf" },
       };
       const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
       const next = vi.fn();
@@ -332,7 +336,7 @@ describe("middleware/index", () => {
       const req = {
         method: "POST",
         headers: { "x-csrf-token": token },
-        cookies: { csrfToken: token },
+        cookies: { test_csrfToken: token },
       };
       const res = {};
       const next = vi.fn();

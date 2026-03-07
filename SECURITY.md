@@ -35,6 +35,7 @@ AnchorMarks implements the following security measures:
 - CSRF token validation for state-changing operations
 - API key authentication for programmatic access
 - All database queries include user_id filtering for data isolation
+- **App-specific cookie names**: Cookies are prefixed with a deployment-specific identifier (derived from `JWT_SECRET`) to prevent authentication conflicts when multiple applications share the same domain. This ensures that logging into one app doesn't interfere with sessions in another app on the same domain.
 
 ### Input Validation & Sanitization
 

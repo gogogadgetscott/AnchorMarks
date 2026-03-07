@@ -147,7 +147,7 @@ function setupMiddleware(app, { config, validateCsrfTokenMiddleware }) {
 
 // Export middleware setup and auth helpers
 const jwt = require("jsonwebtoken");
-const { JWT_SECRET, isApiKeyAllowed } = require("../config");
+const { JWT_SECRET, COOKIE_PREFIX, isApiKeyAllowed } = require("../config");
 
 function authenticateToken(db) {
   return (req, res, next) => {
@@ -198,7 +198,7 @@ function authenticateToken(db) {
     }
 
     // JWT from HTTP-only cookie
-    const token = req.cookies.token;
+    const token = req.cookies[`${COOKIE_PREFIX}token`];
     if (!token) {
       return res.status(401).json({ error: "Access token required" });
     }
@@ -225,7 +225,7 @@ function authenticateToken(db) {
         return res.status(401).json({ error: "Access token expired" });
       }
       logger.error("Auth token verification failed", err);
-      res.clearCookie("token");
+      res.clearCookie(`${COOKIE_PREFIX}token`);
       return res.status(403).json({ error: "Invalid token" });
     }
   };
@@ -249,7 +249,7 @@ function validateCsrfToken(db) {
 
     // Enforce double-submit: require X-CSRF-Token header and match cookie
     const csrfToken = req.headers["x-csrf-token"];
-    const sessionCsrf = req.cookies.csrfToken;
+    const sessionCsrf = req.cookies[`${COOKIE_PREFIX}csrfToken`];
 
     if (!csrfToken) {
       return res.status(403).json({

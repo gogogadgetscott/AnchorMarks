@@ -332,6 +332,16 @@ DB_PATH=/var/lib/anchormarks/anchormarks.db
 CORS_ORIGIN=https://yourdomain.com
 ```
 
+**Optional cookie prefix configuration:**
+
+```bash
+# Set a custom cookie prefix (default: derived from JWT_SECRET)
+# Useful when multiple apps share the same domain
+COOKIE_PREFIX=myapp_
+```
+
+**Note:** Changing `COOKIE_PREFIX` or `JWT_SECRET` will invalidate all existing user sessions, requiring users to log in again.
+
 Generate a strong JWT_SECRET:
 
 ```bash

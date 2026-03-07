@@ -9,6 +9,7 @@ module.exports = function createAuthRouter(db) {
   const csrf = validateCsrfToken(db);
 
   router.get("/csrf", ctrl.getCsrfToken);
+  router.get("/config/public", ctrl.getPublicConfig);
   router.post("/register", validateBody(schemas.authRegister), ctrl.register);
   router.post("/login", validateBody(schemas.authLogin), ctrl.login);
   router.get("/me", auth, ctrl.getMe);
