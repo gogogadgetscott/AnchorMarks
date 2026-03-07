@@ -161,10 +161,15 @@ function initImportExportListeners(): void {
     });
 }
 
+let globalDelegationInitialized = false;
+
 /**
  * Global Event Delegation (Click and Input)
  */
 function initGlobalDelegation(): void {
+  if (globalDelegationInitialized) return;
+  globalDelegationInitialized = true;
+
   // Global Input Delegation
   document.body.addEventListener("input", (e: Event) => {
     const target = (e.target as HTMLElement).closest(
