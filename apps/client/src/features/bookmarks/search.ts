@@ -394,9 +394,8 @@ export async function toggleFilterTag(tag: string): Promise<void> {
 
   updateActiveNav();
   renderActiveFilters();
-  const { renderBookmarks } = await import("@features/bookmarks/bookmarks.ts");
-  renderBookmarks();
-  renderSidebarTags();
+  const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
+  await loadBookmarks();
 }
 
 // Toggle tag mode (AND/OR)
