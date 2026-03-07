@@ -2087,6 +2087,11 @@
             <ul>
               <li>Password hashing (bcrypt)</li>
               <li>JWT auth in an httpOnly cookie for browser sessions</li>
+              <li>
+                <strong>Note:</strong> Cookie names may include a
+                deployment-specific prefix to prevent conflicts when multiple
+                apps share the same domain.
+              </li>
               <li>CSRF tokens required for state-changing browser requests</li>
               <li>
                 User isolation: every query filters by <code>user_id</code>
@@ -2098,13 +2103,13 @@
             <ul>
               <li>
                 <strong>JWT cookie:</strong> login/register sets a
-                <code>token</code> cookie; browser requests include it
-                automatically.
+                <code>token</code> cookie (prefixed for your deployment);
+                browser requests include it automatically.
               </li>
               <li>
                 <strong>CSRF:</strong> mutating requests send
                 <code>X-CSRF-Token</code> matching the
-                <code>csrfToken</code> cookie.
+                <code>csrfToken</code> cookie (prefixed for your deployment).
               </li>
               <li>
                 <strong>API keys:</strong> integrations authenticate with

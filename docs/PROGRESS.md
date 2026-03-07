@@ -4,7 +4,21 @@ Track work completed and in progress for AnchorMarks.
 
 ## Done (Recent)
 
+- 2026-03-07: Implemented app-specific cookie prefixes to prevent authentication conflicts when multiple apps share the same domain.
 - 2026-02-22: CSRF hardening for auth mutations, SSRF guards, and tag cleanup scoping.
+
+## 2026-03-07
+
+- Implemented app-specific cookie naming to prevent authentication conflicts:
+  - Added `COOKIE_PREFIX` configuration derived from `JWT_SECRET` (or optionally set via environment variable).
+  - Updated all cookie operations (set/read/clear) in `authController.js` and `middleware/index.js` to use prefixed names.
+  - Created public `/api/auth/config/public` endpoint to expose cookie prefix for frontend (future extensibility).
+  - Updated test suite with prefixed cookie names and added `COOKIE_PREFIX` to test mocks.
+  - All 320 server tests and 158 client tests passing.
+- Updated documentation:
+  - Added `COOKIE_PREFIX` configuration to `INSTALL.md` with notes about session invalidation.
+  - Updated `SECURITY.md` to explain why app-specific cookies prevent cross-app authentication conflicts.
+  - Updated `help.html` to note that cookie names include deployment-specific prefixes.
 
 ## 2026-02-22
 

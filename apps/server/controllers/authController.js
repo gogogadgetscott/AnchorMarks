@@ -6,6 +6,7 @@ const {
   JWT_REFRESH_SECRET,
   JWT_ACCESS_EXPIRY,
   JWT_REFRESH_EXPIRY,
+  COOKIE_PREFIX,
 } = require("../config");
 const { logger } = require("../lib/logger");
 const { reportAndSend } = require("../lib/errors");
@@ -36,15 +37,15 @@ function setTokenCookies(res, accessToken, refreshToken, csrfToken) {
     sameSite: isProd ? "Strict" : "Lax",
     path: "/",
   };
-  res.cookie("token", accessToken, {
+  res.cookie(`${COOKIE_PREFIX}token`, accessToken, {
     ...cookieOpts,
     maxAge: expiryToMs(JWT_ACCESS_EXPIRY),
   });
-  res.cookie("refreshToken", refreshToken, {
+  res.cookie(`${COOKIE_PREFIX}refreshToken`, refreshToken, {
     ...cookieOpts,
     maxAge: expiryToMs(JWT_REFRESH_EXPIRY),
   });
-  res.cookie("csrfToken", csrfToken, {
+  res.cookie(`${COOKIE_PREFIX}csrfToken`, csrfToken, {
     httpOnly: false,
     secure: isProd,
     sameSite: isProd ? "Strict" : "Lax",
@@ -91,7 +92,7 @@ function createExampleBookmarks(db, userId, folderId = null, fetchFavicon) {
 
 function getCsrfToken(req, res) {
   const csrfToken = generateCsrfToken();
-  res.cookie("csrfToken", csrfToken, {
+  res.cookie(`${COOKIE_PREFIX}csrfToken`, csrfToken, {
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
@@ -99,6 +100,13 @@ function getCsrfToken(req, res) {
     path: "/",
   });
   res.json({ csrfToken });
+}
+
+function getPublicConfig(req, res) {
+  // Return public configuration needed by the frontend before authentication
+  res.json({
+    cookiePrefix: COOKIE_PREFIX,
+  });
 }
 
 async function register(req, res) {
@@ -257,19 +265,19 @@ function refresh(req, res) {
     db.prepare("DELETE FROM refresh_tokens WHERE expires_at < ?").run(
       new Date().toISOString(),
     );
-    const refreshToken = req.cookies.refreshToken;
+    const refreshToken = req.cookies[`${COOKIE_PREFIX}refreshToken`];
     if (!refreshToken) {
-      res.clearCookie("token");
-      res.clearCookie("refreshToken");
-      res.clearCookie("csrfToken");
+      res.clearCookie(`${COOKIE_PREFIX}token`);
+      res.clearCookie(`${COOKIE_PREFIX}refreshToken`);
+      res.clearCookie(`${COOKIE_PREFIX}csrfToken`);
       return res.status(401).json({ error: "Refresh token required" });
     }
     const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
     const { userId, jti } = decoded;
     if (!userId || !jti) {
-      res.clearCookie("token");
-      res.clearCookie("refreshToken");
-      res.clearCookie("csrfToken");
+      res.clearCookie(`${COOKIE_PREFIX}token`);
+      res.clearCookie(`${COOKIE_PREFIX}refreshToken`);
+      res.clearCookie(`${COOKIE_PREFIX}csrfToken`);
       return res.status(401).json({ error: "Invalid refresh token" });
     }
     const row = db
@@ -280,9 +288,9 @@ function refresh(req, res) {
     const now = new Date().toISOString();
     if (!row || row.expires_at < now) {
       if (row) db.prepare("DELETE FROM refresh_tokens WHERE id = ?").run(jti);
-      res.clearCookie("token");
-      res.clearCookie("refreshToken");
-      res.clearCookie("csrfToken");
+      res.clearCookie(`${COOKIE_PREFIX}token`);
+      res.clearCookie(`${COOKIE_PREFIX}refreshToken`);
+      res.clearCookie(`${COOKIE_PREFIX}csrfToken`);
       return res
         .status(401)
         .json({ error: "Refresh token expired or revoked" });
@@ -290,9 +298,9 @@ function refresh(req, res) {
     db.prepare("DELETE FROM refresh_tokens WHERE id = ?").run(jti);
     const user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
     if (!user) {
-      res.clearCookie("token");
-      res.clearCookie("refreshToken");
-      res.clearCookie("csrfToken");
+      res.clearCookie(`${COOKIE_PREFIX}token`);
+      res.clearCookie(`${COOKIE_PREFIX}refreshToken`);
+      res.clearCookie(`${COOKIE_PREFIX}csrfToken`);
       return res.status(401).json({ error: "User not found" });
     }
     const newRefreshJti = uuidv4();
@@ -324,9 +332,9 @@ function refresh(req, res) {
     });
   } catch (err) {
     if (err.name === "TokenExpiredError" || err.name === "JsonWebTokenError") {
-      res.clearCookie("token");
-      res.clearCookie("refreshToken");
-      res.clearCookie("csrfToken");
+      res.clearCookie(`${COOKIE_PREFIX}token`);
+      res.clearCookie(`${COOKIE_PREFIX}refreshToken`);
+      res.clearCookie(`${COOKIE_PREFIX}csrfToken`);
       return res
         .status(401)
         .json({ error: "Refresh token invalid or expired" });
@@ -342,11 +350,11 @@ function logout(req, res) {
   const audit = { logout: () => {}, ...securityAudit };
   audit.logout(req.user.id, req);
   db.prepare("DELETE FROM refresh_tokens WHERE user_id = ?").run(req.user.id);
-  res.clearCookie("token");
-  res.clearCookie("refreshToken");
-  res.clearCookie("csrfToken");
+  res.clearCookie(`${COOKIE_PREFIX}token`);
+  res.clearCookie(`${COOKIE_PREFIX}refreshToken`);
+  res.clearCookie(`${COOKIE_PREFIX}csrfToken`);
   const csrfToken = generateCsrfToken();
-  res.cookie("csrfToken", csrfToken, {
+  res.cookie(`${COOKIE_PREFIX}csrfToken`, csrfToken, {
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
@@ -364,9 +372,9 @@ function deleteAccount(req, res) {
     const result = db.prepare("DELETE FROM users WHERE id = ?").run(userId);
     if (result.changes === 0)
       return res.status(404).json({ error: "User not found" });
-    res.clearCookie("token");
-    res.clearCookie("refreshToken");
-    res.clearCookie("csrfToken");
+    res.clearCookie(`${COOKIE_PREFIX}token`);
+    res.clearCookie(`${COOKIE_PREFIX}refreshToken`);
+    res.clearCookie(`${COOKIE_PREFIX}csrfToken`);
     res.json({
       success: true,
       message: "Account and data deleted successfully",
@@ -426,7 +434,7 @@ async function changePassword(req, res) {
     db.prepare("DELETE FROM refresh_tokens WHERE user_id = ?").run(req.user.id);
     audit.passwordChange(req.user.id, req);
     const csrfToken = generateCsrfToken();
-    res.cookie("csrfToken", csrfToken, {
+    res.cookie(`${COOKIE_PREFIX}csrfToken`, csrfToken, {
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
@@ -441,6 +449,7 @@ async function changePassword(req, res) {
 
 module.exports = {
   getCsrfToken,
+  getPublicConfig,
   register,
   login,
   getMe,

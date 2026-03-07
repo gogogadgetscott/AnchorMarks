@@ -87,6 +87,19 @@ const JWT_REFRESH_SECRET =
 // Short-lived access token; refresh token rotation extends sessions (defaults: 15m access, 7d refresh)
 const JWT_ACCESS_EXPIRY = process.env.JWT_ACCESS_EXPIRY || "15m";
 const JWT_REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY || "7d";
+
+// Cookie prefix for app-specific cookies (prevents conflicts when multiple apps share domain)
+// Generates a unique prefix based on JWT_SECRET to ensure uniqueness per deployment
+function generateCookiePrefix() {
+  if (process.env.COOKIE_PREFIX !== undefined) {
+    return process.env.COOKIE_PREFIX;
+  }
+  // Generate a unique prefix based on JWT_SECRET (first 8 chars of hash)
+  const hash = crypto.createHash("sha256").update(JWT_SECRET).digest("hex");
+  return `anchormarks_${hash.substring(0, 8)}_`;
+}
+const COOKIE_PREFIX = generateCookiePrefix();
+
 // Resolve DB_PATH so relative paths (e.g. ./apps/database/anchormarks.db) are
 // relative to project root, not process cwd (fixes Docker when cwd is /apps/server).
 const projectRoot = path.join(__dirname, "..", "..", "..");
@@ -163,6 +176,7 @@ module.exports = {
   JWT_REFRESH_SECRET,
   JWT_ACCESS_EXPIRY,
   JWT_REFRESH_EXPIRY,
+  COOKIE_PREFIX,
   DB_PATH,
   ENABLE_BACKGROUND_JOBS,
   ENABLE_FAVICON_BACKGROUND_JOBS,
