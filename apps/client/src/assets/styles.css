@@ -2240,6 +2240,21 @@ body.sidebar-collapsed .nav-section-header {
   margin-left: auto;
 }
 
+.btn-select-all {
+  background: none;
+  border: none;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.75rem;
+  color: var(--primary-color);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.btn-select-all:hover {
+  background: var(--primary-color-10, rgba(var(--primary-rgb, 99, 102, 241), 0.1));
+}
+
 /* Responsive: stack center content into flow on small screens */
 @media (max-width: 640px) {
   .header-center {

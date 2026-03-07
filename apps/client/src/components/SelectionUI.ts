@@ -56,6 +56,7 @@ export function SelectionUI(options: SelectionUIOptions = {}): string {
           ${Icon("close", { size: 20 })}
         </button>
         <span class="selection-count header-selection-count" ${countIdAttr}>0 selected</span>
+        <button class="btn-text btn-select-all" data-action="bulk-select-all" title="Select All">Select All</button>
       </div>
       <div class="header-right">
         ${actionButtons}
