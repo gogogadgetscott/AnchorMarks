@@ -93,6 +93,9 @@ function initAuthForms(): void {
         // Re-initialize app state (assuming initializeApp is globally available or we import it)
         const { initializeApp } = await import("../../App.ts");
         await initializeApp();
+        import("@features/bookmarks/smart-organization-ui.ts").then((mod) =>
+          mod.default.init(),
+        );
       }
     });
 
@@ -125,6 +128,9 @@ function initAuthForms(): void {
         await loadSettings();
         const { initializeApp } = await import("../../App.ts");
         await initializeApp();
+        import("@features/bookmarks/smart-organization-ui.ts").then((mod) =>
+          mod.default.init(),
+        );
       }
     });
 }
@@ -212,6 +218,10 @@ function initBookmarkForms(): void {
         if (metadata.title && titleInput) titleInput.value = metadata.title;
         if (metadata.description && descInput)
           descInput.value = metadata.description;
+
+        import("@features/bookmarks/smart-organization-ui.ts").then(
+          ({ showSmartTagSuggestions }) => showSmartTagSuggestions(url),
+        );
 
         showToast("Info fetched successfully", "success");
       } catch (err: unknown) {

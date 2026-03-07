@@ -1126,6 +1126,10 @@ export async function editBookmark(id: string): Promise<void> {
     await import("@features/bookmarks/tag-input.ts");
   loadTagsFromInput(bookmark.tags || "");
 
+  import("@features/bookmarks/smart-organization-ui.ts").then(
+    ({ showSmartTagSuggestions }) => showSmartTagSuggestions(bookmark.url),
+  );
+
   openModal("bookmark-modal");
 }
 
