@@ -9,6 +9,7 @@ import type { Bookmark, DashboardWidget } from "@types";
 import type { DashboardViewResponse } from "../../types/api";
 import { showToast } from "@utils/ui-helpers.ts";
 import { confirmDialog, promptDialog } from "@features/ui/confirm-dialog.ts";
+import { Button } from "@components/index.ts";
 import { escapeHtml } from "@utils/index.ts";
 
 // Constants
@@ -701,6 +702,48 @@ function renderWidgetContent(
               ${escapeHtml(b.title || b.url)}
             </span>
           </a>
+          <div class="compact-actions">
+            ${Button("", {
+              variant: "ghost",
+              className: "compact-action-btn",
+              icon: "edit",
+              data: { action: "edit-bookmark", id: b.id },
+              title: "Edit bookmark",
+            })}
+            ${Button("", {
+              variant: b.is_favorite ? "warning" : "ghost",
+              className: "compact-action-btn",
+              icon: b.is_favorite ? "star-filled" : "star",
+              data: { action: "toggle-favorite", id: b.id },
+              title: b.is_favorite
+                ? "Remove from favorites"
+                : "Add to favorites",
+            })}
+            ${
+              b.is_archived
+                ? Button("", {
+                    variant: "ghost",
+                    className: "compact-action-btn",
+                    icon: "unarchive",
+                    data: { action: "unarchive-bookmark", id: b.id },
+                    title: "Unarchive bookmark",
+                  })
+                : Button("", {
+                    variant: "ghost",
+                    className: "compact-action-btn",
+                    icon: "archive",
+                    data: { action: "archive-bookmark", id: b.id },
+                    title: "Archive bookmark",
+                  })
+            }
+            ${Button("", {
+              variant: "ghost",
+              className: "compact-action-btn compact-action-danger",
+              icon: "trash",
+              data: { action: "delete-bookmark", id: b.id },
+              title: "Delete bookmark",
+            })}
+          </div>
         </div>
       `,
         )
