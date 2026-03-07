@@ -114,7 +114,7 @@ export async function updateHeaderContent(): Promise<void> {
     id: "main-header",
     className: "main-header",
     title: "Bookmarks",
-    bulkActions: ["archive", "move", "tag", "delete"],
+    bulkActions: ["archive", "move", "tag", "auto-tag", "delete"],
   };
 
   // Customize header based on current view

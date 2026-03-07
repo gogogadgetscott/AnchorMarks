@@ -222,9 +222,82 @@ export async function bulkUnarchive(): Promise<void> {
   showToast(`${ids.length} bookmarks unarchived`, "success");
 }
 
+// Bulk auto-tag using smart suggestions
+export async function bulkAutoTag(): Promise<void> {
+  if (state.selectedBookmarks.size === 0) return;
+
+  const ids = Array.from(state.selectedBookmarks);
+  const bookmarks = state.bookmarks.filter((b) => ids.includes(b.id));
+
+  if (
+    !(await confirmDialog(
+      `Auto-tag ${bookmarks.length} bookmark(s) using smart suggestions?`,
+      { title: "Auto-Tag", confirmText: "Auto-Tag" },
+    ))
+  )
+    return;
+
+  let taggedCount = 0;
+
+  for (const bookmark of bookmarks) {
+    try {
+      const [smartResponse, aiResponse] = await Promise.allSettled([
+        api<{ suggestions: { tag: string }[] }>(
+          `/tags/suggest-smart?url=${encodeURIComponent(bookmark.url)}&limit=6`,
+        ),
+        api<{ suggestions: { tag: string }[] }>(
+          `/tags/suggest-ai?url=${encodeURIComponent(bookmark.url)}&limit=6`,
+        ),
+      ]);
+
+      const smartTags =
+        smartResponse.status === "fulfilled"
+          ? (smartResponse.value.suggestions || []).map((s) => s.tag).filter(Boolean)
+          : [];
+      const aiTags =
+        aiResponse.status === "fulfilled"
+          ? (aiResponse.value.suggestions || []).map((s) => s.tag).filter(Boolean)
+          : [];
+
+      const tags = Array.from(new Set([...smartTags, ...aiTags]));
+      if (tags.length === 0) continue;
+
+      await api("/tags/bulk-add", {
+        method: "POST",
+        body: JSON.stringify({ bookmark_ids: [bookmark.id], tags: tags.join(", ") }),
+      });
+
+      const merged = new Set([...parseTagInput(bookmark.tags || ""), ...tags]);
+      const bm = state.bookmarks.find((b) => b.id === bookmark.id);
+      if (bm) {
+        bm.tags = Array.from(merged).join(", ");
+        (bm as any).tags_detailed = undefined;
+      }
+      taggedCount++;
+    } catch {
+      // skip bookmarks that fail
+    }
+  }
+
+  const { clearSelections, renderBookmarks } =
+    await import("@features/bookmarks/bookmarks.ts");
+  const { renderSidebarTags } = await import("@features/bookmarks/search.ts");
+  clearSelections();
+  await updateCounts();
+  renderBookmarks();
+  renderSidebarTags();
+  showToast(
+    taggedCount > 0
+      ? `Auto-tagged ${taggedCount} bookmark(s)`
+      : "No suggestions found for selected bookmarks",
+    taggedCount > 0 ? "success" : "info",
+  );
+}
+
 export default {
   bulkAddTags,
   bulkRemoveTags,
   bulkArchive,
   bulkUnarchive,
+  bulkAutoTag,
 };

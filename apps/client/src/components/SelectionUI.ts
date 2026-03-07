@@ -1,6 +1,6 @@
 import { Icon } from "./Icon.ts";
 
-export type BulkAction = "archive" | "unarchive" | "move" | "tag" | "delete";
+export type BulkAction = "archive" | "unarchive" | "move" | "tag" | "auto-tag" | "delete";
 
 interface SelectionUIOptions {
   actions?: BulkAction[];
@@ -31,6 +31,7 @@ export function SelectionUI(options: SelectionUIOptions = {}): string {
     unarchive: { icon: "unarchive", title: "Unarchive Selected" },
     move: { icon: "folder", title: "Move to Folder" },
     tag: { icon: "tag", title: "Add Tags" },
+    "auto-tag": { icon: "sparkles", title: "Auto-Tag with AI" },
     delete: { icon: "trash", title: "Delete", className: "text-danger" },
   };
 

@@ -498,6 +498,11 @@ function initBulkActionListeners(): void {
     ) {
       import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkRemoveTags());
     } else if (
+      btn.classList.contains("btn-bulk-auto-tag") ||
+      btn.id === "bulk-auto-tag-btn"
+    ) {
+      import("@features/bookmarks/bulk-ops.ts").then((m) => m.bulkAutoTag());
+    } else if (
       btn.classList.contains("btn-bulk-archive") ||
       btn.id === "bulk-archive-btn"
     ) {
