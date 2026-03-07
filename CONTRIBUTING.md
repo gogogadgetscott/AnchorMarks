@@ -1,74 +1,73 @@
 # Contributing to AnchorMarks
 
-Thanks for your interest in improving AnchorMarks!
+Thanks for your interest in improving AnchorMarks! This project was built with AI-assisted development (GitHub Copilot, Claude, Antigravity), and we welcome contributions of all kinds—human or AI!
 
-> **About this project**: AnchorMarks was built with AI-assisted development using GitHub Copilot. All contributions are welcome—whether human or AI-assisted!
+## 🚀 Getting Started
 
-## Quick Start
+1.  **Fork & Clone**: Pull down the repository.
+2.  **Install Dependencies**: Run `npm install` from the root.
+3.  **Explore**: Run `make help` to see all available commands.
 
-- Fork and clone the repo
-- `npm install`
-- `make dev-full` to start development environment
-- `make test` to run the test suite
-- Make changes in a feature branch and add tests when possible
-- Use `make lint` to format and lint code
-- Run `make help` to see all available commands
+### Development Commands
 
-## Code Style
+Use the `Makefile` for all development tasks:
 
-- Keep code readable and self-explanatory; add small comments only where logic is non-obvious.
-- Favor small, focused commits with descriptive messages.
+| Command | Description |
+| :--- | :--- |
+| `make dev-full` | Start full dev stack (backend + Vite frontend HMR) |
+| `make dev` | Start backend only |
+| `make dev-vite` | Start Vite frontend only (requires separate backend) |
+| `make test` | Run all tests |
+| `make lint` | Format and lint all code |
+| `make build` | Build for production |
+| `make clean` | Clean build artifacts |
 
-## Testing
+---
 
-- Add or update tests for new behaviors.
-- Ensure `make test` passes before opening a PR.
-- Use `make test-backend-watch` or `make test-frontend-watch` for development.
+## 🛠️ Development Guidelines
 
-## Security
+### Branching Policy
 
-- Do not include secrets in commits.
-- Report vulnerabilities privately (see SECURITY.md).
+- Never work directly on `main`.
+- Start each task on a descriptive branch:
+    - `feature/description`
+    - `bugfix/description`
+    - `chore/description`
+    - `hotfix/description`
 
-## Pull Requests
+### Code Style
 
-- Describe the change and rationale.
-- Note any user-facing changes and manual steps to verify.
+- **Readability**: Keep code self-explanatory. Add comments only for non-obvious logic.
+- **Commits**: Use small, focused commits with clear, descriptive messages.
+- **Scope**: Keep changes minimal and targeted to the specific problem.
 
-## Good First Issues
+---
 
-We label beginner-friendly tasks with `good first issue`. If you're new:
+## 🧪 Testing
 
-- Comment on the issue to request assignment.
-- Ask clarifying questions — maintainers are happy to help.
-- Start small: docs, tests, or focused bug fixes are perfect.
+- **Verify**: Always ensure `make test` passes before opening a PR.
+- **Add Tests**: Include or update tests for any new behaviors or bug fixes.
+- **Watch Mode**: Use `make test-watch` during active development.
+- **Coverage**: Check `make test-coverage` for larger logic changes.
 
-## Development Commands
+---
 
-Use the Makefile for all development tasks:
+## 🛡️ Security
 
-```bash
-make dev-full           # Start full dev stack (backend + Vite frontend with HMR)
-make dev                # Start backend only
-make dev-vite           # Start Vite frontend only (requires separate backend)
-make test               # Run all tests
-make test-backend-watch # Run backend tests in watch mode
-make test-frontend-watch # Run frontend tests in watch mode
-make test-coverage      # Generate test coverage reports
-make lint               # Format and lint all code
-make clean              # Clean build artifacts
-make help               # Show all available commands
-```
+- **Secrets**: Never commit secrets or API keys.
+- **Isolation**: Follow project patterns for JWT/CSRF and per-user data isolation.
+- **Reporting**: Report vulnerabilities privately (see [SECURITY.md](SECURITY.md)).
 
-All build, test, and development tasks are now centralized in the Makefile. See `make help` for complete list of targets.
+---
 
-## PR Checklist
+## ✅ Pull Request Checklist
 
-- **Branch**: Create a feature branch (`feature/description`), bugfix branch (`bugfix/description`), or chore branch (`chore/description`)
-- **Tests**: add/adjust unit tests for new behavior (run `make test`)
-- **Lint/format**: run `make lint` and keep diffs focused
-- **Docs**: update README/help where user-facing changes occur
-- **Help HTML**: If adding UI features, update [apps/client/public/help.html](apps/client/public/help.html) with documentation
-- **Security**: avoid secrets, follow JWT/CSRF patterns
-- **Scope**: keep changes minimal and targeted to the problem
-- **Scope**: keep changes minimal and targeted to the problem
+Before submitting your PR, please ensure:
+
+- [ ] **Branch**: Working on a correctly named non-`main` branch.
+- [ ] **Tests**: `make test` passes and new behavior is covered.
+- [ ] **Lint**: `make lint` has been run to ensure consistent formatting.
+- [ ] **Docs**: Updated `README.md` or `docs/` if there are user-facing changes.
+- [ ] **Help**: Updated `apps/client/public/help.html` for new UI features.
+- [ ] **Progress**: Updated `docs/PROGRESS.md` with a summary of work.
+- [ ] **PR Description**: Includes clear rationale and verification steps.
