@@ -1,4 +1,5 @@
 const path = require("path");
+const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
@@ -262,7 +263,9 @@ function validateCsrfToken(db) {
           "Missing CSRF cookie. Please log in again to obtain a new CSRF token.",
       });
     }
-    if (csrfToken !== sessionCsrf) {
+    const a = Buffer.from(csrfToken);
+    const b = Buffer.from(sessionCsrf);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
       return res.status(403).json({
         error:
           "CSRF token mismatch. Please refresh the page or re-authenticate.",

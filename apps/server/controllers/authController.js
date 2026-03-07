@@ -95,7 +95,7 @@ function getCsrfToken(req, res) {
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "Strict" : "Lax",
-    maxAge: 30 * 24 * 60 * 60 * 1000,
+    maxAge: expiryToMs(JWT_REFRESH_EXPIRY),
     path: "/",
   });
   res.json({ csrfToken });
