@@ -68,7 +68,7 @@ export function loadComponents(): void {
         centerContent: `
           ${Omnibar({ id: "search-input" })}
         `,
-        bulkActions: ["archive", "move", "tag", "delete"],
+        bulkActions: ["archive", "move", "tag", "auto-tag", "delete"],
       });
       // Attach view-toggle listeners after header render
       import("@/App.ts").then(({ attachViewToggleListeners }) =>

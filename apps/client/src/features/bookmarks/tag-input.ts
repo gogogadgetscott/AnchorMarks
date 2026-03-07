@@ -115,7 +115,7 @@ export function clearTags(): void {
 }
 
 // Add a tag
-function addTag(tagName: string, updateInput: boolean = true): void {
+export function addTag(tagName: string, updateInput: boolean = true): void {
   const normalizedTag = tagName.trim();
   if (!normalizedTag || selectedTags.includes(normalizedTag)) {
     return;

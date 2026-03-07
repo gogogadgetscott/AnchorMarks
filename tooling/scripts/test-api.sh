@@ -72,7 +72,7 @@ get_request "health"
 # put_request "bookmarks/1" '{"title": "Updated Bookmark"}'
 # delete_request "bookmarks/1"
 
-# get_request "quick-search?q=home"
+# get_request "quick-search?q=help.com"
 
 # get_request "tags"
 # get_request "tags/analytics"

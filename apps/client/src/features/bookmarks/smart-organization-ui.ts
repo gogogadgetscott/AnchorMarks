@@ -59,21 +59,7 @@ function showToast(message: string, type?: string): void {
 }
 
 function addTagToInput(tag: string): void {
-  const AM = getAPI();
-  if (AM.addTagToInput) {
-    AM.addTagToInput(tag);
-  } else {
-    const input = document.getElementById("bookmark-tags") as HTMLInputElement;
-    if (input) {
-      const current = input.value
-        ? input.value.split(",").map((t) => t.trim())
-        : [];
-      if (!current.includes(tag)) {
-        current.push(tag);
-        input.value = current.join(", ");
-      }
-    }
-  }
+  import("@features/bookmarks/tag-input.ts").then(({ addTag }) => addTag(tag));
 }
 
 function loadFolders(): void {
@@ -84,6 +70,7 @@ function loadFolders(): void {
 // ============== SMART TAG SUGGESTIONS ==============
 
 let smartTagSuggestTimeout: ReturnType<typeof setTimeout> | undefined;
+let smartTagSuggestSeq = 0;
 
 async function showSmartTagSuggestions(url: string): Promise<void> {
   const tagSuggestions = document.getElementById("tag-suggestions");
@@ -93,11 +80,18 @@ async function showSmartTagSuggestions(url: string): Promise<void> {
   }
 
   clearTimeout(smartTagSuggestTimeout);
+  const seq = ++smartTagSuggestSeq;
+
   smartTagSuggestTimeout = setTimeout(async () => {
+    if (seq !== smartTagSuggestSeq) return;
+    renderSuggestionsLoading();
+
     try {
       const response = await api(
         `/tags/suggest-smart?url=${encodeURIComponent(url)}&limit=8`,
       );
+
+      if (seq !== smartTagSuggestSeq) return;
 
       if (response.suggestions && response.suggestions.length > 0) {
         renderSmartTagSuggestions(response.suggestions, response.domain_info);
@@ -109,22 +103,50 @@ async function showSmartTagSuggestions(url: string): Promise<void> {
       const AM = getAPI();
       const aiAllowed = AM.aiSuggestionsEnabled !== false;
       if (aiAllowed) {
+        appendAILoadingIndicator();
         try {
           const ai = await api(
             `/tags/suggest-ai?url=${encodeURIComponent(url)}&limit=6`,
           );
+          if (seq !== smartTagSuggestSeq) return;
+          removeAILoadingIndicator();
           if (ai && ai.suggestions && ai.suggestions.length) {
             appendAISuggestions(ai.suggestions);
           }
         } catch (aiErr) {
+          removeAILoadingIndicator();
           // Ignore if not configured or failed
         }
       }
     } catch (err) {
       console.error("Smart tag suggestions failed:", err);
-      renderTagSuggestions([]);
+      if (seq === smartTagSuggestSeq) renderTagSuggestions([]);
     }
   }, 400);
+}
+
+function renderSuggestionsLoading(): void {
+  const tagSuggestions = document.getElementById("tag-suggestions");
+  if (!tagSuggestions) return;
+  tagSuggestions.innerHTML = `
+    <span class="tag-suggestions-loading text-tertiary">
+      <span class="loading-dots">Fetching suggestions<span>.</span><span>.</span><span>.</span></span>
+    </span>
+  `;
+}
+
+function appendAILoadingIndicator(): void {
+  const tagSuggestions = document.getElementById("tag-suggestions");
+  if (!tagSuggestions) return;
+  const el = document.createElement("div");
+  el.id = "ai-suggestions-loading";
+  el.className = "ai-suggestions-header text-tertiary";
+  el.innerHTML = `<span>🤖 AI thinking<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span></span>`;
+  tagSuggestions.appendChild(el);
+}
+
+function removeAILoadingIndicator(): void {
+  document.getElementById("ai-suggestions-loading")?.remove();
 }
 
 function renderTagSuggestions(list: string[]): void {
@@ -157,7 +179,7 @@ function renderTagSuggestions(list: string[]): void {
 
 function renderSmartTagSuggestions(
   suggestions: SmartTagSuggestion[],
-  domainInfo: { domain: string; bookmark_count: number; category?: string },
+  domainInfo: { domain: string; bookmarkCount?: number; bookmark_count?: number; category?: string },
 ): void {
   const tagSuggestions = document.getElementById("tag-suggestions");
   if (!tagSuggestions) return;
@@ -209,8 +231,9 @@ function renderSmartTagSuggestions(
     infoEl.className = "domain-info-mini text-tertiary";
     infoEl.style.cssText =
       "font-size:0.75rem; margin-top:8px; padding-top:8px; border-top:1px solid var(--border-color);";
+    const count = domainInfo.bookmarkCount ?? domainInfo.bookmark_count ?? 0;
     infoEl.innerHTML = `
-      📌 ${domainInfo.bookmark_count} bookmarks from ${escapeHtml(domainInfo.domain)}
+      📌 ${count} bookmarks from ${escapeHtml(domainInfo.domain)}
       ${domainInfo.category ? ` • ${escapeHtml(domainInfo.category)}` : ""}
     `;
     tagSuggestions.appendChild(infoEl);
@@ -223,38 +246,35 @@ function appendAISuggestions(
   const tagSuggestions = document.getElementById("tag-suggestions");
   if (!tagSuggestions || !suggestions || !suggestions.length) return;
 
+  const tagNames = suggestions.map((sugg: string | { tag: string }) =>
+    typeof sugg === "string" ? sugg : sugg.tag,
+  );
+
   const header = document.createElement("div");
-  header.className = "text-tertiary";
-  header.style.cssText = "font-size:0.8rem; margin-top:8px;";
-  header.textContent = "🤖 AI Suggestions";
+  header.className = "ai-suggestions-header text-tertiary";
+  header.innerHTML = `
+    <span>🤖 AI Suggestions</span>
+    <button type="button" class="btn btn-secondary" style="font-size:0.75rem; padding:2px 8px; height:auto;">Add All</button>
+  `;
+  header.querySelector("button")?.addEventListener("click", () => {
+    tagNames.forEach((name) => addTagToInput(name));
+  });
   tagSuggestions.appendChild(header);
 
-  const html = suggestions
-    .map((sugg: string | { tag: string }) => {
-      const name = typeof sugg === "string" ? sugg : sugg.tag;
-      return `
-        <div class="smart-tag-suggestion" data-tag="${escapeHtml(name)}" title="AI-generated">
-          <button type="button" class="tag-suggestion-btn">
-            <span class="source-icon">🤖</span>
-            <span class="tag-name">${escapeHtml(name)}</span>
-          </button>
-        </div>
-      `;
-    })
-    .join("");
-
-  const wrapper = document.createElement("div");
-  wrapper.innerHTML = html;
-  tagSuggestions.appendChild(wrapper);
-
-  wrapper.querySelectorAll(".tag-suggestion-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const container = btn.closest(".smart-tag-suggestion") as HTMLElement;
-      if (container) {
-        addTagToInput(container.dataset.tag || "");
-      }
-    });
+  const row = document.createElement("div");
+  row.className = "ai-suggestions-row";
+  tagNames.forEach((name) => {
+    const pill = document.createElement("div");
+    pill.className = "smart-tag-suggestion";
+    pill.dataset.tag = name;
+    pill.title = "AI-generated";
+    pill.innerHTML = `<button type="button" class="tag-suggestion-btn"><span class="source-icon">🤖</span><span class="tag-name">${escapeHtml(name)}</span></button>`;
+    pill.querySelector("button")?.addEventListener("click", () =>
+      addTagToInput(name),
+    );
+    row.appendChild(pill);
   });
+  tagSuggestions.appendChild(row);
 }
 
 // ============== SMART COLLECTIONS ==============
@@ -574,9 +594,9 @@ export function init() {
 
   // Attach smart tag suggestions to URL input
   if (bookmarkUrlInput) {
-    bookmarkUrlInput.addEventListener("input", (e: Event) => {
-      showSmartTagSuggestions((e.target as HTMLInputElement).value);
-    });
+    bookmarkUrlInput.addEventListener("input", (e: Event) =>
+      showSmartTagSuggestions((e.target as HTMLInputElement).value),
+    );
   }
 
   // Load smart collections on dashboard (don't block)

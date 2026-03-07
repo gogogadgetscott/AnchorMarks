@@ -2240,6 +2240,21 @@ body.sidebar-collapsed .nav-section-header {
   margin-left: auto;
 }
 
+.btn-select-all {
+  background: none;
+  border: none;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.75rem;
+  color: var(--primary-color);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.btn-select-all:hover {
+  background: var(--primary-color-10, rgba(var(--primary-rgb, 99, 102, 241), 0.1));
+}
+
 /* Responsive: stack center content into flow on small screens */
 @media (max-width: 640px) {
   .header-center {
@@ -2968,6 +2983,77 @@ body.tag-cloud-active .content-body {
 .tag-suggestion:hover {
   border-color: var(--primary-300);
   color: var(--text-primary);
+}
+
+/* Smart tag suggestion pills inside the bookmark modal */
+#tag-suggestions .smart-tag-suggestion {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+#tag-suggestions .smart-tag-suggestion:hover {
+  border-color: var(--primary-300);
+  background: var(--primary-50);
+}
+
+#tag-suggestions .tag-suggestion-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+#tag-suggestions .tag-suggestion-btn:hover {
+  color: var(--text-primary);
+}
+
+#tag-suggestions .tag-score {
+  font-size: 0.75em;
+  color: var(--text-tertiary);
+  font-weight: normal;
+}
+
+#tag-suggestions .domain-info-mini {
+  width: 100%;
+  flex-basis: 100%;
+}
+
+#tag-suggestions .ai-suggestions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+#tag-suggestions .ai-suggestions-header {
+  width: 100%;
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.loading-dots span {
+  animation: loading-blink 1.2s infinite;
+  opacity: 0;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes loading-blink {
+  0%, 80%, 100% { opacity: 0; }
+  40% { opacity: 1; }
 }
 
 .tag {
