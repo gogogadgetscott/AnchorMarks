@@ -363,43 +363,40 @@ export function renderActiveFilters(): void {
 }
 
 // Toggle filter tag
-export function toggleFilterTag(tag: string): void {
-  if (state.filterConfig.tags.includes(tag)) {
-    state.setFilterConfig({
-      ...state.filterConfig,
-      tags: state.filterConfig.tags.filter((t) => t !== tag),
-    });
-  } else {
-    state.setFilterConfig({
-      ...state.filterConfig,
-      tags: [...state.filterConfig.tags, tag],
-    });
-  }
-
-  state.setCurrentView("all");
+export async function toggleFilterTag(tag: string): Promise<void> {
+  await state.setCurrentView("all");
   state.setCurrentFolder(null);
+
+  const idx = state.filterConfig.tags.indexOf(tag);
+  const newTags =
+    idx === -1
+      ? [...state.filterConfig.tags, tag]
+      : state.filterConfig.tags.filter((_, i) => i !== idx);
+  state.setFilterConfig({
+    ...state.filterConfig,
+    tags: newTags,
+    search: undefined,
+  });
 
   const searchInput = document.getElementById(
     "search-input",
   ) as HTMLInputElement;
-  const viewTitle = document.getElementById("view-title");
-
   if (searchInput) searchInput.value = "";
 
+  const viewTitle = document.getElementById("view-title");
   if (viewTitle) {
-    if (state.filterConfig.tags.length === 0) {
+    if (newTags.length === 0) {
       viewTitle.textContent = "Bookmarks";
     } else {
-      viewTitle.textContent = `Tags: ${state.filterConfig.tags.join(", ")} (${state.filterConfig.tagMode})`;
+      viewTitle.textContent = `Tags: ${newTags.join(", ")} (${state.filterConfig.tagMode})`;
     }
   }
 
   updateActiveNav();
   renderActiveFilters();
+  const { renderBookmarks } = await import("@features/bookmarks/bookmarks.ts");
+  renderBookmarks();
   renderSidebarTags();
-  import("@features/bookmarks/bookmarks.ts").then(({ renderBookmarks }) =>
-    renderBookmarks(),
-  );
 }
 
 // Toggle tag mode (AND/OR)
