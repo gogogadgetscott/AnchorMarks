@@ -628,6 +628,7 @@ function renderDashboardWidget(widget: DashboardWidget, index: number): string {
 
   const width = getWidgetWidth(widget);
   const height = getWidgetHeight(widget);
+  const widgetCount = widget.type === "tag-analytics" ? "" : widgetData.count;
 
   // Calculate appropriate text color for custom widget colors
   const headerStyle = widget.color
@@ -648,7 +649,7 @@ function renderDashboardWidget(widget: DashboardWidget, index: number): string {
           </svg>
         </div>
         <h3>${escapeHtml(widgetData.title)}</h3>
-        <span class="widget-count">${widgetData.count}</span>
+        <span class="widget-count">${widgetCount}</span>
         <div class="widget-actions">
           <div class="widget-options-container">
             <button class="btn-icon small widget-options-btn" data-action="toggle-widget-options" data-index="${index}" title="Options">
@@ -731,6 +732,12 @@ function getWidgetDisplayData(widget: DashboardWidget): {
       title: linkedId,
       count: cachedBookmarks.length,
       bookmarks: cachedBookmarks,
+    };
+  } else if (widget.type === "tag-analytics") {
+    return {
+      title: "Tag Analytics",
+      count: 0,
+      bookmarks: [],
     };
   }
 
@@ -1768,6 +1775,8 @@ export function addDashboardWidget(
     if (folder) title = folder.name;
   } else if (type === "tag") {
     title = id;
+  } else if (type === "tag-analytics") {
+    title = "Tag Analytics";
   }
 
   const widget: DashboardWidget = {
