@@ -5,7 +5,12 @@
 
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
-import type { Bookmark, DashboardWidget } from "@types";
+import type {
+  Bookmark,
+  DashboardWidget,
+  TagAnalyticsItem,
+  CooccurrenceItem,
+} from "@types";
 import type { DashboardViewResponse } from "../../types/api";
 import { showToast, openModal, resetForms } from "@utils/ui-helpers.ts";
 import { confirmDialog, promptDialog } from "@features/ui/confirm-dialog.ts";
@@ -606,6 +611,7 @@ export function renderDashboard(): void {
 
   initDashboardDragDrop();
   attachWidgetEventListeners();
+  void initTagAnalyticsWidgets();
   void ensureWidgetsData();
 }
 
@@ -693,7 +699,7 @@ function renderDashboardWidget(widget: DashboardWidget, index: number): string {
         </div>
       </div>
       <div class="widget-body">
-        ${renderWidgetContent(widget, widgetData)}
+        ${renderWidgetContent(widget, widgetData, index)}
       </div>
     </div>
   `;
@@ -741,9 +747,10 @@ function getWidgetDisplayData(widget: DashboardWidget): {
 function renderWidgetContent(
   widget: DashboardWidget,
   widgetData: { title: string; count: number; bookmarks: Bookmark[] },
+  index?: number,
 ): string {
   if (widget.type === "tag-analytics") {
-    return '<div style="padding:1rem;text-align:center;color:var(--text-secondary)">Tag analytics coming soon</div>';
+    return getTagAnalyticsMarkup(index ?? 0);
   }
 
   if (widgetData.bookmarks.length === 0) {
@@ -823,6 +830,81 @@ function renderWidgetContent(
   `;
 }
 
+function getTagAnalyticsMarkup(index: number): string {
+  return `
+    <div class="tag-analytics" data-analytics-widget="${index}">
+      <div class="tag-analytics-controls" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;">
+        <label style="display:flex;align-items:center;gap:0.25rem;">
+          <span style="font-size:0.75rem;color:var(--text-tertiary)">Metric</span>
+          <select class="tag-analytics-metric">
+            <option value="count">Usage</option>
+            <option value="click_count_sum">Clicks</option>
+            <option value="favorite_count_sum">Favorites</option>
+          </select>
+        </label>
+        <label style="display:flex;align-items:center;gap:0.25rem;">
+          <span style="font-size:0.75rem;color:var(--text-tertiary)">Top N</span>
+          <select class="tag-analytics-limit">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="30">30</option>
+            <option value="50">50</option>
+          </select>
+        </label>
+        <label style="display:flex;align-items:center;gap:0.25rem;">
+          <span style="font-size:0.75rem;color:var(--text-tertiary)">Pairs Sort</span>
+          <select class="tag-analytics-pairsort">
+            <option value="count" selected>Count</option>
+            <option value="alpha">A-Z</option>
+          </select>
+        </label>
+        <div class="tag-analytics-exports" style="margin-left:auto;display:flex;gap:0.25rem;">
+          <button class="btn btn-sm tag-analytics-export-json" title="Export JSON">JSON</button>
+          <button class="btn btn-sm tag-analytics-export-tags-csv" title="Export Tags CSV">Tags CSV</button>
+          <button class="btn btn-sm tag-analytics-export-pairs-csv" title="Export Pairs CSV">Pairs CSV</button>
+        </div>
+      </div>
+
+      <div class="tag-analytics-colors" style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:0.25rem;">
+          <span style="font-size:0.75rem;color:var(--text-tertiary)">Usage</span>
+          <input type="color" class="tag-analytics-color-usage" style="width:24px;height:20px;border:none;cursor:pointer;" />
+        </label>
+        <label style="display:flex;align-items:center;gap:0.25rem;">
+          <span style="font-size:0.75rem;color:var(--text-tertiary)">Clicks</span>
+          <input type="color" class="tag-analytics-color-clicks" style="width:24px;height:20px;border:none;cursor:pointer;" />
+        </label>
+        <label style="display:flex;align-items:center;gap:0.25rem;">
+          <span style="font-size:0.75rem;color:var(--text-tertiary)">Favorites</span>
+          <input type="color" class="tag-analytics-color-favorites" style="width:24px;height:20px;border:none;cursor:pointer;" />
+        </label>
+        <label style="display:flex;align-items:center;gap:0.25rem;">
+          <span style="font-size:0.75rem;color:var(--text-tertiary)">Pairs</span>
+          <input type="color" class="tag-analytics-color-pairs" style="width:24px;height:20px;border:none;cursor:pointer;" />
+        </label>
+      </div>
+
+      <div class="tag-analytics-legend" style="display:flex;gap:0.75rem;align-items:center;margin-bottom:0.5rem;">
+        <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-usage" style="display:inline-block;width:10px;height:10px;background:#6366f1;border-radius:2px"></span>Usage</span>
+        <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-clicks" style="display:inline-block;width:10px;height:10px;background:#f97316;border-radius:2px"></span>Clicks</span>
+        <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-favorites" style="display:inline-block;width:10px;height:10px;background:#eab308;border-radius:2px"></span>Favorites</span>
+        <span class="legend-item" style="display:flex;align-items:center;gap:0.25rem;font-size:0.75rem;color:var(--text-tertiary)"><span class="legend-color legend-pairs" style="display:inline-block;width:10px;height:10px;background:#6b7280;border-radius:2px"></span>Pairs</span>
+      </div>
+
+      <div class="tag-analytics-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+        <div class="tag-analytics-col">
+          <div class="tag-analytics-col-title" style="font-weight:600;margin-bottom:0.25rem;">Top Tags</div>
+          <div class="tag-analytics-list tag-analytics-top-tags" style="display:grid;grid-template-columns:1fr auto;gap:0.25rem"></div>
+        </div>
+        <div class="tag-analytics-col">
+          <div class="tag-analytics-col-title" style="font-weight:600;margin-bottom:0.25rem;">Top Co-occurrence</div>
+          <div class="tag-analytics-list tag-analytics-cooccurrence" style="display:grid;grid-template-columns:1fr auto;gap:0.25rem"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 /**
  * Sort bookmarks for widget display
  */
@@ -859,9 +941,322 @@ function sortWidgetBookmarks(
  * Initialize tag analytics widgets
  */
 export async function initTagAnalyticsWidgets(): Promise<void> {
-  // tag analytics widgets may require async data loading in the future.
-  // for now this is a no-op stub so callers can safely await it.
-  return;
+  try {
+    const widgets = document.querySelectorAll(
+      '.dashboard-widget-freeform[data-widget-type="tag-analytics"] .tag-analytics',
+    );
+    if (!widgets || widgets.length === 0) return;
+
+    const res = await api<{
+      success?: boolean;
+      tags?: TagAnalyticsItem[];
+      cooccurrence?: CooccurrenceItem[];
+    }>("/tags/analytics");
+
+    const tags = Array.isArray(res?.tags) ? res.tags : [];
+    const cooccurrence = Array.isArray(res?.cooccurrence)
+      ? res.cooccurrence
+      : [];
+
+    widgets.forEach((root) => {
+      const idx = parseInt(
+        root.getAttribute("data-analytics-widget") || "-1",
+        10,
+      );
+      if (
+        Number.isNaN(idx) ||
+        idx < 0 ||
+        idx >= state.dashboardWidgets.length
+      ) {
+        return;
+      }
+
+      const widget = state.dashboardWidgets[idx];
+      const settings = widget.settings || {
+        metric: "count",
+        limit: 20,
+        pairSort: "count",
+        colors: {
+          usage: "#6366f1",
+          clicks: "#f97316",
+          favorites: "#eab308",
+          pairs: "#6b7280",
+        },
+      };
+
+      const metric = settings.metric || "count";
+      const limit = settings.limit || 20;
+      const pairSort = settings.pairSort || "count";
+      const colors = settings.colors || {
+        usage: "#6366f1",
+        clicks: "#f97316",
+        favorites: "#eab308",
+        pairs: "#6b7280",
+      };
+
+      const metricSel = root.querySelector(
+        ".tag-analytics-metric",
+      ) as HTMLSelectElement | null;
+      const limitSel = root.querySelector(
+        ".tag-analytics-limit",
+      ) as HTMLSelectElement | null;
+      const pairSortSel = root.querySelector(
+        ".tag-analytics-pairsort",
+      ) as HTMLSelectElement | null;
+      const colorUsage = root.querySelector(
+        ".tag-analytics-color-usage",
+      ) as HTMLInputElement | null;
+      const colorClicks = root.querySelector(
+        ".tag-analytics-color-clicks",
+      ) as HTMLInputElement | null;
+      const colorFavorites = root.querySelector(
+        ".tag-analytics-color-favorites",
+      ) as HTMLInputElement | null;
+      const colorPairs = root.querySelector(
+        ".tag-analytics-color-pairs",
+      ) as HTMLInputElement | null;
+      const legendUsage = root.querySelector(
+        ".legend-usage",
+      ) as HTMLElement | null;
+      const legendClicks = root.querySelector(
+        ".legend-clicks",
+      ) as HTMLElement | null;
+      const legendFavorites = root.querySelector(
+        ".legend-favorites",
+      ) as HTMLElement | null;
+      const legendPairs = root.querySelector(
+        ".legend-pairs",
+      ) as HTMLElement | null;
+
+      if (metricSel) metricSel.value = metric;
+      if (limitSel) limitSel.value = String(limit);
+      if (pairSortSel) pairSortSel.value = pairSort;
+      if (colorUsage) colorUsage.value = colors.usage || "#6366f1";
+      if (colorClicks) colorClicks.value = colors.clicks || "#f97316";
+      if (colorFavorites) colorFavorites.value = colors.favorites || "#eab308";
+      if (colorPairs) colorPairs.value = colors.pairs || "#6b7280";
+      if (legendUsage)
+        legendUsage.style.backgroundColor = colors.usage || "#6366f1";
+      if (legendClicks)
+        legendClicks.style.backgroundColor = colors.clicks || "#f97316";
+      if (legendFavorites) {
+        legendFavorites.style.backgroundColor = colors.favorites || "#eab308";
+      }
+      if (legendPairs)
+        legendPairs.style.backgroundColor = colors.pairs || "#6b7280";
+
+      const topTagsEl = root.querySelector(".tag-analytics-top-tags");
+      const coocEl = root.querySelector(".tag-analytics-cooccurrence");
+      if (topTagsEl) {
+        const sortedTags = [...tags].sort((a, b) => {
+          const left = Number(a[metric as keyof TagAnalyticsItem] || 0);
+          const right = Number(b[metric as keyof TagAnalyticsItem] || 0);
+          return right - left;
+        });
+        const topTags = sortedTags.slice(0, limit);
+        const metricColor =
+          metric === "count"
+            ? colors.usage || "#6366f1"
+            : metric === "click_count_sum"
+              ? colors.clicks || "#f97316"
+              : colors.favorites || "#eab308";
+
+        topTagsEl.innerHTML = topTags
+          .map(
+            (t) => `
+              <div class="tag-name" title="${escapeHtml(t.name)}">${escapeHtml(t.name)}</div>
+              <div class="tag-count" style="text-align:right;color:${metricColor}">${Number(t[metric as keyof TagAnalyticsItem] || 0)}</div>
+            `,
+          )
+          .join("");
+      }
+
+      if (coocEl) {
+        const sortedPairs = [...cooccurrence].sort((a, b) => {
+          if (pairSort === "alpha") {
+            const left = `${a.tag_name_a} + ${a.tag_name_b}`.toLowerCase();
+            const right = `${b.tag_name_a} + ${b.tag_name_b}`.toLowerCase();
+            return left.localeCompare(right);
+          }
+          return (b.count || 0) - (a.count || 0);
+        });
+        const pairs = sortedPairs.slice(0, limit);
+
+        coocEl.innerHTML = pairs
+          .map(
+            (p) => `
+              <div class="pair-name" title="${escapeHtml(p.tag_name_a)} + ${escapeHtml(p.tag_name_b)}">${escapeHtml(p.tag_name_a)} + ${escapeHtml(p.tag_name_b)}</div>
+              <div class="pair-count" style="text-align:right;color:${colors.pairs || "#6b7280"}">${p.count}</div>
+            `,
+          )
+          .join("");
+      }
+
+      const saveWidgetSettings = () => {
+        import("@features/bookmarks/settings.ts").then(({ saveSettings }) =>
+          saveSettings({ dashboard_widgets: state.dashboardWidgets }),
+        );
+      };
+
+      if (metricSel) {
+        metricSel.onchange = (e) => {
+          const val = (e.target as HTMLSelectElement).value;
+          if (!state.dashboardWidgets[idx].settings) {
+            state.dashboardWidgets[idx].settings = {};
+          }
+          state.dashboardWidgets[idx].settings!.metric = val;
+          saveWidgetSettings();
+          void initTagAnalyticsWidgets();
+        };
+      }
+
+      if (limitSel) {
+        limitSel.onchange = (e) => {
+          const val = parseInt((e.target as HTMLSelectElement).value, 10);
+          if (!state.dashboardWidgets[idx].settings) {
+            state.dashboardWidgets[idx].settings = {};
+          }
+          state.dashboardWidgets[idx].settings!.limit = val;
+          saveWidgetSettings();
+          void initTagAnalyticsWidgets();
+        };
+      }
+
+      if (pairSortSel) {
+        pairSortSel.onchange = (e) => {
+          const val = (e.target as HTMLSelectElement).value;
+          if (!state.dashboardWidgets[idx].settings) {
+            state.dashboardWidgets[idx].settings = {};
+          }
+          state.dashboardWidgets[idx].settings!.pairSort = val;
+          saveWidgetSettings();
+          void initTagAnalyticsWidgets();
+        };
+      }
+
+      function ensureColors(): void {
+        if (!state.dashboardWidgets[idx].settings) {
+          state.dashboardWidgets[idx].settings = {};
+        }
+        if (!state.dashboardWidgets[idx].settings!.colors) {
+          state.dashboardWidgets[idx].settings!.colors = {};
+        }
+      }
+
+      if (colorUsage) {
+        colorUsage.onchange = (e) => {
+          ensureColors();
+          state.dashboardWidgets[idx].settings!.colors!.usage = (
+            e.target as HTMLInputElement
+          ).value;
+          saveWidgetSettings();
+          void initTagAnalyticsWidgets();
+        };
+      }
+
+      if (colorClicks) {
+        colorClicks.onchange = (e) => {
+          ensureColors();
+          state.dashboardWidgets[idx].settings!.colors!.clicks = (
+            e.target as HTMLInputElement
+          ).value;
+          saveWidgetSettings();
+          void initTagAnalyticsWidgets();
+        };
+      }
+
+      if (colorFavorites) {
+        colorFavorites.onchange = (e) => {
+          ensureColors();
+          state.dashboardWidgets[idx].settings!.colors!.favorites = (
+            e.target as HTMLInputElement
+          ).value;
+          saveWidgetSettings();
+          void initTagAnalyticsWidgets();
+        };
+      }
+
+      if (colorPairs) {
+        colorPairs.onchange = (e) => {
+          ensureColors();
+          state.dashboardWidgets[idx].settings!.colors!.pairs = (
+            e.target as HTMLInputElement
+          ).value;
+          saveWidgetSettings();
+          void initTagAnalyticsWidgets();
+        };
+      }
+
+      const downloadFile = (name: string, mime: string, text: string) => {
+        const blob = new Blob([text], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = name;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        URL.revokeObjectURL(url);
+      };
+
+      const toCSV = <T extends object>(rows: T[], columns: string[]) => {
+        const header = columns.join(",");
+        const body = rows
+          .map((r) =>
+            columns
+              .map((c) => {
+                const value = (r as Record<string, unknown>)[c];
+                const v = value != null ? String(value) : "";
+                const escaped = v.replace(/"/g, '""');
+                return `"${escaped}"`;
+              })
+              .join(","),
+          )
+          .join("\n");
+        return `${header}\n${body}`;
+      };
+
+      const btnJson = root.querySelector(".tag-analytics-export-json");
+      const btnTagsCsv = root.querySelector(".tag-analytics-export-tags-csv");
+      const btnPairsCsv = root.querySelector(".tag-analytics-export-pairs-csv");
+
+      if (btnJson) {
+        (btnJson as HTMLButtonElement).onclick = () => {
+          const payload = JSON.stringify({ tags, cooccurrence }, null, 2);
+          downloadFile("tag-analytics.json", "application/json", payload);
+        };
+      }
+
+      if (btnTagsCsv) {
+        (btnTagsCsv as HTMLButtonElement).onclick = () => {
+          const columns = ["name", "count"];
+          if (tags.length > 0) {
+            if (typeof tags[0].click_count_sum !== "undefined") {
+              columns.push("click_count_sum");
+            }
+            if (typeof tags[0].favorite_count_sum !== "undefined") {
+              columns.push("favorite_count_sum");
+            }
+          }
+          const csv = toCSV(tags, columns);
+          downloadFile("tag-analytics-tags.csv", "text/csv", csv);
+        };
+      }
+
+      if (btnPairsCsv) {
+        (btnPairsCsv as HTMLButtonElement).onclick = () => {
+          const csv = toCSV(cooccurrence, [
+            "tag_name_a",
+            "tag_name_b",
+            "count",
+          ]);
+          downloadFile("tag-analytics-pairs.csv", "text/csv", csv);
+        };
+      }
+    });
+  } catch (err) {
+    console.error("Failed to load tag analytics", err);
+  }
 }
 
 async function ensureWidgetsData(): Promise<void> {
