@@ -3,7 +3,7 @@
  * Provides offline support, caching, and performance improvements
  */
 
-const CACHE_VERSION = "anchormarks-v1.0.6";
+const CACHE_VERSION = "anchormarks-v1.0.8";
 const CACHE_NAME = `${CACHE_VERSION}-cache`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
