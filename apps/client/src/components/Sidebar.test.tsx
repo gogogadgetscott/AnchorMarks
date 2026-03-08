@@ -1,6 +1,12 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  act,
+  waitFor,
+} from "@testing-library/react";
 import { renderWithProviders } from "../test-utils.tsx";
 import { Sidebar } from "./Sidebar.tsx";
 import { AppProviders } from "../contexts/AppProviders";
@@ -86,12 +92,13 @@ describe("Sidebar (React)", () => {
       </AppProviders>,
     );
 
-    await act(async () => {});
-
-    const activeItem = container.querySelector(
-      ".nav-item.active",
-    ) as HTMLElement;
-    expect(activeItem?.dataset.view).toBe("favorites");
+    // Wait for context update to propagate
+    await waitFor(() => {
+      const activeItem = container.querySelector(
+        ".nav-item.active",
+      ) as HTMLElement;
+      expect(activeItem?.dataset.view).toBe("favorites");
+    });
   });
 
   it("calls setCurrentView when a nav item is clicked", async () => {

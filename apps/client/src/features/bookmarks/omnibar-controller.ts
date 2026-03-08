@@ -9,8 +9,22 @@ import {
   getAllBookmarks,
 } from "@features/bookmarks/commands.ts";
 import type { Command } from "../../types/index";
-import { escapeHtml, safeLocalStorage } from "@utils/index.ts";
-import { Icon } from "@components/Icon.ts";
+import { safeLocalStorage, escapeHtml } from "@utils/index.ts";
+
+// Minimal HTML renderer for icons used by legacy DOM functions. This returns
+// a simple empty SVG element with appropriate classes so CSS can style it. The
+// React Icon component remains the source of truth for graphical content; the
+// legacy renderer only needs a placeholder for tests and fallback UI.
+function renderIcon(name: string, opts: { size?: number } = {}): string {
+  const size = opts.size ?? 16;
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" class="icon icon-${escapeHtml(name)}" aria-hidden="true"></svg>`;
+}
+
+// This module is now purely a shared helper / controller layer for the React
+// Omnibar. All DOM rendering and event wiring has moved into the React
+// component. Legacy callers continue to import these functions for
+// backwards-compatibility; fallback implementations keep things working until
+// the migration is complete.
 
 const RECENT_SEARCHES_KEY = "anchormarks_recent_searches";
 const MAX_RECENT_SEARCHES = 10;
@@ -77,7 +91,6 @@ export function clearRecentSearches(): void {
   } catch {
     // Ignore localStorage errors
   }
-  renderOmnibarPanel("");
 }
 
 // Remove a single recent search
@@ -90,7 +103,6 @@ export function removeRecentSearch(query: string): void {
   } catch {
     // Ignore localStorage errors
   }
-  renderOmnibarPanel("");
 }
 
 // Get suggested tags (top 8 most used)
@@ -179,48 +191,63 @@ export function getQuickActions(): OmnibarItem[] {
   ];
 }
 
-// Open omnibar panel
+// controller hooks filled by React component
+interface OmnibarController {
+  open: () => void;
+  close: () => void;
+  toggle: () => void;
+  navigate: (direction: "up" | "down") => void;
+  executeActive: () => void;
+  getState?: () => {
+    isOpen: boolean;
+    activeIndex: number;
+    currentItems: OmnibarItem[];
+  };
+}
+
+let controller: OmnibarController | null = null;
+
+export function registerOmnibarController(ctrl: OmnibarController) {
+  controller = ctrl;
+}
+
+// high‑level API that consumers call
 export function openOmnibar(): void {
-  const panel = document.getElementById("omnibar-panel");
-  const input = document.getElementById("search-input") as HTMLInputElement;
-
-  if (!panel) return;
-
-  omnibarState.isOpen = true;
-  panel.classList.remove("hidden");
-
-  // Update aria-expanded for accessibility
-  if (input) {
-    input.setAttribute("aria-expanded", "true");
-  }
-
-  // Render initial content
-  renderOmnibarPanel(input?.value || "");
-}
-
-// Close omnibar panel
-export function closeOmnibar(): void {
-  const panel = document.getElementById("omnibar-panel");
-  const input = document.getElementById("search-input") as HTMLInputElement;
-
-  // Always update state so tests and non-DOM environments behave consistently
-  omnibarState.isOpen = false;
-  if (panel) panel.classList.add("hidden");
-  omnibarState.activeIndex = 0;
-  omnibarState.currentItems = [];
-
-  // Update aria-expanded for accessibility
-  if (input) {
-    input.setAttribute("aria-expanded", "false");
-  }
-}
-
-// Toggle omnibar
-export function toggleOmnibar(): void {
-  if (omnibarState.isOpen) {
-    closeOmnibar();
+  if (controller && controller.open) {
+    controller.open();
   } else {
-    openOmnibar();
+    const input = document.getElementById(
+      "search-input",
+    ) as HTMLInputElement | null;
+    if (input) input.focus();
+  }
+}
+
+export function closeOmnibar(): void {
+  if (controller && controller.close) {
+    controller.close();
+  } else {
+    const input = document.getElementById(
+      "search-input",
+    ) as HTMLInputElement | null;
+    if (input) {
+      input.value = "";
+      input.blur();
+    }
+  }
+}
+
+export function toggleOmnibar(): void {
+  if (controller && controller.toggle) {
+    controller.toggle();
+  } else {
+    // fallback: focus/blur based on panel visibility
+    const panel = document.getElementById("omnibar-panel");
+    if (panel && panel.classList.contains("hidden")) {
+      openOmnibar();
+    } else {
+      closeOmnibar();
+    }
   }
 }
 
@@ -303,11 +330,11 @@ function renderRecentSearches(searches: string[]): void {
       (search) => `
     <div class="omnibar-recent-item" data-search="${escapeHtml(search)}">
       <div style="display: flex; align-items: center; gap: 0.5rem;">
-        ${Icon("clock", { size: 16 })}
+        ${renderIcon("clock", { size: 16 })}
         <span>${escapeHtml(search)}</span>
       </div>
       <button class="omnibar-recent-remove btn-icon" data-search="${escapeHtml(search)}" title="Remove">
-        ${Icon("close", { size: 14 })}
+        ${renderIcon("close", { size: 14 })}
       </button>
     </div>
   `,
@@ -392,7 +419,7 @@ function renderQuickActions(): void {
       (action) => `
     <div class="omnibar-item" data-action="${escapeHtml(action.label)}">
       <div class="omnibar-item-icon">
-        ${action.icon ? Icon(action.icon, { size: 18 }) : ""}
+        ${action.icon ? renderIcon(action.icon, { size: 18 }) : ""}
       </div>
       <div class="omnibar-item-content">
         <div class="omnibar-item-label">${escapeHtml(action.label)}</div>
@@ -449,7 +476,7 @@ function renderResultsList(commands: Command[]): void {
         };
         const iconName = iconMap[cat] || "dot";
 
-        categoryBadge = `<span class="command-category ${escapeHtml(cat)}">${Icon(iconName, { size: 12 })} ${escapeHtml(label)}</span>`;
+        categoryBadge = `<span class="command-category ${escapeHtml(cat)}">${renderIcon(iconName, { size: 12 })} ${escapeHtml(label)}</span>`;
       }
 
       return `

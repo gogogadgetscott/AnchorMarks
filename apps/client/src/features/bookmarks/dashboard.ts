@@ -212,7 +212,15 @@ export async function initDashboardViews(): Promise<void> {
   // Attach click handler (idempotent across header re-renders)
   btn.onclick = (e: MouseEvent) => {
     e.stopPropagation();
-    showViewsMenu();
+    // Prefer opening the React-managed BookmarkViews if present
+    const openEvent = new CustomEvent("bookmark-views:open");
+    window.dispatchEvent(openEvent);
+    // Fallback to legacy menu for non-React pages
+    setTimeout(() => {
+      if (!document.getElementById("bookmark-views-btn")) {
+        showViewsMenu();
+      }
+    }, 50);
   };
 
   // Initial load

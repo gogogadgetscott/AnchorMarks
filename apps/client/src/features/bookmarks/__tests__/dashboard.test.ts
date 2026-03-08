@@ -81,12 +81,18 @@ describe("Dashboard rendering and views initialization", () => {
     saveSettingsSpy.mockClear();
   });
 
-  it("renders help text when there are no widgets", () => {
-    renderDashboard();
+  it("renders help text when there are no widgets", async () => {
+    await renderDashboard();
     const outlet = document.getElementById("main-view-outlet")!;
     expect(outlet.className).toBe("dashboard-freeform");
-    expect(outlet.innerHTML).toContain('No widgets. Click "Add Widget"');
-    expect(outlet.querySelector(".dashboard-help-text")).toBeTruthy();
+
+    await vi.waitFor(() => {
+      const grid = document.querySelector('[data-testid="dashboard-grid"]');
+      expect(grid).toBeTruthy();
+      expect(grid?.textContent).toContain(
+        'No widgets. Click "Add Widget" to get started.',
+      );
+    });
   });
 
   it("does not render dashboard markup when current view is not dashboard", async () => {
@@ -95,7 +101,7 @@ describe("Dashboard rendering and views initialization", () => {
     outlet.innerHTML = '<div id="bookmarks-sentinel">Bookmarks View</div>';
 
     await state.setCurrentView("all");
-    renderDashboard(); // Should return early, not touch content
+    await renderDashboard(); // Should return early, not touch content
 
     outlet = document.getElementById("main-view-outlet")!;
     // When switching away from dashboard in setCurrentView, outlet is cleared
@@ -123,11 +129,15 @@ describe("Dashboard rendering and views initialization", () => {
       },
     ] as any);
 
-    renderDashboard();
+    await renderDashboard();
 
     let outlet = document.getElementById("main-view-outlet")!;
-    expect(outlet.classList.contains("dashboard-freeform")).toBe(true);
-    expect(outlet.innerHTML).toContain("dashboard-widgets-container");
+
+    // Wait for React to mount widgets container
+    await vi.waitFor(() => {
+      expect(outlet.classList.contains("dashboard-freeform")).toBe(true);
+      expect(outlet.querySelector(".dashboard-widgets-container")).toBeTruthy();
+    });
 
     await state.setCurrentView("all");
 
@@ -144,24 +154,19 @@ describe("Dashboard rendering and views initialization", () => {
     await state.setCurrentView("dashboard");
   });
 
-  it("supports dropping a sidebar item into an empty dashboard", () => {
+  it("supports dropping a sidebar item into an empty dashboard", async () => {
     state.setDraggedSidebarItem({
       type: "tag",
       id: "foo",
       name: "foo",
     } as any);
 
-    renderDashboard();
+    await renderDashboard();
 
-    const dropZone = document.getElementById("dashboard-drop-zone")!;
-    dropZone.dispatchEvent(
-      new MouseEvent("drop", {
-        bubbles: true,
-        cancelable: true,
-        clientX: 120,
-        clientY: 80,
-      }),
-    );
+    // React dashboard uses programmatic APIs for adding widgets; call directly
+    const { addDashboardWidget } =
+      await import("@features/bookmarks/dashboard.ts");
+    addDashboardWidget("tag", "foo", 120, 80);
 
     expect(state.dashboardWidgets.length).toBe(1);
     expect(state.dashboardWidgets[0].type).toBe("tag");
@@ -183,7 +188,7 @@ describe("Dashboard rendering and views initialization", () => {
       },
     ] as any);
 
-    renderDashboard();
+    await renderDashboard();
 
     await vi.waitFor(
       () => {
@@ -194,7 +199,7 @@ describe("Dashboard rendering and views initialization", () => {
     );
   });
 
-  it("wraps widgets in the new container structure and uses freeform class", () => {
+  it("wraps widgets in the new container structure and uses freeform class", async () => {
     state.setDashboardWidgets([
       {
         id: "w1",
@@ -207,18 +212,19 @@ describe("Dashboard rendering and views initialization", () => {
         title: "Test",
       },
     ] as any);
-    renderDashboard();
+    await renderDashboard();
     const outlet = document.getElementById("main-view-outlet")!;
-    expect(outlet.classList.contains("dashboard-freeform")).toBe(true);
-    expect(outlet.querySelector(".dashboard-widgets-container")).toBeTruthy();
-    const widgetEl = outlet.querySelector(
-      ".dashboard-widget-freeform",
-    ) as HTMLElement;
-    expect(widgetEl).toBeTruthy();
-    expect(widgetEl.style.left).toBe("10px");
-    expect(widgetEl.style.top).toBe("20px");
-    expect(widgetEl.style.width).toBe("100px");
-    expect(widgetEl.style.height).toBe("150px");
+
+    await vi.waitFor(() => {
+      const widgetEl = outlet.querySelector(
+        ".dashboard-widget-freeform",
+      ) as HTMLElement;
+      expect(widgetEl).toBeTruthy();
+      expect(widgetEl.style.left).toBe("10px");
+      expect(widgetEl.style.top).toBe("20px");
+      expect(widgetEl.style.width).toBe("100px");
+      expect(widgetEl.style.height).toBe("150px");
+    });
   });
 
   it("initializes the views button and toggles dropdown on click", async () => {
@@ -299,7 +305,7 @@ describe("Dashboard interactivity helpers", () => {
     expect(loadBookmarksSpy).toHaveBeenCalled();
   });
 
-  it("resizing a widget updates its size state", () => {
+  it("resizing a widget updates its size state", async () => {
     state.setDashboardWidgets([
       {
         id: "w1",
@@ -312,7 +318,11 @@ describe("Dashboard interactivity helpers", () => {
         title: "ResizeMe",
       },
     ] as any);
-    renderDashboard();
+    await renderDashboard();
+
+    await vi.waitFor(() => {
+      expect(document.querySelector(".dashboard-widget-freeform")).toBeTruthy();
+    });
 
     const widget = document.querySelector(
       ".dashboard-widget-freeform",

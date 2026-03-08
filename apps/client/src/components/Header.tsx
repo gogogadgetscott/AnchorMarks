@@ -92,15 +92,7 @@ export function Header() {
     saveDashboardStateSnapshot?.();
   }, []);
 
-  const handleShowViews = useCallback(async () => {
-    const dashboard = await import("@features/bookmarks/dashboard.ts");
-    const initViews = (dashboard as Record<string, unknown>).initDashboardViews;
-    if (typeof initViews === "function") {
-      await initViews();
-      const viewsBtn = document.getElementById("views-btn");
-      viewsBtn?.click();
-    }
-  }, []);
+  // Bookmark views are rendered by the React component; no legacy init required.
 
   const handleToggleFullscreen = useCallback(async () => {
     const { toggleFullscreen } =
@@ -153,7 +145,6 @@ export function Header() {
                     hasUnsavedChanges={dashboardHasUnsavedChanges}
                     viewName={currentDashboardViewName}
                     onSaveClick={handleSaveDashboard}
-                    onViewsClick={handleShowViews}
                     onAddWidgetClick={() =>
                       setIsWidgetPickerOpen(!isWidgetPickerOpen)
                     }

@@ -17,10 +17,7 @@ import {
   updateStats,
 } from "@utils/ui-helpers.ts";
 import { Bookmark, Tag } from "../../types/index";
-import {
-  BookmarkViewResponse,
-  RestoreBookmarkViewResponse,
-} from "../../types/api";
+import { RestoreBookmarkViewResponse } from "../../types/api";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
 import { BookmarkCard as createBookmarkCard } from "@components/index.ts";
 export { createBookmarkCard };
@@ -841,21 +838,6 @@ export function initBookmarkViews(): void {
   logger.debug("initBookmarkViews is deprecated: React renders the Views UI.");
 }
 
-// Show bookmark views dropdown menu (legacy shim)
-async function showBookmarkViewsMenu() {
-  const viewsUnknown = await loadBookmarkViews();
-  const views: BookmarkViewResponse[] = Array.isArray(viewsUnknown)
-    ? viewsUnknown
-    : [];
-  window.dispatchEvent(
-    new CustomEvent("bookmark-views:open", { detail: { views } }),
-  );
-}
-
-function closeBookmarkViewsDropdown(e: Event) {
-  window.dispatchEvent(new CustomEvent("bookmark-views:close", { detail: e }));
-}
-
 // Save current bookmark view
 export async function saveCurrentBookmarkView() {
   try {
@@ -912,31 +894,8 @@ export async function saveCurrentBookmarkView() {
   }
 }
 
-// Load bookmark views
-async function loadBookmarkViews() {
-  try {
-    return await api("/bookmark/views");
-  } catch {
-    return [];
-  }
-}
-
-// Delete bookmark view (legacy shim)
-async function deleteBookmarkView(id: string) {
-  if (
-    !(await confirmDialog("Delete this view?", {
-      title: "Delete View",
-      destructive: true,
-    }))
-  )
-    return;
-
-  await api(`/bookmark/views/${id}`, { method: "DELETE" });
-  showToast("View deleted", "success");
-  window.dispatchEvent(
-    new CustomEvent("bookmark-views:deleted", { detail: { id } }),
-  );
-}
+// Bookmark views are handled entirely by React (BookmarkViews component).
+// Legacy DOM helpers removed.
 
 // Restore bookmark view
 // Restore bookmark view
@@ -1005,7 +964,8 @@ export async function restoreBookmarkView(id: string): Promise<void> {
     await saveSettings({ current_view: state.currentView });
 
     showToast("View restored!", "success");
-    document.getElementById("bookmark-views-dropdown")?.remove();
+    // Notify React (or legacy) UI to close any open views dropdown
+    window.dispatchEvent(new CustomEvent("bookmark-views:close"));
   } catch (err) {
     logger.error("Error restoring bookmark view", err);
     const errorMessage =

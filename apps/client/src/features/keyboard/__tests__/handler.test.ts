@@ -4,7 +4,7 @@ const { openOmnibarMock } = vi.hoisted(() => ({
   openOmnibarMock: vi.fn(),
 }));
 
-vi.mock("@features/bookmarks/omnibar.ts", () => ({
+vi.mock("@features/bookmarks/omnibar-controller.ts", () => ({
   openOmnibar: openOmnibarMock,
   closeOmnibar: vi.fn(),
 }));

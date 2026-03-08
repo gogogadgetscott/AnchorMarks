@@ -8,10 +8,33 @@ import type { BookmarkViewResponse } from "@/types/api";
 export function BookmarkViews() {
   const [open, setOpen] = useState(false);
   const [views, setViews] = useState<BookmarkViewResponse[]>([]);
+  const [hasLegacyButton, setHasLegacyButton] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const { showToast } = useToast();
 
   useEffect(() => {
+    // If a legacy views button exists (rendered by DashboardToolbar or legacy code),
+    // attach a click handler so it opens the React dropdown. This prevents duplicate
+    // UI while keeping the button placement consistent.
+    const legacyBtn = document.getElementById(
+      "views-btn",
+    ) as HTMLButtonElement | null;
+    if (legacyBtn) {
+      const handler = (e: MouseEvent) => {
+        e.stopPropagation();
+        fetchAndOpen();
+      };
+      legacyBtn.addEventListener("click", handler);
+      // If legacy button present, hide the internal button to avoid duplicate controls
+      // (we'll still render the dropdown when opened via events).
+      setTimeout(() => {
+        setHasLegacyButton(true);
+      }, 0);
+
+      return () => {
+        legacyBtn.removeEventListener("click", handler);
+      };
+    }
     function onOpen(e: any) {
       const incoming = e?.detail?.views ?? [];
       setViews(Array.isArray(incoming) ? incoming : []);
@@ -107,20 +130,22 @@ export function BookmarkViews() {
 
   return (
     <div className="bookmark-views-container" style={{ position: "relative" }}>
-      <button
-        id="views-btn"
-        ref={btnRef}
-        className="btn btn-secondary"
-        onClick={(e) => {
-          e.stopPropagation();
-          if (open) setOpen(false);
-          else fetchAndOpen();
-        }}
-        title="Views"
-        aria-haspopup="true"
-      >
-        <Icon name="bookmark" size={16} /> Views
-      </button>
+      {!hasLegacyButton && (
+        <button
+          id="bookmark-views-btn"
+          ref={btnRef}
+          className="btn btn-secondary"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (open) setOpen(false);
+            else fetchAndOpen();
+          }}
+          title="Views"
+          aria-haspopup="true"
+        >
+          <Icon name="bookmark" size={16} /> Views
+        </button>
+      )}
 
       {open && (
         <div className="dropdown-menu" style={dropdownStyle()} role="dialog">

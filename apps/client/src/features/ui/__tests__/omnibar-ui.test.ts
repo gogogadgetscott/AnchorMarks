@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { initOmnibarListeners } from "@features/ui/omnibar.ts";
-import { _testGetState } from "@features/bookmarks/omnibar.ts";
+import { _testGetState } from "@features/bookmarks/omnibar-controller.ts";
 import * as state from "@features/state.ts";
 
 describe("UI Omnibar - Escape key", () => {

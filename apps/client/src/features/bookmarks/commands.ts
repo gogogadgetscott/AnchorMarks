@@ -436,7 +436,7 @@ export function getOmnibarCommands(filterText: string = ""): Command[] {
           import("@features/bookmarks/search.ts").then(({ sidebarFilterTag }) =>
             sidebarFilterTag(tagName),
           );
-          import("@features/bookmarks/omnibar.ts").then(({ closeOmnibar }) =>
+          import("@features/bookmarks/omnibar-controller.ts").then(({ closeOmnibar }) =>
             closeOmnibar(),
           );
         },
@@ -478,7 +478,7 @@ export function getOmnibarCommands(filterText: string = ""): Command[] {
         import("@features/bookmarks/search.ts").then(
           ({ renderActiveFilters }) => renderActiveFilters(),
         );
-        import("@features/bookmarks/omnibar.ts").then(({ closeOmnibar }) =>
+        import("@features/bookmarks/omnibar-controller.ts").then(({ closeOmnibar }) =>
           closeOmnibar(),
         );
       },

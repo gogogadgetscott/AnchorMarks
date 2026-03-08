@@ -4,7 +4,7 @@ import {
   closeOmnibar,
   renderOmnibarPanel,
   clearRecentSearches,
-} from "@features/bookmarks/omnibar.ts";
+} from "@features/bookmarks/omnibar-controller.ts";
 
 /**
  * Legacy omnibar event wiring shim.

@@ -113,6 +113,7 @@ describe("bookmarks filtering + active filter UI", () => {
       search: "alpha",
     });
 
+    // Ensure DOM has been prepared before calling the legacy renderer
     renderActiveFilters();
 
     const section = document.getElementById("active-filters-section")!;

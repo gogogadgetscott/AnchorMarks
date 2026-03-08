@@ -3,7 +3,7 @@
  * Handles global keyboard shortcuts and navigation
  */
 
-import { openOmnibar, closeOmnibar } from "@features/bookmarks/omnibar.ts";
+import { openOmnibar, closeOmnibar } from "@features/bookmarks/omnibar-controller.ts";
 import { openModal } from "@utils/ui-helpers.ts";
 import {
   getBookmarksBridge,

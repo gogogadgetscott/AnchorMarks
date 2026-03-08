@@ -347,9 +347,15 @@ export function renderActiveFilters(): void {
   const searchTerm =
     state.filterConfig.search?.trim() || searchInput?.value?.trim() || "";
   if (searchTerm) {
+    // Legacy HTML icon helper — use global Icon() if provided, otherwise inline fallback
+    const legacyIcon =
+      typeof (globalThis as any).Icon === "function"
+        ? (globalThis as any).Icon("search", { size: 12 })
+        : `<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" style=\"width:12px;height:12px\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"M21 21l-4.35-4.35\"/></svg>`;
+
     html += `
             <div class="filter-chip search-chip">
-                ${Icon("search", { size: 12 })}
+                ${legacyIcon}
                 <span>Search: ${escapeHtml(searchTerm)}</span>
                 <button data-action="clear-search" title="Remove">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
