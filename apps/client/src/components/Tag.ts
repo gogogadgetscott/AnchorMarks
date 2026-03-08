@@ -1,4 +1,4 @@
-import { escapeHtml } from "@utils/index.ts";
+import { escapeHtml, escapeHtmlAttr } from "@utils/index.ts";
 
 interface TagOptions {
   color?: string;
@@ -26,7 +26,7 @@ export function Tag(name: string, options: TagOptions = {}): string {
   } = options;
 
   const dataAttrs = Object.entries(data)
-    .map(([key, value]) => `data-${key}="${value}"`)
+    .map(([key, value]) => `data-${key}="${escapeHtmlAttr(String(value))}"`)
     .join(" ");
 
   const cursorStyle = clickable ? "cursor: pointer;" : "cursor: default;";

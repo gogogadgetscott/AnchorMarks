@@ -610,7 +610,7 @@ function renderDashboardWidget(widget: DashboardWidget, index: number): string {
          data-widget-id="${escapeHtml(widget.id)}"
          data-widget-type="${escapeHtml(widget.type)}"
          style="position:absolute;left:${widget.x || 0}px;top:${widget.y || 0}px;width:${width}px;height:${height}px">
-      <div class="widget-header">
+      <div class="widget-header" ${widget.color ? `data-color="${widget.color}"` : ""}>
         <div class="widget-drag-handle" title="Drag to move">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
             <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>

@@ -75,7 +75,7 @@ help: ## Display this help screen
 # ============================================================================
 build-frontend: ## Build frontend for production
 	@echo "$(BLUE)Building frontend for production...$(NC)"
-	@cd $(FRONTEND_DIR) && npx vite build && npx esbuild src/shared/folders-utils-browser.ts --bundle --platform=browser --format=iife --global-name=foldersUtils --outfile=../server/public/js/folders-utils.js --minify
+	@cd $(FRONTEND_DIR) && npx vite build && npx esbuild src/shared/folders-utils-browser.ts --bundle --platform=browser --format=iife --outfile=../server/public/js/folders-utils.js --minify
 	@echo "$(GREEN)✓ Frontend built successfully$(NC)"
 
 build-docker: ## Build Docker containers (anchormarks image; entrypoint ensures /apps/database is writable)

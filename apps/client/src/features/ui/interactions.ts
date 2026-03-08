@@ -213,10 +213,9 @@ function initGlobalDelegation(): void {
 
     const action = target.dataset.action;
     const id = target.dataset.id || "";
-    const tag =
-      target.dataset.tag ||
-      target.closest("[data-tag]")?.getAttribute("data-tag") ||
-      "";
+    // Get tag from the target element's data-tag attribute
+    // Note: use getAttribute to get the raw attribute value before any HTML entity decoding
+    const tag = target.dataset.tag || target.getAttribute("data-tag") || "";
     const modal = target.dataset.modalTarget;
 
     switch (action) {

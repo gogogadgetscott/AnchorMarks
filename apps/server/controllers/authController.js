@@ -255,7 +255,7 @@ function getMe(req, res) {
       role: req.user.role || "user",
       api_key: req.user.api_key,
     },
-    csrfToken: req.cookies.csrfToken,
+    csrfToken: req.cookies[`${COOKIE_PREFIX}csrfToken`],
   });
 }
 

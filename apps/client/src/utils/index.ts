@@ -24,6 +24,16 @@ export function escapeHtml(text: string): string {
   return div.innerHTML;
 }
 
+// Escape HTML for use in HTML attributes
+export function escapeHtmlAttr(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 /**
  * Sanitize HTML - removes all tags except a safe allowlist
  * Use this when you need to allow some HTML formatting (e.g., links, bold)
