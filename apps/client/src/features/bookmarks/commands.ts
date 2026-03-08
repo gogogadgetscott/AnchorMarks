@@ -13,17 +13,37 @@ let allBookmarksCache: Bookmark[] = [];
 let lastBookmarksFetch: number = 0;
 const CACHE_DURATION = 30000; // 30 seconds
 
+function canUseBackgroundApiRefresh(): boolean {
+  if (typeof window === "undefined") return false;
+  const origin = window.location?.origin || "";
+  return origin.startsWith("http://") || origin.startsWith("https://");
+}
+
 // Refresh all bookmarks cache in background
 export async function refreshOmnibarBookmarks(): Promise<void> {
   // Skip if the cache is still fresh to avoid hammering the API on every view switch
   if (Date.now() - lastBookmarksFetch < CACHE_DURATION) return;
+
+  // In test/jsdom or non-http origins, relative API URLs are not fetchable.
+  // Fall back to in-memory/state bookmarks without noisy warnings.
+  if (!canUseBackgroundApiRefresh()) {
+    lastBookmarksFetch = Date.now();
+    return;
+  }
+
   try {
     const { api } = await import("@services/api.ts");
     const response = await api<Bookmark[]>("/bookmarks?limit=1000");
     allBookmarksCache = Array.isArray(response) ? response : [];
     lastBookmarksFetch = Date.now();
   } catch (err) {
-    console.error("Failed to fetch bookmarks for omnibar:", err);
+    const errText = String(err);
+    const isRelativeUrlRuntimeWarning =
+      errText.includes("Failed to parse URL") || errText.includes("Invalid URL");
+
+    if (!isRelativeUrlRuntimeWarning) {
+      console.error("Failed to fetch bookmarks for omnibar:", err);
+    }
   }
 }
 

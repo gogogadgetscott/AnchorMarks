@@ -9,7 +9,6 @@ import {
   clearRecentSearches,
   renderOmnibarPanel,
 } from "@features/bookmarks/omnibar.ts";
-import { updateFilterButtonText } from "@features/bookmarks/filters.ts";
 import * as state from "@features/state.ts";
 
 /**
@@ -65,6 +64,35 @@ export function initOmnibarListeners(): void {
 
     // Keep bookmark list filtered: persist search and refetch from server so search is full-library
     const trimmed = query.trim();
+
+    // Command-mode omnibar queries (">...") are for quick actions/settings,
+    // not bookmark filtering, so keep them out of persistent search filters.
+    if (trimmed.startsWith(">")) {
+      const hadSearchFilter = Boolean(state.filterConfig.search);
+      if (state.filterConfig.search !== undefined) {
+        state.setFilterConfig({
+          ...state.filterConfig,
+          search: undefined,
+        });
+      }
+
+      if (hadSearchFilter) {
+        if (searchFilterTimeout) clearTimeout(searchFilterTimeout);
+        searchFilterTimeout = setTimeout(() => {
+          import("@features/bookmarks/bookmarks.ts").then((bookmarksModule) => {
+            bookmarksModule.renderBookmarks();
+          });
+          import("@features/bookmarks/search.ts").then((mod) =>
+            mod.renderActiveFilters(),
+          );
+          import("@features/bookmarks/filters.ts").then((mod) =>
+            mod.updateFilterButtonText(),
+          );
+        }, 120);
+      }
+      return;
+    }
+
     state.setFilterConfig({
       ...state.filterConfig,
       search: trimmed,

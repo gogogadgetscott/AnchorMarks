@@ -1,14 +1,32 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { initOmnibarListeners } from "@features/ui/omnibar.ts";
 import { _testGetState } from "@features/bookmarks/omnibar.ts";
+import * as state from "@features/state.ts";
 
 describe("UI Omnibar - Escape key", () => {
   beforeEach(() => {
+    // jsdom does not implement this browser API used by omnibar list rendering.
+    (Element.prototype as any).scrollIntoView = () => {};
+
+    state.setFilterConfig({
+      ...state.filterConfig,
+      search: undefined,
+    });
+
     // Ensure DOM elements present
     document.body.innerHTML = `
       <div class="omnibar-container">
         <input id="search-input" type="text" />
         <div id="omnibar-panel" class="omnibar-panel"></div>
+        <div id="omnibar-recent" class="omnibar-section"></div>
+        <div id="omnibar-tags" class="omnibar-section"></div>
+        <div id="omnibar-actions" class="omnibar-section"></div>
+        <div id="omnibar-results" class="omnibar-section hidden"></div>
+        <div id="omnibar-recent-list"></div>
+        <div id="omnibar-tags-list"></div>
+        <div id="omnibar-actions-list"></div>
+        <div id="omnibar-results-list"></div>
+        <button id="omnibar-clear-recent"></button>
       </div>
     `;
     initOmnibarListeners();
@@ -40,5 +58,14 @@ describe("UI Omnibar - Escape key", () => {
     expect(_testGetState().isOpen).toBe(false);
     // panel should have hidden class
     expect(panel.classList.contains("hidden")).toBe(true);
+  });
+
+  it("does not apply '>...' command queries to bookmark search filter", () => {
+    const input = document.getElementById("search-input") as HTMLInputElement;
+
+    input.value = ">settings";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+
+    expect(state.filterConfig.search).toBeUndefined();
   });
 });
