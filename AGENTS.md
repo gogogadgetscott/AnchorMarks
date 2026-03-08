@@ -54,7 +54,7 @@ After any mutation:
 1. **Tests**: Run `make test`. Add tests for new logic (see `apps/server/__tests__/`).
 2. **Lint**: Run `make lint`.
 3. **Docs**: Update `apps/server/public/help.html` for UI changes.
-4. **Log**: Update `docs/PROGRESS.md` with your changes.
+4. **Log**: Update `docs/CHANGELOG.md` with your changes.
 5. **Git**: Use feature branches (`feature/...`, `bugfix/...`).
 
 Refer to [CONTRIBUTING.md](CONTRIBUTING.md) for detailed PR requirements.

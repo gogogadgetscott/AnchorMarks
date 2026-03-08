@@ -69,5 +69,5 @@ Before submitting your PR, please ensure:
 - [ ] **Lint**: `make lint` has been run to ensure consistent formatting.
 - [ ] **Docs**: Updated `README.md` or `docs/` if there are user-facing changes.
 - [ ] **Help**: Updated `apps/client/public/help.html` for new UI features.
-- [ ] **Progress**: Updated `docs/PROGRESS.md` with a summary of work.
+- [ ] **Log**: Updated `docs/CHANGELOG.md` with a summary of work.
 - [ ] **PR Description**: Includes clear rationale and verification steps.

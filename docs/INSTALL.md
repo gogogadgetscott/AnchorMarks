@@ -763,7 +763,7 @@ For more information, see:
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Development guidelines
 - [SECURITY.md](SECURITY.md) - Security best practices
 - [ROADMAP.md](ROADMAP.md) - Planned features
-- [PROGRESS.md](PROGRESS.md) - Recent work log
+- [CHANGELOG.md](CHANGELOG.md) - Change log
 
 ### AI Tag Suggestions (Optional)
 
