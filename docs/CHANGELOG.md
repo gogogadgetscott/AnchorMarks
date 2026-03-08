@@ -4,6 +4,14 @@ All notable changes to AnchorMarks are documented here.
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **Theme switching via omnibar** — quickly change themes using the command palette with `>` prefix (e.g., `> dark`, `> light`, `> ocean`); all 7 themes (System, Light, Dark, Ocean, Sunset, Midnight, High Contrast) are now accessible via quick commands
+
+---
+
 ## [1.0.7] - 2026-03-02
 
 ### Added

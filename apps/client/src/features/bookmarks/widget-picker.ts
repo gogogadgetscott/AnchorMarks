@@ -167,16 +167,16 @@ function filterWidgetPickerFolders(searchTerm: string): void {
 
 // Filter tags in widget picker based on search term
 function filterWidgetPickerTags(searchTerm: string): void {
-const container = document.getElementById(
-  "widget-tags-container",
-) as HTMLElement & {
-  _allTags: Array<{
-    type?: string;
-    name: string;
-    count: number;
-  }>;
-  _originalHTML: string;
-};
+  const container = document.getElementById(
+    "widget-tags-container",
+  ) as HTMLElement & {
+    _allTags: Array<{
+      type?: string;
+      name: string;
+      count: number;
+    }>;
+    _originalHTML: string;
+  };
   if (!container || !container._allTags) return;
 
   const term = searchTerm.toLowerCase().trim();
@@ -276,8 +276,9 @@ function attachWidgetFolderListeners() {
       if (!dragEvent.dataTransfer) return;
 
       state.setDraggedSidebarItem({
-        type, id,
-        name: ""
+        type,
+        id,
+        name: "",
       });
       dragEvent.dataTransfer.effectAllowed = "copy";
       dragEvent.dataTransfer.setData(
@@ -335,8 +336,9 @@ function attachWidgetTagListeners() {
 
       if (type === "tag") {
         state.setDraggedSidebarItem({
-          type, id,
-          name: ""
+          type,
+          id,
+          name: "",
         });
       }
       dragEvent.dataTransfer.effectAllowed = "copy";

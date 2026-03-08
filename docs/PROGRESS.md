@@ -4,11 +4,17 @@ Track work completed and in progress for AnchorMarks.
 
 ## Done (Recent)
 
+- 2026-03-07: Added theme switching commands to omnibar for quick theme changes via command palette.
 - 2026-03-07: Implemented app-specific cookie prefixes to prevent authentication conflicts when multiple apps share the same domain.
 - 2026-02-22: CSRF hardening for auth mutations, SSRF guards, and tag cleanup scoping.
 
 ## 2026-03-07
 
+- Added theme switching to omnibar command palette:
+  - Added 7 theme switching commands: System, Light, Dark, Ocean, Sunset, Midnight, and High Contrast.
+  - Users can now quickly switch themes using `>` prefix (e.g., `> dark`, `> theme`, etc.).
+  - Each theme command has descriptive icons and help text.
+  - Updated help documentation to mention theme switching via omnibar.
 - Implemented app-specific cookie naming to prevent authentication conflicts:
   - Added `COOKIE_PREFIX` configuration derived from `JWT_SECRET` (or optionally set via environment variable).
   - Updated all cookie operations (set/read/clear) in `authController.js` and `middleware/index.js` to use prefixed names.

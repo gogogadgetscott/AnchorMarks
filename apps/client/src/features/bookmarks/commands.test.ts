@@ -264,6 +264,34 @@ describe("Quick Launch - getOmnibarCommands", () => {
 
       expect(results.every((r) => r.category === "command")).toBe(true);
     });
+
+    it("should include theme switching commands", () => {
+      const results = getOmnibarCommands(">theme");
+
+      const themeCommands = results.filter((r) =>
+        r.label.toLowerCase().includes("theme"),
+      );
+      expect(themeCommands.length).toBeGreaterThan(0);
+
+      // Check for specific theme commands
+      expect(themeCommands.some((r) => r.label.includes("Light"))).toBe(true);
+      expect(themeCommands.some((r) => r.label.includes("Dark"))).toBe(true);
+      expect(themeCommands.some((r) => r.label.includes("Ocean"))).toBe(true);
+      expect(themeCommands.some((r) => r.label.includes("Sunset"))).toBe(true);
+      expect(themeCommands.some((r) => r.label.includes("Midnight"))).toBe(
+        true,
+      );
+      expect(themeCommands.some((r) => r.label.includes("High Contrast"))).toBe(
+        true,
+      );
+      expect(themeCommands.some((r) => r.label.includes("System"))).toBe(true);
+    });
+
+    it("should filter theme commands by name", () => {
+      const results = getOmnibarCommands(">dark");
+
+      expect(results.some((r) => r.label.includes("Dark theme"))).toBe(true);
+    });
   });
 
   describe("Folder prefix (@)", () => {

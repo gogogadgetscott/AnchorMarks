@@ -1418,7 +1418,9 @@ export function initDashboardDragDrop(): void {
 
   // Handle widget resizing
   newOutlet
-    .querySelectorAll<HTMLElement>(".dashboard-widget-freeform .widget-resize-handle")
+    .querySelectorAll<HTMLElement>(
+      ".dashboard-widget-freeform .widget-resize-handle",
+    )
     .forEach((handle) => {
       handle.addEventListener("mousedown", (e: MouseEvent) => {
         const widgetEl = (e.currentTarget as HTMLElement).closest(

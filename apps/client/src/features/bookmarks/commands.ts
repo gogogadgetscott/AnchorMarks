@@ -142,6 +142,83 @@ export function getOmnibarCommands(filterText: string = ""): Command[] {
       description: "Open application settings",
     },
     {
+      label: "Switch to System theme",
+      action: () => {
+        import("@features/bookmarks/settings.ts").then(({ setTheme }) =>
+          setTheme("system", true),
+        );
+      },
+      icon: "🖥️",
+      category: "command",
+      description: "Use system theme preference",
+    },
+    {
+      label: "Switch to Light theme",
+      action: () => {
+        import("@features/bookmarks/settings.ts").then(({ setTheme }) =>
+          setTheme("light", true),
+        );
+      },
+      icon: "☀️",
+      category: "command",
+      description: "Use light color theme",
+    },
+    {
+      label: "Switch to Dark theme",
+      action: () => {
+        import("@features/bookmarks/settings.ts").then(({ setTheme }) =>
+          setTheme("dark", true),
+        );
+      },
+      icon: "🌙",
+      category: "command",
+      description: "Use dark color theme",
+    },
+    {
+      label: "Switch to Ocean theme",
+      action: () => {
+        import("@features/bookmarks/settings.ts").then(({ setTheme }) =>
+          setTheme("ocean", true),
+        );
+      },
+      icon: "🌊",
+      category: "command",
+      description: "Use ocean color theme",
+    },
+    {
+      label: "Switch to Sunset theme",
+      action: () => {
+        import("@features/bookmarks/settings.ts").then(({ setTheme }) =>
+          setTheme("sunset", true),
+        );
+      },
+      icon: "🌅",
+      category: "command",
+      description: "Use sunset color theme",
+    },
+    {
+      label: "Switch to Midnight theme",
+      action: () => {
+        import("@features/bookmarks/settings.ts").then(({ setTheme }) =>
+          setTheme("midnight", true),
+        );
+      },
+      icon: "🌌",
+      category: "command",
+      description: "Use midnight color theme",
+    },
+    {
+      label: "Switch to High Contrast theme",
+      action: () => {
+        import("@features/bookmarks/settings.ts").then(({ setTheme }) =>
+          setTheme("high-contrast", true),
+        );
+      },
+      icon: "◐",
+      category: "command",
+      description: "Use high contrast theme",
+    },
+    {
       label: "Import bookmarks",
       action: () => {
         openModal("settings-modal");
