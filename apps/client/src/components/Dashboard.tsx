@@ -18,7 +18,10 @@ export function Dashboard() {
     <>
       <DashboardToolbar />
       <div id="main-view-outlet" className="dashboard-freeform"></div>
-      <div className="dashboard-insights-section" style={{ marginTop: "2rem", padding: "1rem" }}>
+      <div
+        className="dashboard-insights-section"
+        style={{ marginTop: "2rem", padding: "1rem" }}
+      >
         <SmartInsights enabled={currentView === "dashboard"} />
       </div>
     </>

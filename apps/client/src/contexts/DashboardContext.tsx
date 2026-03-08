@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import * as state from "../features/state.ts";
+import { syncDashboardBridge } from "./context-bridge";
 import type { DashboardWidget } from "../types/index";
 
 interface DashboardConfig {
@@ -127,6 +128,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           setTagSuggestTimeout(value as any);
           break;
       }
+    });
+  }, []);
+
+  // Sync into bridge so non-React code (settings.ts restore) can write directly to context
+  useEffect(() => {
+    syncDashboardBridge({
+      setDashboardConfig,
+      setDashboardWidgets,
+      setWidgetOrder,
+      setCollapsedSections,
+      setCurrentDashboardViewId,
+      setCurrentDashboardViewName,
     });
   }, []);
 

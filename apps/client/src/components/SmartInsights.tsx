@@ -78,18 +78,26 @@ export function SmartInsights({ enabled = true }: SmartInsightsProps) {
         <div className="insights-section">
           <h4>Top Domains</h4>
           <div className="insights-list">
-            {insights.top_domains.slice(0, 5).map((domain: { domain: string; count: number; percentage?: number }) => (
-              <div key={domain.domain} className="insight-item">
-                <span className="item-name">{domain.domain}</span>
-                <div className="item-bar">
-                  <div
-                    className="bar-fill"
-                    style={{ width: `${domain.percentage || 0}%` }}
-                  />
-                </div>
-                <span className="item-count">{domain.count}</span>
-              </div>
-            ))}
+            {insights.top_domains
+              .slice(0, 5)
+              .map(
+                (domain: {
+                  domain: string;
+                  count: number;
+                  percentage?: number;
+                }) => (
+                  <div key={domain.domain} className="insight-item">
+                    <span className="item-name">{domain.domain}</span>
+                    <div className="item-bar">
+                      <div
+                        className="bar-fill"
+                        style={{ width: `${domain.percentage || 0}%` }}
+                      />
+                    </div>
+                    <span className="item-count">{domain.count}</span>
+                  </div>
+                ),
+              )}
           </div>
         </div>
       )}
@@ -99,15 +107,17 @@ export function SmartInsights({ enabled = true }: SmartInsightsProps) {
         <div className="insights-section">
           <h4>Top Tags</h4>
           <div className="insights-tags">
-            {insights.top_tags.slice(0, 8).map((tagObj: { tag: string; count: number }) => (
-              <span
-                key={tagObj.tag}
-                className="tag-badge-small"
-                title={`${tagObj.count} bookmarks`}
-              >
-                {tagObj.tag} ({tagObj.count})
-              </span>
-            ))}
+            {insights.top_tags
+              .slice(0, 8)
+              .map((tagObj: { tag: string; count: number }) => (
+                <span
+                  key={tagObj.tag}
+                  className="tag-badge-small"
+                  title={`${tagObj.count} bookmarks`}
+                >
+                  {tagObj.tag} ({tagObj.count})
+                </span>
+              ))}
           </div>
         </div>
       )}
@@ -119,11 +129,15 @@ export function SmartInsights({ enabled = true }: SmartInsightsProps) {
           <div className="insights-stats">
             <div className="stat-row">
               <span>This Week</span>
-              <strong>{insights.recent_activity.bookmarks_this_week || 0}</strong>
+              <strong>
+                {insights.recent_activity.bookmarks_this_week || 0}
+              </strong>
             </div>
             <div className="stat-row">
               <span>This Month</span>
-              <strong>{insights.recent_activity.bookmarks_this_month || 0}</strong>
+              <strong>
+                {insights.recent_activity.bookmarks_this_month || 0}
+              </strong>
             </div>
           </div>
         </div>
@@ -140,9 +154,11 @@ export function SmartInsights({ enabled = true }: SmartInsightsProps) {
                 <div className="suggestion-item">
                   <strong>Create Collections:</strong>
                   <ul>
-                    {insights.suggestions.create_these_collections.map((coll: string) => (
-                      <li key={coll}>{coll}</li>
-                    ))}
+                    {insights.suggestions.create_these_collections.map(
+                      (coll: string) => (
+                        <li key={coll}>{coll}</li>
+                      ),
+                    )}
                   </ul>
                 </div>
               )}

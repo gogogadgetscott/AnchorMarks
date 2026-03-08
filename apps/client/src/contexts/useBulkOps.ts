@@ -6,8 +6,13 @@ import { api } from "@services/api.ts";
 import { parseTagInput } from "@utils/index.ts";
 
 export function useBulkOps() {
-  const { selectedBookmarks, bookmarks, setBookmarks, setSelectedBookmarks, setBulkMode } =
-    useBookmarks();
+  const {
+    selectedBookmarks,
+    bookmarks,
+    setBookmarks,
+    setSelectedBookmarks,
+    setBulkMode,
+  } = useBookmarks();
 
   const clearSelections = useCallback(() => {
     setSelectedBookmarks(new Set());
@@ -96,7 +101,11 @@ export function useBulkOps() {
       bookmarks.map((b) => {
         if (!selectedBookmarks.has(b.id)) return b;
         const merged = new Set([...parseTagInput(b.tags || ""), ...tagsToAdd]);
-        return { ...b, tags: Array.from(merged).join(", "), tags_detailed: undefined };
+        return {
+          ...b,
+          tags: Array.from(merged).join(", "),
+          tags_detailed: undefined,
+        };
       }),
     );
     clearSelections();
@@ -205,11 +214,15 @@ export function useBulkOps() {
 
         const smartTags =
           smartResponse.status === "fulfilled"
-            ? (smartResponse.value.suggestions || []).map((s) => s.tag).filter(Boolean)
+            ? (smartResponse.value.suggestions || [])
+                .map((s) => s.tag)
+                .filter(Boolean)
             : [];
         const aiTags =
           aiResponse.status === "fulfilled"
-            ? (aiResponse.value.suggestions || []).map((s) => s.tag).filter(Boolean)
+            ? (aiResponse.value.suggestions || [])
+                .map((s) => s.tag)
+                .filter(Boolean)
             : [];
 
         const tags = Array.from(new Set([...smartTags, ...aiTags]));
@@ -217,12 +230,18 @@ export function useBulkOps() {
 
         await api("/tags/bulk-add", {
           method: "POST",
-          body: JSON.stringify({ bookmark_ids: [bookmark.id], tags: tags.join(", ") }),
+          body: JSON.stringify({
+            bookmark_ids: [bookmark.id],
+            tags: tags.join(", "),
+          }),
         });
 
         const idx = updatedBookmarks.findIndex((b) => b.id === bookmark.id);
         if (idx !== -1) {
-          const merged = new Set([...parseTagInput(bookmark.tags || ""), ...tags]);
+          const merged = new Set([
+            ...parseTagInput(bookmark.tags || ""),
+            ...tags,
+          ]);
           updatedBookmarks[idx] = {
             ...updatedBookmarks[idx],
             tags: Array.from(merged).join(", "),

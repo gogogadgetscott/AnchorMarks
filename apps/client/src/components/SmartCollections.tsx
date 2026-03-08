@@ -1,4 +1,7 @@
-import { useSmartCollections, type SmartCollection } from "@hooks/useSmartCollections";
+import {
+  useSmartCollections,
+  type SmartCollection,
+} from "@hooks/useSmartCollections";
 
 interface SmartCollectionsProps {
   bookmarkId?: string;
@@ -14,7 +17,10 @@ export function SmartCollections({
   onCollectionClick,
   enabled = true,
 }: SmartCollectionsProps) {
-  const { collections, isLoading, error } = useSmartCollections(bookmarkId, enabled);
+  const { collections, isLoading, error } = useSmartCollections(
+    bookmarkId,
+    enabled,
+  );
 
   const handleCollectionClick = (collection: SmartCollection) => {
     if (onCollectionClick) {

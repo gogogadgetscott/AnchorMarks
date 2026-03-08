@@ -65,7 +65,11 @@ export function SmartTagSuggestions({
   }
 
   // No suggestions + not loading AI
-  if (smartSuggestions.length === 0 && aiSuggestions.length === 0 && !isLoadingAI) {
+  if (
+    smartSuggestions.length === 0 &&
+    aiSuggestions.length === 0 &&
+    !isLoadingAI
+  ) {
     return (
       <div className="tag-suggestions" id="tag-suggestions">
         <span className="text-tertiary" style={{ fontSize: "0.85rem" }}>
@@ -108,8 +112,8 @@ export function SmartTagSuggestions({
             borderTop: "1px solid var(--border-color)",
           }}
         >
-          📌 {domainInfo.bookmarkCount ?? domainInfo.bookmark_count ?? 0} bookmarks
-          from {domainInfo.domain}
+          📌 {domainInfo.bookmarkCount ?? domainInfo.bookmark_count ?? 0}{" "}
+          bookmarks from {domainInfo.domain}
           {domainInfo.category && ` • ${domainInfo.category}`}
         </div>
       )}

@@ -8,16 +8,14 @@ import type { Bookmark } from "../types/index";
 
 export function useBookmarkActions() {
   const { bookmarks, setBookmarks } = useBookmarks();
-  const { openBookmarkModal } = useModal();
+  const { openBookmarkModal, closeModal } = useModal();
 
   const archiveBookmark = useCallback(
     async (id: string) => {
       try {
         await api(`/bookmarks/${id}/archive`, { method: "POST" });
         setBookmarks(
-          bookmarks.map((b) =>
-            b.id === id ? { ...b, is_archived: 1 } : b,
-          ),
+          bookmarks.map((b) => (b.id === id ? { ...b, is_archived: 1 } : b)),
         );
         showToast("Bookmark archived", "success");
       } catch (err) {
@@ -32,9 +30,7 @@ export function useBookmarkActions() {
       try {
         await api(`/bookmarks/${id}/unarchive`, { method: "POST" });
         setBookmarks(
-          bookmarks.map((b) =>
-            b.id === id ? { ...b, is_archived: 0 } : b,
-          ),
+          bookmarks.map((b) => (b.id === id ? { ...b, is_archived: 0 } : b)),
         );
         showToast("Bookmark unarchived", "success");
       } catch (err) {
@@ -106,11 +102,47 @@ export function useBookmarkActions() {
     [bookmarks, openBookmarkModal],
   );
 
+  const createBookmark = useCallback(
+    async (data: Partial<Bookmark>) => {
+      try {
+        const bookmark = await api<Bookmark>("/bookmarks", {
+          method: "POST",
+          body: JSON.stringify(data),
+        });
+        setBookmarks([bookmark, ...bookmarks]);
+        closeModal();
+        showToast("Bookmark added!", "success");
+      } catch (err: unknown) {
+        showToast((err as Error).message, "error");
+      }
+    },
+    [bookmarks, setBookmarks, closeModal],
+  );
+
+  const updateBookmark = useCallback(
+    async (id: string, data: Partial<Bookmark>) => {
+      try {
+        const bookmark = await api<Bookmark>(`/bookmarks/${id}`, {
+          method: "PUT",
+          body: JSON.stringify(data),
+        });
+        setBookmarks(bookmarks.map((b) => (b.id === id ? bookmark : b)));
+        closeModal();
+        showToast("Bookmark updated", "success");
+      } catch (err: unknown) {
+        showToast((err as Error).message, "error");
+      }
+    },
+    [bookmarks, setBookmarks, closeModal],
+  );
+
   return {
     archiveBookmark,
     unarchiveBookmark,
     deleteBookmark,
     toggleFavorite,
     editBookmark,
+    createBookmark,
+    updateBookmark,
   };
 }

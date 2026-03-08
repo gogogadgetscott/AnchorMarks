@@ -4,6 +4,7 @@ import { useBookmarks } from "./contexts/BookmarksContext";
 import { useFolders } from "./contexts/FoldersContext";
 import { useUI } from "./contexts/UIContext";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { useSettings } from "./hooks/useSettings";
 import { AppShell } from "./AppShell";
 
 export function App() {
@@ -11,6 +12,7 @@ export function App() {
   const { loadBookmarks } = useBookmarks();
   const { loadFolders } = useFolders();
   const { setIsInitialLoad, currentView } = useUI();
+  const { loadSettings } = useSettings();
 
   // Inject React context actions into keyboard shortcuts system
   useKeyboardShortcuts();
@@ -23,10 +25,11 @@ export function App() {
   useEffect(() => {
     if (isAuthenticated) {
       setIsInitialLoad(false);
+      loadSettings();
       loadFolders();
       loadBookmarks();
     }
-  }, [isAuthenticated, loadFolders, loadBookmarks, setIsInitialLoad]);
+  }, [isAuthenticated, loadSettings, loadFolders, loadBookmarks, setIsInitialLoad]);
 
   // Reload bookmarks when view changes (except dashboard and analytics)
   useEffect(() => {

@@ -51,7 +51,7 @@ export function useSmartInsights(enabled = true): UseSmartInsightsResult {
 
     try {
       const response = await api<SmartInsightsData>("/smart-insights");
-      
+
       if (response) {
         setInsights(response);
       } else {

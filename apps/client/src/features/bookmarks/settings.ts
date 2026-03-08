@@ -38,98 +38,123 @@ export function initThemeControls(settings: UserSettings) {
 
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
-import { getUIBridge } from "@/contexts/context-bridge";
+import {
+  getUIBridge,
+  getDashboardBridge,
+  getBookmarksBridge,
+} from "@/contexts/context-bridge";
 
-// Load settings from server
+// Load settings from server (legacy: used for dashboard view restore)
+// For initial app load, use the useSettings() React hook instead.
 export async function loadSettings(): Promise<void> {
   try {
     const settings = await api<any>("/settings");
-    state.setViewMode(settings.view_mode || "grid");
-    // Theme and high contrast controls
+
+    // Write to React context bridges (preferred path)
+    try {
+      const ui = getUIBridge();
+      ui.setViewMode(settings.view_mode || "grid");
+      ui.setHideFavicons(settings.hide_favicons || false);
+      ui.setHideSidebar(settings.hide_sidebar || false);
+      ui.setAiSuggestionsEnabled(settings.ai_suggestions_enabled !== false);
+      ui.setRichLinkPreviewsEnabled(!!settings.rich_link_previews_enabled);
+      ui.setIncludeChildBookmarks(settings.include_child_bookmarks === 1);
+      ui.setSnapToGrid(settings.snap_to_grid !== false);
+      ui.setTourCompleted(settings.tour_completed || false);
+      if (typeof settings.tag_cloud_max_tags === "number") {
+        ui.setTagCloudMaxTags(settings.tag_cloud_max_tags);
+      }
+      if (typeof settings.tag_cloud_default_show_all !== "undefined") {
+        ui.setTagCloudDefaultShowAll(!!settings.tag_cloud_default_show_all);
+      }
+      if (settings.current_view) {
+        await ui.setCurrentView(settings.current_view);
+      }
+    } catch {
+      // Bridge not ready — fall back to state.* for pre-React paths
+      state.setViewMode(settings.view_mode || "grid");
+      state.setHideFavicons(settings.hide_favicons || false);
+      state.setHideSidebar(settings.hide_sidebar || false);
+      state.setAiSuggestionsEnabled(settings.ai_suggestions_enabled !== false);
+      state.setRichLinkPreviewsEnabled(!!settings.rich_link_previews_enabled);
+      state.setIncludeChildBookmarks(settings.include_child_bookmarks === 1);
+      state.setSnapToGrid(settings.snap_to_grid !== false);
+      state.setTourCompleted(settings.tour_completed || false);
+      if (settings.current_view) {
+        state.setCurrentView(settings.current_view);
+      }
+    }
+
+    try {
+      const dash = getDashboardBridge();
+      const widgets = settings.dashboard_widgets || [];
+      dash.setDashboardConfig({
+        mode: settings.dashboard_mode || "folder",
+        tags: settings.dashboard_tags || [],
+        bookmarkSort: settings.dashboard_sort || "recently_added",
+      });
+      dash.setWidgetOrder(settings.widget_order || {});
+      dash.setDashboardWidgets(widgets);
+      dash.setCollapsedSections(settings.collapsed_sections || []);
+      if (settings.current_dashboard_view_id) {
+        dash.setCurrentDashboardViewId(settings.current_dashboard_view_id);
+      }
+      if (settings.current_dashboard_view_name) {
+        dash.setCurrentDashboardViewName(settings.current_dashboard_view_name);
+      }
+    } catch {
+      state.setDashboardConfig({
+        mode: settings.dashboard_mode || "folder",
+        tags: settings.dashboard_tags || [],
+        bookmarkSort: settings.dashboard_sort || "recently_added",
+      });
+      state.setWidgetOrder(settings.widget_order || {});
+      state.setDashboardWidgets(settings.dashboard_widgets || []);
+      state.setCollapsedSections(settings.collapsed_sections || []);
+      if (settings.current_dashboard_view_id) {
+        state.setCurrentDashboardViewId(settings.current_dashboard_view_id);
+      }
+      if (settings.current_dashboard_view_name) {
+        state.setCurrentDashboardViewName(settings.current_dashboard_view_name);
+      }
+    }
+
+    try {
+      if (settings.tag_sort) {
+        const bm = getBookmarksBridge();
+        bm.setFilterConfig({ ...bm.getFilterConfig(), tagSort: settings.tag_sort });
+      }
+    } catch {
+      if (settings.tag_sort) {
+        state.setFilterConfig({ ...state.filterConfig, tagSort: settings.tag_sort });
+      }
+    }
+
+    // DOM side effects (theme, sidebar)
     initThemeControls(settings);
     applyTheme(settings);
-    state.setHideFavicons(settings.hide_favicons || false);
-    state.setHideSidebar(settings.hide_sidebar || false);
-    state.setAiSuggestionsEnabled(settings.ai_suggestions_enabled !== false);
-    state.setRichLinkPreviewsEnabled(!!settings.rich_link_previews_enabled);
-    state.setIncludeChildBookmarks(settings.include_child_bookmarks === 1);
-    state.setSnapToGrid(settings.snap_to_grid !== false);
-    state.setDashboardConfig({
-      mode: settings.dashboard_mode || "folder",
-      tags: settings.dashboard_tags || [],
-      bookmarkSort: settings.dashboard_sort || "recently_added",
-    });
-    state.setWidgetOrder(settings.widget_order || {});
-    state.setDashboardWidgets(settings.dashboard_widgets || []);
-    state.setCollapsedSections(settings.collapsed_sections || []);
-    state.setTourCompleted(settings.tour_completed || false);
-
-    // Tag Cloud settings
-    if (typeof settings.tag_cloud_max_tags === "number") {
-      state.setTagCloudMaxTags(settings.tag_cloud_max_tags);
-    }
-    if (typeof settings.tag_cloud_default_show_all !== "undefined") {
-      state.setTagCloudDefaultShowAll(!!settings.tag_cloud_default_show_all);
-    }
-
-    // Load tag sort preference
-    if (settings.tag_sort) {
-      state.setFilterConfig({
-        ...state.filterConfig,
-        tagSort: settings.tag_sort,
-      });
-    }
-
-    // Set current view from settings
-    if (settings.current_view) {
-      state.setCurrentView(settings.current_view);
-    }
-
-    // Restore current dashboard view name and ID
-    if (settings.current_dashboard_view_id) {
-      state.setCurrentDashboardViewId(settings.current_dashboard_view_id);
-    }
-    if (settings.current_dashboard_view_name) {
-      state.setCurrentDashboardViewName(settings.current_dashboard_view_name);
-    }
-
-    // Apply theme
     const theme =
       settings.theme || localStorage.getItem("anchormarks_theme") || "dark";
-    setTheme(theme, false); // false = don't save to server again since we just loaded it
+    setTheme(theme, false);
 
-    // Apply sidebar collapsed state - use server setting with localStorage fallback
-    let sidebarCollapsed = settings.hide_sidebar
+    const sidebarCollapsed = settings.hide_sidebar
       ? true
       : safeLocalStorage.getItem("anchormarks_sidebar_collapsed") === "true";
-    // Persist desktop collapsed state only; ignore on mobile
-    // removed stray import
-    if (sidebarCollapsed && window.innerWidth > 1024) {
-      document.body.classList.add("sidebar-collapsed");
-    } else if (!sidebarCollapsed && window.innerWidth > 1024) {
-      document.body.classList.remove("sidebar-collapsed");
+    if (window.innerWidth > 1024) {
+      document.body.classList.toggle("sidebar-collapsed", sidebarCollapsed);
     }
     safeLocalStorage.setItem(
       "anchormarks_sidebar_collapsed",
       String(sidebarCollapsed),
     );
-    // removed erroneous call
-    // Apply collapsed sections
-    state.collapsedSections.forEach((sectionId) => {
+
+    (settings.collapsed_sections || []).forEach((sectionId: string) => {
       const section = document.getElementById(sectionId);
       if (section) section.classList.add("collapsed");
     });
   } catch (err) {
     logger.error("Failed to load settings", err);
-    // removed erroneous call
   }
-
-  // Save settings to server
-  // ...existing code...
-
-  // Apply theme
-  // removed erroneous call
-  // Theme is applied when settings are loaded
 }
 
 // Set theme

@@ -6,7 +6,10 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import { subscribe, setCurrentView as vanillaSetCurrentView } from "../features/state";
+import {
+  subscribe,
+  setCurrentView as vanillaSetCurrentView,
+} from "../features/state";
 import { syncUIBridge } from "./context-bridge";
 import type { TourStep } from "../types/index";
 
@@ -202,6 +205,15 @@ export function UIProvider({ children }: { children: ReactNode }) {
       setCurrentView,
       setCurrentFolder,
       setHideSidebar,
+      setViewMode: (val) => setViewMode(val as ViewMode),
+      setHideFavicons: (val) => setHideFavicons(val),
+      setAiSuggestionsEnabled: (val) => setAiSuggestionsEnabled(val),
+      setRichLinkPreviewsEnabled: (val) => setRichLinkPreviewsEnabled(val),
+      setIncludeChildBookmarks: (val) => setIncludeChildBookmarks(val),
+      setSnapToGrid: (val) => setSnapToGrid(val),
+      setTourCompleted: (val) => setTourCompleted(val),
+      setTagCloudMaxTags: (val) => setTagCloudMaxTags(val),
+      setTagCloudDefaultShowAll: (val) => setTagCloudDefaultShowAll(val),
     });
   }, [currentView, currentFolder, hideSidebar]);
 

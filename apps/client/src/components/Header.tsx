@@ -117,7 +117,11 @@ export function Header() {
   const userName = currentUser?.username ?? "User";
 
   return (
-    <header className="header content-header" id={`${currentView}-header`} role="banner">
+    <header
+      className="header content-header"
+      id={`${currentView}-header`}
+      role="banner"
+    >
       {!isBulkMode ? (
         <div className="header-content header-normal-ui">
           <div className="header-left">

@@ -8,7 +8,7 @@
  * get*Bridge(), which always reflects the latest React state.
  */
 
-import type { User, Bookmark, Folder } from "../types/index";
+import type { User, Bookmark, Folder, DashboardWidget, FilterConfig } from "../types/index";
 
 // ─── Auth State Bridge ────────────────────────────────────────────────────────
 
@@ -54,11 +54,13 @@ interface BookmarksStore {
   totalCount: number;
   selectedBookmarks: Set<string>;
   bulkMode: boolean;
+  filterConfig: FilterConfig;
   setBookmarks: (val: Bookmark[]) => void;
   setRenderedBookmarks: (val: Bookmark[]) => void;
   setTotalCount: (val: number) => void;
   setSelectedBookmarks: (val: Set<string>) => void;
   setBulkMode: (val: boolean) => void;
+  setFilterConfig: (val: FilterConfig) => void;
   loadBookmarks: () => Promise<void>;
 }
 
@@ -86,6 +88,8 @@ export function getBookmarksBridge() {
     setSelectedBookmarks: (val: Set<string>) => s.setSelectedBookmarks(val),
     getBulkMode: () => s.bulkMode,
     setBulkMode: (val: boolean) => s.setBulkMode(val),
+    getFilterConfig: () => s.filterConfig,
+    setFilterConfig: (val: FilterConfig) => s.setFilterConfig(val),
     loadBookmarks: () => s.loadBookmarks(),
   };
 }
@@ -99,6 +103,15 @@ interface UIStore {
   setCurrentView: (val: string) => Promise<void>;
   setCurrentFolder: (val: string | null) => void;
   setHideSidebar: (val: boolean) => void;
+  setViewMode: (val: "grid" | "list" | "compact") => void;
+  setHideFavicons: (val: boolean) => void;
+  setAiSuggestionsEnabled: (val: boolean) => void;
+  setRichLinkPreviewsEnabled: (val: boolean) => void;
+  setIncludeChildBookmarks: (val: boolean) => void;
+  setSnapToGrid: (val: boolean) => void;
+  setTourCompleted: (val: boolean) => void;
+  setTagCloudMaxTags: (val: number) => void;
+  setTagCloudDefaultShowAll: (val: boolean) => void;
 }
 
 const _ui: Partial<UIStore> = {};
@@ -119,6 +132,57 @@ export function getUIBridge() {
     setCurrentFolder: (val: string | null) => s.setCurrentFolder(val),
     getHideSidebar: () => s.hideSidebar,
     setHideSidebar: (val: boolean) => s.setHideSidebar(val),
+    setViewMode: (val: "grid" | "list" | "compact") => s.setViewMode(val),
+    setHideFavicons: (val: boolean) => s.setHideFavicons(val),
+    setAiSuggestionsEnabled: (val: boolean) => s.setAiSuggestionsEnabled(val),
+    setRichLinkPreviewsEnabled: (val: boolean) => s.setRichLinkPreviewsEnabled(val),
+    setIncludeChildBookmarks: (val: boolean) => s.setIncludeChildBookmarks(val),
+    setSnapToGrid: (val: boolean) => s.setSnapToGrid(val),
+    setTourCompleted: (val: boolean) => s.setTourCompleted(val),
+    setTagCloudMaxTags: (val: number) => s.setTagCloudMaxTags(val),
+    setTagCloudDefaultShowAll: (val: boolean) => s.setTagCloudDefaultShowAll(val),
+  };
+}
+
+// ─── Dashboard State Bridge ───────────────────────────────────────────────────
+
+interface DashboardConfig {
+  mode: string;
+  tags: string[];
+  bookmarkSort: string;
+}
+
+interface DashboardStore {
+  setDashboardConfig: (val: DashboardConfig) => void;
+  setDashboardWidgets: (val: DashboardWidget[]) => void;
+  setWidgetOrder: (val: Record<string, number>) => void;
+  setCollapsedSections: (val: string[]) => void;
+  setCurrentDashboardViewId: (val: string | null) => void;
+  setCurrentDashboardViewName: (val: string | null) => void;
+}
+
+const _dashboard: Partial<DashboardStore> = {};
+
+export function syncDashboardBridge(store: DashboardStore): void {
+  Object.assign(_dashboard, store);
+}
+
+export function getDashboardBridge() {
+  if (!_dashboard.setDashboardConfig) {
+    throw new Error(
+      "DashboardBridge not initialized - ensure DashboardProvider is mounted",
+    );
+  }
+  const s = _dashboard as DashboardStore;
+  return {
+    setDashboardConfig: (val: DashboardConfig) => s.setDashboardConfig(val),
+    setDashboardWidgets: (val: DashboardWidget[]) => s.setDashboardWidgets(val),
+    setWidgetOrder: (val: Record<string, number>) => s.setWidgetOrder(val),
+    setCollapsedSections: (val: string[]) => s.setCollapsedSections(val),
+    setCurrentDashboardViewId: (val: string | null) =>
+      s.setCurrentDashboardViewId(val),
+    setCurrentDashboardViewName: (val: string | null) =>
+      s.setCurrentDashboardViewName(val),
   };
 }
 

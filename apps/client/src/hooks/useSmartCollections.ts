@@ -24,7 +24,7 @@ interface UseSmartCollectionsResult {
  */
 export function useSmartCollections(
   bookmarkId?: string,
-  enabled = true
+  enabled = true,
 ): UseSmartCollectionsResult {
   const [collections, setCollections] = useState<SmartCollection[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,9 +42,10 @@ export function useSmartCollections(
         params.set("bookmarkId", bookmarkId);
       }
 
-      const response = await api<{ success: boolean; collections: SmartCollection[] }>(
-        `/smart-collections/suggest?${params.toString()}`
-      );
+      const response = await api<{
+        success: boolean;
+        collections: SmartCollection[];
+      }>(`/smart-collections/suggest?${params.toString()}`);
 
       if (response.success && Array.isArray(response.collections)) {
         setCollections(response.collections);
@@ -53,7 +54,9 @@ export function useSmartCollections(
       }
     } catch (err) {
       console.error("Failed to fetch smart collections:", err);
-      setError(err instanceof Error ? err.message : "Failed to fetch collections");
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch collections",
+      );
       setCollections([]);
     } finally {
       setIsLoading(false);

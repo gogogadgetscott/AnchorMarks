@@ -50,6 +50,16 @@ vi.mock("@/contexts/index.ts", async (importOriginal) => {
   };
 });
 
+vi.mock("@/contexts/useBookmarkActions", () => ({
+  useBookmarkActions: () => ({
+    archiveBookmark: vi.fn(),
+    unarchiveBookmark: vi.fn(),
+    deleteBookmark: vi.fn(),
+    toggleFavorite: vi.fn(),
+    editBookmark: vi.fn(),
+  }),
+}));
+
 vi.mock("@features/bookmarks/bookmarks.ts", () => ({
   deleteBookmark: vi.fn(),
   archiveBookmark: vi.fn(),

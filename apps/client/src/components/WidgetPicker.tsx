@@ -4,7 +4,7 @@ import { useBookmarks } from "../contexts/BookmarksContext";
 import { useFolders } from "../contexts/FoldersContext";
 import { Icon } from "./Icon.tsx";
 import { showToast } from "@utils/ui-helpers.ts";
-import { addDashboardWidget } from "@features/bookmarks/dashboard.ts";
+import { useDashboard } from "../contexts/DashboardContext";
 import type { Folder, DashboardWidget } from "../types/index";
 
 interface PickerItemProps {
@@ -108,7 +108,9 @@ function PickerItem({
 
 export function WidgetPicker() {
   const { isWidgetPickerOpen, setIsWidgetPickerOpen } = useUI();
-  const { folders, dashboardWidgets, tagMetadata } = useBookmarks();
+  const { folders, dashboardWidgets, setDashboardWidgets, tagMetadata } =
+    useBookmarks();
+  const { setDashboardHasUnsavedChanges } = useDashboard();
   const { getRecursiveBookmarkCount, setDraggedSidebarItem } = useFolders();
   const [isPinned, setIsPinned] = useState(false);
   const [folderSearch, setFolderSearch] = useState("");
@@ -145,7 +147,30 @@ export function WidgetPicker() {
     const x = rect ? rect.width / 2 - 160 : 100;
     const y = dropZone ? 50 + dropZone.scrollTop : 50;
 
-    addDashboardWidget(type, id, x, y);
+    let title = `${type} Widget`;
+    if (type === "folder") {
+      const folder = folders.find((f) => f.id === id);
+      if (folder) title = folder.name;
+    } else if (type === "tag") {
+      title = id;
+    } else if (type === "tag-analytics") {
+      title = "Tag Analytics";
+    }
+
+    const snap = (v: number) => Math.round(v / 20) * 20;
+    const widget: DashboardWidget = {
+      id: `${type}-${id}-${Date.now()}`,
+      type,
+      config: { linkedId: id },
+      x: snap(x),
+      y: snap(y),
+      w: 320,
+      h: 400,
+      title,
+    };
+
+    setDashboardWidgets([...dashboardWidgets, widget]);
+    setDashboardHasUnsavedChanges(true);
 
     if (!isPinned) {
       setIsWidgetPickerOpen(false);

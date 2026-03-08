@@ -149,14 +149,16 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       totalCount,
       selectedBookmarks,
       bulkMode,
+      filterConfig,
       setBookmarks,
       setRenderedBookmarks,
       setTotalCount,
       setSelectedBookmarks,
       setBulkMode,
+      setFilterConfig,
       loadBookmarks,
     });
-  }, [bookmarks, renderedBookmarks, totalCount, selectedBookmarks, bulkMode]);
+  }, [bookmarks, renderedBookmarks, totalCount, selectedBookmarks, bulkMode, filterConfig]);
 
   const setWidgetDataCache = useCallback((id: string, val: Bookmark[]) => {
     setWidgetDataCacheState((prev) => ({ ...prev, [id]: val }));

@@ -2,11 +2,8 @@ import { useRef, useEffect, useState } from "react";
 import { useModal } from "@contexts/ModalContext";
 import { useFolders } from "@contexts/FoldersContext";
 import { createFocusTrap, removeFocusTrap } from "@utils/focus-trap.ts";
-import {
-  fetchMetadata,
-  createBookmark,
-  updateBookmark,
-} from "@features/bookmarks/bookmarks.ts";
+import { fetchMetadata } from "@features/bookmarks/bookmarks.ts";
+import { useBookmarkActions } from "@/contexts/useBookmarkActions";
 import { SmartTagSuggestions } from "@components/SmartTagSuggestions";
 
 const COLOR_OPTIONS = [
@@ -26,6 +23,7 @@ const COLOR_OPTIONS = [
 export default function BookmarkModal() {
   const { closeModal, bookmarkFormData, setBookmarkFormData } = useModal();
   const { folders } = useFolders();
+  const { createBookmark, updateBookmark } = useBookmarkActions();
   const modalRef = useRef<HTMLDivElement>(null);
   const [isFetching, setIsFetching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -66,7 +64,7 @@ export default function BookmarkModal() {
     } else {
       await createBookmark(data);
     }
-    // createBookmark/updateBookmark call closeModals() internally
+    // createBookmark/updateBookmark handle state update, closeModal, and toast
   };
 
   const handleFetchMetadata = async () => {
@@ -99,7 +97,7 @@ export default function BookmarkModal() {
     const currentTags = bookmarkFormData.tags
       ? bookmarkFormData.tags.split(",").map((t) => t.trim())
       : [];
-    
+
     if (!currentTags.includes(tag)) {
       const newTags = [...currentTags, tag].join(", ");
       setBookmarkFormData({ tags: newTags });

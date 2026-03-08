@@ -4,7 +4,8 @@ import { useFolders } from "@contexts/FoldersContext";
 import { useBulkOps } from "@contexts/useBulkOps";
 
 export function BulkBar() {
-  const { selectedBookmarks, setSelectedBookmarks, renderedBookmarks } = useBookmarks();
+  const { selectedBookmarks, setSelectedBookmarks, renderedBookmarks } =
+    useBookmarks();
   const { folders } = useFolders();
   const {
     bulkDelete,
@@ -49,13 +50,25 @@ export function BulkBar() {
         </button>
       </div>
       <div className="bulk-actions">
-        <button className="btn btn-ghost" id="bulk-favorite-btn" onClick={bulkFavorite}>
+        <button
+          className="btn btn-ghost"
+          id="bulk-favorite-btn"
+          onClick={bulkFavorite}
+        >
           Favorite
         </button>
-        <button className="btn btn-secondary" id="bulk-tag-btn" onClick={bulkAddTags}>
+        <button
+          className="btn btn-secondary"
+          id="bulk-tag-btn"
+          onClick={bulkAddTags}
+        >
           Tag
         </button>
-        <button className="btn btn-ghost" id="bulk-untag-btn" onClick={bulkRemoveTags}>
+        <button
+          className="btn btn-ghost"
+          id="bulk-untag-btn"
+          onClick={bulkRemoveTags}
+        >
           Remove Tags
         </button>
         <div className="bulk-move">
@@ -73,10 +86,18 @@ export function BulkBar() {
             Move
           </button>
         </div>
-        <button className="btn btn-danger" id="bulk-delete-btn" onClick={bulkDelete}>
+        <button
+          className="btn btn-danger"
+          id="bulk-delete-btn"
+          onClick={bulkDelete}
+        >
           Delete
         </button>
-        <button className="btn btn-ghost" id="bulk-clear-btn" onClick={clearSelections}>
+        <button
+          className="btn btn-ghost"
+          id="bulk-clear-btn"
+          onClick={clearSelections}
+        >
           Clear
         </button>
       </div>
