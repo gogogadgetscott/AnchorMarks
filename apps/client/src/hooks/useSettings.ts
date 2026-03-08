@@ -32,8 +32,11 @@ export function useSettings() {
     setCurrentDashboardViewName,
   } = useDashboard();
 
-  const { filterConfig, setFilterConfig, setDashboardWidgets: setBookmarksWidgets } =
-    useBookmarks();
+  const {
+    filterConfig,
+    setFilterConfig,
+    setDashboardWidgets: setBookmarksWidgets,
+  } = useBookmarks();
 
   const loadSettings = useCallback(async (): Promise<void> => {
     try {
@@ -57,7 +60,10 @@ export function useSettings() {
       }
 
       if (settings.tag_sort) {
-        setFilterConfig({ ...filterConfig, tagSort: settings.tag_sort } as FilterConfig);
+        setFilterConfig({
+          ...filterConfig,
+          tagSort: settings.tag_sort,
+        } as FilterConfig);
       }
 
       if (settings.current_view) {
@@ -65,7 +71,10 @@ export function useSettings() {
       }
 
       // Dashboard settings
-      if (settings.dashboard_mode !== undefined || settings.dashboard_tags !== undefined) {
+      if (
+        settings.dashboard_mode !== undefined ||
+        settings.dashboard_tags !== undefined
+      ) {
         setDashboardConfig({
           mode: settings.dashboard_mode || "folder",
           tags: settings.dashboard_tags || [],
@@ -88,7 +97,9 @@ export function useSettings() {
 
       // Apply theme (DOM side effect)
       const theme =
-        settings.theme || safeLocalStorage.getItem("anchormarks_theme") || "dark";
+        settings.theme ||
+        safeLocalStorage.getItem("anchormarks_theme") ||
+        "dark";
       setTheme(theme, false);
 
       // Apply sidebar collapsed state

@@ -122,11 +122,17 @@ export async function loadSettings(): Promise<void> {
     try {
       if (settings.tag_sort) {
         const bm = getBookmarksBridge();
-        bm.setFilterConfig({ ...bm.getFilterConfig(), tagSort: settings.tag_sort });
+        bm.setFilterConfig({
+          ...bm.getFilterConfig(),
+          tagSort: settings.tag_sort,
+        });
       }
     } catch {
       if (settings.tag_sort) {
-        state.setFilterConfig({ ...state.filterConfig, tagSort: settings.tag_sort });
+        state.setFilterConfig({
+          ...state.filterConfig,
+          tagSort: settings.tag_sort,
+        });
       }
     }
 

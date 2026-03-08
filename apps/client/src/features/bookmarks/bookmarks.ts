@@ -5,7 +5,7 @@
 
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
-import { escapeHtml } from "@utils/index.ts";
+// escapeHtml previously used for legacy DOM rendering; React components handle UI now
 import { logger } from "@utils/logger.ts";
 import {
   dom,
@@ -459,61 +459,27 @@ export async function fetchMetadata(url: string): Promise<{
   }
 }
 
-// Idempotent record of listeners
-const attachedContainers = new WeakSet<HTMLElement>();
-
 export function attachBookmarkCardListeners(): void {
+  // In the React UI, bookmark interactions are handled by React components.
+  // Keep a minimal, non-invasive fallback for legacy pages: only attach a
+  // favicon error handler so broken images are replaced with an inline SVG.
+  logger.warn(
+    "attachBookmarkCardListeners is deprecated: React handles bookmark interactions.",
+  );
+
   const container = document.getElementById("main-view-outlet");
-  if (!container || attachedContainers.has(container)) return;
-  attachedContainers.add(container);
+  if (!container || (container as any).__faviconHandlerAttached) return;
+  (container as any).__faviconHandlerAttached = true;
 
-  container.addEventListener("click", (e) => {
-    const card = (e.target as HTMLElement).closest(
-      ".bookmark-card, .rich-bookmark-card",
-    ) as HTMLElement | null;
-    if (!card) return;
-
-    if ((e.target as HTMLElement).closest(".bookmark-select")) {
-      e.stopPropagation();
-      toggleBookmarkSelection(
-        card.dataset.id || "",
-        parseInt(card.dataset.index || "0", 10),
-        (e as MouseEvent).shiftKey,
-        true,
-      );
-      return;
-    }
-
-    if ((e.target as HTMLElement).closest(".bookmark-actions, .bookmark-tags"))
-      return;
-
-    const id = card.dataset.id || "";
-    const bookmark = state.bookmarks.find((b) => b.id === id);
-    if (!bookmark) return;
-
-    const url = bookmark.url;
-    if (url.startsWith("view:")) {
-      const viewId = url.substring(5);
-      import("@features/bookmarks/dashboard.ts").then(({ restoreView }) =>
-        restoreView(viewId, bookmark.title),
-      );
-    } else if (url.startsWith("bookmark-view:")) {
-      restoreBookmarkView(url.substring(14));
-    } else {
-      trackClick(id);
-      window.open(url, "_blank", "noopener,noreferrer");
-    }
-  });
-
-  // Favicon error handler using delegation (simulated via bubbling since error doesn't bubble)
-  // We use a capture listener or just wrap the existing logic for clarity
+  // Favicon error handler (capture) — lightweight fallback for non-React pages
   container.addEventListener(
     "error",
     (e) => {
-      const target = e.target as HTMLElement;
+      const target = e.target as HTMLElement | null;
       if (
+        target &&
         target.classList.contains("bookmark-favicon-img") &&
-        target.dataset.fallback === "true"
+        target.dataset?.fallback === "true"
       ) {
         const parent = target.parentElement;
         if (parent) {
@@ -523,7 +489,7 @@ export function attachBookmarkCardListeners(): void {
       }
     },
     true,
-  ); // Use capture to "simulate" delegation for non-bubbling 'error' event
+  );
 }
 
 // Toggle bookmark selection
@@ -870,190 +836,28 @@ export function sortBookmarks(list: Bookmark[]): Bookmark[] {
 
 // Initialize bookmark views UI
 export function initBookmarkViews(): void {
-  const headerRight = document.querySelector(".content-header .header-right");
-  if (!headerRight) return;
-
-  let btn = document.getElementById("views-btn") as HTMLButtonElement;
-
-  // Create or reposition Views button
-  if (!btn) {
-    btn = document.createElement("button");
-    btn.id = "views-btn";
-    btn.className = "btn btn-secondary";
-    btn.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
-            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-        </svg>
-        Views
-    `;
-  } else {
-    // Button exists, remove from current position to reposition
-    btn.remove();
-  }
-
-  // Update click handler for bookmark view
-  btn.onclick = (e) => {
-    e.stopPropagation();
-    showBookmarkViewsMenu();
-  };
-
-  // Insert Views button based on current view
-  const filterBtn = document.getElementById("filter-dropdown-btn");
-  const sortControls = document.querySelector(".sort-controls");
-  const timeRangeControls = document.querySelector(".time-range-controls");
-  const headerSearchBar = document.querySelector(".header-search-bar");
-  const viewToggle = document.querySelector(".view-toggle");
-
-  if ((sortControls || timeRangeControls || headerSearchBar) && viewToggle) {
-    // On favorites/recent/archived page with controls and view toggle, insert before view toggle
-    headerRight.insertBefore(btn, viewToggle);
-  } else if (sortControls || timeRangeControls || headerSearchBar) {
-    // On favorites/recent/archived page without view toggle, append after controls
-    headerRight.appendChild(btn);
-  } else if (filterBtn && filterBtn.nextSibling) {
-    // On bookmarks page, insert after Filters button
-    headerRight.insertBefore(btn, filterBtn.nextSibling);
-  } else {
-    // Fallback: insert before first child
-    headerRight.insertBefore(btn, headerRight.firstChild);
-  }
+  // Bookmark views UI is now provided by React. Retain this function as a
+  // compatibility shim; React will render the Views button and menu.
+  logger.debug("initBookmarkViews is deprecated: React renders the Views UI.");
 }
 
-// Show bookmark views dropdown menu
+// Show bookmark views dropdown menu (legacy shim)
 async function showBookmarkViewsMenu() {
-  // Remove existing dropdown if any
-  document.getElementById("bookmark-views-dropdown")?.remove();
-
   const viewsUnknown = await loadBookmarkViews();
   const views: BookmarkViewResponse[] = Array.isArray(viewsUnknown)
     ? viewsUnknown
     : [];
-
-  const dropdown = document.createElement("div");
-  dropdown.id = "bookmark-views-dropdown";
-  dropdown.className = "dropdown-menu";
-
-  // Position dropdown below the Views button
-  const viewsBtn = document.getElementById("views-btn");
-  if (viewsBtn) {
-    const rect = viewsBtn.getBoundingClientRect();
-    // Center the dropdown under the button
-    const dropdownWidth = 250;
-    const left = Math.max(10, rect.left + rect.width / 2 - dropdownWidth / 2);
-    dropdown.style.cssText = `
-      position: fixed;
-      top: ${rect.bottom + 8}px;
-      left: ${left}px;
-      z-index: 1000;
-      min-width: 250px;
-    `;
-  } else {
-    // Fallback positioning
-    dropdown.style.cssText = `
-      position: fixed;
-      top: 5rem;
-      right: 1rem;
-      z-index: 1000;
-      min-width: 250px;
-    `;
-  }
-
-  let html = `
-        <div style="font-weight:600;padding:0.5rem;border-bottom:1px solid var(--border-color);margin-bottom:0.5rem">
-            Bookmark Views
-        </div>
-        <div class="views-list" style="max-height:200px;overflow-y:auto">
-    `;
-
-  if (views.length === 0) {
-    html += `<div style="padding:0.5rem;color:var(--text-tertiary);text-align:center">No saved views</div>`;
-  } else {
-    views.forEach((view: BookmarkViewResponse) => {
-      html += `
-                <div class="dropdown-item view-item" data-view-id="${view.id}" style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem;cursor:pointer;border-radius:4px">
-                    <span class="view-name" style="flex:1">${escapeHtml(view.name)}</span>
-                    <button class="btn-icon small text-danger delete-view-btn" data-view-id="${view.id}" title="Delete">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px">
-                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
-                </div>
-            `;
-    });
-  }
-
-  html += `
-        </div>
-        <div style="border-top:1px solid var(--border-color);margin-top:0.5rem;padding-top:0.5rem">
-            <button class="btn btn-primary btn-sm btn-full" id="save-bookmark-view-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;margin-right:4px">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                    <polyline points="17 21 17 13 7 13 7 21"/>
-                    <polyline points="7 3 7 8 15 8"/>
-                </svg>
-                Save Current View
-            </button>
-        </div>
-    `;
-
-  dropdown.innerHTML = html;
-  document.body.appendChild(dropdown);
-
-  // Attach event listeners to view items
-  dropdown.querySelectorAll(".view-item").forEach((item) => {
-    const viewId = (item as HTMLElement).dataset.viewId || "";
-    const nameSpan = item.querySelector(".view-name");
-    const deleteBtn = item.querySelector(".delete-view-btn");
-
-    // Click on view name to restore
-    if (nameSpan) {
-      nameSpan.addEventListener("click", async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        await restoreBookmarkView(viewId);
-      });
-    }
-
-    // Click on delete button
-    if (deleteBtn) {
-      deleteBtn.addEventListener("click", async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        await deleteBookmarkView(viewId);
-      });
-    }
-  });
-
-  // Attach event listener to save button
-  const saveBtn = dropdown.querySelector("#save-bookmark-view-btn");
-  if (saveBtn) {
-    saveBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      await saveCurrentBookmarkView();
-    });
-  }
-
-  // Global click to close
-  setTimeout(() => {
-    document.addEventListener("click", closeBookmarkViewsDropdown);
-  }, 0);
+  window.dispatchEvent(
+    new CustomEvent("bookmark-views:open", { detail: { views } }),
+  );
 }
 
 function closeBookmarkViewsDropdown(e: Event) {
-  const dropdown = document.getElementById("bookmark-views-dropdown");
-  if (
-    dropdown &&
-    !dropdown.contains(e.target as Node) &&
-    (e.target as HTMLElement).id !== "views-btn"
-  ) {
-    dropdown.remove();
-    document.removeEventListener("click", closeBookmarkViewsDropdown);
-  }
+  window.dispatchEvent(new CustomEvent("bookmark-views:close", { detail: e }));
 }
 
 // Save current bookmark view
-async function saveCurrentBookmarkView() {
+export async function saveCurrentBookmarkView() {
   try {
     const name = await promptDialog("Enter a name for this view:", {
       title: "Save Bookmark View",
@@ -1085,7 +889,10 @@ async function saveCurrentBookmarkView() {
     logger.debug("Bookmark view saved", { viewId: view.id });
 
     showToast("View saved!", "success");
-    document.getElementById("bookmark-views-dropdown")?.remove();
+    // Notify React UI that a view was saved so it can refresh
+    window.dispatchEvent(
+      new CustomEvent("bookmark-views:saved", { detail: view }),
+    );
 
     // Prompt to create bookmark shortcut
     if (
@@ -1114,7 +921,7 @@ async function loadBookmarkViews() {
   }
 }
 
-// Delete bookmark view
+// Delete bookmark view (legacy shim)
 async function deleteBookmarkView(id: string) {
   if (
     !(await confirmDialog("Delete this view?", {
@@ -1123,14 +930,12 @@ async function deleteBookmarkView(id: string) {
     }))
   )
     return;
-  try {
-    await api(`/bookmark/views/${id}`, { method: "DELETE" });
-    showToast("View deleted", "success");
-    // Refresh dropdown if open
-    document.getElementById("bookmark-views-dropdown")?.remove();
-  } catch (err: unknown) {
-    showToast((err as Error).message, "error");
-  }
+
+  await api(`/bookmark/views/${id}`, { method: "DELETE" });
+  showToast("View deleted", "success");
+  window.dispatchEvent(
+    new CustomEvent("bookmark-views:deleted", { detail: { id } }),
+  );
 }
 
 // Restore bookmark view

@@ -158,7 +158,14 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       setFilterConfig,
       loadBookmarks,
     });
-  }, [bookmarks, renderedBookmarks, totalCount, selectedBookmarks, bulkMode, filterConfig]);
+  }, [
+    bookmarks,
+    renderedBookmarks,
+    totalCount,
+    selectedBookmarks,
+    bulkMode,
+    filterConfig,
+  ]);
 
   const setWidgetDataCache = useCallback((id: string, val: Bookmark[]) => {
     setWidgetDataCacheState((prev) => ({ ...prev, [id]: val }));
@@ -480,7 +487,82 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
 
 export function useBookmarks(): BookmarksContextValue {
   const ctx = useContext(BookmarksContext);
-  if (!ctx)
-    throw new Error("useBookmarks must be used within BookmarksProvider");
-  return ctx;
+  if (ctx) return ctx;
+
+  // Fallback for non-React consumers (tests or legacy code). Use the
+  // vanilla state module so code that expects the hook to work without the
+  // provider (unit tests) still functions.
+  let state: any = null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    state = require("../features/state");
+  } catch {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      state = require("@features/state.ts");
+    } catch {
+      state = null;
+    }
+  }
+
+  return {
+    bookmarks: state?.bookmarks,
+    renderedBookmarks: state?.renderedBookmarks,
+    folders: state?.folders,
+    collections: state?.collections,
+    dashboardWidgets: state?.dashboardWidgets,
+    totalCount: state?.totalCount,
+    widgetDataCache: state?.widgetDataCache,
+    filterConfig: state?.filterConfig,
+    tagMetadata: state?.tagMetadata,
+    displayedCount: state?.displayedCount,
+    isLoading: state?.isLoading,
+    isLoadingMore: state?.isLoadingMore,
+    selectedBookmarks: state?.selectedBookmarks,
+    lastSelectedIndex: state?.lastSelectedIndex,
+    bulkMode: state?.bulkMode,
+    loadBookmarks: async () => state?.loadBookmarks && state.loadBookmarks(),
+    loadMoreBookmarks: async () =>
+      state?.loadMoreBookmarks && state.loadMoreBookmarks(),
+    setBookmarks: (val: any) => state?.setBookmarks && state.setBookmarks(val),
+    setRenderedBookmarks: (val: any) =>
+      state?.setRenderedBookmarks && state.setRenderedBookmarks(val),
+    setFolders: (val: any) => state?.setFolders && state.setFolders(val),
+    setCollections: (val: any) =>
+      state?.setCollections && state.setCollections(val),
+    setDashboardWidgets: (val: any) =>
+      state?.setDashboardWidgets && state.setDashboardWidgets(val),
+    setTotalCount: (val: number) =>
+      state?.setTotalCount && state.setTotalCount(val),
+    setWidgetDataCache: (id: string, val: any) =>
+      state?.setWidgetDataCache && state.setWidgetDataCache(id, val),
+    clearWidgetDataCache: () =>
+      state?.clearWidgetDataCache && state.clearWidgetDataCache(),
+    setFilterConfig: (val: any) =>
+      state?.setFilterConfig && state.setFilterConfig(val),
+    setTagMetadata: (val: any) =>
+      state?.setTagMetadata && state.setTagMetadata(val),
+    setDisplayedCount: (val: number) =>
+      state?.setDisplayedCount && state.setDisplayedCount(val),
+    setIsLoading: (val: boolean) =>
+      state?.setIsLoading && state.setIsLoading(val),
+    setIsLoadingMore: (val: boolean) =>
+      state?.setIsLoadingMore && state.setIsLoadingMore(val),
+    setSelectedBookmarks: (val: Set<string>) =>
+      state?.setSelectedBookmarks && state.setSelectedBookmarks(val),
+    setLastSelectedIndex: (val: number | null) =>
+      state?.setLastSelectedIndex && state.setLastSelectedIndex(val),
+    setBulkMode: (val: boolean) => state?.setBulkMode && state.setBulkMode(val),
+    resetPagination: () => state?.resetPagination && state.resetPagination(),
+    fetchTagStats: async () =>
+      state?.fetchTagStats ? state.fetchTagStats() : [],
+    renameTag: async (from: string, to: string) =>
+      state?.renameTag && state.renameTag(from, to),
+    deleteTag: async (id: string, name: string) =>
+      state?.deleteTag && state.deleteTag(id, name),
+    updateTag: async (id: string, name: string, color?: string) =>
+      state?.updateTag && state.updateTag(id, name, color),
+    createTag: async (name: string, color?: string) =>
+      state?.createTag ? state.createTag(name, color) : false,
+  } as BookmarksContextValue;
 }

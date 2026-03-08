@@ -131,9 +131,9 @@ export function useWebSocket(): UseWebSocketReturn {
 
           case "folders:changed":
             try {
-              const { loadFolders } =
-                await import("@features/bookmarks/folders.ts");
-              await loadFolders();
+              const { getFoldersBridge } =
+                await import("@/contexts/context-bridge");
+              await getFoldersBridge().loadFolders();
             } catch {
               // Silently fail
             }

@@ -9,6 +9,7 @@ import { Omnibar } from "./Omnibar.tsx";
 import { SelectionUI, BulkAction } from "./SelectionUI.tsx";
 import { UserProfile } from "./UserProfile.tsx";
 import { ViewToggle } from "./ViewToggle.tsx";
+import BookmarkViews from "./BookmarkViews"; // Rendered near DashboardToolbar
 
 export function Header() {
   const {
@@ -147,17 +148,20 @@ export function Header() {
           <div className="header-right">
             {currentView === "dashboard" ? (
               <>
-                <DashboardToolbar
-                  hasUnsavedChanges={dashboardHasUnsavedChanges}
-                  viewName={currentDashboardViewName}
-                  onSaveClick={handleSaveDashboard}
-                  onViewsClick={handleShowViews}
-                  onAddWidgetClick={() =>
-                    setIsWidgetPickerOpen(!isWidgetPickerOpen)
-                  }
-                  onFullscreenClick={handleToggleFullscreen}
-                  onLayoutSettingsClick={handleLayoutSettings}
-                />
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <DashboardToolbar
+                    hasUnsavedChanges={dashboardHasUnsavedChanges}
+                    viewName={currentDashboardViewName}
+                    onSaveClick={handleSaveDashboard}
+                    onViewsClick={handleShowViews}
+                    onAddWidgetClick={() =>
+                      setIsWidgetPickerOpen(!isWidgetPickerOpen)
+                    }
+                    onFullscreenClick={handleToggleFullscreen}
+                    onLayoutSettingsClick={handleLayoutSettings}
+                  />
+                  <BookmarkViews />
+                </div>
                 <UserProfile
                   name={userName}
                   avatarChar={avatarChar}

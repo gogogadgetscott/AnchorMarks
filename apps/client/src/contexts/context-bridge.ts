@@ -8,7 +8,13 @@
  * get*Bridge(), which always reflects the latest React state.
  */
 
-import type { User, Bookmark, Folder, DashboardWidget, FilterConfig } from "../types/index";
+import type {
+  User,
+  Bookmark,
+  Folder,
+  DashboardWidget,
+  FilterConfig,
+} from "../types/index";
 
 // ─── Auth State Bridge ────────────────────────────────────────────────────────
 
@@ -135,12 +141,14 @@ export function getUIBridge() {
     setViewMode: (val: "grid" | "list" | "compact") => s.setViewMode(val),
     setHideFavicons: (val: boolean) => s.setHideFavicons(val),
     setAiSuggestionsEnabled: (val: boolean) => s.setAiSuggestionsEnabled(val),
-    setRichLinkPreviewsEnabled: (val: boolean) => s.setRichLinkPreviewsEnabled(val),
+    setRichLinkPreviewsEnabled: (val: boolean) =>
+      s.setRichLinkPreviewsEnabled(val),
     setIncludeChildBookmarks: (val: boolean) => s.setIncludeChildBookmarks(val),
     setSnapToGrid: (val: boolean) => s.setSnapToGrid(val),
     setTourCompleted: (val: boolean) => s.setTourCompleted(val),
     setTagCloudMaxTags: (val: number) => s.setTagCloudMaxTags(val),
-    setTagCloudDefaultShowAll: (val: boolean) => s.setTagCloudDefaultShowAll(val),
+    setTagCloudDefaultShowAll: (val: boolean) =>
+      s.setTagCloudDefaultShowAll(val),
   };
 }
 

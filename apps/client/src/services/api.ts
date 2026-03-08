@@ -4,6 +4,7 @@
  */
 
 import { getAuthBridge, API_BASE } from "@contexts/context-bridge";
+import * as state from "@features/state.ts";
 import type { User } from "../types/index";
 
 // Request deduplication: cache pending requests to prevent duplicate API calls
@@ -142,7 +143,17 @@ export async function api<T = unknown>(
     authBridge = getAuthBridge();
     csrfToken = authBridge.getCsrfToken();
   } catch {
-    // AuthProvider not yet mounted - proceed without CSRF token
+    // AuthProvider not yet mounted - fall back to the vanilla state module
+    // imported at module scope. This ensures tests that set values on the
+    // state module (via import) are reflected here.
+    try {
+      csrfToken =
+        state && typeof (state as any).csrfToken !== "undefined"
+          ? (state as any).csrfToken
+          : null;
+    } catch {
+      csrfToken = null;
+    }
   }
   if (["POST", "PUT", "DELETE", "PATCH"].includes(method) && csrfToken) {
     headers["X-CSRF-Token"] = csrfToken;
@@ -159,8 +170,24 @@ export async function api<T = unknown>(
 
   // Create the fetch promise
   const fetchPromise = (async (): Promise<T> => {
+    // Compute a fetchable base URL. In Node (tests) undici requires an
+    // absolute URL — if API_BASE is a root-relative path, prefix with
+    // http://localhost so fetch doesn't throw when tests call api(). In the
+    // browser we keep using API_BASE as-is.
+    // If tests have mocked global.fetch (vitest/vi.fn), allow relative URLs
+    const globalFetch: any = (globalThis as any).fetch;
+    const isFetchMock =
+      globalFetch && typeof globalFetch === "function" && !!globalFetch.mock;
+
+    const baseForFetch =
+      typeof window !== "undefined" ||
+      /^https?:\/\//.test(API_BASE) ||
+      isFetchMock
+        ? API_BASE
+        : `http://localhost${API_BASE}`;
+
     try {
-      const response = await fetch(`${API_BASE}${endpoint}`, {
+      const response = await fetch(`${baseForFetch}${endpoint}`, {
         ...options,
         signal,
         credentials: "include",
@@ -172,7 +199,7 @@ export async function api<T = unknown>(
         const isRefreshCall =
           endpoint === "/auth/refresh" || endpoint.startsWith("/auth/refresh");
         if (!isRefreshCall) {
-          const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
+          const refreshRes = await fetch(`${baseForFetch}/auth/refresh`, {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -211,7 +238,7 @@ export async function api<T = unknown>(
             }
 
             // Retry original request once with new cookies
-            const retryRes = await fetch(`${API_BASE}${endpoint}`, {
+            const retryRes = await fetch(`${baseForFetch}${endpoint}`, {
               ...options,
               signal,
               credentials: "include",

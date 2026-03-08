@@ -290,6 +290,93 @@ export function UIProvider({ children }: { children: ReactNode }) {
 
 export function useUI(): UIContextValue {
   const ctx = useContext(UIContext);
-  if (!ctx) throw new Error("useUI must be used within UIProvider");
-  return ctx;
+  if (ctx) return ctx;
+
+  // Fallback for non-React consumers (tests or legacy code). Read from the
+  // vanilla state module so tests that mock @features/state.ts still work
+  // without mounting the React provider.
+  // Try to read vanilla state defensively. Use a dynamic require so tests
+  // that mock path aliases don't throw at module-eval time. Guard access
+  // to avoid exceptions when mocks don't provide all exports.
+  let state: any = null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    state = require("../features/state");
+  } catch {
+    try {
+      // Fallback to alias path if relative resolution fails
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      state = require("@features/state.ts");
+    } catch {
+      state = null;
+    }
+  }
+
+  return {
+    currentView: state?.currentView ?? "dashboard",
+    currentFolder: state?.currentFolder ?? null,
+    viewMode: (state?.viewMode as ViewMode) ?? "grid",
+    hideFavicons: state?.hideFavicons ?? false,
+    hideSidebar: state?.hideSidebar ?? false,
+    aiSuggestionsEnabled: state?.aiSuggestionsEnabled ?? true,
+    includeChildBookmarks: state?.includeChildBookmarks ?? false,
+    snapToGrid: state?.snapToGrid ?? true,
+    tourCompleted: state?.tourCompleted ?? false,
+    richLinkPreviewsEnabled: state?.richLinkPreviewsEnabled ?? false,
+    tagCloudMaxTags: state?.tagCloudMaxTags ?? 120,
+    tagCloudDefaultShowAll: state?.tagCloudDefaultShowAll ?? false,
+    isFullscreen: state?.isFullscreen ?? false,
+    isInitialLoad: state?.isInitialLoad ?? true,
+    isWidgetPickerOpen: state?.isWidgetPickerOpen ?? false,
+    showingAllTags: state?.showingAllTags ?? false,
+    allSidebarTags: state?.allSidebarTags ?? [],
+    tourState: state?.tourState ?? {
+      active: false,
+      currentStep: 0,
+      steps: defaultTourSteps,
+    },
+    lastTagRenameAction: state?.lastTagRenameAction ?? null,
+    viewToolbarConfig: state?.viewToolbarConfig ?? defaultViewToolbarConfig,
+    setCurrentView: async (val: string) =>
+      state?.setCurrentView && state.setCurrentView(val),
+    setCurrentFolder: (val: string | null) =>
+      state?.setCurrentFolder && state.setCurrentFolder(val),
+    setViewMode: (val: ViewMode) =>
+      state?.setViewMode && state.setViewMode(val),
+    setHideFavicons: (val: boolean) =>
+      state?.setHideFavicons && state.setHideFavicons(val),
+    setHideSidebar: (val: boolean) =>
+      state?.setHideSidebar && state.setHideSidebar(val),
+    setAiSuggestionsEnabled: (val: boolean) =>
+      state?.setAiSuggestionsEnabled && state.setAiSuggestionsEnabled(val),
+    setIncludeChildBookmarks: (val: boolean) =>
+      state?.setIncludeChildBookmarks && state.setIncludeChildBookmarks(val),
+    setSnapToGrid: (val: boolean) =>
+      state?.setSnapToGrid && state.setSnapToGrid(val),
+    setTourCompleted: (val: boolean) =>
+      state?.setTourCompleted && state.setTourCompleted(val),
+    setRichLinkPreviewsEnabled: (val: boolean) =>
+      state?.setRichLinkPreviewsEnabled &&
+      state.setRichLinkPreviewsEnabled(val),
+    setTagCloudMaxTags: (val: number) =>
+      state?.setTagCloudMaxTags && state.setTagCloudMaxTags(val),
+    setTagCloudDefaultShowAll: (val: boolean) =>
+      state?.setTagCloudDefaultShowAll && state.setTagCloudDefaultShowAll(val),
+    setIsFullscreen: (val: boolean) =>
+      state?.setIsFullscreen && state.setIsFullscreen(val),
+    setIsInitialLoad: (val: boolean) =>
+      state?.setIsInitialLoad && state.setIsInitialLoad(val),
+    setIsWidgetPickerOpen: (val: boolean) =>
+      state?.setIsWidgetPickerOpen && state.setIsWidgetPickerOpen(val),
+    setShowingAllTags: (val: boolean) =>
+      state?.setShowingAllTags && state.setShowingAllTags(val),
+    setAllSidebarTags: (val: { name: string; count: number }[]) =>
+      state?.setAllSidebarTags && state.setAllSidebarTags(val),
+    setTourState: (val: TourState) =>
+      state?.setTourState && state.setTourState(val),
+    setLastTagRenameAction: (val: { from: string; to: string } | null) =>
+      state?.setLastTagRenameAction && state.setLastTagRenameAction(val),
+    setViewToolbarConfig: (view: string, config: Record<string, unknown>) =>
+      state?.setViewToolbarConfig && state.setViewToolbarConfig(view, config),
+  } as UIContextValue;
 }

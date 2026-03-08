@@ -5,7 +5,11 @@
 
 import { openOmnibar, closeOmnibar } from "@features/bookmarks/omnibar.ts";
 import { openModal } from "@utils/ui-helpers.ts";
-import { getBookmarksBridge, getUIBridge } from "@/contexts/context-bridge";
+import {
+  getBookmarksBridge,
+  getFoldersBridge,
+  getUIBridge,
+} from "@/contexts/context-bridge";
 
 /**
  * Handle global keyboard events
@@ -134,9 +138,15 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     const activeEl = document.activeElement;
     if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
-    const { navigateToFolderByIndex } =
-      await import("@features/bookmarks/folders.ts");
-    navigateToFolderByIndex(parseInt(key) - 1);
+    const index = parseInt(key) - 1;
+    const rootFolders = getFoldersBridge()
+      .getFolders()
+      .filter((f) => !f.parent_id);
+    if (index < 0 || index >= rootFolders.length) return;
+    const folder = rootFolders[index];
+    getUIBridge().setCurrentFolder(folder.id);
+    await getUIBridge().setCurrentView("folder");
+    getBookmarksBridge().loadBookmarks();
   }
 
   // Ctrl+Shift+D: Dashboard

@@ -29,7 +29,13 @@ export function App() {
       loadFolders();
       loadBookmarks();
     }
-  }, [isAuthenticated, loadSettings, loadFolders, loadBookmarks, setIsInitialLoad]);
+  }, [
+    isAuthenticated,
+    loadSettings,
+    loadFolders,
+    loadBookmarks,
+    setIsInitialLoad,
+  ]);
 
   // Reload bookmarks when view changes (except dashboard and analytics)
   useEffect(() => {
