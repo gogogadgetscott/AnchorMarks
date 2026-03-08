@@ -701,6 +701,7 @@ function renderDashboardWidget(widget: DashboardWidget, index: number): string {
       <div class="widget-body">
         ${renderWidgetContent(widget, widgetData, index)}
       </div>
+      <div class="widget-resize-handle" title="Drag to resize"></div>
     </div>
   `;
 }
@@ -1405,6 +1406,51 @@ export function initDashboardDragDrop(): void {
         document.addEventListener("mousemove", onMouseMove);
         document.addEventListener("mouseup", onMouseUp);
         e.preventDefault();
+      });
+    });
+
+  // Handle widget resizing
+  newOutlet
+    .querySelectorAll<HTMLElement>(".dashboard-widget-freeform .widget-resize-handle")
+    .forEach((handle) => {
+      handle.addEventListener("mousedown", (e: MouseEvent) => {
+        const widgetEl = (e.currentTarget as HTMLElement).closest(
+          ".dashboard-widget-freeform",
+        ) as HTMLElement;
+        if (!widgetEl) return;
+
+        const index = Number(widgetEl.dataset.widgetIndex);
+        if (isNaN(index)) return;
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const origWidth = widgetEl.offsetWidth;
+        const origHeight = widgetEl.offsetHeight;
+
+        function onMouseMove(moveEv: MouseEvent) {
+          const dx = moveEv.clientX - startX;
+          const dy = moveEv.clientY - startY;
+          const newWidth = snapToGrid(Math.max(200, origWidth + dx));
+          const newHeight = snapToGrid(Math.max(150, origHeight + dy));
+          widgetEl.style.width = newWidth + "px";
+          widgetEl.style.height = newHeight + "px";
+          const widgetState = state.dashboardWidgets[index];
+          if (widgetState) {
+            widgetState.w = newWidth;
+            widgetState.h = newHeight;
+          }
+        }
+
+        function onMouseUp() {
+          document.removeEventListener("mousemove", onMouseMove);
+          document.removeEventListener("mouseup", onMouseUp);
+          markDashboardModified();
+        }
+
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+        e.preventDefault();
+        e.stopPropagation();
       });
     });
 }
