@@ -11,68 +11,88 @@ interface NavItem {
   countId?: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
-  {
-    view: "dashboard",
-    label: "Dashboard",
-    icon: "dashboard",
-    tooltip: "Dashboard",
-  },
-  {
-    view: "all",
-    label: "Bookmarks",
-    icon: "home",
-    tooltip: "Bookmarks",
-    countId: "bookmark-count",
-  },
-  {
-    view: "favorites",
-    label: "Favorites",
-    icon: "star",
-    countId: "fav-count",
-  },
-  {
-    view: "recent",
-    label: "Recent",
-    icon: "clock",
-    countId: "count-recent",
-  },
-  {
-    view: "most-used",
-    label: "Most Used",
-    icon: "activity",
-    tooltip: "Most Used",
-    countId: "count-most-used",
-  },
-  {
-    view: "archived",
-    label: "Archived",
-    icon: "archive",
-    countId: "count-archived",
-  },
-  {
-    view: "tag-cloud",
-    label: "Tag Cloud",
-    icon: "cloud",
-    tooltip: "Tag Cloud",
-  },
-  {
-    view: "analytics",
-    label: "Analytics",
-    icon: "bar-chart",
-    tooltip: "Analytics",
-  },
+{ id: "analytics", label: "Analytics", icon: "bar-chart", section: "App" },
+{ id: "shortcuts", label: "Shortcuts", icon: "⌨️", section: "App" },
 ];
 
+function FolderItem({
+  folder,
+  allFolders,
+  currentFolder,
+  onSelect,
+  depth = 0
+}: {
+  folder: any;
+  allFolders: any[];
+  currentFolder: string | null;
+  onSelect: (id: string | null) => void;
+  depth?: number;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const children = allFolders.filter(f => f.parent_id === folder.id);
+  const hasChildren = children.length > 0;
+  const isActive = currentFolder === folder.id;
+
+  return (
+    <div className="folder-item-container" style={{ paddingLeft: `${depth * 12}px` }}>
+      <div
+        className={`nav-item folder-item ${isActive ? 'active' : ''}`}
+        onClick={() => onSelect(isActive ? null : folder.id)}
+      >
+        <span
+          className="folder-toggle"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(!isOpen);
+          }}
+          style={{ visibility: hasChildren ? 'visible' : 'hidden' }}
+        >
+          {isOpen ? '▼' : '▶'}
+        </span>
+        <Icon name="folder" size={18} />
+        <span className="folder-name">{folder.name}</span>
+      </div>
+      {isOpen && hasChildren && (
+        <div className="folder-children">
+          {children.map(child => (
+            <FolderItem
+              key={child.id}
+              folder={child}
+              allFolders={allFolders}
+              currentFolder={currentFolder}
+              onSelect={onSelect}
+              depth={depth + 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Sidebar() {
-  const { currentView, setCurrentView } = useUI();
+  const { currentView, setCurrentView, currentFolder, setCurrentFolder } = useUI();
   const {
-    bookmarks,
     folders,
     totalCount,
-    renderedBookmarks,
-    dashboardWidgets
+    setFilterConfig,
+    filterConfig,
+    tagMetadata
   } = useBookmarks();
+
+  const [tagSearch, setTagSearch] = useState("");
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["folders", "tags"]));
+
+  const toggleSection = (id: string) => {
+    const next = new Set(expandedSections);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setExpandedSections(next);
+  };
+
+  const filteredTags = Object.keys(tagMetadata)
+    .filter(t => t.toLowerCase().includes(tagSearch.toLowerCase()))
+    .sort((a, b) => (tagMetadata[b].count || 0) - (tagMetadata[a].count || 0));
 
   // Calculate counts for badges
   const getBadgeCount = (view: string) => {
