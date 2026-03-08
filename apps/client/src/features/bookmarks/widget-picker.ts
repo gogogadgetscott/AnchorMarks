@@ -167,12 +167,16 @@ function filterWidgetPickerFolders(searchTerm: string): void {
 
 // Filter tags in widget picker based on search term
 function filterWidgetPickerTags(searchTerm: string): void {
-  const container = document.getElementById(
-    "widget-tags-container",
-  ) as HTMLElement & {
-    _allTags: Array<{ name: string; count: number }>;
-    _originalHTML: string;
-  };
+const container = document.getElementById(
+  "widget-tags-container",
+) as HTMLElement & {
+  _allTags: Array<{
+    type?: string;
+    name: string;
+    count: number;
+  }>;
+  _originalHTML: string;
+};
   if (!container || !container._allTags) return;
 
   const term = searchTerm.toLowerCase().trim();
@@ -240,11 +244,12 @@ function attachWidgetFolderListeners() {
   if (!container) return;
 
   container.querySelectorAll(".widget-picker-item").forEach((item) => {
-    const type = (item as HTMLElement).dataset.type || "";
+    const rawType = (item as HTMLElement).dataset.type;
     const id = (item as HTMLElement).dataset.id || "";
     const isAdded = item.classList.contains("added");
 
-    if (isAdded) return;
+    if (isAdded || rawType !== "folder") return;
+    const type: "folder" = rawType;
 
     // Click to add
     item.addEventListener("click", () => {
@@ -254,12 +259,7 @@ function attachWidgetFolderListeners() {
       const x = rect ? rect.width / 2 - 160 : 100;
       const y = rect ? 50 + dropZone.scrollTop : 50;
 
-      // Fix type mismatch for Tag Analytics
-      if (type === "tag-analytics") {
-        addDashboardWidget(type as "tag", id, x, y);
-      } else {
-        addDashboardWidget(type as "tag" | "folder", id, x, y);
-      }
+      addDashboardWidget(type, id, x, y);
 
       if (!widgetDropdownPinned) {
         closeWidgetPicker();
@@ -275,7 +275,10 @@ function attachWidgetFolderListeners() {
       const dragEvent = e as DragEvent;
       if (!dragEvent.dataTransfer) return;
 
-      state.setDraggedSidebarItem({ type, id });
+      state.setDraggedSidebarItem({
+        type, id,
+        name: ""
+      });
       dragEvent.dataTransfer.effectAllowed = "copy";
       dragEvent.dataTransfer.setData(
         "text/plain",
@@ -298,11 +301,12 @@ function attachWidgetTagListeners() {
   if (!container) return;
 
   container.querySelectorAll(".widget-picker-item").forEach((item) => {
-    const type = (item as HTMLElement).dataset.type || "";
+    const rawType = (item as HTMLElement).dataset.type;
     const id = (item as HTMLElement).dataset.id || "";
     const isAdded = item.classList.contains("added");
 
-    if (isAdded) return;
+    if (isAdded || !rawType) return;
+    const type = rawType as "tag" | "tag-analytics";
 
     // Click to add
     item.addEventListener("click", () => {
@@ -313,7 +317,7 @@ function attachWidgetTagListeners() {
       const y = rect ? 50 + dropZone.scrollTop : 50;
 
       // Pass the correct type - tag-analytics needs to be passed as-is
-      addDashboardWidget(type as "tag" | "folder" | "tag-analytics", id, x, y);
+      addDashboardWidget(type, id, x, y);
 
       if (!widgetDropdownPinned) {
         closeWidgetPicker();
@@ -329,7 +333,12 @@ function attachWidgetTagListeners() {
       const dragEvent = e as DragEvent;
       if (!dragEvent.dataTransfer) return;
 
-      state.setDraggedSidebarItem({ type, id });
+      if (type === "tag") {
+        state.setDraggedSidebarItem({
+          type, id,
+          name: ""
+        });
+      }
       dragEvent.dataTransfer.effectAllowed = "copy";
       dragEvent.dataTransfer.setData(
         "text/plain",
