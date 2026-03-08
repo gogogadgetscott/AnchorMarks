@@ -205,6 +205,12 @@ export function ModalProvider({ children }: { children: ReactNode }) {
           openSettingsModal(tab);
           break;
         }
+        case "open-filter":
+          openFilterModal();
+          break;
+        case "open-tour":
+          openTourModal();
+          break;
         case "close":
           closeModal();
           break;

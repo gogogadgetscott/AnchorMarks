@@ -26,7 +26,6 @@ import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
 import {
   BookmarkCard as createBookmarkCard,
   SkeletonCard,
-  RichBookmarkCard,
 } from "@components/index.ts";
 export { createBookmarkCard };
 
@@ -241,8 +240,6 @@ export async function loadBookmarks(): Promise<void> {
 
 // Render bookmarks list
 // --- Virtualization State & Constants ---
-const pendingMetadataFetches = new Set<string>();
-let ogImageObserver: IntersectionObserver | null = null;
 
 export function renderBookmarks(): void {
   // Only update state if we're in a bookmark-rendering view
@@ -466,103 +463,7 @@ export async function loadMoreBookmarks(): Promise<void> {
   }
 }
 
-// Sequential queue for OG image fetches to avoid rate-limit bursts
-const ogImageQueue: Array<{ id: string; url: string }> = [];
-let ogImageQueueRunning = false;
-
-async function drainOGImageQueue(): Promise<void> {
-  if (ogImageQueueRunning) return;
-  ogImageQueueRunning = true;
-  while (ogImageQueue.length > 0) {
-    const item = ogImageQueue.shift()!;
-    await processOGImageFetch(item.id, item.url);
-    if (ogImageQueue.length > 0) {
-      await new Promise<void>((resolve) => setTimeout(resolve, 250));
-    }
-  }
-  ogImageQueueRunning = false;
-}
-
-// Adaptive Lazy Loading for Rich Cards
-async function lazyLoadOGImages(): Promise<void> {
-  const container =
-    dom.mainViewOutlet || document.getElementById("main-view-outlet");
-  if (!container) return;
-
-  const placeholders = Array.from(
-    container.querySelectorAll(
-      ".rich-card-image-placeholder[data-bookmark-id]",
-    ),
-  ) as HTMLElement[];
-  if (placeholders.length === 0) return;
-
-  // Initialize IntersectionObserver if not already present
-  if (!ogImageObserver) {
-    ogImageObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const el = entry.target as HTMLElement;
-            const id = el.dataset.bookmarkId;
-            const url = el.dataset.bookmarkUrl;
-            if (id && url) {
-              ogImageQueue.push({ id, url });
-              drainOGImageQueue();
-            }
-            ogImageObserver?.unobserve(el);
-          }
-        });
-      },
-      { rootMargin: "200px" },
-    );
-  }
-
-  // Observe all placeholders in the current DOM
-  placeholders.forEach((p) => ogImageObserver?.observe(p));
-}
-
-async function processOGImageFetch(
-  bookmarkId: string,
-  bookmarkUrl: string,
-): Promise<void> {
-  if (pendingMetadataFetches.has(bookmarkId)) return;
-  pendingMetadataFetches.add(bookmarkId);
-
-  try {
-    const bookmark = state.bookmarks.find((b) => b.id === bookmarkId);
-    if (bookmark && (bookmark.og_image || bookmark.thumbnail_local)) {
-      updateRichCardImage(
-        bookmarkId,
-        bookmark.og_image || bookmark.thumbnail_local!,
-      );
-      return;
-    }
-
-    const metadata = await api<{ og_image?: string }>(
-      "/bookmarks/fetch-metadata",
-      {
-        method: "POST",
-        body: JSON.stringify({ url: bookmarkUrl }),
-      },
-    );
-
-    if (metadata?.og_image) {
-      const idx = state.bookmarks.findIndex((b) => b.id === bookmarkId);
-      if (idx !== -1) {
-        state.bookmarks[idx].og_image = metadata.og_image;
-        await api(`/bookmarks/${bookmarkId}`, {
-          method: "PUT",
-          body: JSON.stringify({ og_image: metadata.og_image }),
-        });
-        updateRichCardImage(bookmarkId, metadata.og_image);
-      }
-    }
-  } catch (err) {
-    logger.debug("Failed to fetch OG image", { id: bookmarkId, err });
-  } finally {
-    pendingMetadataFetches.delete(bookmarkId);
-  }
-}
+// Adaptive Lazy Loading for Rich Cards - Removed (integrated into React components)
 
 /**
  * Fetch metadata for a URL
@@ -585,16 +486,6 @@ export async function fetchMetadata(url: string): Promise<{
   } catch (err) {
     logger.error("Failed to fetch metadata", { url, err });
     throw err;
-  }
-}
-
-function updateRichCardImage(bookmarkId: string, ogImage: string): void {
-  const card = document.querySelector(
-    `.rich-bookmark-card[data-id="${bookmarkId}"]`,
-  );
-  const placeholder = card?.querySelector(".rich-card-image-placeholder");
-  if (placeholder) {
-    placeholder.outerHTML = `<div class="rich-card-image"><img src="${escapeHtml(ogImage)}" alt="" loading="lazy"></div>`;
   }
 }
 

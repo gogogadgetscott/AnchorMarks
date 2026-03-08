@@ -19,6 +19,8 @@ interface ModalAction {
     | "open-tag"
     | "open-folder"
     | "open-settings"
+    | "open-filter"
+    | "open-tour"
     | "close";
   payload?: any;
 }
@@ -87,10 +89,6 @@ export function openFolderModal(data?: any) {
   });
 }
 
-/**
- * Open settings modal
- * @param tab The tab name to open in settings
- */
 export function openSettingsModal(tab?: string) {
   if (!dispatcher) {
     console.warn(
@@ -101,6 +99,36 @@ export function openSettingsModal(tab?: string) {
   dispatcher({
     type: "open-settings",
     payload: { tab },
+  });
+}
+
+/**
+ * Open filter sidebar
+ */
+export function openFilterModal() {
+  if (!dispatcher) {
+    console.warn(
+      "Modal dispatcher not initialized. ModalProvider may not be mounted.",
+    );
+    return;
+  }
+  dispatcher({
+    type: "open-filter",
+  });
+}
+
+/**
+ * Open onboarding tour
+ */
+export function openTourModal() {
+  if (!dispatcher) {
+    console.warn(
+      "Modal dispatcher not initialized. ModalProvider may not be mounted.",
+    );
+    return;
+  }
+  dispatcher({
+    type: "open-tour",
   });
 }
 
@@ -137,6 +165,12 @@ export function openModal(id: string): void {
       break;
     case "settings-modal":
       openSettingsModal("general");
+      break;
+    case "filter-sidebar":
+      openFilterModal();
+      break;
+    case "tour":
+      openTourModal();
       break;
     default:
       console.warn(`Unknown modal ID: ${id}`);

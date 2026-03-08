@@ -11,7 +11,7 @@
 
 .PHONY: help \
 	build-frontend build-docker build-test-docker \
-	start start-backend start-frontend start-all start-docker start-prod stop stop-all restart-all \
+	start dev-full start-backend start-frontend start-all start-docker start-prod stop stop-all restart-all \
 	test-backend test-backend-local test-frontend test-frontend-local test-all test-coverage \
 	test-backend-watch test-frontend-watch \
 	test-docker test-docker-backend test-docker-frontend \
@@ -100,6 +100,8 @@ rebuild-docker: ## Rebuild Docker containers from scratch (ensures database dir 
 # START/STOP TARGETS
 # ============================================================================
 start: start-all ## Alias for start-all (start backend and frontend)
+
+dev-full: start-all ## Alias for start-all (full stack with HMR)
 
 start-backend: ## Start backend server in development mode
 	@echo "$(BLUE)Starting backend server...$(NC)"

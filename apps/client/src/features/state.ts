@@ -459,6 +459,10 @@ export function setFilterConfig(val: FilterConfig) {
   filterConfig = val;
   emit("filterConfig", val);
 }
+export function setSelectedBookmarks(val: Set<string>) {
+  selectedBookmarks = val;
+  emit("selectedBookmarks", val);
+}
 export function setLastSelectedIndex(val: number | null) {
   lastSelectedIndex = val;
   emit("lastSelectedIndex", val);

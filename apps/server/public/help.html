@@ -1957,7 +1957,7 @@
             </div>
 
             <h4>Manual Linux/macOS install</h4>
-            <div class="code-block">npm ci --omit=dev && make run-prod</div>
+            <div class="code-block">npm ci --omit=dev && make start-prod</div>
 
             <h4>Nginx reverse proxy</h4>
             <p>
@@ -2258,14 +2258,15 @@
             </p>
             <div class="code-block">
               # Install dependencies npm install # See all available commands
-              make help # Start both dev servers (recommended) make run-all #
-              Start only the backend make run-backend # Start only Vite dev
-              server make run-frontend # Stop servers make stop-all # Restart
+              make help # Start both dev servers (recommended) make dev-full #
+              Start only the backend make start-backend # Start only Vite dev
+              server make start-frontend # Stop servers make stop-all # Restart
               servers make restart-all # Build for production make
-              build-frontend # Run in production mode make run-prod # Run all
-              tests make test-all # Run backend tests make test-backend # Run
-              frontend tests make test-frontend # Lint and format code make
-              lint-code # Check linting without fixing make lint-check
+              build-frontend # Run in production mode make start-prod # Run all
+              tests make test-all # Run backend tests (local) make
+              test-backend-local # Run frontend tests (Docker) make
+              test-frontend # Lint and format code make lint-code # Check
+              linting without fixing make lint-check
             </div>
 
             <h3 class="help-anchor" id="screenshots">
@@ -2292,7 +2293,7 @@
             <h4>Running the Pipeline</h4>
             <p>
               Ensure your development servers are running (<code
-                >make run-all</code
+                >make dev-full</code
               >), then run the following in a separate terminal:
             </p>
             <div class="code-block">
@@ -2327,7 +2328,7 @@
               ><strong>Production Mode:</strong> Run
               <code>make build-frontend</code> to compile the frontend into
               <code>apps/client/dist</code>. Then
-              <code>make run-prod</code> serves everything from the Express
+              <code>make start-prod</code> serves everything from the Express
               server on a single port (3000 by default). No Vite dev server
               needed in production.
             </div>
