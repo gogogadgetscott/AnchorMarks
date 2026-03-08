@@ -23,7 +23,7 @@ interface RenderReactDashboardInput {
   onSortWidget?: (
     widgetIndex: number,
     sort: "a-z" | "z-a" | "recent" | "most_visited",
-) => void;
+  ) => void;
   onAddBookmarkToWidget?: (widgetType: string, widgetId: string) => void;
   onOpenAllWidgetBookmarks?: (widgetIndex: number) => void;
   onShowWidgetInBookmarksView?: (widgetType: string, widgetId: string) => void;

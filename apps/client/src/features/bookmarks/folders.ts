@@ -9,12 +9,7 @@ import { Folder } from "../../types/index";
 import { escapeHtml } from "@utils/index.ts";
 import { logger } from "@utils/logger.ts";
 import { buildFolderOptionsHTML } from "./folders-utils";
-import {
-  showToast,
-  closeModals,
-  openModal,
-  updateActiveNav,
-} from "@utils/ui-helpers.ts";
+import { showToast, closeModals, updateActiveNav } from "@utils/ui-helpers.ts";
 import { Badge } from "@components/Badge.ts";
 import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
@@ -331,44 +326,20 @@ export async function deleteFolder(id: string): Promise<void> {
 }
 
 // Edit folder (populate form)
+import * as modalController from "@utils/modal-controller.ts";
+
 export function editFolder(id: string): void {
   const folder = state.folders.find((f) => f.id === id);
   if (!folder) return;
 
-  const modalTitle = document.getElementById("folder-modal-title");
-  if (modalTitle) modalTitle.textContent = "Edit Folder";
+  const folderData = {
+    id: folder.id,
+    name: folder.name,
+    color: folder.color || "",
+    parentId: folder.parent_id || null,
+  };
 
-  const idInput = document.getElementById("folder-id") as HTMLInputElement;
-  if (idInput) idInput.value = id;
-
-  const nameInput = document.getElementById("folder-name") as HTMLInputElement;
-  if (nameInput) nameInput.value = folder.name;
-
-  const colorInput = document.getElementById(
-    "folder-color",
-  ) as HTMLInputElement;
-  if (colorInput) colorInput.value = folder.color || "";
-
-  document.querySelectorAll(".color-option").forEach((opt: Element) => {
-    if ((opt as HTMLElement).dataset.color === folder.color)
-      opt.classList.add("active");
-    else opt.classList.remove("active");
-  });
-
-  updateFolderParentSelect(id);
-  const parentSelect = document.getElementById(
-    "folder-parent",
-  ) as HTMLSelectElement;
-  if (parentSelect) parentSelect.value = folder.parent_id || "";
-
-  // Change button text
-  const form = document.getElementById("folder-form");
-  if (form) {
-    const btn = form.querySelector('button[type="submit"]');
-    if (btn) btn.textContent = "Save";
-  }
-
-  openModal("folder-modal");
+  modalController.openFolderModal(folderData);
 }
 
 // Navigate to folder by index

@@ -2,6 +2,11 @@ import { useRef, useEffect, useState } from "react";
 import { useModal } from "@contexts/ModalContext";
 import { useFolders } from "@contexts/FoldersContext";
 import { createFocusTrap, removeFocusTrap } from "@utils/focus-trap.ts";
+import {
+  fetchMetadata,
+  createBookmark,
+  updateBookmark,
+} from "@features/bookmarks/bookmarks.ts";
 
 const COLOR_OPTIONS = [
   { color: "", label: "No color" },
@@ -21,9 +26,6 @@ export default function BookmarkModal() {
   const { closeModal, bookmarkFormData, setBookmarkFormData } = useModal();
   const { folders } = useFolders();
   const modalRef = useRef<HTMLDivElement>(null);
-  const [selectedColor, setSelectedColor] = useState<string>(
-    bookmarkFormData.color || "",
-  );
   const [isFetching, setIsFetching] = useState(false);
 
   useEffect(() => {
@@ -47,9 +49,22 @@ export default function BookmarkModal() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Form submission will be handled by feature files
-    // For now, just close the modal
-    closeModal();
+
+    const data = {
+      url: bookmarkFormData.url,
+      title: bookmarkFormData.title,
+      description: bookmarkFormData.description,
+      folder_id: bookmarkFormData.folderId || undefined,
+      color: bookmarkFormData.color,
+      tags: bookmarkFormData.tags,
+    };
+
+    if (bookmarkFormData.id) {
+      await updateBookmark(bookmarkFormData.id, data);
+    } else {
+      await createBookmark(data);
+    }
+    // createBookmark/updateBookmark call closeModals() internally
   };
 
   const handleFetchMetadata = async () => {
@@ -57,19 +72,27 @@ export default function BookmarkModal() {
 
     setIsFetching(true);
     try {
-      // Call to API or feature module to fetch metadata
-      // This will be integrated with the existing bookmarks feature
-      console.log("Fetching metadata for:", bookmarkFormData.url);
+      const metadata = await fetchMetadata(bookmarkFormData.url);
+      setBookmarkFormData({
+        title: metadata.title || bookmarkFormData.title,
+        description: metadata.description || bookmarkFormData.description,
+      });
+
+      // Show smart suggestions
+      import("@features/bookmarks/smart-organization-ui.ts").then(
+        ({ showSmartTagSuggestions }) =>
+          showSmartTagSuggestions(bookmarkFormData.url),
+      );
     } catch (error) {
-      console.error("Failed to fetch metadata:", error);
+      // Error handling is done in fetchMetadata (logger)
+      // and createBookmark/updateBookmark (toast)
     } finally {
       setIsFetching(false);
     }
   };
 
   const handleColorSelect = (color: string) => {
-    setSelectedColor(color);
-    setBookmarkFormData({ ...bookmarkFormData, color });
+    setBookmarkFormData({ color });
   };
 
   const isEditing = Boolean(bookmarkFormData.id);
@@ -285,7 +308,7 @@ export default function BookmarkModal() {
                   key={option.color || "none"}
                   type="button"
                   className={`color-option-bookmark ${
-                    selectedColor === option.color ? "active" : ""
+                    bookmarkFormData.color === option.color ? "active" : ""
                   }`}
                   style={
                     {

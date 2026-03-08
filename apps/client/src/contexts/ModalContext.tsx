@@ -20,6 +20,7 @@ export interface BookmarkFormData {
 }
 
 export interface TagFormData {
+  id?: string;
   name: string;
   color: string;
 }
@@ -50,7 +51,7 @@ interface ModalState {
 
 interface ModalActions {
   openBookmarkModal: (data?: Partial<BookmarkFormData>) => void;
-  openTagModal: (tagName: string, color: string) => void;
+  openTagModal: (data: { id?: string; name: string; color?: string }) => void;
   openFolderModal: (data?: Partial<FolderFormData>) => void;
   openSettingsModal: (tab?: string) => void;
   openFilterModal: () => void;
@@ -110,10 +111,21 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     setOpenModal("bookmark");
   }, []);
 
-  const openTagModal = useCallback((tagName: string, color: string) => {
-    setTagFormDataState({ name: tagName, color });
-    setOpenModal("tag");
-  }, []);
+  const openTagModal = useCallback(
+    ({
+      id,
+      name,
+      color = "#f59e0b",
+    }: {
+      id?: string;
+      name: string;
+      color?: string;
+    }) => {
+      setTagFormDataState({ id, name, color });
+      setOpenModal("tag");
+    },
+    [],
+  );
 
   const openFolderModal = useCallback((data?: Partial<FolderFormData>) => {
     setFolderFormDataState({
@@ -181,8 +193,8 @@ export function ModalProvider({ children }: { children: ReactNode }) {
           openBookmarkModal(action.payload);
           break;
         case "open-tag": {
-          const { tagName = "", color = "#f59e0b" } = action.payload || {};
-          openTagModal(tagName, color);
+          const { id, name = "", color = "#f59e0b" } = action.payload || {};
+          openTagModal({ id, name, color });
           break;
         }
         case "open-folder":

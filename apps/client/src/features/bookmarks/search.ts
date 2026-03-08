@@ -6,7 +6,7 @@
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { escapeHtml, parseTagInput, pluralize } from "@utils/index.ts";
-import { showToast, updateActiveNav } from "@utils/ui-helpers.ts";
+import { closeModals, showToast, updateActiveNav } from "@utils/ui-helpers.ts";
 import { Badge } from "@components/Badge.ts";
 import { Icon } from "@components/Icon.ts";
 import type { Collection, Tag } from "../../types/index";
@@ -483,6 +483,28 @@ export async function renameTagAcross(from: string, to: string): Promise<void> {
   showToast(`Renamed ${from} → ${to}`, "success");
 }
 
+// Fetch and sort tag stats
+export async function fetchTagStats(): Promise<TagStatItem[]> {
+  const tags = await api<any[]>("/tags");
+  if (!tags || tags.length === 0) return [];
+
+  const sortMode = state.filterConfig.tagSort || "count_desc";
+  tags.sort((a: TagStatItem, b: TagStatItem) => {
+    switch (sortMode) {
+      case "count_asc":
+        return a.count - b.count;
+      case "name_asc":
+        return a.name.localeCompare(b.name);
+      case "name_desc":
+        return b.name.localeCompare(a.name);
+      case "count_desc":
+      default:
+        return b.count - a.count;
+    }
+  });
+  return tags;
+}
+
 // Load tag stats
 export async function loadTagStats(): Promise<void> {
   const tagStatsList = document.getElementById(
@@ -491,8 +513,8 @@ export async function loadTagStats(): Promise<void> {
   if (!tagStatsList) return;
 
   try {
-    const tags = await api<any[]>("/tags");
-    if (!tags || tags.length === 0) {
+    const tags = await fetchTagStats();
+    if (tags.length === 0) {
       tagStatsList.innerHTML =
         '<div class="text-tertiary" style="font-size:0.9rem;">No tags yet</div>';
       updateTagRenameUndoButton();
@@ -502,22 +524,6 @@ export async function loadTagStats(): Promise<void> {
     const tagStatsListElement = tagStatsList as HTMLElement & {
       _allTags: TagStatItem[];
     };
-    // Sort tags based on user preference
-    const sortMode = state.filterConfig.tagSort || "count_desc";
-    tags.sort((a: TagStatItem, b: TagStatItem) => {
-      switch (sortMode) {
-        case "count_asc":
-          return a.count - b.count;
-        case "name_asc":
-          return a.name.localeCompare(b.name);
-        case "name_desc":
-          return b.name.localeCompare(a.name);
-        case "count_desc":
-        default:
-          return b.count - a.count;
-      }
-    });
-
     // Store tags for filtering
     tagStatsListElement._allTags = tags;
 
@@ -568,7 +574,7 @@ function renderTagStatsList(tags: TagStatItem[]): void {
     el.addEventListener("click", () => {
       openTagModal({
         id: el.dataset.id,
-        name: el.dataset.name,
+        name: el.dataset.name || "",
         color: el.dataset.color,
       });
     });
@@ -740,54 +746,34 @@ export async function renderTagsForFilter(
   });
 }
 
+import * as modalController from "@utils/modal-controller.ts";
+
 // Tag Modal
 export function openTagModal(tag: {
   id?: string;
-  name?: string;
+  name: string;
   color?: string;
 }): void {
-  const modal = document.getElementById("tag-modal");
-  const form = document.getElementById("tag-form");
-  const tagIdInput = document.getElementById("tag-id") as HTMLInputElement;
-  const tagNameInput = document.getElementById("tag-name") as HTMLInputElement;
-  const tagColorInput = document.getElementById(
-    "tag-color",
-  ) as HTMLInputElement;
-
-  if (!modal) return;
-  if (!form) return;
-  if (!tagIdInput || !tagNameInput || !tagColorInput) return;
-
-  tagIdInput.value = tag.id || "";
-  tagNameInput.value = tag.name || "";
-
-  // Set color
-  const color = tag.color || "#f59e0b";
-  tagColorInput.value = color;
-
-  document.querySelectorAll(".color-option-tag").forEach((btn: Element) => {
-    if ((btn as HTMLElement).dataset.color === color) {
-      btn.classList.add("active");
-    } else {
-      btn.classList.remove("active");
-    }
-  });
-
-  // Use openModal to properly attach event listeners (including close button)
-  import("@utils/ui-helpers.ts").then(({ openModal }) => {
-    openModal("tag-modal");
-    tagNameInput.focus();
-  });
+  modalController.openTagModal(tag);
 }
 
-export async function handleTagSubmit(e: Event): Promise<void> {
-  e.preventDefault();
-  const id = (document.getElementById("tag-id") as HTMLInputElement).value;
-  const name = (
-    document.getElementById("tag-name") as HTMLInputElement
-  ).value.trim();
-  const color = (document.getElementById("tag-color") as HTMLInputElement)
-    .value;
+export async function handleTagSubmit(
+  e?: Event,
+  tagData?: { id?: string; name?: string; color?: string },
+): Promise<void> {
+  if (e) e.preventDefault();
+
+  const id =
+    tagData?.id ??
+    (document.getElementById("tag-id") as HTMLInputElement)?.value;
+  const name =
+    (
+      tagData?.name ??
+      (document.getElementById("tag-name") as HTMLInputElement)?.value
+    )?.trim() || "";
+  const color =
+    tagData?.color ??
+    (document.getElementById("tag-color") as HTMLInputElement)?.value;
 
   if (!name) return;
 
@@ -797,8 +783,7 @@ export async function handleTagSubmit(e: Event): Promise<void> {
       body: JSON.stringify({ name, color }),
     });
 
-    const modal = document.getElementById("tag-modal");
-    if (modal) modal.classList.add("hidden");
+    closeModals();
     loadTagStats(); // Reload stats
 
     // request refresh of dashboard or sidebar if needed

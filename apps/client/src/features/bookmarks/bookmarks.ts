@@ -11,7 +11,6 @@ import {
   dom,
   showToast,
   closeModals,
-  openModal,
   updateCounts,
   getEmptyStateMessage,
   updateBulkUI,
@@ -565,6 +564,30 @@ async function processOGImageFetch(
   }
 }
 
+/**
+ * Fetch metadata for a URL
+ */
+export async function fetchMetadata(url: string): Promise<{
+  title?: string;
+  description?: string;
+  og_image?: string;
+}> {
+  try {
+    const metadata = await api<{
+      title?: string;
+      description?: string;
+      og_image?: string;
+    }>("/bookmarks/fetch-metadata", {
+      method: "POST",
+      body: JSON.stringify({ url }),
+    });
+    return metadata;
+  } catch (err) {
+    logger.error("Failed to fetch metadata", { url, err });
+    throw err;
+  }
+}
+
 function updateRichCardImage(bookmarkId: string, ogImage: string): void {
   const card = document.querySelector(
     `.rich-bookmark-card[data-id="${bookmarkId}"]`,
@@ -888,65 +911,24 @@ export async function trackClick(id: string): Promise<void> {
 }
 
 // Edit bookmark (populate form)
+import * as modalController from "@utils/modal-controller.ts";
+
 export async function editBookmark(id: string): Promise<void> {
   const bookmark = findBookmarkById(id);
   if (!bookmark) return;
 
-  document.getElementById("bookmark-modal-title")!.textContent =
-    "Edit Bookmark";
-  (document.getElementById("bookmark-id") as HTMLInputElement).value = id;
-  (document.getElementById("bookmark-url") as HTMLInputElement).value =
-    bookmark.url;
-  (document.getElementById("bookmark-title") as HTMLInputElement).value =
-    bookmark.title;
-  (document.getElementById("bookmark-description") as HTMLInputElement).value =
-    bookmark.description || "";
-  (document.getElementById("bookmark-folder") as HTMLSelectElement).value =
-    bookmark.folder_id || "";
-  (document.getElementById("bookmark-tags") as HTMLInputElement).value =
-    bookmark.tags || "";
+  const bookmarkData = {
+    id: bookmark.id,
+    url: bookmark.url,
+    title: bookmark.title,
+    description: bookmark.description || "",
+    folderId: bookmark.folder_id || null,
+    tags: bookmark.tags || "",
+    color: bookmark.color || "",
+    favicon: bookmark.favicon || "",
+  };
 
-  // Load color
-  const colorInput = document.getElementById(
-    "bookmark-color",
-  ) as HTMLInputElement;
-  if (colorInput) colorInput.value = bookmark.color || "";
-
-  // Update color picker UI
-  document
-    .querySelectorAll(".color-option-bookmark")
-    .forEach((opt: Element) => {
-      const el = opt as HTMLElement;
-      const optColor = el.dataset.color || "";
-      opt.classList.toggle("active", optColor === (bookmark.color || ""));
-    });
-
-  // Show favicon if available
-  const faviconRow = document.getElementById("bookmark-favicon-row");
-  const faviconImg = document.getElementById(
-    "bookmark-favicon-img",
-  ) as HTMLImageElement | null;
-  if (faviconRow && faviconImg) {
-    if (bookmark.favicon) {
-      faviconImg.src = bookmark.favicon;
-      faviconRow.style.display = "flex";
-    } else {
-      faviconRow.style.display = "none";
-      faviconImg.src = "";
-    }
-  }
-
-  // Load tags into the new tag input system
-  // @ts-ignore
-  const { loadTagsFromInput } =
-    await import("@features/bookmarks/tag-input.ts");
-  loadTagsFromInput(bookmark.tags || "");
-
-  import("@features/bookmarks/smart-organization-ui.ts").then(
-    ({ showSmartTagSuggestions }) => showSmartTagSuggestions(bookmark.url),
-  );
-
-  openModal("bookmark-modal");
+  modalController.openBookmarkModal(bookmarkData);
 }
 
 // Filter by tag

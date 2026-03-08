@@ -51,10 +51,13 @@ export function openBookmarkModal(data?: any) {
 
 /**
  * Open tag modal
- * @param tagName The tag name to edit
- * @param color The tag color
+ * @param tag Object containing id, name and color
  */
-export function openTagModal(tagName: string, color: string) {
+export function openTagModal(tag: {
+  id?: string;
+  name: string;
+  color?: string;
+}) {
   if (!dispatcher) {
     console.warn(
       "Modal dispatcher not initialized. ModalProvider may not be mounted.",
@@ -63,7 +66,7 @@ export function openTagModal(tagName: string, color: string) {
   }
   dispatcher({
     type: "open-tag",
-    payload: { tagName, color },
+    payload: tag,
   });
 }
 
@@ -127,7 +130,7 @@ export function openModal(id: string): void {
       openBookmarkModal();
       break;
     case "tag-modal":
-      openTagModal("", "#f59e0b");
+      openTagModal({ name: "", color: "#f59e0b" });
       break;
     case "folder-modal":
       openFolderModal();

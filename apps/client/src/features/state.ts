@@ -141,6 +141,7 @@ export let tourState = {
 // Misc State
 export let lastTagRenameAction: { from: string; to: string } | null = null;
 export let isInitialLoad: boolean = true;
+export let isWidgetPickerOpen: boolean = false;
 
 // Lazy Loading State
 export const BOOKMARKS_PER_PAGE = 50;
@@ -483,6 +484,10 @@ export function setLastTagRenameAction(
 export function setIsInitialLoad(val: boolean) {
   isInitialLoad = val;
   emit("isInitialLoad", val);
+}
+export function setIsWidgetPickerOpen(val: boolean) {
+  isWidgetPickerOpen = val;
+  emit("isWidgetPickerOpen", val);
 }
 export function setDisplayedCount(val: number) {
   displayedCount = val;

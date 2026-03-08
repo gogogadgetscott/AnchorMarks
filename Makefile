@@ -22,6 +22,8 @@
 	stop-docker restart-docker logs shell logs-docker shell-docker rebuild-docker \
 	create-demo-gif capture-screenshots
 
+.ONESHELL:
+
 # Variables
 ROOT_DIR := $(CURDIR)
 APP_DIR := $(ROOT_DIR)/apps
@@ -127,12 +129,24 @@ stop-all: ## Stop all running development processes
 	@$(MAKE) stop-docker
 	@echo "$(BLUE)Stopping development processes...$(NC)"
 	. $(ENV_FILE) 2>/dev/null || true; \
-	PORT=$$(printf '%s' "$${PORT:-3000}" | tr -d '\r'); \
-	VITE_PORT=$$(printf '%s' "$${VITE_PORT:-5173}" | tr -d '\r'); \
-	BACKEND_PID=$$(lsof -ti:$$PORT 2>/dev/null); \
-	VITE_PID=$$(lsof -ti:$$VITE_PORT 2>/dev/null); \
-	[ -n "$$BACKEND_PID" ] && kill -9 $$BACKEND_PID && echo "$(GREEN)✓ Stopped backend process $$BACKEND_PID on port $$PORT$(NC)" || echo "$(YELLOW)⚠ No backend process found on port $$PORT$(NC)"; \
-	[ -n "$$VITE_PID" ] && kill -9 $$VITE_PID && echo "$(GREEN)✓ Stopped Vite process $$VITE_PID on port $$VITE_PORT$(NC)" || echo "$(YELLOW)⚠ No Vite process found on port $$VITE_PORT$(NC)"
+	\
+	_PORT=$$(printf '%s' "$${PORT:-3000}" | tr -d '\r'); \
+	_VITE_PORT=$$(printf '%s' "$${VITE_PORT:-5173}" | tr -d '\r'); \
+	\
+	if command -v lsof >/dev/null 2>&1; then \
+		_BACKEND_PID=$$(lsof -ti:$$_PORT 2>/dev/null); \
+		_VITE_PID=$$(lsof -ti:$$_VITE_PORT 2>/dev/null); \
+	elif command -v fuser >/dev/null 2>&1; then \
+		_BACKEND_PID=$$(fuser $$_PORT/tcp 2>/dev/null | tr ' ' '\n' | head -1); \
+		_VITE_PID=$$(fuser $$_VITE_PORT/tcp 2>/dev/null | tr ' ' '\n' | head -1); \
+	else \
+		_BACKEND_PID=""; \
+		_VITE_PID=""; \
+		echo "$(YELLOW)⚠ Neither lsof nor fuser available. Install one to stop processes by port.$(NC)"; \
+	fi; \
+	\
+	[ -n "$$_BACKEND_PID" ] && kill -9 $$_BACKEND_PID 2>/dev/null && echo "$(GREEN)✓ Stopped backend process $$_BACKEND_PID on port $$_PORT$(NC)" || echo "$(YELLOW)⚠ No backend process found on port $$_PORT$(NC)"; \
+	[ -n "$$_VITE_PID" ] && kill -9 $$_VITE_PID 2>/dev/null && echo "$(GREEN)✓ Stopped Vite process $$_VITE_PID on port $$_VITE_PORT$(NC)" || echo "$(YELLOW)⚠ No Vite process found on port $$_VITE_PORT$(NC)"
 
 stop-docker: ## Stop Docker containers
 	@echo "$(BLUE)Stopping Docker containers...$(NC)"
@@ -253,13 +267,13 @@ lint: lint-code ## Alias for lint-code (lint and format code)
 
 lint-code: ## Lint and format code
 	@echo "$(BLUE)Linting and formatting code...$(NC)"
-	npx eslint "**/*.js" --config tooling/eslint.config.cjs --fix && npx prettier . --write
+	npx eslint "**/*.{js,ts,cjs,mjs,tsx}" --config tooling/eslint.config.cjs --fix && npx prettier . --write
 	@echo "$(GREEN)✓ Code linted and formatted$(NC)"
 
 
 lint-check: ## Check linting without fixing
 	@echo "$(BLUE)Checking code linting...$(NC)"
-	npx eslint "**/*.js" --config tooling/eslint.config.cjs && npx prettier . --check
+	npx eslint "**/*.{js,ts,cjs,mjs,tsx}" --config tooling/eslint.config.cjs && npx prettier . --check
 	@echo "$(GREEN)✓ Linting check passed$(NC)"
 
 lint-backend: ## Lint backend code only
@@ -280,15 +294,13 @@ clean: clean-all ## Alias for clean-all (clean all artifacts)
 
 clean-frontend: ## Clean frontend build artifacts
 	@echo "$(BLUE)Cleaning frontend...$(NC)"
-	@cd $(BACKEND_DIR) && rm -rf node_modules
-	@cd $(FRONTEND_DIR) && rm -rf dist
+	cd $(FRONTEND_DIR) && rm -rf node_modules dist
 	@echo "$(GREEN)✓ Frontend cleaned$(NC)"
 
 clean-all: clean-frontend ## Clean all build artifacts
 	@echo "$(BLUE)Cleaning all build artifacts...$(NC)"
-	@cd $(BACKEND_DIR) && rm -rf dist
-	@cd $(FRONTEND_DIR) && rm -rf node_modules
-	@cd $(ROOT_DIR) && rm -rf node_modules
+	cd $(BACKEND_DIR) && rm -rf node_modules dist
+	cd $(ROOT_DIR) && rm -rf node_modules
 	@echo "$(GREEN)✓ All artifacts cleaned$(NC)"
 
 reinstall-deps: clean-all ## Clean and reinstall dependencies

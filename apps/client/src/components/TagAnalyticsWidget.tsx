@@ -48,9 +48,7 @@ export function TagAnalyticsWidget({
 }: TagAnalyticsWidgetProps) {
   const [metric, setMetric] = useState(initialSettings.metric || "count");
   const [limit, setLimit] = useState(initialSettings.limit || 20);
-  const [pairSort, setPairSort] = useState(
-    initialSettings.pairSort || "count",
-  );
+  const [pairSort, setPairSort] = useState(initialSettings.pairSort || "count");
   const [colors, setColors] = useState({
     ...DEFAULT_COLORS,
     ...initialSettings.colors,
@@ -123,22 +121,25 @@ export function TagAnalyticsWidget({
     [],
   );
 
-  const toCSV = useCallback(<T extends object>(rows: T[], columns: string[]) => {
-    const header = columns.join(",");
-    const body = rows
-      .map((r) =>
-        columns
-          .map((c) => {
-            const value = (r as Record<string, unknown>)[c];
-            const v = value != null ? String(value) : "";
-            const escaped = v.replace(/"/g, '""');
-            return `"${escaped}"`;
-          })
-          .join(","),
-      )
-      .join("\n");
-    return `${header}\n${body}`;
-  }, []);
+  const toCSV = useCallback(
+    <T extends object>(rows: T[], columns: string[]) => {
+      const header = columns.join(",");
+      const body = rows
+        .map((r) =>
+          columns
+            .map((c) => {
+              const value = (r as Record<string, unknown>)[c];
+              const v = value != null ? String(value) : "";
+              const escaped = v.replace(/"/g, '""');
+              return `"${escaped}"`;
+            })
+            .join(","),
+        )
+        .join("\n");
+      return `${header}\n${body}`;
+    },
+    [],
+  );
 
   const handleExportJSON = useCallback(() => {
     const payload = JSON.stringify({ tags, cooccurrence }, null, 2);
@@ -204,7 +205,9 @@ export function TagAnalyticsWidget({
           marginBottom: "0.5rem",
         }}
       >
-        <label style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+        <label
+          style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}
+        >
           <span style={{ fontSize: "0.75rem", color: "var(--text-tertiary)" }}>
             Metric
           </span>
@@ -218,7 +221,9 @@ export function TagAnalyticsWidget({
             <option value="favorite_count_sum">Favorites</option>
           </select>
         </label>
-        <label style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+        <label
+          style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}
+        >
           <span style={{ fontSize: "0.75rem", color: "var(--text-tertiary)" }}>
             Top N
           </span>
@@ -233,7 +238,9 @@ export function TagAnalyticsWidget({
             <option value="50">50</option>
           </select>
         </label>
-        <label style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+        <label
+          style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}
+        >
           <span style={{ fontSize: "0.75rem", color: "var(--text-tertiary)" }}>
             Pairs Sort
           </span>
@@ -291,50 +298,78 @@ export function TagAnalyticsWidget({
           flexWrap: "wrap",
         }}
       >
-        <label style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+        <label
+          style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}
+        >
           <span style={{ fontSize: "0.75rem", color: "var(--text-tertiary)" }}>
             Usage
           </span>
           <input
             type="color"
             className="tag-analytics-color-usage"
-            style={{ width: "24px", height: "20px", border: "none", cursor: "pointer" }}
+            style={{
+              width: "24px",
+              height: "20px",
+              border: "none",
+              cursor: "pointer",
+            }}
             value={colors.usage}
             onChange={handleColorChange("usage")}
           />
         </label>
-        <label style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+        <label
+          style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}
+        >
           <span style={{ fontSize: "0.75rem", color: "var(--text-tertiary)" }}>
             Clicks
           </span>
           <input
             type="color"
             className="tag-analytics-color-clicks"
-            style={{ width: "24px", height: "20px", border: "none", cursor: "pointer" }}
+            style={{
+              width: "24px",
+              height: "20px",
+              border: "none",
+              cursor: "pointer",
+            }}
             value={colors.clicks}
             onChange={handleColorChange("clicks")}
           />
         </label>
-        <label style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+        <label
+          style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}
+        >
           <span style={{ fontSize: "0.75rem", color: "var(--text-tertiary)" }}>
             Favorites
           </span>
           <input
             type="color"
             className="tag-analytics-color-favorites"
-            style={{ width: "24px", height: "20px", border: "none", cursor: "pointer" }}
+            style={{
+              width: "24px",
+              height: "20px",
+              border: "none",
+              cursor: "pointer",
+            }}
             value={colors.favorites}
             onChange={handleColorChange("favorites")}
           />
         </label>
-        <label style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+        <label
+          style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}
+        >
           <span style={{ fontSize: "0.75rem", color: "var(--text-tertiary)" }}>
             Pairs
           </span>
           <input
             type="color"
             className="tag-analytics-color-pairs"
-            style={{ width: "24px", height: "20px", border: "none", cursor: "pointer" }}
+            style={{
+              width: "24px",
+              height: "20px",
+              border: "none",
+              cursor: "pointer",
+            }}
             value={colors.pairs}
             onChange={handleColorChange("pairs")}
           />

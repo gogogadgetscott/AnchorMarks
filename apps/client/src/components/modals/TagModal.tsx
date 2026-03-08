@@ -1,6 +1,7 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 import { useModal } from "@contexts/ModalContext";
 import { createFocusTrap, removeFocusTrap } from "@utils/focus-trap.ts";
+import { handleTagSubmit, deleteTagById } from "@features/bookmarks/search.ts";
 
 const TAG_COLORS = [
   "#f59e0b",
@@ -17,9 +18,6 @@ const TAG_COLORS = [
 export default function TagModal() {
   const { closeModal, tagFormData, setTagFormData } = useModal();
   const modalRef = useRef<HTMLDivElement>(null);
-  const [selectedColor, setSelectedColor] = useState<string>(
-    tagFormData.color || "#f59e0b",
-  );
 
   useEffect(() => {
     if (modalRef.current) {
@@ -42,13 +40,25 @@ export default function TagModal() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Form submission handled by feature files
-    closeModal();
+    await handleTagSubmit(undefined, tagFormData);
+  };
+
+  const handleDelete = async () => {
+    if (tagFormData.id && tagFormData.name) {
+      const { confirmDialog } = await import("@features/ui/confirm-dialog.ts");
+      const confirmed = await confirmDialog(
+        `Are you sure you want to delete the tag "${tagFormData.name}"? This will remove it from all bookmarks.`,
+        { title: "Delete Tag", confirmText: "Delete", destructive: true },
+      );
+
+      if (confirmed) {
+        await deleteTagById(tagFormData.id, tagFormData.name);
+      }
+    }
   };
 
   const handleColorSelect = (color: string) => {
-    setSelectedColor(color);
-    setTagFormData({ ...tagFormData, color });
+    setTagFormData({ color });
   };
 
   return (
@@ -106,7 +116,7 @@ export default function TagModal() {
                   key={color}
                   type="button"
                   className={`color-option-tag ${
-                    selectedColor === color ? "active" : ""
+                    tagFormData.color === color ? "active" : ""
                   }`}
                   style={
                     {
@@ -118,18 +128,20 @@ export default function TagModal() {
                 />
               ))}
             </div>
-            <input type="hidden" id="tag-color" value={selectedColor} />
           </div>
 
           <div className="modal-footer">
-            <button
-              type="button"
-              className="btn btn-outline-danger"
-              id="delete-tag-btn"
-              style={{ marginRight: "auto" }}
-            >
-              Delete Tag
-            </button>
+            {tagFormData.id && (
+              <button
+                type="button"
+                className="btn btn-outline-danger"
+                id="delete-tag-btn"
+                style={{ marginRight: "auto" }}
+                onClick={handleDelete}
+              >
+                Delete Tag
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-secondary modal-cancel"

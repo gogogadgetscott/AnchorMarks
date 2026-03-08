@@ -1,8 +1,19 @@
-type ReactNode,
-useEffect,
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  type ReactNode,
+  useEffect,
 } from "react";
 import * as state from "../features/state.ts";
-import type { Bookmark, Collection, FilterConfig, Folder, DashboardWidget } from "../types/index";
+import type {
+  Bookmark,
+  Collection,
+  FilterConfig,
+  Folder,
+  DashboardWidget,
+} from "../types/index";
 
 export const BOOKMARKS_PER_PAGE = 50;
 
@@ -68,7 +79,9 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
   const [renderedBookmarks, setRenderedBookmarks] = useState<Bookmark[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
-  const [dashboardWidgets, setDashboardWidgets] = useState<DashboardWidget[]>([]);
+  const [dashboardWidgets, setDashboardWidgets] = useState<DashboardWidget[]>(
+    [],
+  );
   const [totalCount, setTotalCount] = useState(0);
   const [widgetDataCache, setWidgetDataCacheState] = useState<
     Record<string, Bookmark[]>
@@ -95,20 +108,48 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     return state.subscribe((key, value) => {
       switch (key) {
-        case "bookmarks": setBookmarks(value as Bookmark[]); break;
-        case "renderedBookmarks": setRenderedBookmarks(value as Bookmark[]); break;
-        case "folders": setFolders(value as Folder[]); break;
-        case "collections": setCollections(value as Collection[]); break;
-        case "dashboardWidgets": setDashboardWidgets(value as DashboardWidget[]); break;
-        case "totalCount": setTotalCount(value as number); break;
-        case "filterConfig": setFilterConfig(value as FilterConfig); break;
-        case "tagMetadata": setTagMetadata(value as any); break;
-        case "displayedCount": setDisplayedCount(value as number); break;
-        case "isLoading": setIsLoading(value as boolean); break;
-        case "isLoadingMore": setIsLoadingMore(value as boolean); break;
-        case "selectedBookmarks": setSelectedBookmarks(value as Set<string>); break;
-        case "lastSelectedIndex": setLastSelectedIndex(value as number | null); break;
-        case "bulkMode": setBulkMode(value as boolean); break;
+        case "bookmarks":
+          setBookmarks(value as Bookmark[]);
+          break;
+        case "renderedBookmarks":
+          setRenderedBookmarks(value as Bookmark[]);
+          break;
+        case "folders":
+          setFolders(value as Folder[]);
+          break;
+        case "collections":
+          setCollections(value as Collection[]);
+          break;
+        case "dashboardWidgets":
+          setDashboardWidgets(value as DashboardWidget[]);
+          break;
+        case "totalCount":
+          setTotalCount(value as number);
+          break;
+        case "filterConfig":
+          setFilterConfig(value as FilterConfig);
+          break;
+        case "tagMetadata":
+          setTagMetadata(value as any);
+          break;
+        case "displayedCount":
+          setDisplayedCount(value as number);
+          break;
+        case "isLoading":
+          setIsLoading(value as boolean);
+          break;
+        case "isLoadingMore":
+          setIsLoadingMore(value as boolean);
+          break;
+        case "selectedBookmarks":
+          setSelectedBookmarks(value as Set<string>);
+          break;
+        case "lastSelectedIndex":
+          setLastSelectedIndex(value as number | null);
+          break;
+        case "bulkMode":
+          setBulkMode(value as boolean);
+          break;
       }
     });
   }, []);

@@ -1,14 +1,10 @@
+import { ModalPortal } from "@components/modals/ModalPortal.tsx";
 import { Header } from "@components/Header.tsx";
+import { WidgetPicker } from "@components/WidgetPicker.tsx";
 import { BookmarksList } from "@components/BookmarksList.tsx";
 import { useAuth } from "./contexts/AuthContext";
 import authScreen from "@layouts/fragments/auth-screen.html?raw";
 import sidebar from "@layouts/fragments/sidebar.html?raw";
-import bookmarkModal from "@layouts/fragments/bookmark-modal.html?raw";
-import tagModal from "@layouts/fragments/tag-modal.html?raw";
-import folderModal from "@layouts/fragments/folder-modal.html?raw";
-import filterSidebar from "@layouts/fragments/filter-sidebar.html?raw";
-import settingsModal from "@layouts/fragments/settings-modal.html?raw";
-import onboardingTour from "@layouts/fragments/onboarding-tour.html?raw";
 import toast from "@layouts/fragments/toast.html?raw";
 
 const sidebarHtml = sidebar.replace(
@@ -16,15 +12,7 @@ const sidebarHtml = sidebar.replace(
   import.meta.env.VITE_APP_VERSION ?? "",
 );
 
-const externalModalsMarkup = [
-  bookmarkModal,
-  tagModal,
-  folderModal,
-  filterSidebar,
-  settingsModal,
-  onboardingTour,
-  toast,
-].join("\n");
+const externalModalsMarkup = toast;
 
 /**
  * React shell that preserves legacy DOM structure while migration is in progress.
@@ -57,6 +45,7 @@ export function AppShell() {
         <main className="main-content">
           <div id="headers-container">
             <Header />
+            <WidgetPicker />
           </div>
           <div id="bulk-bar-container"></div>
 
@@ -76,7 +65,10 @@ export function AppShell() {
         </main>
       </div>
 
-      {/* Modals & Overlays (Legacy) */}
+      {/* React Modals */}
+      <ModalPortal />
+
+      {/* Legacy Toasts */}
       <div
         style={{ display: "contents" }}
         dangerouslySetInnerHTML={{ __html: externalModalsMarkup }}

@@ -3,16 +3,17 @@ import { useUI } from "../contexts/UIContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useBookmarks } from "../contexts/BookmarksContext";
 import { Icon } from "./Icon.tsx";
-import { Omnibar } from "./Omnibar.tsx";
 import { ViewToggle } from "./ViewToggle.tsx";
 import { UserProfile } from "./UserProfile.tsx";
 import { SelectionUI, BulkAction } from "./SelectionUI.tsx";
+import { DashboardToolbar } from "./DashboardToolbar.tsx";
+import { Omnibar } from "./Omnibar.tsx";
+import { useDashboard } from "../contexts/DashboardContext";
 
 export function Header() {
   const {
     currentView,
     viewMode,
-    hideSidebar,
     viewToolbarConfig,
     isWidgetPickerOpen,
     setViewMode,
@@ -20,6 +21,8 @@ export function Header() {
   } = useUI();
   const { currentUser } = useAuth();
   const { selectedBookmarks } = useBookmarks();
+  const { dashboardHasUnsavedChanges, currentDashboardViewName } =
+    useDashboard();
 
   const config = (viewToolbarConfig[currentView] ?? {}) as Record<
     string,
@@ -82,29 +85,54 @@ export function Header() {
     }
   }, []);
 
+  const handleSaveDashboard = useCallback(async () => {
+    const { saveDashboard } = await import("@features/bookmarks/dashboard.ts");
+    saveDashboard?.();
+  }, []);
+
+  const handleShowViews = useCallback(async () => {
+    const dashboard = await import("@features/bookmarks/dashboard.ts");
+    const initViews = (dashboard as Record<string, unknown>).initDashboardViews;
+    if (typeof initViews === "function") {
+      await initViews();
+      const viewsBtn = document.getElementById("views-btn");
+      viewsBtn?.click();
+    }
+  }, []);
+
+  const handleToggleFullscreen = useCallback(async () => {
+    const { toggleFullscreen } =
+      await import("@features/bookmarks/dashboard.ts");
+    toggleFullscreen?.();
+  }, []);
+
+  const handleLayoutSettings = useCallback(async () => {
+    const { toggleLayoutSettings } =
+      await import("@features/bookmarks/dashboard.ts");
+    toggleLayoutSettings?.();
+  }, []);
+
   const avatarChar = currentUser?.username?.[0]?.toUpperCase() ?? "U";
   const userName = currentUser?.username ?? "User";
 
   return (
-    <header
-      className="content-header"
-      id={`${currentView}-header`}
-      role="banner"
-    >
+    <header className="header" id={`${currentView}-header`} role="banner">
       {!isBulkMode ? (
-        <div className="header-normal-ui">
+        <div className="header-content header-normal-ui">
           <div className="header-left">
             <button
-              className="btn-icon"
-              id={`toggle-sidebar-btn-${currentView}`}
+              id="sidebar-toggle-btn"
+              className="btn-icon sidebar-toggle"
               title="Toggle Sidebar"
               aria-label="Toggle sidebar"
-              aria-expanded={!hideSidebar}
+              aria-expanded="true"
               onClick={handleSidebarToggle}
             >
-              <Icon name="menu" />
+              <Icon name="menu" size={20} />
             </button>
-            <h1>{title}</h1>
+            <h1 id="view-title" className="view-title">
+              {title}
+            </h1>
           </div>
 
           <div className="header-center">
@@ -112,46 +140,65 @@ export function Header() {
           </div>
 
           <div className="header-right">
-            {currentView === "dashboard" && (
-              <button
-                id="dashboard-add-widget-btn"
-                className={`btn btn-primary ${isWidgetPickerOpen ? "active" : ""}`}
-                onClick={() => setIsWidgetPickerOpen(!isWidgetPickerOpen)}
-              >
-                <Icon name="plus" size={16} />
-                <span>Add Widget</span>
-              </button>
+            {currentView === "dashboard" ? (
+              <>
+                <DashboardToolbar
+                  hasUnsavedChanges={dashboardHasUnsavedChanges}
+                  viewName={currentDashboardViewName}
+                  onSaveClick={handleSaveDashboard}
+                  onViewsClick={handleShowViews}
+                  onAddWidgetClick={() =>
+                    setIsWidgetPickerOpen(!isWidgetPickerOpen)
+                  }
+                  onFullscreenClick={handleToggleFullscreen}
+                  onLayoutSettingsClick={handleLayoutSettings}
+                />
+                <UserProfile
+                  name={userName}
+                  avatarChar={avatarChar}
+                  onOpenSettings={handleOpenSettings}
+                  onLogout={handleLogout}
+                />
+              </>
+            ) : (
+              <>
+                {showFilters && (
+                  <button
+                    id="filter-dropdown-btn"
+                    className="btn btn-secondary"
+                    title="Filters"
+                    aria-label="Open filters"
+                    aria-haspopup="true"
+                  >
+                    <Icon name="filter" size={16} />
+                    <span className="filter-btn-text">Filters</span>
+                  </button>
+                )}
+                {showViewToggle && (
+                  <ViewToggle
+                    activeMode={viewMode}
+                    onModeChange={setViewMode}
+                  />
+                )}
+                <UserProfile
+                  name={userName}
+                  avatarChar={avatarChar}
+                  onOpenSettings={handleOpenSettings}
+                  onLogout={handleLogout}
+                />
+              </>
             )}
-            {showFilters && (
-              <button
-                id="filter-dropdown-btn"
-                className="btn btn-secondary"
-                title="Filters"
-                aria-label="Open filters"
-                aria-haspopup="true"
-              >
-                <Icon name="filter" size={16} />
-                <span className="filter-btn-text">Filters</span>
-              </button>
-            )}
-            {showViewToggle && (
-              <ViewToggle activeMode={viewMode} onModeChange={setViewMode} />
-            )}
-            <UserProfile
-              name={userName}
-              avatarChar={avatarChar}
-              onOpenSettings={handleOpenSettings}
-              onLogout={handleLogout}
-            />
           </div>
         </div>
       ) : (
-        <SelectionUI
-          selectionCount={selectionCount}
-          onClear={handleClearSelection}
-          onSelectAll={handleSelectAll}
-          onBulkAction={handleBulkAction}
-        />
+        <div className="header-selection-ui">
+          <SelectionUI
+            selectionCount={selectionCount}
+            onClear={handleClearSelection}
+            onSelectAll={handleSelectAll}
+            onBulkAction={handleBulkAction}
+          />
+        </div>
       )}
     </header>
   );

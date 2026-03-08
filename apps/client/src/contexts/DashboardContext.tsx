@@ -3,8 +3,10 @@ import {
   useContext,
   useState,
   useCallback,
+  useEffect,
   type ReactNode,
 } from "react";
+import * as state from "../features/state.ts";
 import type { DashboardWidget } from "../types/index";
 
 interface DashboardConfig {
@@ -23,7 +25,7 @@ interface DashboardState {
   dashboardHasUnsavedChanges: boolean;
   savedDashboardState: string | null;
   currentDashboardTab: string | null;
-  // Drag/resize state — will move to a dedicated hook once dashboard is ported
+  // Drag/resize state
   draggedWidget: HTMLElement | null;
   isDraggingWidget: boolean;
   dragStartPos: { x: number; y: number };
@@ -108,6 +110,70 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [tagSuggestTimeout, setTagSuggestTimeout] = useState<ReturnType<
     typeof setTimeout
   > | null>(null);
+
+  useEffect(() => {
+    return state.subscribe((key, value) => {
+      switch (key) {
+        case "dashboardConfig":
+          setDashboardConfig(value as DashboardConfig);
+          break;
+        case "dashboardWidgets":
+          setDashboardWidgets(value as DashboardWidget[]);
+          break;
+        case "widgetOrder":
+          setWidgetOrder(value as Record<string, number>);
+          break;
+        case "collapsedSections":
+          setCollapsedSections(value as string[]);
+          break;
+        case "currentDashboardViewName":
+          setCurrentDashboardViewName(value as string | null);
+          break;
+        case "currentDashboardViewId":
+          setCurrentDashboardViewId(value as string | null);
+          break;
+        case "dashboardHasUnsavedChanges":
+          setDashboardHasUnsavedChanges(value as boolean);
+          break;
+        case "savedDashboardState":
+          setSavedDashboardState(value as string | null);
+          break;
+        case "currentDashboardTab":
+          setCurrentDashboardTab(value as string | null);
+          break;
+        case "draggedWidget":
+          setDraggedWidget(value as HTMLElement | null);
+          break;
+        case "isDraggingWidget":
+          setIsDraggingWidget(value as boolean);
+          break;
+        case "dragStartPos":
+          setDragStartPos(value as { x: number; y: number });
+          break;
+        case "widgetStartPos":
+          setWidgetStartPos(value as { x: number; y: number });
+          break;
+        case "isResizing":
+          setIsResizing(value as boolean);
+          break;
+        case "resizingWidget":
+          setResizingWidget(value as HTMLElement | null);
+          break;
+        case "resizeStartSize":
+          setResizeStartSize(value as { w: number; h: number });
+          break;
+        case "sidebarPopout":
+          setSidebarPopout(value as HTMLElement | null);
+          break;
+        case "popoutTimeout":
+          setPopoutTimeout(value as any);
+          break;
+        case "tagSuggestTimeout":
+          setTagSuggestTimeout(value as any);
+          break;
+      }
+    });
+  }, []);
 
   const value: DashboardContextValue = {
     dashboardConfig,

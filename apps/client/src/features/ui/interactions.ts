@@ -375,9 +375,7 @@ function initGlobalDelegation(): void {
       }
       case "toggle-widget-picker":
         e.stopPropagation();
-        import("@features/bookmarks/widget-picker.ts").then(
-          ({ toggleWidgetPicker }) => toggleWidgetPicker(),
-        );
+        state.setIsWidgetPickerOpen(!state.isWidgetPickerOpen);
         break;
       case "toggle-layout-settings":
         e.stopPropagation();

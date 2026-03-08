@@ -1,7 +1,12 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 import { useModal } from "@contexts/ModalContext";
 import { useFolders } from "@contexts/FoldersContext";
 import { createFocusTrap, removeFocusTrap } from "@utils/focus-trap.ts";
+import {
+  createFolder,
+  updateFolder,
+  deleteFolder,
+} from "@features/bookmarks/folders.ts";
 
 const FOLDER_COLORS = [
   "#6366f1",
@@ -20,9 +25,6 @@ export default function FolderModal() {
   const { closeModal, folderFormData, setFolderFormData } = useModal();
   const { folders } = useFolders();
   const modalRef = useRef<HTMLDivElement>(null);
-  const [selectedColor, setSelectedColor] = useState<string>(
-    folderFormData.color || "#6366f1",
-  );
 
   useEffect(() => {
     if (modalRef.current) {
@@ -45,13 +47,29 @@ export default function FolderModal() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Form submission handled by feature files
-    closeModal();
+
+    const data = {
+      name: folderFormData.name,
+      parent_id: folderFormData.parentId || undefined,
+      color: folderFormData.color,
+    };
+
+    if (folderFormData.id) {
+      await updateFolder(folderFormData.id, data);
+    } else {
+      await createFolder(data);
+    }
+    // closeModals() is called inside updateFolder/createFolder
+  };
+
+  const handleDelete = async () => {
+    if (folderFormData.id) {
+      await deleteFolder(folderFormData.id);
+    }
   };
 
   const handleColorSelect = (color: string) => {
-    setSelectedColor(color);
-    setFolderFormData({ ...folderFormData, color });
+    setFolderFormData({ color });
   };
 
   const isEditing = Boolean(folderFormData.id);
@@ -143,7 +161,7 @@ export default function FolderModal() {
                   key={color}
                   type="button"
                   className={`color-option ${
-                    selectedColor === color ? "active" : ""
+                    folderFormData.color === color ? "active" : ""
                   }`}
                   style={
                     {
@@ -155,10 +173,20 @@ export default function FolderModal() {
                 />
               ))}
             </div>
-            <input type="hidden" id="folder-color" value={selectedColor} />
           </div>
 
           <div className="modal-footer">
+            {folderFormData.id && (
+              <button
+                type="button"
+                className="btn btn-outline-danger"
+                id="delete-folder-btn"
+                style={{ marginRight: "auto" }}
+                onClick={handleDelete}
+              >
+                Delete Folder
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-secondary modal-cancel"

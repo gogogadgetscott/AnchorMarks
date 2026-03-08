@@ -78,8 +78,6 @@ function getWidgetCacheKey(widget: DashboardWidget): string {
   return `${widget.type}:${linkedId}`;
 }
 
-
-
 function getWidgetBookmarks(widget: DashboardWidget): Bookmark[] {
   const cacheKey = getWidgetCacheKey(widget);
   const cached = state.widgetDataCache[cacheKey];
@@ -660,7 +658,6 @@ export async function renderDashboard(): Promise<void> {
   }
 }
 
-
 /**
  * Initialize tag analytics widgets
  */
@@ -1196,9 +1193,6 @@ export function initDashboardDragDrop(): void {
     });
 }
 
-
-
-
 /**
  * Update widget sort order
  */
@@ -1305,7 +1299,6 @@ async function showWidgetInBookmarksView(
   }
 }
 
-
 /**
  * Update widget color
  */
@@ -1317,7 +1310,6 @@ function updateWidgetColor(index: number, color: string): void {
     showToast("Widget color updated", "success");
   }
 }
-
 
 /**
  * Add a new dashboard widget

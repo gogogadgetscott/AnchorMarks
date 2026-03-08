@@ -3,8 +3,10 @@ import {
   useContext,
   useState,
   useCallback,
+  useEffect,
   type ReactNode,
 } from "react";
+import { subscribe } from "../features/state";
 import type { TourStep } from "../types/index";
 
 type ViewMode = "grid" | "list" | "compact";
@@ -161,6 +163,14 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [viewToolbarConfig, setViewToolbarConfigState] = useState(
     defaultViewToolbarConfig,
   );
+
+  useEffect(() => {
+    return subscribe((key, value) => {
+      if (key === "isWidgetPickerOpen") {
+        setIsWidgetPickerOpen(value as boolean);
+      }
+    });
+  }, []);
 
   // setCurrentView carries body class side-effects from the legacy system.
   // These will be removed as views are fully ported to React.
