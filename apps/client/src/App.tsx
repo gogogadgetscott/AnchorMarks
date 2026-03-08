@@ -18,29 +18,10 @@ export function App() {
     const savedTheme = safeLocalStorage.getItem("anchormarks_theme");
     if (savedTheme) {
       document.documentElement.setAttribute("data-theme", savedTheme);
-      const themeSelect = document.getElementById(
-        "theme-select",
-      ) as HTMLSelectElement;
-      if (themeSelect) themeSelect.value = savedTheme;
-    }
-
-    // Security: hide auth forms if user might be authenticated
-    const authScreen = document.getElementById("auth-screen");
-    if (authScreen && !authScreen.classList.contains("hidden")) {
-      ["login-form", "register-form"].forEach((id) => {
-        const form = document.getElementById(id);
-        if (form) {
-          form.setAttribute("data-bitwarden-watching", "false");
-          form.setAttribute("data-lpignore", "true");
-          form.style.display = "none";
-        }
-      });
     }
 
     // Initialize global listeners
     Promise.all([
-      import("@features/ui/navigation.ts"),
-      import("@features/ui/forms.ts"),
       import("@features/ui/interactions.ts"),
       import("@features/ui/tags.ts"),
       import("@features/keyboard/handler.ts"),
@@ -48,17 +29,12 @@ export function App() {
       import("@features/auth/auth.ts").then((m) => m.checkAuth()),
     ]).then(
       ([
-        { initNavigationListeners },
-        { initFormListeners },
         { initInteractions },
         { initTagListeners },
         { handleKeyboard },
         { registerGlobalCleanup },
         isAuthed,
       ]) => {
-        initNavigationListeners();
-        initFormListeners();
-
         if (!isAuthed) {
           import("@features/ui/omnibar.ts").then(({ initOmnibarListeners }) => {
             initOmnibarListeners();
@@ -74,6 +50,82 @@ export function App() {
           capture: true,
           signal: globalSignal.signal,
         });
+
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+            document.body.classList.remove("mobile-sidebar-open");
+            import("@utils/ui-helpers.ts").then((m) => m.closeModals());
+          }
+        }, { signal: globalSignal.signal });
+
+        // Global Resize listener
+        window.addEventListener("resize", () => {
+          if (window.innerWidth > 1024) {
+            document.body.classList.remove("mobile-sidebar-open");
+          }
+        }, { signal: globalSignal.signal });
+
+        // Image Load/Error Delegation
+        document.addEventListener("load", (e) => {
+          const target = e.target as HTMLElement;
+          if (target instanceof HTMLImageElement && target.classList.contains("img-loading")) {
+            target.classList.add("img-loaded");
+          }
+        }, { capture: true, signal: globalSignal.signal });
+
+        const faviconRefreshQueue: Array<{ id: string; target: HTMLImageElement }> = [];
+        let faviconRefreshRunning = false;
+
+        const processFaviconQueue = async () => {
+          if (faviconRefreshRunning || faviconRefreshQueue.length === 0) return;
+          faviconRefreshRunning = true;
+          const { api } = await import("@services/api.ts");
+
+          while (faviconRefreshQueue.length > 0) {
+            const item = faviconRefreshQueue.shift();
+            if (!item) continue;
+            try {
+              const res = await api<{ favicon?: string }>(`/bookmarks/${item.id}/refresh-favicon`, { method: "POST" });
+              if (res?.favicon && item.target.parentElement) {
+                const parent = item.target.parentElement;
+                const url = String(res.favicon).trim();
+                const safe = url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/");
+                if (safe) {
+                  const img = document.createElement("img");
+                  img.className = "bookmark-favicon-img";
+                  img.loading = "lazy";
+                  img.src = `${url}?t=${Date.now()}`;
+                  parent.innerHTML = "";
+                  parent.appendChild(img);
+                }
+              }
+            } catch { /* ignore fallback already shown */ }
+            await new Promise(r => setTimeout(r, 100));
+          }
+          faviconRefreshRunning = false;
+        };
+
+        document.addEventListener("error", (e) => {
+          const target = e.target as HTMLElement;
+          if (!(target instanceof HTMLImageElement)) return;
+
+          if (target.classList.contains("bookmark-favicon-img")) {
+            const iconHtml = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon icon-link" style="width: 24px; height: 24px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
+            if (target.parentElement) target.parentElement.innerHTML = iconHtml;
+
+            if (target.dataset.retryAttempted !== "true") {
+              target.dataset.retryAttempted = "true";
+              const card = target.closest(".bookmark-card") as HTMLElement;
+              const id = card?.dataset.id;
+              if (id) {
+                faviconRefreshQueue.push({ id, target });
+                processFaviconQueue();
+              }
+            }
+          } else if (target.classList.contains("command-favicon") || target.closest(".blocked-link-item") || target.hasAttribute("data-fallback")) {
+            target.style.display = "none";
+          }
+        }, { capture: true, signal: globalSignal.signal });
       },
     );
   }, []);

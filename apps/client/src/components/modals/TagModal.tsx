@@ -131,17 +131,16 @@ export default function TagModal() {
           </div>
 
           <div className="modal-footer">
-            {tagFormData.id && (
-              <button
-                type="button"
-                className="btn btn-outline-danger"
-                id="delete-tag-btn"
-                style={{ marginRight: "auto" }}
-                onClick={handleDelete}
-              >
-                Delete Tag
-              </button>
-            )}
+            <button
+              type="button"
+              className="btn btn-outline-danger"
+              id="delete-tag-btn"
+              style={{ marginRight: "auto" }}
+              onClick={handleDelete}
+              disabled={!tagFormData.id || !tagFormData.name}
+            >
+              Delete Tag
+            </button>
             <button
               type="button"
               className="btn btn-secondary modal-cancel"

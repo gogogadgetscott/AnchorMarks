@@ -11,11 +11,6 @@ import {
   dom,
   showToast,
   closeModals,
-  updateCounts,
-  getEmptyStateMessage,
-  updateBulkUI,
-  updateActiveNav,
-  updateStats,
 } from "@utils/ui-helpers.ts";
 import { Bookmark, Tag } from "../../types/index";
 import {
@@ -42,26 +37,8 @@ export function invalidateTagMetadataCache(): void {
 /**
  * Render skeletons while loading
  */
-export function renderSkeletons(): void {
-  const container =
-    (dom.mainViewOutlet?.isConnected ? dom.mainViewOutlet : null) ||
-    document.getElementById("main-view-outlet");
-  if (!container) return;
-
-  // Set container class based on view mode
-  const classMap = {
-    grid: "bookmarks-grid",
-    list: "bookmarks-list",
-    compact: "bookmarks-compact",
-  };
-  container.className = classMap[state.viewMode] || "bookmarks-grid";
-
-  // Render 8 skeleton cards
-  container.innerHTML = Array(8)
-    .fill(null)
-    .map(() => SkeletonCard())
-    .join("");
-}
+/** @deprecated Managed by React (BookmarksList) */
+export function renderSkeletons(): void { }
 
 // Load bookmarks from server
 export async function loadBookmarks(): Promise<void> {
@@ -110,8 +87,8 @@ export async function loadBookmarks(): Promise<void> {
         state.currentView === "most-used"
           ? "most_visited"
           : state.filterConfig.sort ||
-            state.dashboardConfig.bookmarkSort ||
-            "recently_added";
+          state.dashboardConfig.bookmarkSort ||
+          "recently_added";
       params.append("sort", sortOption);
 
       // Server handles all filtering for favorites, archived, recent, and most-used views
@@ -154,9 +131,9 @@ export async function loadBookmarks(): Promise<void> {
       api<any>(endpoint),
       shouldFetchTags
         ? api<any[]>("/tags").catch((err: unknown) => {
-            logger.error("Failed to load tag metadata", err);
-            return null;
-          })
+          logger.error("Failed to load tag metadata", err);
+          return null;
+        })
         : Promise.resolve(null),
     ]);
 
@@ -429,8 +406,8 @@ export async function loadMoreBookmarks(): Promise<void> {
         state.currentView === "most-used"
           ? "most_visited"
           : state.filterConfig.sort ||
-            state.dashboardConfig.bookmarkSort ||
-            "recently_added";
+          state.dashboardConfig.bookmarkSort ||
+          "recently_added";
       params.append("sort", sortOption);
     }
 

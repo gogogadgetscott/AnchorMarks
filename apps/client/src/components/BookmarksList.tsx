@@ -262,17 +262,7 @@ export function BookmarksList() {
   }
 
   if (!filtered.length) {
-    const hasActiveFilters =
-      filterConfig.tags.length > 0 || !!filterConfig.search;
-    return (
-      <div id="empty-state" className="empty-state">
-        <p>
-          {hasActiveFilters
-            ? "No bookmarks match your filters."
-            : "No bookmarks yet."}
-        </p>
-      </div>
-    );
+    return null; // EmptyState component in AppShell handles this
   }
 
   const containerClass =

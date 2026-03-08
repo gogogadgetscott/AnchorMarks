@@ -5,6 +5,7 @@ import { UIProvider } from "./UIContext";
 import { FoldersProvider } from "./FoldersContext";
 import { DashboardProvider } from "./DashboardContext";
 import { ModalProvider } from "./ModalContext";
+import { ToastProvider } from "./ToastContext";
 
 /**
  * Composes all context providers into a single wrapper.
@@ -13,15 +14,17 @@ import { ModalProvider } from "./ModalContext";
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
-      <UIProvider>
-        <FoldersProvider>
-          <BookmarksProvider>
-            <DashboardProvider>
-              <ModalProvider>{children}</ModalProvider>
-            </DashboardProvider>
-          </BookmarksProvider>
-        </FoldersProvider>
-      </UIProvider>
+      <ToastProvider>
+        <UIProvider>
+          <FoldersProvider>
+            <BookmarksProvider>
+              <DashboardProvider>
+                <ModalProvider>{children}</ModalProvider>
+              </DashboardProvider>
+            </BookmarksProvider>
+          </FoldersProvider>
+        </UIProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }

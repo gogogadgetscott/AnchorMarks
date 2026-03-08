@@ -41,6 +41,7 @@ const defaultTourSteps: TourStep[] = [
 
 interface UIState {
   currentView: string;
+  currentFolder: string | null;
   viewMode: ViewMode;
   hideFavicons: boolean;
   hideSidebar: boolean;
@@ -63,6 +64,7 @@ interface UIState {
 
 interface UIActions {
   setCurrentView: (val: string) => void;
+  setCurrentFolder: (val: string | null) => void;
   setViewMode: (val: ViewMode) => void;
   setHideFavicons: (val: boolean) => void;
   setHideSidebar: (val: boolean) => void;
@@ -134,6 +136,7 @@ const defaultViewToolbarConfig: Record<string, Record<string, unknown>> = {
 
 export function UIProvider({ children }: { children: ReactNode }) {
   const [currentView, setCurrentViewState] = useState("dashboard");
+  const [currentFolder, setCurrentFolderState] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [hideFavicons, setHideFavicons] = useState(false);
   const [hideSidebar, setHideSidebar] = useState(false);
@@ -168,6 +171,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
     return subscribe((key, value) => {
       if (key === "isWidgetPickerOpen") {
         setIsWidgetPickerOpen(value as boolean);
+      } else if (key === "currentFolder") {
+        setCurrentFolderState(value as string | null);
       }
     });
   }, []);
@@ -179,6 +184,10 @@ export function UIProvider({ children }: { children: ReactNode }) {
     document.body.classList.toggle("tag-cloud-active", val === "tag-cloud");
     document.body.classList.toggle("analytics-active", val === "analytics");
     setCurrentViewState(val);
+  }, []);
+
+  const setCurrentFolder = useCallback((val: string | null) => {
+    setCurrentFolderState(val);
   }, []);
 
   const setViewToolbarConfig = useCallback(
@@ -193,6 +202,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
 
   const value: UIContextValue = {
     currentView,
+    currentFolder,
     viewMode,
     hideFavicons,
     hideSidebar,
@@ -212,6 +222,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
     lastTagRenameAction,
     viewToolbarConfig,
     setCurrentView,
+    setCurrentFolder,
     setViewMode: useCallback((val) => setViewMode(val), []),
     setHideFavicons: useCallback((val) => setHideFavicons(val), []),
     setHideSidebar: useCallback((val) => setHideSidebar(val), []),

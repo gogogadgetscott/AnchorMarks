@@ -52,23 +52,34 @@ export function openBookmarkModal(data?: any) {
 }
 
 /**
- * Open tag modal
- * @param tag Object containing id, name and color
+ * Open tag modal.
+ * Supports both legacy `(tagName, color)` and object input.
  */
-export function openTagModal(tag: {
-  id?: string;
-  name: string;
-  color?: string;
-}) {
+export function openTagModal(
+  tagOrName: { id?: string; name?: string; color?: string } | string,
+  colorArg?: string,
+) {
   if (!dispatcher) {
     console.warn(
       "Modal dispatcher not initialized. ModalProvider may not be mounted.",
     );
     return;
   }
+
+  const normalized =
+    typeof tagOrName === "string"
+      ? { name: tagOrName, color: colorArg }
+      : tagOrName;
+
+  const payload = {
+    id: normalized.id,
+    tagName: normalized.name ?? "",
+    color: normalized.color ?? "#f59e0b",
+  };
+
   dispatcher({
     type: "open-tag",
-    payload: tag,
+    payload,
   });
 }
 
@@ -158,7 +169,7 @@ export function openModal(id: string): void {
       openBookmarkModal();
       break;
     case "tag-modal":
-      openTagModal({ name: "", color: "#f59e0b" });
+      openTagModal("", "#f59e0b");
       break;
     case "folder-modal":
       openFolderModal();

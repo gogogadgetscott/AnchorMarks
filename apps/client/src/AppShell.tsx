@@ -1,4 +1,3 @@
-import React from "react";
 import { Sidebar } from "@components/Sidebar.tsx";
 import { Header } from "@components/Header.tsx";
 import { WidgetPicker } from "@components/WidgetPicker.tsx";
@@ -6,14 +5,14 @@ import { BookmarksList } from "@components/BookmarksList.tsx";
 import { BulkBar } from "@components/BulkBar.tsx";
 import { AuthScreen } from "@components/AuthScreen.tsx";
 import { ModalPortal } from "@components/modals/ModalPortal.tsx";
+import { EmptyState } from "@components/EmptyState.tsx";
 import { useAuth } from "./contexts/AuthContext";
 import { useBookmarks } from "./contexts/BookmarksContext";
-import toastHtml from "@layouts/fragments/toast.html?raw";
 
 /**
  * AppShell handles the overall layout and conditional rendering based on auth status.
  */
-export default function AppShell() {
+export function AppShell() {
   const { isAuthenticated } = useAuth();
   const { bulkMode } = useBookmarks();
 
@@ -23,7 +22,11 @@ export default function AppShell() {
         <AuthScreen />
       ) : (
         <div id="main-app" className="main-app">
-          <div className="sidebar-backdrop" id="sidebar-backdrop"></div>
+          <div
+            className="sidebar-backdrop"
+            id="sidebar-backdrop"
+            onClick={() => document.body.classList.remove("mobile-sidebar-open")}
+          ></div>
 
           <Sidebar />
 
@@ -37,10 +40,7 @@ export default function AppShell() {
 
             <div className="content-body">
               <BookmarksList />
-
-              <div id="empty-state-container">
-                <div id="empty-state" className="empty-state hidden"></div>
-              </div>
+              <EmptyState />
             </div>
           </main>
         </div>
@@ -48,12 +48,6 @@ export default function AppShell() {
 
       {/* React Modals */}
       <ModalPortal />
-
-      {/* Legacy Toasts (Keep for now as no React replacement exists) */}
-      <div
-        style={{ display: "contents" }}
-        dangerouslySetInnerHTML={{ __html: toastHtml }}
-      />
     </>
   );
 }
