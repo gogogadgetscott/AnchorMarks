@@ -4,6 +4,7 @@
  */
 
 import * as state from "@features/state.ts";
+import type { User } from "../types/index";
 
 // Request deduplication: cache pending requests to prevent duplicate API calls
 const pendingRequests = new Map<string, Promise<any>>();
@@ -73,6 +74,23 @@ function onPageUnload(): void {
 if (typeof window !== "undefined") {
   window.addEventListener("pagehide", onPageUnload);
   window.addEventListener("beforeunload", onPageUnload);
+}
+
+function getStringField(
+  value: Record<string, unknown> | null,
+  key: string,
+): string | undefined {
+  const field = value?.[key];
+  return typeof field === "string" ? field : undefined;
+}
+
+function getErrorMessage(payload: unknown, fallback: string): string {
+  if (typeof payload === "string") return payload;
+  if (payload && typeof payload === "object") {
+    const errorField = (payload as Record<string, unknown>).error;
+    if (typeof errorField === "string") return errorField;
+  }
+  return fallback;
 }
 
 /**
@@ -161,10 +179,18 @@ export async function api<T = unknown>(
                 refreshData = null;
               }
             }
-            if (refreshData?.csrfToken)
-              state.setCsrfToken(refreshData.csrfToken);
-            if (refreshData?.user) {
-              state.setCurrentUser(refreshData.user);
+            const refreshedCsrfToken = getStringField(
+              refreshData,
+              "csrfToken",
+            );
+            if (refreshedCsrfToken) state.setCsrfToken(refreshedCsrfToken);
+
+            const refreshedUser =
+              refreshData && typeof refreshData.user === "object"
+                ? (refreshData.user as User)
+                : null;
+            if (refreshedUser) {
+              state.setCurrentUser(refreshedUser);
               state.setIsAuthenticated(true);
             }
             if (!refreshData) {
@@ -183,11 +209,11 @@ export async function api<T = unknown>(
               headers: {
                 ...headers,
                 ...(options.headers as Record<string, string>),
-                ...(refreshData.csrfToken &&
+                ...(refreshedCsrfToken &&
                 ["POST", "PUT", "DELETE", "PATCH"].includes(
                   (options.method || "GET").toUpperCase(),
                 )
-                  ? { "X-CSRF-Token": refreshData.csrfToken }
+                  ? { "X-CSRF-Token": refreshedCsrfToken }
                   : {}),
               },
             });
@@ -215,9 +241,10 @@ export async function api<T = unknown>(
             const retryData = retryCt?.includes("application/json")
               ? await retryRes.json()
               : await retryRes.text();
-            const errMsg =
-              (retryData as Record<string, unknown>)?.error ||
-              `API Error: ${retryRes.status} ${retryRes.statusText}`;
+            const errMsg = getErrorMessage(
+              retryData,
+              `API Error: ${retryRes.status} ${retryRes.statusText}`,
+            );
             throw new Error(errMsg);
           }
         }
@@ -255,9 +282,10 @@ export async function api<T = unknown>(
       }
 
       if (!response.ok) {
-        const errorMessage =
-          (data as Record<string, unknown>)?.error ||
-          `API Error: ${response.status} ${response.statusText}`;
+        const errorMessage = getErrorMessage(
+          data,
+          `API Error: ${response.status} ${response.statusText}`,
+        );
         // Special handling for CSRF errors
         if (
           errorMessage.toLowerCase().includes("csrf") ||

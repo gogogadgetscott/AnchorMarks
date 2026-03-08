@@ -9,6 +9,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Omnibar } from "./Omnibar.tsx";
+import type { Command } from "../types/index";
 
 if (!Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = () => {};
@@ -16,7 +17,7 @@ if (!Element.prototype.scrollIntoView) {
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
-function defaultCommandsForQuery(query: string) {
+function defaultCommandsForQuery(query?: string): Command[] {
   if (!query) return [];
   return [
     {

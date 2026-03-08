@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { api } from "../services/api.ts";
+import * as state from "../features/state.ts";
 import type { Folder, Tag } from "../types/index";
 
 interface FoldersState {
@@ -43,7 +44,10 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const data = await api<{ folders: Folder[] }>("/folders");
-      setFolders(data.folders || []);
+      const foldersData = data.folders || [];
+      setFolders(foldersData);
+      // Sync with vanilla state for backward compatibility
+      state.setFolders(foldersData);
     } catch (err) {
       console.error("Failed to load folders:", err);
     } finally {

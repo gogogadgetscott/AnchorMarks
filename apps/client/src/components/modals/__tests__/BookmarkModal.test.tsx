@@ -1,8 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import BookmarkModal from "../BookmarkModal";
 import { ModalProvider } from "../../../contexts/ModalContext";
-import { FoldersProvider } from "../../../contexts/FoldersContext";
 
 const mockFolders = [
   { id: "f1", name: "Folder 1", parentId: null, color: "#6366f1" },

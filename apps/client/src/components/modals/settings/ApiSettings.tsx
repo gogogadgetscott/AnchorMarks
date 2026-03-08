@@ -1,18 +1,20 @@
 import { useState, useEffect } from "react";
-import { api } from "@services/api.ts";
+import { useAuth } from "@contexts/AuthContext";
 import { regenerateApiKey, copyApiKey } from "@features/auth/auth.ts";
-import { showToast } from "@utils/ui-helpers.ts";
 
 export function ApiSettings() {
+  const { currentUser } = useAuth();
   const [apiKey, setApiKey] = useState("••••••••••••••••");
   const [showKey, setShowKey] = useState(false);
 
-  const handleRegenerate = async () => {
-    const newKey = await regenerateApiKey();
-    if (newKey) {
-      setApiKey(newKey);
-      setShowKey(true);
+  useEffect(() => {
+    if (currentUser?.api_key) {
+      setApiKey(currentUser.api_key);
     }
+  }, [currentUser]);
+
+  const handleRegenerate = async () => {
+    await regenerateApiKey();
   };
 
   const handleCopy = () => {

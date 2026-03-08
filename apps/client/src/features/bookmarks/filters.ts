@@ -7,7 +7,6 @@ import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { escapeHtml } from "@utils/index.ts";
 import { showToast } from "@utils/ui-helpers.ts";
-import { getRecursiveBookmarkCount } from "@features/bookmarks/folders.ts";
 import type { Bookmark, ActiveFilterItem } from "../../types/index";
 
 let filterDropdownPinned = false;
@@ -304,7 +303,7 @@ function filterFoldersInDropdown(searchTerm: string): void {
   const term = searchTerm.toLowerCase().trim();
 
   if (!term) {
-    container.innerHTML = container._originalHTML;
+    container.innerHTML = container._originalHTML ?? "";
     attachFolderClickHandlers();
     return;
   }
@@ -355,7 +354,7 @@ function filterTagsInDropdown(searchTerm: string): void {
   const term = searchTerm.toLowerCase().trim();
 
   if (!term) {
-    container.innerHTML = container._originalHTML;
+    container.innerHTML = container._originalHTML ?? "";
     attachTagClickHandlers();
     return;
   }
@@ -406,7 +405,7 @@ function attachFolderClickHandlers(): void {
         state.setCurrentFolder(null);
       } else {
         await state.setCurrentView("folder");
-        state.setCurrentFolder(folderId);
+        state.setCurrentFolder(folderId!);
       }
 
       await applyFilters();
@@ -427,7 +426,8 @@ function attachTagClickHandlers(): void {
 
   container.querySelectorAll(".filter-item").forEach((item: Element) => {
     item.addEventListener("click", async () => {
-      const tagName = (item as HTMLElement).dataset.tag;
+      const tagName = (item as HTMLElement).dataset.tag as string;
+      if (!tagName) return;
       const currentTags = [...state.filterConfig.tags];
 
       if (currentTags.includes(tagName)) {
@@ -479,7 +479,7 @@ async function renderFoldersInDropdown(): Promise<void> {
   const getUnfilteredRecursiveCount = (folderId: string): number => {
     // Count bookmarks that belong to this folder
     let total = bookmarksToProcess.filter(
-      (b) => b.folder_id === folderId,
+      (b: Bookmark) => b.folder_id === folderId,
     ).length;
 
     // Add counts from child folders
@@ -626,6 +626,7 @@ async function renderCollectionsInDropdown(): Promise<void> {
   container.querySelectorAll(".filter-item").forEach((item: Element) => {
     item.addEventListener("click", async () => {
       const collectionId = (item as HTMLElement).dataset.collectionId;
+      if (!collectionId) return;
       const collection = state.collections.find((c) => c.id === collectionId);
 
       state.setCurrentFolder(null);

@@ -235,6 +235,11 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       setRenderedBookmarks(data.bookmarks);
       setTotalCount(data.total || data.bookmarks.length);
 
+      // Sync with vanilla state for backward compatibility
+      state.setBookmarks(data.bookmarks);
+      state.setRenderedBookmarks(data.bookmarks);
+      state.setTotalCount(data.total || data.bookmarks.length);
+
       if (data.tags) {
         const metadata: Record<
           string,
@@ -291,6 +296,10 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       setBookmarks(newBookmarks);
       setRenderedBookmarks(newBookmarks);
       setDisplayedCount((prev) => prev + data.bookmarks.length);
+
+      // Sync with vanilla state for backward compatibility
+      state.setBookmarks(newBookmarks);
+      state.setRenderedBookmarks(newBookmarks);
     } catch (err) {
       console.error("Failed to load more bookmarks:", err);
     } finally {

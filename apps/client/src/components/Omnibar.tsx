@@ -302,8 +302,10 @@ export function Omnibar({
 
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsListRef = useRef<HTMLDivElement>(null);
-  const blurTimeout = useRef<ReturnType<typeof setTimeout>>();
-  const searchFilterTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchFilterTimeout = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const isCommandMode = query.trim().startsWith(">");
   const hasQuery = query.trim().length > 0;

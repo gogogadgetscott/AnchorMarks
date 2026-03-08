@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useUI } from "../contexts/UIContext";
 import { useBookmarks } from "../contexts/BookmarksContext";
 import { Icon } from "./Icon.tsx";
@@ -131,6 +131,7 @@ export function Sidebar() {
     filterConfig,
     tagMetadata,
     dashboardWidgets,
+    loadBookmarks,
   } = useBookmarks();
 
   const [tagSearch, setTagSearch] = useState("");
@@ -195,7 +196,7 @@ export function Sidebar() {
   const handleNavClick = useCallback(
     async (view: string) => {
       setCurrentView(view);
-      setCurrentFolder(null); // Clear folder filter when clicking main nav
+      setCurrentFolder(null);
 
       if (window.innerWidth <= 1024) {
         document.body.classList.remove("mobile-sidebar-open");
@@ -204,18 +205,15 @@ export function Sidebar() {
       const { saveSettings } = await import("@features/bookmarks/settings.ts");
       saveSettings({ current_view: view });
 
-      const { renderSkeletons, loadBookmarks } =
-        await import("@features/bookmarks/bookmarks.ts");
       if (
         view !== "dashboard" &&
         view !== "tag-cloud" &&
         view !== "analytics"
       ) {
-        renderSkeletons();
         await loadBookmarks();
       }
     },
-    [setCurrentView, setCurrentFolder],
+    [setCurrentView, setCurrentFolder, loadBookmarks],
   );
 
   const handleAddBookmark = useCallback(async () => {

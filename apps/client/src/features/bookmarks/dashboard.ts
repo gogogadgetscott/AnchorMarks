@@ -1072,7 +1072,7 @@ export function initDashboardDragDrop(): void {
         const x = e.clientX - rect.left + dropZone.scrollLeft;
         const y = e.clientY - rect.top + dropZone.scrollTop;
 
-        if (dragged.type === "folder" || dragged.type === "tag") {
+        if ((dragged.type === "folder" || dragged.type === "tag") && dragged.id) {
           addDashboardWidget(dragged.type, dragged.id, x, y);
         }
 

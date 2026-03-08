@@ -114,12 +114,15 @@ export function renderFolders(): void {
 
   container.querySelectorAll(".folder-item").forEach((item: Element) => {
     const htmlItem = item as HTMLElement;
+
     item.addEventListener("click", (e: Event) => {
       if (e.defaultPrevented) return;
 
       if ((e.target as HTMLElement).closest(".folder-actions")) return;
 
       e.stopPropagation();
+      const folderId = htmlItem.dataset.folder;
+      if (!folderId) return;
 
       if (state.currentView === "dashboard") {
         import("@features/bookmarks/dashboard.ts").then(
@@ -129,7 +132,7 @@ export function renderFolders(): void {
             const y = 50 + ((existingWidgets * 30) % 200);
 
             try {
-              addDashboardWidget("folder", htmlItem.dataset.folder, x, y);
+              addDashboardWidget("folder", folderId, x, y);
             } catch (err: unknown) {
               showToast(
                 "Error adding widget: " + (err as Error).message,
@@ -141,7 +144,7 @@ export function renderFolders(): void {
         return;
       }
 
-      state.setCurrentFolder(htmlItem.dataset.folder);
+      state.setCurrentFolder(folderId);
       state.setCurrentView("folder");
       updateActiveNav();
       import("@features/bookmarks/search.ts").then(({ renderActiveFilters }) =>
@@ -157,16 +160,20 @@ export function renderFolders(): void {
     });
 
     if (item.getAttribute("draggable") === "true") {
-      item.addEventListener("dragstart", (e: DragEvent) => {
+      item.addEventListener("dragstart", (e: Event) => {
+        const dragEvent = e as DragEvent;
+        const folderId = htmlItem.dataset.folder;
+        const folderName = htmlItem.dataset.folderName;
+        if (!folderId || !folderName) return;
         state.setDraggedSidebarItem({
           type: "folder",
-          id: htmlItem.dataset.folder,
-          name: htmlItem.dataset.folderName,
-          color: htmlItem.dataset.folderColor,
+          id: folderId,
+          name: folderName,
+          color: htmlItem.dataset.folderColor || undefined,
         });
-        if (e.dataTransfer) {
-          e.dataTransfer.effectAllowed = "copy";
-          e.dataTransfer.setData(
+        if (dragEvent.dataTransfer) {
+          dragEvent.dataTransfer.effectAllowed = "copy";
+          dragEvent.dataTransfer.setData(
             "text/plain",
             htmlItem.dataset.folderName || "",
           );
@@ -259,7 +266,7 @@ export async function createFolder(
     updateFolderSelect();
     if (closeModal) closeModals();
     showToast("Folder created!", "success");
-    return folder;
+    return newFolder;
   } catch (err: unknown) {
     showToast((err as Error).message, "error");
     return null;
@@ -420,6 +427,7 @@ export async function renderFoldersForFilter(
     item.addEventListener("click", async (e: Event) => {
       e.stopPropagation();
       const folderId = (item as HTMLElement).dataset.folderId;
+      if (!folderId) return;
 
       // Toggle active state
       container

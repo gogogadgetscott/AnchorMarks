@@ -51,12 +51,12 @@ export interface Folder {
 }
 
 export interface Tag {
-  id: string;
+  id?: string;
   name: string;
   color?: string;
   color_override?: string;
   count?: number;
-  type?: "tag"; // Optional discriminator for drag/drop operations
+  type?: "tag";
 }
 
 export interface DashboardWidget {
