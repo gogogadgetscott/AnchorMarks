@@ -3,7 +3,7 @@
  * Handles all API communication with the backend
  */
 
-import * as state from "@features/state.ts";
+import { getAuthBridge, API_BASE } from "@contexts/context-bridge";
 import type { User } from "../types/index";
 
 // Request deduplication: cache pending requests to prevent duplicate API calls
@@ -136,8 +136,10 @@ export async function api<T = unknown>(
   };
   // Always send CSRF token for state-changing requests
   const method = (options.method || "GET").toUpperCase();
-  if (["POST", "PUT", "DELETE", "PATCH"].includes(method) && state.csrfToken) {
-    headers["X-CSRF-Token"] = state.csrfToken;
+  const authBridge = getAuthBridge();
+  const csrfToken = authBridge.getCsrfToken();
+  if (["POST", "PUT", "DELETE", "PATCH"].includes(method) && csrfToken) {
+    headers["X-CSRF-Token"] = csrfToken;
   }
 
   // Create AbortController for timeout and cancellation
@@ -152,7 +154,7 @@ export async function api<T = unknown>(
   // Create the fetch promise
   const fetchPromise = (async (): Promise<T> => {
     try {
-      const response = await fetch(`${state.API_BASE}${endpoint}`, {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
         ...options,
         signal,
         credentials: "include",
@@ -164,7 +166,7 @@ export async function api<T = unknown>(
         const isRefreshCall =
           endpoint === "/auth/refresh" || endpoint.startsWith("/auth/refresh");
         if (!isRefreshCall) {
-          const refreshRes = await fetch(`${state.API_BASE}/auth/refresh`, {
+          const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -180,26 +182,26 @@ export async function api<T = unknown>(
               }
             }
             const refreshedCsrfToken = getStringField(refreshData, "csrfToken");
-            if (refreshedCsrfToken) state.setCsrfToken(refreshedCsrfToken);
+            if (refreshedCsrfToken) authBridge.setCsrfToken(refreshedCsrfToken);
 
             const refreshedUser =
               refreshData && typeof refreshData.user === "object"
                 ? (refreshData.user as User)
                 : null;
             if (refreshedUser) {
-              state.setCurrentUser(refreshedUser);
-              state.setIsAuthenticated(true);
+              authBridge.setCurrentUser(refreshedUser);
+              authBridge.setIsAuthenticated(true);
             }
             if (!refreshData) {
-              state.setCsrfToken(null);
-              state.setCurrentUser(null);
-              state.setIsAuthenticated(false);
+              authBridge.setCsrfToken(null);
+              authBridge.setCurrentUser(null);
+              authBridge.setIsAuthenticated(false);
               const { showAuthScreen } = await import("@features/auth/auth.ts");
               showAuthScreen();
               throw new Error("Session expired");
             }
             // Retry original request once with new cookies
-            const retryRes = await fetch(`${state.API_BASE}${endpoint}`, {
+            const retryRes = await fetch(`${API_BASE}${endpoint}`, {
               ...options,
               signal,
               credentials: "include",
@@ -227,9 +229,9 @@ export async function api<T = unknown>(
               return data as T;
             }
             if (retryRes.status === 401) {
-              state.setCsrfToken(null);
-              state.setCurrentUser(null);
-              state.setIsAuthenticated(false);
+              authBridge.setCsrfToken(null);
+              authBridge.setCurrentUser(null);
+              authBridge.setIsAuthenticated(false);
               const { showAuthScreen } = await import("@features/auth/auth.ts");
               showAuthScreen();
               throw new Error("Session expired");
@@ -245,9 +247,9 @@ export async function api<T = unknown>(
             throw new Error(errMsg);
           }
         }
-        state.setCsrfToken(null);
-        state.setCurrentUser(null);
-        state.setIsAuthenticated(false);
+        authBridge.setCsrfToken(null);
+        authBridge.setCurrentUser(null);
+        authBridge.setIsAuthenticated(false);
         const { showAuthScreen } = await import("@features/auth/auth.ts");
         showAuthScreen();
         throw new Error("Session expired");
@@ -288,7 +290,7 @@ export async function api<T = unknown>(
           errorMessage.toLowerCase().includes("csrf") ||
           errorMessage.toLowerCase().includes("x-csrf-token")
         ) {
-          state.setCsrfToken(null);
+          authBridge.setCsrfToken(null);
           // Optionally trigger re-auth or reload UI
         }
         throw new Error(errorMessage);

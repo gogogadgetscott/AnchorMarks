@@ -11,7 +11,8 @@ import {
   getOmnibarCommands,
   getAllBookmarks,
 } from "@features/bookmarks/commands.ts";
-import * as legacyState from "@features/state.ts";
+import { useUI } from "@contexts/UIContext";
+import { useBookmarks } from "@contexts/BookmarksContext";
 import type { Command } from "../types/index";
 
 // ─── localStorage helpers (kept as pure functions, no React) ─────────────────
@@ -79,7 +80,7 @@ function getSuggestedTags(): { name: string; count: number }[] {
     .slice(0, 8);
 }
 
-// ─── Quick actions (bridge to legacy system until navigation is ported) ───────
+// ─── Quick actions (bridge to navigation via hooks) ──────────────────────────
 
 interface QuickAction {
   label: string;
@@ -87,7 +88,11 @@ interface QuickAction {
   run: () => void;
 }
 
-function getQuickActions(): QuickAction[] {
+function getQuickActions(
+  setCurrentView: (val: string) => Promise<void>,
+  setCurrentFolder: (val: string | null) => void,
+  loadBookmarks: () => Promise<void>,
+): QuickAction[] {
   return [
     {
       label: "Add bookmark",
@@ -100,29 +105,19 @@ function getQuickActions(): QuickAction[] {
     {
       label: "View favorites",
       icon: "star",
-      run: () => {
-        legacyState.setCurrentView("favorites");
-        legacyState.setCurrentFolder(null);
-        import("@utils/ui-helpers.ts").then(({ updateActiveNav }) =>
-          updateActiveNav(),
-        );
-        import("@features/bookmarks/bookmarks.ts").then(({ loadBookmarks }) =>
-          loadBookmarks(),
-        );
+      run: async () => {
+        await setCurrentView("favorites");
+        setCurrentFolder(null);
+        await loadBookmarks();
       },
     },
     {
       label: "View dashboard",
       icon: "grid",
-      run: () => {
-        legacyState.setCurrentView("dashboard");
-        legacyState.setCurrentFolder(null);
-        import("@utils/ui-helpers.ts").then(({ updateActiveNav }) =>
-          updateActiveNav(),
-        );
-        import("@features/bookmarks/bookmarks.ts").then(({ loadBookmarks }) =>
-          loadBookmarks(),
-        );
+      run: async () => {
+        await setCurrentView("dashboard");
+        setCurrentFolder(null);
+        await loadBookmarks();
       },
     },
     {
@@ -291,6 +286,9 @@ export function Omnibar({
   shortcut = "Ctrl+K or /",
   showDropdown = true,
 }: OmnibarProps) {
+  const { currentView, setCurrentView, setCurrentFolder } = useUI();
+  const { filterConfig, setFilterConfig, loadBookmarks } = useBookmarks();
+
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -310,6 +308,13 @@ export function Omnibar({
   const isCommandMode = query.trim().startsWith(">");
   const hasQuery = query.trim().length > 0;
 
+  // Get quick actions with hooks
+  const quickActions = getQuickActions(
+    setCurrentView,
+    setCurrentFolder,
+    loadBookmarks,
+  );
+
   // Recompute panel content whenever query or open state changes
   useEffect(() => {
     if (!isOpen) return;
@@ -323,16 +328,13 @@ export function Omnibar({
     }
   }, [isOpen, query, hasQuery]);
 
-  // Bridge: apply search filter to legacy bookmark system
+  // Bridge: apply search filter to bookmark system
   useEffect(() => {
     if (searchFilterTimeout.current) clearTimeout(searchFilterTimeout.current);
 
     const trimmed = query.trim();
 
-    if (
-      legacyState.currentView === "favorites" ||
-      legacyState.currentView === "recent"
-    ) {
+    if (currentView === "favorites" || currentView === "recent") {
       searchFilterTimeout.current = setTimeout(() => {
         import("@features/bookmarks/bookmarks.ts").then((m) =>
           m.renderBookmarks(),
@@ -342,9 +344,9 @@ export function Omnibar({
     }
 
     if (isCommandMode) {
-      if (legacyState.filterConfig.search !== undefined) {
-        legacyState.setFilterConfig({
-          ...legacyState.filterConfig,
+      if (filterConfig.search !== undefined) {
+        setFilterConfig({
+          ...filterConfig,
           search: undefined,
         });
         searchFilterTimeout.current = setTimeout(() => {
@@ -356,8 +358,8 @@ export function Omnibar({
       return;
     }
 
-    legacyState.setFilterConfig({
-      ...legacyState.filterConfig,
+    setFilterConfig({
+      ...filterConfig,
       search: trimmed || undefined,
     });
 
@@ -377,7 +379,7 @@ export function Omnibar({
       if (searchFilterTimeout.current)
         clearTimeout(searchFilterTimeout.current);
     };
-  }, [query, isCommandMode]);
+  }, [query, isCommandMode, currentView, filterConfig, setFilterConfig]);
 
   const open = useCallback(() => {
     if (blurTimeout.current) clearTimeout(blurTimeout.current);
@@ -598,7 +600,7 @@ export function Omnibar({
                 <span>Quick Actions</span>
               </div>
               <div className="omnibar-section-content">
-                {getQuickActions().map((action) => (
+                {quickActions.map((action) => (
                   <ActionItem
                     key={action.label}
                     action={action}

@@ -3,7 +3,7 @@
  * Handles authentication (login, register, logout, checkAuth)
  */
 
-import * as state from "@features/state.ts";
+import { getAuthBridge } from "@contexts/context-bridge";
 import { api } from "@services/api.ts";
 import { showToast, closeModals } from "@utils/ui-helpers.ts";
 import {
@@ -203,13 +203,14 @@ export function showMainApp(): void {
 
 // Prefetch CSRF Token
 export async function prefetchCsrf(): Promise<void> {
-  if (!state.csrfToken) {
-    try {
+  try {
+    const authBridge = getAuthBridge();
+    if (!authBridge.getCsrfToken()) {
       const data = await api<{ csrfToken: string }>("/auth/csrf");
-      state.setCsrfToken(data.csrfToken);
-    } catch (e) {
-      logger.error("Failed to prefetch CSRF token", e);
+      authBridge.setCsrfToken(data.csrfToken);
     }
+  } catch (e) {
+    logger.error("Failed to prefetch CSRF token", e);
   }
 }
 
@@ -224,9 +225,10 @@ export async function login(email: string, password: string): Promise<boolean> {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
-    state.setCsrfToken(data.csrfToken);
-    state.setCurrentUser(data.user);
-    state.setIsAuthenticated(true);
+    const authBridge = getAuthBridge();
+    authBridge.setCsrfToken(data.csrfToken);
+    authBridge.setCurrentUser(data.user);
+    authBridge.setIsAuthenticated(true);
     authContextSetter?.(data.user, data.csrfToken, true);
     showMainApp();
     showToast("Welcome back!", "success");
@@ -253,9 +255,10 @@ export async function register(
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
-    state.setCsrfToken(data.csrfToken);
-    state.setCurrentUser(data.user);
-    state.setIsAuthenticated(true);
+    const authBridge = getAuthBridge();
+    authBridge.setCsrfToken(data.csrfToken);
+    authBridge.setCurrentUser(data.user);
+    authBridge.setIsAuthenticated(true);
     authContextSetter?.(data.user, data.csrfToken, true);
     showMainApp();
     showToast("Account created successfully!", "success");
@@ -275,9 +278,10 @@ export function logout(): void {
       logger.error("Logout failed", err);
     })
     .finally(() => {
-      state.setCsrfToken(null);
-      state.setCurrentUser(null);
-      state.setIsAuthenticated(false);
+      const authBridge = getAuthBridge();
+      authBridge.setCsrfToken(null);
+      authBridge.setCurrentUser(null);
+      authBridge.setIsAuthenticated(false);
       authContextSetter?.(null, null, false);
       showAuthScreen();
     });
@@ -290,17 +294,19 @@ export async function checkAuth(): Promise<boolean> {
       user: User;
       csrfToken: string;
     }>("/auth/me");
-    state.setCurrentUser(data.user);
-    state.setCsrfToken(data.csrfToken);
-    state.setIsAuthenticated(true);
+    const authBridge = getAuthBridge();
+    authBridge.setCurrentUser(data.user);
+    authBridge.setCsrfToken(data.csrfToken);
+    authBridge.setIsAuthenticated(true);
     authContextSetter?.(data.user, data.csrfToken, true);
     hideServerStatusBanner();
     return true;
   } catch (err) {
     logger.error("Auth check failed", err);
-    state.setCsrfToken(null);
-    state.setCurrentUser(null);
-    state.setIsAuthenticated(false);
+    const authBridge = getAuthBridge();
+    authBridge.setCsrfToken(null);
+    authBridge.setCurrentUser(null);
+    authBridge.setIsAuthenticated(false);
     authContextSetter?.(null, null, false);
     showAuthScreen();
     handleApiError(err, true);

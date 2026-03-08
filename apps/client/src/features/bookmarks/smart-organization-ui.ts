@@ -3,6 +3,16 @@
  *
  * This module provides smart tag suggestions, collection recommendations,
  * and bookmark insights using the AnchorMarks API.
+ * 
+ * @deprecated This entire module uses legacy DOM manipulation patterns.
+ * MIGRATION PLAN:
+ * 1. Create React components: SmartTagSuggestions.tsx, SmartCollections.tsx, SmartInsights.tsx
+ * 2. Move API calls to custom hooks (useSmartTags, useSmartCollections, useSmartInsights)
+ * 3. Replace direct DOM manipulation with React state and Context
+ * 4. Update BookmarkModal.tsx to use the new SmartTagSuggestions component
+ * 5. Remove window API access pattern - use React Context directly
+ * 
+ * For now, these functions remain functional but should not be used in new code.
  */
 
 import type {
@@ -72,6 +82,12 @@ function loadFolders(): void {
 let smartTagSuggestTimeout: ReturnType<typeof setTimeout> | undefined;
 let smartTagSuggestSeq = 0;
 
+/**
+ * @deprecated This function performs direct DOM manipulation.
+ * Should be converted to a React component (SmartTagSuggestions)
+ * that uses state and context instead of document.getElementById.
+ * Currently used by BookmarkModal.tsx - needs to be migrated together.
+ */
 async function showSmartTagSuggestions(url: string): Promise<void> {
   const tagSuggestions = document.getElementById("tag-suggestions");
   if (!tagSuggestions || !url) {
@@ -125,6 +141,9 @@ async function showSmartTagSuggestions(url: string): Promise<void> {
   }, 400);
 }
 
+/**
+ * @deprecated Direct DOM manipulation - convert to React loading state
+ */
 function renderSuggestionsLoading(): void {
   const tagSuggestions = document.getElementById("tag-suggestions");
   if (!tagSuggestions) return;
@@ -149,6 +168,10 @@ function removeAILoadingIndicator(): void {
   document.getElementById("ai-suggestions-loading")?.remove();
 }
 
+/**
+ * @deprecated Direct DOM manipulation - convert to React component with state.
+ * Should be part of a SmartTagSuggestions React component.
+ */
 function renderTagSuggestions(list: string[]): void {
   const tagSuggestions = document.getElementById("tag-suggestions");
   if (!tagSuggestions) return;
@@ -177,6 +200,10 @@ function renderTagSuggestions(list: string[]): void {
   });
 }
 
+/**
+ * @deprecated Direct DOM manipulation - convert to React component.
+ * Should be part of a SmartTagSuggestions React component with proper state management.
+ */
 function renderSmartTagSuggestions(
   suggestions: SmartTagSuggestion[],
   domainInfo: {
@@ -245,6 +272,10 @@ function renderSmartTagSuggestions(
   }
 }
 
+/**
+ * @deprecated Direct DOM manipulation - convert to React component.
+ * Should append to SmartTagSuggestions React component state instead of DOM.
+ */
 function appendAISuggestions(
   suggestions: Array<string | { tag: string }>,
 ): void {
@@ -300,6 +331,10 @@ async function loadSmartCollections() {
   }
 }
 
+/**
+ * @deprecated Direct DOM manipulation - convert to SmartCollections React component.
+ * This entire smart collections UI should be a proper React component with Context.
+ */
 function renderSmartCollectionSuggestions(
   collections: Array<{
     name: string;
@@ -438,6 +473,10 @@ async function loadSmartInsights() {
   }
 }
 
+/**
+ * @deprecated Direct DOM manipulation - convert to SmartInsights React component.
+ * Should use React Context to manage insights data and render as a proper component.
+ */
 function renderSmartInsights(insights: SmartInsights): void {
   const container = document.getElementById("smart-insights-widget");
   if (!container || !insights) return;
@@ -548,6 +587,10 @@ async function showDomainStats(domain: string): Promise<void> {
   }
 }
 
+/**
+ * @deprecated Direct DOM manipulation - should use React modal system.
+ * Convert to use ModalContext and create a DomainStatsModal React component.
+ */
 function displayDomainStatsModal(stats: DomainStats): void {
   if (!stats) return;
 

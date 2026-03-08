@@ -1,12 +1,8 @@
 import { useState, useEffect } from "react";
-import {
-  fetchTagStats,
-  renameTagAcross,
-  deleteTagById,
-} from "@features/bookmarks/search.ts";
+import { useBookmarks } from "@contexts/BookmarksContext";
 import { openTagModal } from "@utils/modal-controller.ts";
 import { showToast } from "@utils/ui-helpers.ts";
-import { confirmDialog } from "@features/ui/confirm-dialog.ts";
+import { showConfirm } from "@contexts/ConfirmContext";
 
 interface TagStatItem {
   id: string;
@@ -17,6 +13,7 @@ interface TagStatItem {
 }
 
 export function TagSettings() {
+  const { fetchTagStats, renameTag, deleteTag } = useBookmarks();
   const [tags, setTags] = useState<TagStatItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [renameFrom, setRenameFrom] = useState("");
@@ -31,7 +28,7 @@ export function TagSettings() {
     setIsLoading(true);
     try {
       const data = await fetchTagStats();
-      setTags(data as TagStatItem[]);
+      setTags(data);
     } catch (err) {
       console.error("Failed to load tag stats", err);
     } finally {
@@ -45,16 +42,17 @@ export function TagSettings() {
       return;
     }
 
-    if (
-      !(await confirmDialog(`Rename tag "${renameFrom}" to "${renameTo}"?`, {
+    const confirmed = await showConfirm(
+      `Rename tag "${renameFrom}" to "${renameTo}"?`,
+      {
         title: "Rename Tag",
-      }))
-    ) {
-      return;
-    }
+      },
+    );
+
+    if (!confirmed) return;
 
     try {
-      await renameTagAcross(renameFrom, renameTo);
+      await renameTag(renameFrom, renameTo);
       setRenameFrom("");
       setRenameTo("");
       loadStats();
@@ -64,17 +62,8 @@ export function TagSettings() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (
-      !(await confirmDialog(`Delete tag "${name}"?`, {
-        title: "Delete Tag",
-        destructive: true,
-      }))
-    ) {
-      return;
-    }
-
     try {
-      await deleteTagById(id, name);
+      await deleteTag(id, name);
       loadStats();
     } catch (err: any) {
       showToast(err.message || "Delete failed", "error");

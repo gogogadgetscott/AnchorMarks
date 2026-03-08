@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@components/modals/ConfirmDialog.tsx";
 import { EmptyState } from "@components/EmptyState.tsx";
 import { TagCloud } from "@components/TagCloud.tsx";
 import { AnalyticsView } from "@components/AnalyticsView.tsx";
+import { Dashboard } from "@components/Dashboard.tsx";
 import { useAuth } from "./contexts/AuthContext";
 import { useBookmarks } from "./contexts/BookmarksContext";
 import { useUI } from "./contexts/UIContext";
@@ -23,6 +24,8 @@ export function AppShell() {
 
   const renderMainContent = () => {
     switch (currentView) {
+      case "dashboard":
+        return <Dashboard />;
       case "tag-cloud":
         return <TagCloud />;
       case "analytics":

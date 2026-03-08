@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 import { useModal } from "@contexts/ModalContext";
+import { useBookmarks } from "@contexts/BookmarksContext";
 import { createFocusTrap, removeFocusTrap } from "@utils/focus-trap.ts";
-import { handleTagSubmit, deleteTagById } from "@features/bookmarks/search.ts";
 
 const TAG_COLORS = [
   "#f59e0b",
@@ -17,6 +17,7 @@ const TAG_COLORS = [
 
 export default function TagModal() {
   const { closeModal, tagFormData, setTagFormData } = useModal();
+  const { updateTag, deleteTag } = useBookmarks();
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,20 +41,16 @@ export default function TagModal() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await handleTagSubmit(undefined, tagFormData);
+    if (tagFormData.id && tagFormData.name) {
+      await updateTag(tagFormData.id, tagFormData.name, tagFormData.color);
+      closeModal();
+    }
   };
 
   const handleDelete = async () => {
     if (tagFormData.id && tagFormData.name) {
-      const { confirmDialog } = await import("@features/ui/confirm-dialog.ts");
-      const confirmed = await confirmDialog(
-        `Are you sure you want to delete the tag "${tagFormData.name}"? This will remove it from all bookmarks.`,
-        { title: "Delete Tag", confirmText: "Delete", destructive: true },
-      );
-
-      if (confirmed) {
-        await deleteTagById(tagFormData.id, tagFormData.name);
-      }
+      await deleteTag(tagFormData.id, tagFormData.name);
+      closeModal();
     }
   };
 

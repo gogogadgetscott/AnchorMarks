@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { updateProfile, updatePassword } from "@features/auth/auth.ts";
 
 export function ProfileSettings() {
-  const { currentUser } = useAuth();
+  const { currentUser, updateProfile, updatePassword } = useAuth();
   const [email, setEmail] = useState(currentUser?.email || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");

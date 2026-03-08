@@ -6,7 +6,8 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import { subscribe } from "../features/state";
+import { subscribe, setCurrentView as vanillaSetCurrentView } from "../features/state";
+import { registerUIBridge } from "./context-bridge";
 import type { TourStep } from "../types/index";
 
 type ViewMode = "grid" | "list" | "compact";
@@ -63,7 +64,7 @@ interface UIState {
 }
 
 interface UIActions {
-  setCurrentView: (val: string) => void;
+  setCurrentView: (val: string) => Promise<void>;
   setCurrentFolder: (val: string | null) => void;
   setViewMode: (val: ViewMode) => void;
   setHideFavicons: (val: boolean) => void;
@@ -173,22 +174,42 @@ export function UIProvider({ children }: { children: ReactNode }) {
         setIsWidgetPickerOpen(value as boolean);
       } else if (key === "currentFolder") {
         setCurrentFolderState(value as string | null);
+      } else if (key === "currentView") {
+        setCurrentViewState(value as string);
       }
     });
   }, []);
 
-  // setCurrentView carries body class side-effects from the legacy system.
-  // These will be removed as views are fully ported to React.
-  const setCurrentView = useCallback((val: string) => {
-    document.body.classList.toggle("dashboard-active", val === "dashboard");
-    document.body.classList.toggle("tag-cloud-active", val === "tag-cloud");
-    document.body.classList.toggle("analytics-active", val === "analytics");
+  // setCurrentView syncs with vanilla state for cleanup and legacy code compatibility
+  const setCurrentView = useCallback(async (val: string) => {
+    // Call vanilla state's setCurrentView which handles all cleanup
+    await vanillaSetCurrentView(val);
+    // The React state will be updated via the subscribe listener above
+    // But we also set it here immediately to avoid any race conditions
     setCurrentViewState(val);
   }, []);
 
   const setCurrentFolder = useCallback((val: string | null) => {
     setCurrentFolderState(val);
   }, []);
+
+  // Register with context bridge for non-React code
+  useEffect(() => {
+    registerUIBridge({
+      getCurrentView: () => currentView,
+      setCurrentView,
+      getCurrentFolder: () => currentFolder,
+      setCurrentFolder,
+      getHideSidebar: () => hideSidebar,
+      setHideSidebar,
+    });
+  }, [
+    currentView,
+    currentFolder,
+    hideSidebar,
+    setCurrentView,
+    setCurrentFolder,
+  ]);
 
   const setViewToolbarConfig = useCallback(
     (view: string, config: Record<string, unknown>) => {

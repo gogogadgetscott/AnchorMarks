@@ -195,10 +195,7 @@ export function toggleRichLinkPreviews(): void {
   state.setRichLinkPreviewsEnabled(newValue);
   saveSettings({ rich_link_previews_enabled: newValue ? 1 : 0 });
 
-  // Refresh view
-  import("@features/bookmarks/bookmarks.ts").then(({ renderBookmarks }) => {
-    renderBookmarks();
-  });
+  // React Context handles re-rendering automatically
 }
 
 // Toggle child bookmarks

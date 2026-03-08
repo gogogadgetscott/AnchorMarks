@@ -2,11 +2,6 @@ import { useRef, useEffect } from "react";
 import { useModal } from "@contexts/ModalContext";
 import { useFolders } from "@contexts/FoldersContext";
 import { createFocusTrap, removeFocusTrap } from "@utils/focus-trap.ts";
-import {
-  createFolder,
-  updateFolder,
-  deleteFolder,
-} from "@features/bookmarks/folders.ts";
 
 const FOLDER_COLORS = [
   "#6366f1",
@@ -23,7 +18,7 @@ const FOLDER_COLORS = [
 
 export default function FolderModal() {
   const { closeModal, folderFormData, setFolderFormData } = useModal();
-  const { folders } = useFolders();
+  const { folders, createFolder, updateFolder, deleteFolder } = useFolders();
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

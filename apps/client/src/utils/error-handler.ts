@@ -70,21 +70,6 @@ export function handleApiError(error: unknown, showBanner = true): string {
   return message;
 }
 
-import { logError as loggerError } from "./logger.ts";
-
-/**
- * Log error to console (only in development)
- * @deprecated Use logger.error() from logger.ts instead
- */
-export function logError(error: unknown, context?: string): void {
-  const message = context || "Error";
-  if (error instanceof Error) {
-    loggerError(message, error);
-  } else {
-    loggerError(message, new Error(String(error)));
-  }
-}
-
 /**
  * Initialize global error handlers for unhandled errors and promise rejections
  */

@@ -63,12 +63,19 @@ export default function SettingsModal() {
   };
 
   return (
-    <div className="modal show" id="settings-modal" style={{ display: "flex" }}>
+    <div
+      className="modal show"
+      id="settings-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settings-modal-title"
+      style={{ display: "flex" }}
+    >
       <div className="modal-backdrop" onClick={closeModal}></div>
       <div className="modal-content modal-lg settings-modal-content">
         <div className="modal-header">
           <div className="header-title-complex">
-            <h2>Settings</h2>
+            <h2 id="settings-modal-title">Settings</h2>
             <span className="text-tertiary">
               Configure your AnchorMarks experience
             </span>
@@ -76,7 +83,7 @@ export default function SettingsModal() {
           <button
             className="modal-close btn-icon"
             onClick={closeModal}
-            aria-label="Close"
+            aria-label="Close settings"
           >
             ✕
           </button>
@@ -85,23 +92,25 @@ export default function SettingsModal() {
         <div className="modal-body settings-modal-body">
           <div className="settings-layout">
             <aside className="settings-sidebar">
-              {sections.map((section) => (
-                <div key={section.title} className="settings-nav-section">
-                  <div className="settings-nav-header">{section.title}</div>
-                  {section.tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      className={`settings-tab-btn ${
-                        settingsActiveTab === tab.id ? "active" : ""
-                      }`}
-                      onClick={() => setSettingsActiveTab(tab.id)}
-                    >
-                      <span className="tab-icon">{tab.icon}</span>
-                      <span className="tab-label">{tab.label}</span>
-                    </button>
-                  ))}
-                </div>
-              ))}
+              <nav aria-label="Settings sections">
+                {sections.map((section) => (
+                  <div key={section.title} className="settings-nav-section">
+                    <div className="settings-nav-header">{section.title}</div>
+                    {section.tabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        className={`settings-tab-btn ${
+                          settingsActiveTab === tab.id ? "active" : ""
+                        }`}
+                        onClick={() => setSettingsActiveTab(tab.id)}
+                      >
+                        <span className="tab-icon">{tab.icon}</span>
+                        <span className="tab-label">{tab.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </nav>
             </aside>
 
             <main className="settings-main-content">{renderActivePanel()}</main>

@@ -217,6 +217,12 @@ export async function loadBookmarks(): Promise<void> {
 // Render bookmarks list
 // --- Virtualization State & Constants ---
 
+/**
+ * @deprecated This function performs client-side filtering and updates state.renderedBookmarks.
+ * React (BookmarksList component) handles the actual rendering automatically via Context.
+ * The filtering logic should eventually be moved to BookmarksContext.
+ * For now, this updates state that React observes, but doesn't trigger DOM updates directly.
+ */
 export function renderBookmarks(): void {
   // Only update state if we're in a bookmark-rendering view
   if (

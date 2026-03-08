@@ -1,11 +1,10 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useUI } from "../contexts/UIContext";
 import { useBookmarks } from "../contexts/BookmarksContext";
-import * as state from "@features/state.ts";
+import { useFolders } from "../contexts/FoldersContext";
 import { Icon } from "./Icon.tsx";
 import { showToast } from "@utils/ui-helpers.ts";
 import { addDashboardWidget } from "@features/bookmarks/dashboard.ts";
-import { getRecursiveBookmarkCount } from "@features/bookmarks/folders.ts";
 import type { Folder, DashboardWidget } from "../types/index";
 
 interface PickerItemProps {
@@ -17,6 +16,7 @@ interface PickerItemProps {
   isAdded: boolean;
   indentation?: number;
   onAdd: (type: "folder" | "tag" | "tag-analytics", id: string) => void;
+  onDragStart?: (item: { type: string; id: string; name: string }) => void;
 }
 
 function PickerItem({
@@ -28,6 +28,7 @@ function PickerItem({
   isAdded,
   indentation = 0,
   onAdd,
+  onDragStart: onDragStartProp,
 }: PickerItemProps) {
   const handleDragStart = (e: React.DragEvent) => {
     if (isAdded) {
@@ -35,12 +36,12 @@ function PickerItem({
       return;
     }
 
-    if (type === "folder" || type === "tag") {
-      state.setDraggedSidebarItem({
+    if ((type === "folder" || type === "tag") && onDragStartProp) {
+      onDragStartProp({
         type,
         id,
         name: "",
-      } as Folder);
+      });
     }
 
     if (e.dataTransfer) {
@@ -108,6 +109,7 @@ function PickerItem({
 export function WidgetPicker() {
   const { isWidgetPickerOpen, setIsWidgetPickerOpen } = useUI();
   const { folders, dashboardWidgets, tagMetadata } = useBookmarks();
+  const { getRecursiveBookmarkCount, setDraggedSidebarItem } = useFolders();
   const [isPinned, setIsPinned] = useState(false);
   const [folderSearch, setFolderSearch] = useState("");
   const [tagSearch, setTagSearch] = useState("");
@@ -185,6 +187,9 @@ export function WidgetPicker() {
               isAdded={isAdded}
               indentation={level * 16}
               onAdd={handleAddWidget}
+              onDragStart={(item) =>
+                setDraggedSidebarItem(item as unknown as Folder)
+              }
             />,
             ...renderLevel(children, level + 1),
           ];
@@ -340,6 +345,9 @@ export function WidgetPicker() {
                         w.type === "tag" && w.id === tag.name,
                     )}
                     onAdd={handleAddWidget}
+                    onDragStart={(item) =>
+                      setDraggedSidebarItem(item as unknown as Folder)
+                    }
                   />
                 ))
               ) : (

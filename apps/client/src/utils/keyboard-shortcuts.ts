@@ -4,7 +4,7 @@
  */
 
 import { showToast } from "./ui-helpers.ts";
-import * as state from "@features/state.ts";
+import { getUIBridge, getBookmarksBridge } from "@contexts/context-bridge";
 
 interface Shortcut {
   key: string;
@@ -15,14 +15,35 @@ interface Shortcut {
   preventDefault?: boolean;
 }
 
+/**
+ * Context actions injected from React
+ * These replace legacy render functions
+ */
+interface ContextActions {
+  loadBookmarks?: () => Promise<void>;
+  setCurrentView?: (view: string) => void;
+  setCurrentFolder?: (folderId: string | null) => void;
+  setBulkMode?: (enabled: boolean) => void;
+  setViewMode?: (mode: "grid" | "list" | "compact") => void;
+}
+
 class KeyboardShortcuts {
   private shortcuts: Map<string, Shortcut> = new Map();
   private sequenceBuffer: string[] = [];
   private sequenceTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly SEQUENCE_TIMEOUT_MS = 1000; // 1 second to complete sequence
+  private contextActions: ContextActions = {};
 
   constructor() {
     this.init();
+  }
+
+  /**
+   * Inject React context actions
+   * Called from React component with access to contexts
+   */
+  setContextActions(actions: ContextActions): void {
+    this.contextActions = actions;
   }
 
   /**
@@ -145,7 +166,8 @@ class KeyboardShortcuts {
         const sidebar = document.getElementById("sidebar");
         if (sidebar) {
           sidebar.classList.toggle("hidden");
-          state.setHideSidebar(!state.hideSidebar);
+          const uiBridge = getUIBridge();
+          uiBridge.setHideSidebar(!uiBridge.getHideSidebar());
         }
       },
     });
@@ -157,8 +179,13 @@ class KeyboardShortcuts {
       category: "Views",
       global: true,
       handler: async () => {
-        const { setViewMode } = await import("@features/state.ts");
-        setViewMode("grid");
+        if (this.contextActions.setViewMode) {
+          this.contextActions.setViewMode("grid");
+        } else {
+          // Fallback to legacy state update
+          const { setViewMode } = await import("@features/state.ts");
+          setViewMode("grid");
+        }
       },
     });
 
@@ -168,8 +195,13 @@ class KeyboardShortcuts {
       category: "Views",
       global: true,
       handler: async () => {
-        const { setViewMode } = await import("@features/state.ts");
-        setViewMode("list");
+        if (this.contextActions.setViewMode) {
+          this.contextActions.setViewMode("list");
+        } else {
+          // Fallback to legacy state update
+          const { setViewMode } = await import("@features/state.ts");
+          setViewMode("list");
+        }
       },
     });
 
@@ -179,8 +211,13 @@ class KeyboardShortcuts {
       category: "Views",
       global: true,
       handler: async () => {
-        const { setViewMode } = await import("@features/state.ts");
-        setViewMode("compact");
+        if (this.contextActions.setViewMode) {
+          this.contextActions.setViewMode("compact");
+        } else {
+          // Fallback to legacy state update
+          const { setViewMode } = await import("@features/state.ts");
+          setViewMode("compact");
+        }
       },
     });
 
@@ -191,11 +228,16 @@ class KeyboardShortcuts {
       category: "Navigation",
       global: true,
       handler: async () => {
-        await state.setCurrentView("dashboard");
-        // Header updates via React Context; legacy updateHeaderContent removed
-        const { renderDashboard } =
-          await import("@features/bookmarks/dashboard.ts");
-        renderDashboard();
+        if (this.contextActions.setCurrentView) {
+          this.contextActions.setCurrentView("dashboard");
+        } else {
+          // Fallback to bridge
+          const uiBridge = getUIBridge();
+          await uiBridge.setCurrentView("dashboard");
+          const { renderDashboard } =
+            await import("@features/bookmarks/dashboard.ts");
+          renderDashboard();
+        }
       },
     });
 
@@ -205,11 +247,23 @@ class KeyboardShortcuts {
       category: "Navigation",
       global: true,
       handler: async () => {
-        await state.setCurrentView("all");
-        state.setCurrentFolder(null);
-        const { loadBookmarks } =
-          await import("@features/bookmarks/bookmarks.ts");
-        await loadBookmarks();
+        if (
+          this.contextActions.setCurrentView &&
+          this.contextActions.setCurrentFolder &&
+          this.contextActions.loadBookmarks
+        ) {
+          this.contextActions.setCurrentView("all");
+          this.contextActions.setCurrentFolder(null);
+          await this.contextActions.loadBookmarks();
+        } else {
+          // Fallback to bridge
+          const uiBridge = getUIBridge();
+          await uiBridge.setCurrentView("all");
+          uiBridge.setCurrentFolder(null);
+          const { loadBookmarks } =
+            await import("@features/bookmarks/bookmarks.ts");
+          await loadBookmarks();
+        }
       },
     });
 
@@ -219,10 +273,20 @@ class KeyboardShortcuts {
       category: "Navigation",
       global: true,
       handler: async () => {
-        await state.setCurrentView("favorites");
-        const { loadBookmarks } =
-          await import("@features/bookmarks/bookmarks.ts");
-        await loadBookmarks();
+        if (
+          this.contextActions.setCurrentView &&
+          this.contextActions.loadBookmarks
+        ) {
+          this.contextActions.setCurrentView("favorites");
+          await this.contextActions.loadBookmarks();
+        } else {
+          // Fallback to bridge
+          const uiBridge = getUIBridge();
+          await uiBridge.setCurrentView("favorites");
+          const { loadBookmarks } =
+            await import("@features/bookmarks/bookmarks.ts");
+          await loadBookmarks();
+        }
       },
     });
 
@@ -233,9 +297,14 @@ class KeyboardShortcuts {
       category: "Actions",
       global: true,
       handler: async () => {
-        state.setBulkMode(!state.bulkMode);
-        const { updateBulkUI } = await import("./ui-helpers.ts");
-        updateBulkUI();
+        const bookmarksBridge = getBookmarksBridge();
+        const newBulkMode = !bookmarksBridge.getBulkMode();
+        if (this.contextActions.setBulkMode) {
+          this.contextActions.setBulkMode(newBulkMode);
+        } else {
+          // Fallback to bridge
+          bookmarksBridge.setBulkMode(newBulkMode);
+        }
       },
     });
   }
@@ -413,4 +482,4 @@ class KeyboardShortcuts {
 const keyboardShortcuts = new KeyboardShortcuts();
 
 export { keyboardShortcuts, KeyboardShortcuts };
-export type { Shortcut };
+export type { Shortcut, ContextActions };

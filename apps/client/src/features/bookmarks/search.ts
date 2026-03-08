@@ -14,7 +14,13 @@ import type { Collection, Tag } from "../../types/index";
 /** Tag with count and optional parent path, used in tag stats list */
 type TagStatItem = Tag & { parent?: string; count: number };
 
-// Render sidebar tags
+/**
+ * Render sidebar tags
+ * @deprecated This function calculates tag counts and updates DOM directly.
+ * React (Sidebar component) should handle this via Context.
+ * The tag counting logic should be moved to BookmarksContext or a dedicated TagsContext.
+ * For now, this updates state and DOM that React components may observe.
+ */
 export function renderSidebarTags(): void {
   const container = document.getElementById("sidebar-tags-list");
   const countBadge = document.getElementById("tags-count");
@@ -151,7 +157,11 @@ export function showAllTags(): void {
   renderTagsList(state.allSidebarTags.slice(0, 100));
 }
 
-// Render tags list
+/**
+ * Render tags list
+ * @deprecated This function renders tags list directly to DOM.
+ * React (Sidebar component) should handle this via Context.
+ */
 export function renderTagsList(tags: { name: string; count: number }[]): void {
   const container = document.getElementById("sidebar-tags-list");
   if (!container) return;
@@ -243,7 +253,11 @@ export function clearAllFilters(): void {
   renderSidebarTags();
 }
 
-// Render active filters
+/**
+ * Render active filters
+ * @deprecated This function renders filter chips directly to DOM.
+ * React (FilterSidebar or Header component) should handle this via Context.
+ */
 export function renderActiveFilters(): void {
   const section = document.getElementById("active-filters-section");
   const chipsContainer = document.getElementById("active-filters-chips");

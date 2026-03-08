@@ -1,19 +1,51 @@
+import { useEffect } from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import SettingsModal from "../SettingsModal";
-import { ModalProvider } from "../../../contexts/ModalContext";
+import { ModalProvider, useModal } from "@/contexts/ModalContext";
 
-// Mock focus-trap utilities
 vi.mock("@utils/focus-trap.ts", () => ({
   createFocusTrap: vi.fn(),
   removeFocusTrap: vi.fn(),
 }));
 
+vi.mock("../settings/ProfileSettings", () => ({
+  ProfileSettings: () => <div id="settings-profile">Profile panel</div>,
+}));
+vi.mock("../settings/GeneralSettings", () => ({
+  GeneralSettings: () => <div id="settings-general">General panel</div>,
+}));
+vi.mock("../settings/TagSettings", () => ({
+  TagSettings: () => <div id="settings-tags">Tags panel</div>,
+}));
+vi.mock("../settings/ApiSettings", () => ({
+  ApiSettings: () => <div id="settings-api">API panel</div>,
+}));
+vi.mock("../settings/ImportExportSettings", () => ({
+  ImportExportSettings: () => <div id="settings-import">Import panel</div>,
+}));
+vi.mock("../settings/MaintenanceSettings", () => ({
+  MaintenanceSettings: () => (
+    <div id="settings-maintenance">Maintenance panel</div>
+  ),
+}));
+vi.mock("../settings/ShortcutSettings", () => ({
+  ShortcutSettings: () => <div id="settings-shortcuts">Shortcuts panel</div>,
+}));
+
+function OpenSettingsModalOnMount() {
+  const { openSettingsModal } = useModal();
+  useEffect(() => {
+    openSettingsModal();
+  }, [openSettingsModal]);
+  return <SettingsModal />;
+}
+
 describe("SettingsModal (React)", () => {
   const renderSettingsModal = () => {
     return render(
       <ModalProvider>
-        <SettingsModal />
+        <OpenSettingsModalOnMount />
       </ModalProvider>,
     );
   };
@@ -24,29 +56,38 @@ describe("SettingsModal (React)", () => {
   });
 
   it("renders settings tabs", () => {
-    renderSettingsModal();
-    expect(screen.getByText("Profile")).toBeTruthy();
-    expect(screen.getByText("General")).toBeTruthy();
-    expect(screen.getByText("Dashboard")).toBeTruthy();
-    expect(screen.getByText("Tags")).toBeTruthy();
-    expect(screen.getByText("API")).toBeTruthy();
+    const { container } = renderSettingsModal();
+    const tabLabels = Array.from(container.querySelectorAll(".tab-label")).map(
+      (el) => el.textContent,
+    );
+
+    expect(tabLabels).toEqual(
+      expect.arrayContaining([
+        "Profile",
+        "General",
+        "Tags",
+        "API",
+        "Import/Export",
+        "Maintenance",
+        "Shortcuts",
+      ]),
+    );
   });
 
   it("renders section headers", () => {
-    renderSettingsModal();
-    expect(screen.getByText("Account")).toBeTruthy();
-    expect(screen.getByText("Customization")).toBeTruthy();
-    expect(screen.getByText("Integrations")).toBeTruthy();
+    const { container } = renderSettingsModal();
+    const sectionHeaders = Array.from(
+      container.querySelectorAll(".settings-nav-header"),
+    ).map((el) => el.textContent);
+
+    expect(sectionHeaders).toEqual(
+      expect.arrayContaining(["Account", "App", "Maintenance"]),
+    );
   });
 
   it("renders close button", () => {
     renderSettingsModal();
     expect(screen.getByLabelText(/Close settings/)).toBeTruthy();
-  });
-
-  it("renders logout button", () => {
-    renderSettingsModal();
-    expect(screen.getByText("Log Out")).toBeTruthy();
   });
 
   it("switches tabs when clicked", () => {
@@ -55,6 +96,7 @@ describe("SettingsModal (React)", () => {
     if (apiTab) {
       fireEvent.click(apiTab);
       expect(apiTab.classList.contains("active")).toBe(true);
+      expect(screen.getByText("API panel")).toBeTruthy();
     }
   });
 
@@ -66,13 +108,9 @@ describe("SettingsModal (React)", () => {
     expect(modal?.getAttribute("aria-labelledby")).toBe("settings-modal-title");
   });
 
-  it("renders settings panel containers", () => {
-    const { container } = renderSettingsModal();
-    expect(container.querySelector("#settings-profile")).toBeTruthy();
-    expect(container.querySelector("#settings-general")).toBeTruthy();
-    expect(container.querySelector("#settings-dashboard")).toBeTruthy();
-    expect(container.querySelector("#settings-tags")).toBeTruthy();
-    expect(container.querySelector("#settings-api")).toBeTruthy();
+  it("renders default panel content", () => {
+    renderSettingsModal();
+    expect(screen.getByText("General panel")).toBeTruthy();
   });
 
   it("closes modal when backdrop is clicked", () => {
@@ -81,16 +119,14 @@ describe("SettingsModal (React)", () => {
     if (backdrop) {
       fireEvent.click(backdrop);
     }
-    // Modal should still be rendered (handled by context)
-    expect(screen.getByText("Settings")).toBeTruthy();
+    expect(container.querySelector("#settings-modal")).toBeNull();
   });
 
   it("closes modal when close button is clicked", () => {
-    renderSettingsModal();
+    const { container } = renderSettingsModal();
     const closeBtn = screen.getByLabelText(/Close settings/);
     fireEvent.click(closeBtn);
-    // Modal should still be rendered (handled by context)
-    expect(screen.getByText("Settings")).toBeTruthy();
+    expect(container.querySelector("#settings-modal")).toBeNull();
   });
 
   it("has tab navigation landmark", () => {

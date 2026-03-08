@@ -544,6 +544,9 @@ export function toggleFullscreen(): void {
 
 /**
  * Render dashboard with all widgets
+ * @deprecated This function is being replaced by React-based dashboard rendering (react-dashboard.tsx).
+ * The function now primarily serves as a bridge to the React component.
+ * Eventually, dashboard rendering should be fully handled by React Context and components.
  */
 export async function renderDashboard(): Promise<void> {
   if (state.currentView !== "dashboard") {

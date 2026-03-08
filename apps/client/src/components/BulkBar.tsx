@@ -8,7 +8,6 @@ import {
   bulkRemoveTags,
   bulkMove,
 } from "@features/bookmarks/bulk-ops.ts";
-import * as state from "@features/state.ts";
 
 export function BulkBar() {
   const {
@@ -24,19 +23,16 @@ export function BulkBar() {
   const handleSelectAll = () => {
     const allIds = new Set(renderedBookmarks.map((b) => b.id));
     setSelectedBookmarks(allIds);
-    state.setSelectedBookmarks(allIds);
   };
 
   const handleUnselectAll = () => {
     const empty = new Set<string>();
     setSelectedBookmarks(empty);
-    state.setSelectedBookmarks(empty);
   };
 
   const handleClear = () => {
     handleUnselectAll();
     setBulkMode(false);
-    state.setBulkMode(false);
   };
 
   const handleMove = async (e: React.ChangeEvent<HTMLSelectElement>) => {

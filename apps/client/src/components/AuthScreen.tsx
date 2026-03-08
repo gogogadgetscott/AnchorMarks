@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@contexts/AuthContext";
-import { login, register } from "@features/auth/auth.ts";
 import { showToast } from "@utils/ui-helpers.ts";
 import { Icon } from "./Icon.tsx";
 
 export function AuthScreen() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, login, register } = useAuth();
   const [tab, setTab] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

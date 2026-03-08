@@ -17,7 +17,10 @@ vi.mock("@utils/ui-helpers.ts", () => ({
   updateActiveNav: vi.fn(),
   closeModals: vi.fn(),
 }));
-vi.mock("@features/auth/auth.ts", () => ({ logout: vi.fn() }));
+vi.mock("@features/auth/auth.ts", () => ({
+  logout: vi.fn(),
+  setAuthContextSetter: vi.fn(),
+}));
 vi.mock("@features/bookmarks/bookmarks.ts", () => ({
   clearSelection: vi.fn(),
   selectAllBookmarks: vi.fn(),

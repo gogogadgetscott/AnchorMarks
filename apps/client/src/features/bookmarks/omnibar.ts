@@ -224,7 +224,12 @@ export function toggleOmnibar(): void {
   }
 }
 
-// Render omnibar panel content
+/**
+ * Render omnibar panel content
+ * @deprecated This function uses legacy DOM manipulation.
+ * A React-based Omnibar component (Omnibar.tsx) already exists and should be used instead.
+ * This function remains for backward compatibility but should not be used in new code.
+ */
 export function renderOmnibarPanel(query: string): void {
   const panel = document.getElementById("omnibar-panel");
   if (!panel) return;

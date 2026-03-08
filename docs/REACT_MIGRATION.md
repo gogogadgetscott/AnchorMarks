@@ -235,14 +235,23 @@ Existing Vitest setup needs no changes.
 - Phase 8: Dashboard - Converted
 - Phase 9: App Shell - Converted (main.tsx, App.tsx)
 - Phase 10: Tests - Many .test.tsx files added
+- Phase 11: Feature Migration to Contexts (In Progress)
+  - ✅ Auth methods migrated to AuthContext (login, register, logout, checkAuth, updateProfile, updatePassword, regenerateApiKey, copyApiKey)
+  - ✅ Folder CRUD migrated to FoldersContext (createFolder, updateFolder, deleteFolder, getRecursiveBookmarkCount)
+  - ✅ Tag management migrated to BookmarksContext (fetchTagStats, renameTag, deleteTag, updateTag, createTag)
+  - ✅ Components updated to use context methods (AuthScreen, ProfileSettings, ApiSettings, FolderModal, WidgetPicker, TagSettings, TagModal)
+  - ⏳ Settings, import/export, bulk operations pending
+  - ⏳ Keyboard shortcuts need React context integration
 - WebSocket: useWebSocket hook created, services/websocket.ts removed
 - Auth: auth.ts integrated with React context
 
 ### Remaining Legacy Code
 
-- `features/*.ts` modules still exist but are not actively called for core operations
-- Legacy `.ts` component files still exist but are not imported by React components
-- Some components still reference vanilla state for backward compatibility
+- Some `features/*.ts` modules still exist and are used by legacy keyboard handlers
+- Legacy `.ts` component files (Badge.ts, Icon.ts, Tag.ts) still exist for backwards compatibility with legacy feature files
+- Settings, import/export, and bulk operations still use imperative functions
+- Keyboard shortcuts still call some legacy render functions (e.g., renderDashboard)
+- Some data-action event delegation patterns remain in maintenance.ts and legacy features
 
 ---
 

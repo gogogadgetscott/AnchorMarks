@@ -449,7 +449,7 @@ export function Sidebar() {
             opacity: 0.7,
           }}
         >
-          v%VITE_APP_VERSION%
+          v{import.meta.env.VITE_APP_VERSION}
         </div>
       </div>
     </aside>

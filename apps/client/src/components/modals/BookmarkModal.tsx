@@ -7,6 +7,7 @@ import {
   createBookmark,
   updateBookmark,
 } from "@features/bookmarks/bookmarks.ts";
+import { SmartTagSuggestions } from "@components/SmartTagSuggestions";
 
 const COLOR_OPTIONS = [
   { color: "", label: "No color" },
@@ -27,6 +28,7 @@ export default function BookmarkModal() {
   const { folders } = useFolders();
   const modalRef = useRef<HTMLDivElement>(null);
   const [isFetching, setIsFetching] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     if (modalRef.current) {
@@ -78,11 +80,8 @@ export default function BookmarkModal() {
         description: metadata.description || bookmarkFormData.description,
       });
 
-      // Show smart suggestions
-      import("@features/bookmarks/smart-organization-ui.ts").then(
-        ({ showSmartTagSuggestions }) =>
-          showSmartTagSuggestions(bookmarkFormData.url),
-      );
+      // Show smart suggestions using React component
+      setShowSuggestions(true);
     } catch (error) {
       // Error handling is done in fetchMetadata (logger)
       // and createBookmark/updateBookmark (toast)
@@ -93,6 +92,18 @@ export default function BookmarkModal() {
 
   const handleColorSelect = (color: string) => {
     setBookmarkFormData({ color });
+  };
+
+  const handleTagClick = (tag: string) => {
+    // Add tag to existing tags, avoid duplicates
+    const currentTags = bookmarkFormData.tags
+      ? bookmarkFormData.tags.split(",").map((t) => t.trim())
+      : [];
+    
+    if (!currentTags.includes(tag)) {
+      const newTags = [...currentTags, tag].join(", ");
+      setBookmarkFormData({ tags: newTags });
+    }
   };
 
   const isEditing = Boolean(bookmarkFormData.id);
@@ -288,7 +299,13 @@ export default function BookmarkModal() {
               id="tag-autocomplete"
               style={{ display: "none" }}
             ></div>
-            <div className="tag-suggestions" id="tag-suggestions"></div>
+            {showSuggestions && bookmarkFormData.url && (
+              <SmartTagSuggestions
+                url={bookmarkFormData.url}
+                onTagClick={handleTagClick}
+                enabled={true}
+              />
+            )}
           </div>
 
           {/* Color picker */}

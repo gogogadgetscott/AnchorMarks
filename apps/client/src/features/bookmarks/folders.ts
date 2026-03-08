@@ -51,7 +51,12 @@ export async function loadFolders(): Promise<void> {
   }
 }
 
-// Render folders in sidebar
+/**
+ * Render folders in sidebar
+ * @deprecated This function renders folders tree directly to DOM.
+ * React (Sidebar component) should handle this via FoldersContext.
+ * The folder tree rendering logic should be moved to a React component.
+ */
 export function renderFolders(): void {
   const container = document.getElementById("folders-list");
   if (!container) return;

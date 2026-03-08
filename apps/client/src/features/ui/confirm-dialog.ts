@@ -16,7 +16,7 @@ import {
  * Legacy confirmDialog bridge
  */
 export const confirmDialog = (message: string, options?: ConfirmOptions) =>
-  showConfirm(message, options);
+  ConfirmDialog.getInstance().show(message, options);
 
 /**
  * Legacy promptDialog bridge
@@ -28,15 +28,21 @@ export const promptDialog = (message: string, options?: PromptOptions) =>
  * Legacy tagPickerDialog bridge
  */
 export const tagPickerDialog = (options?: TagPickerOptions) =>
-  showTagPicker(options);
+  TagPickerDialog.getInstance().show(options);
 
 // For compatibility with any code that still uses the class instances directly (though unlikely)
 export class ConfirmDialog {
+  private static instance: ConfirmDialog | undefined;
+
   public static getInstance() {
-    return {
-      show: (message: string, options?: ConfirmOptions) =>
-        showConfirm(message, options),
-    };
+    if (!ConfirmDialog.instance) {
+      ConfirmDialog.instance = new ConfirmDialog();
+    }
+    return ConfirmDialog.instance;
+  }
+
+  public show(message: string, options?: ConfirmOptions): Promise<boolean> {
+    return showConfirm(message, options);
   }
 }
 
@@ -50,9 +56,16 @@ export class PromptDialog {
 }
 
 export class TagPickerDialog {
+  private static instance: TagPickerDialog | undefined;
+
   public static getInstance() {
-    return {
-      show: (options?: TagPickerOptions) => showTagPicker(options),
-    };
+    if (!TagPickerDialog.instance) {
+      TagPickerDialog.instance = new TagPickerDialog();
+    }
+    return TagPickerDialog.instance;
+  }
+
+  public show(options?: TagPickerOptions): Promise<string[] | null> {
+    return showTagPicker(options);
   }
 }

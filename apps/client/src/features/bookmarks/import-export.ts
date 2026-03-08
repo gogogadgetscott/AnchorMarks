@@ -32,9 +32,7 @@ export async function importHtml(
   ]);
   await Promise.all([loadBookmarks(), loadFolders()]);
 
-  // Update tag list
-  const { renderSidebarTags } = await import("@features/bookmarks/search.ts");
-  if (renderSidebarTags) await renderSidebarTags();
+  // React Context handles re-rendering automatically
 
   const hasLog = !!(result.import_log && result.import_log.length > 0);
 
@@ -89,8 +87,7 @@ export async function importJson(
   ]);
   await Promise.all([loadBookmarks(), loadFolders()]);
 
-  const { renderSidebarTags } = await import("@features/bookmarks/search.ts");
-  if (renderSidebarTags) await renderSidebarTags();
+  // React Context handles re-rendering automatically
 
   return {
     imported: result.imported,

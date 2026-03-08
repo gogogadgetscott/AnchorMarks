@@ -6,8 +6,11 @@ import {
   type ReactNode,
   useEffect,
 } from "react";
-import * as state from "../features/state.ts";
+import { registerBookmarksBridge, getUIBridge } from "./context-bridge";
 import { api } from "../services/api.ts";
+import { showToast } from "./ToastContext";
+import { showConfirm } from "./ConfirmContext";
+import { logger } from "@utils/logger";
 import type {
   Bookmark,
   Collection,
@@ -15,6 +18,14 @@ import type {
   Folder,
   DashboardWidget,
 } from "../types/index";
+
+interface TagStatItem {
+  id: string;
+  name: string;
+  count: number;
+  color?: string;
+  parent?: string;
+}
 
 export const BOOKMARKS_PER_PAGE = 50;
 
@@ -51,6 +62,14 @@ interface BookmarksState {
   bulkMode: boolean;
 }
 
+interface TagManagementMethods {
+  fetchTagStats: () => Promise<TagStatItem[]>;
+  renameTag: (from: string, to: string) => Promise<void>;
+  deleteTag: (id: string, name: string) => Promise<void>;
+  updateTag: (id: string, name: string, color?: string) => Promise<void>;
+  createTag: (name: string, color?: string) => Promise<boolean>;
+}
+
 interface BookmarksActions {
   loadBookmarks: () => Promise<void>;
   loadMoreBookmarks: () => Promise<void>;
@@ -78,7 +97,9 @@ interface BookmarksActions {
   resetPagination: () => void;
 }
 
-type BookmarksContextValue = BookmarksState & BookmarksActions;
+type BookmarksContextValue = BookmarksState &
+  BookmarksActions &
+  TagManagementMethods;
 
 const BookmarksContext = createContext<BookmarksContextValue | null>(null);
 
@@ -120,54 +141,21 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
   );
   const [bulkMode, setBulkMode] = useState(false);
 
+  // Register with context bridge for non-React code
   useEffect(() => {
-    return state.subscribe((key, value) => {
-      switch (key) {
-        case "bookmarks":
-          setBookmarks(value as Bookmark[]);
-          break;
-        case "renderedBookmarks":
-          setRenderedBookmarks(value as Bookmark[]);
-          break;
-        case "folders":
-          setFolders(value as Folder[]);
-          break;
-        case "collections":
-          setCollections(value as Collection[]);
-          break;
-        case "dashboardWidgets":
-          setDashboardWidgets(value as DashboardWidget[]);
-          break;
-        case "totalCount":
-          setTotalCount(value as number);
-          break;
-        case "filterConfig":
-          setFilterConfig(value as FilterConfig);
-          break;
-        case "tagMetadata":
-          setTagMetadata(value as any);
-          break;
-        case "displayedCount":
-          setDisplayedCount(value as number);
-          break;
-        case "isLoading":
-          setIsLoading(value as boolean);
-          break;
-        case "isLoadingMore":
-          setIsLoadingMore(value as boolean);
-          break;
-        case "selectedBookmarks":
-          setSelectedBookmarks(value as Set<string>);
-          break;
-        case "lastSelectedIndex":
-          setLastSelectedIndex(value as number | null);
-          break;
-        case "bulkMode":
-          setBulkMode(value as boolean);
-          break;
-      }
+    registerBookmarksBridge({
+      getBookmarks: () => bookmarks,
+      setBookmarks,
+      getRenderedBookmarks: () => renderedBookmarks,
+      setRenderedBookmarks,
+      getTotalCount: () => totalCount,
+      setTotalCount,
+      getSelectedBookmarks: () => selectedBookmarks,
+      setSelectedBookmarks,
+      getBulkMode: () => bulkMode,
+      setBulkMode,
     });
-  }, []);
+  }, [bookmarks, renderedBookmarks, totalCount, selectedBookmarks, bulkMode]);
 
   const setWidgetDataCache = useCallback((id: string, val: Bookmark[]) => {
     setWidgetDataCacheState((prev) => ({ ...prev, [id]: val }));
@@ -183,17 +171,23 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loadBookmarks = useCallback(async () => {
-    const currentFolder = state.currentFolder;
-    const currentView = state.currentView;
-    const currentCollection = state.currentCollection;
-    const filter = state.filterConfig;
-
-    if (currentView === "analytics") return;
-
-    setIsLoading(true);
-    resetPagination();
-
     try {
+      const uiBridge = getUIBridge();
+      const currentFolder = uiBridge.getCurrentFolder();
+      const currentView = uiBridge.getCurrentView();
+
+      // Get current collection from URL or state if we're in collection view
+      let currentCollection: string | null = null;
+      if (currentView === "collection") {
+        const url = new URL(window.location.href);
+        currentCollection = url.searchParams.get("collection");
+      }
+
+      if (currentView === "analytics") return;
+
+      setIsLoading(true);
+      resetPagination();
+
       const params = new URLSearchParams();
       params.append("limit", String(BOOKMARKS_PER_PAGE));
 
@@ -217,14 +211,14 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         params.append("folder_id", currentFolder);
       }
 
-      if (filter.tags?.length) {
-        filter.tags.forEach((t) => params.append("tag", t));
+      if (filterConfig.tags?.length) {
+        filterConfig.tags.forEach((t: string) => params.append("tag", t));
       }
-      if (filter.search) {
-        params.append("search", filter.search);
+      if (filterConfig.search) {
+        params.append("search", filterConfig.search);
       }
-      if (filter.sort) {
-        params.append("sort", filter.sort);
+      if (filterConfig.sort) {
+        params.append("sort", filterConfig.sort);
       }
 
       const queryString = params.toString();
@@ -234,11 +228,6 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       setBookmarks(data.bookmarks);
       setRenderedBookmarks(data.bookmarks);
       setTotalCount(data.total || data.bookmarks.length);
-
-      // Sync with vanilla state for backward compatibility
-      state.setBookmarks(data.bookmarks);
-      state.setRenderedBookmarks(data.bookmarks);
-      state.setTotalCount(data.total || data.bookmarks.length);
 
       if (data.tags) {
         const metadata: Record<
@@ -268,7 +257,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [resetPagination]);
+  }, [resetPagination, filterConfig]);
 
   const loadMoreBookmarks = useCallback(async () => {
     if (isLoadingMore || displayedCount >= totalCount) return;
@@ -280,15 +269,14 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       params.append("offset", String(displayedCount));
       params.append("limit", String(BOOKMARKS_PER_PAGE));
 
-      const filter = state.filterConfig;
-      if (filter.tags?.length) {
-        filter.tags.forEach((t) => params.append("tag", t));
+      if (filterConfig.tags?.length) {
+        filterConfig.tags.forEach((t: string) => params.append("tag", t));
       }
-      if (filter.search) {
-        params.append("search", filter.search);
+      if (filterConfig.search) {
+        params.append("search", filterConfig.search);
       }
-      if (filter.sort) {
-        params.append("sort", filter.sort);
+      if (filterConfig.sort) {
+        params.append("sort", filterConfig.sort);
       }
 
       const data = await api<BookmarksListResponse>(`/bookmarks?${params}`);
@@ -296,16 +284,147 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       setBookmarks(newBookmarks);
       setRenderedBookmarks(newBookmarks);
       setDisplayedCount((prev) => prev + data.bookmarks.length);
-
-      // Sync with vanilla state for backward compatibility
-      state.setBookmarks(newBookmarks);
-      state.setRenderedBookmarks(newBookmarks);
     } catch (err) {
       console.error("Failed to load more bookmarks:", err);
     } finally {
       setIsLoadingMore(false);
     }
-  }, [isLoadingMore, displayedCount, totalCount, bookmarks]);
+  }, [isLoadingMore, displayedCount, totalCount, bookmarks, filterConfig]);
+
+  // Tag Management Methods
+  const fetchTagStats = useCallback(async (): Promise<TagStatItem[]> => {
+    try {
+      const tags = await api<TagStatItem[]>("/tags");
+      if (!tags || tags.length === 0) return [];
+
+      const sortMode = filterConfig.tagSort || "count_desc";
+      tags.sort((a, b) => {
+        switch (sortMode) {
+          case "count_asc":
+            return a.count - b.count;
+          case "name_asc":
+            return a.name.localeCompare(b.name);
+          case "name_desc":
+            return b.name.localeCompare(a.name);
+          case "count_desc":
+          default:
+            return b.count - a.count;
+        }
+      });
+      return tags;
+    } catch (err) {
+      logger.error("Failed to fetch tag stats:", err);
+      return [];
+    }
+  }, [filterConfig.tagSort]);
+
+  const renameTag = useCallback(
+    async (from: string, to: string): Promise<void> => {
+      if (!from || !to) return;
+
+      try {
+        await api("/tags/rename", {
+          method: "POST",
+          body: JSON.stringify({ from, to }),
+        });
+
+        // Update bookmarks with renamed tag
+        const updatedBookmarks = bookmarks.map((b) => {
+          if (!b.tags) return b;
+          const tags = b.tags
+            .split(",")
+            .map((t) => t.trim())
+            .map((t) => (t === from ? to : t));
+          const merged = Array.from(new Set(tags)).join(", ");
+          return { ...b, tags: merged };
+        });
+
+        setBookmarks(updatedBookmarks);
+
+        // Trigger re-render
+        const event = new CustomEvent("tag-updated");
+        window.dispatchEvent(event);
+
+        showToast(`Renamed ${from} → ${to}`, "success");
+      } catch (err) {
+        logger.error("Failed to rename tag:", err);
+        showToast("Failed to rename tag", "error");
+      }
+    },
+    [bookmarks],
+  );
+
+  const deleteTag = useCallback(
+    async (id: string, name: string): Promise<void> => {
+      const confirmed = await showConfirm(
+        `Delete tag "${name}"? It will be removed from all bookmarks.`,
+        { title: "Delete Tag", destructive: true },
+      );
+
+      if (!confirmed) return;
+
+      try {
+        await api(`/tags/${id}`, { method: "DELETE" });
+
+        // Trigger re-render
+        const event = new CustomEvent("tag-updated");
+        window.dispatchEvent(event);
+
+        showToast(`Tag "${name}" deleted`, "success");
+      } catch (err) {
+        logger.error("Failed to delete tag:", err);
+        showToast("Failed to delete tag", "error");
+      }
+    },
+    [],
+  );
+
+  const updateTag = useCallback(
+    async (id: string, name: string, color?: string): Promise<void> => {
+      if (!name) return;
+
+      try {
+        await api(`/tags/${id}`, {
+          method: "PUT",
+          body: JSON.stringify({ name, color }),
+        });
+
+        // Trigger re-render
+        const event = new CustomEvent("tag-updated");
+        window.dispatchEvent(event);
+
+        showToast("Tag updated successfully", "success");
+      } catch (err) {
+        logger.error("Failed to update tag:", err);
+        showToast("Failed to update tag", "error");
+      }
+    },
+    [],
+  );
+
+  const createTag = useCallback(
+    async (name: string, color?: string): Promise<boolean> => {
+      if (!name || !name.trim()) {
+        showToast("Tag name is required", "error");
+        return false;
+      }
+
+      try {
+        await api("/tags", {
+          method: "POST",
+          body: JSON.stringify({ name: name.trim(), color }),
+        });
+
+        showToast("Tag created successfully", "success");
+        return true;
+      } catch (err) {
+        logger.error("Failed to create tag:", err);
+        showToast("Failed to create tag", "error");
+        return false;
+      }
+    },
+    [],
+  );
 
   const value: BookmarksContextValue = {
     bookmarks,
@@ -342,6 +461,11 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     setLastSelectedIndex: useCallback((val) => setLastSelectedIndex(val), []),
     setBulkMode: useCallback((val) => setBulkMode(val), []),
     resetPagination,
+    fetchTagStats,
+    renameTag,
+    deleteTag,
+    updateTag,
+    createTag,
   };
 
   return (

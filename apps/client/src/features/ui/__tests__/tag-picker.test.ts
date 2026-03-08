@@ -1,136 +1,57 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@utils/logger.ts", () => {
-  const mockFn = vi.fn();
-  return {
-    logger: {
-      debug: mockFn,
-      info: mockFn,
-      warn: mockFn,
-      error: mockFn,
-    },
-    logDebug: mockFn,
-    logInfo: mockFn,
-    logWarn: mockFn,
-    logError: mockFn,
-  };
-});
+const { showTagPickerMock } = vi.hoisted(() => ({
+  showTagPickerMock: vi.fn(),
+}));
 
-import { TagPickerDialog } from "../confirm-dialog";
-import * as state from "@features/state";
+vi.mock("@/contexts/ConfirmContext", () => ({
+  showConfirm: vi.fn(),
+  showPrompt: vi.fn(),
+  showTagPicker: showTagPickerMock,
+}));
 
-function buildSkeleton() {
-  document.body.innerHTML = `
-    <div id="bulk-tag-picker-modal" class="modal hidden">
-      <div class="modal-backdrop"></div>
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 class="tag-picker-title"></h2>
-          <p class="tag-picker-subtitle"></p>
-          <button class="tag-picker-cancel-x"></button>
-        </div>
-        <div class="modal-body">
-          <div id="bulk-tags-input-container">
-            <div id="bulk-selected-tags"></div>
-            <input id="bulk-tags-text-input" />
-            <div id="bulk-tag-autocomplete"></div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="tag-picker-cancel"></button>
-          <button class="tag-picker-ok"></button>
-        </div>
-      </div>
-    </div>
-  `;
-}
+import { TagPickerDialog, tagPickerDialog } from "../confirm-dialog";
 
-describe("TagPickerDialog", () => {
+describe("TagPickerDialog bridge", () => {
   beforeEach(() => {
-    vi.useFakeTimers();
-    document.body.innerHTML = "";
+    vi.clearAllMocks();
     (TagPickerDialog as any).instance = undefined;
-    state.setTagMetadata({
-      alpha: { color: "#111", count: 2 },
-      foo: { color: "#222", count: 1 },
-      bar: { color: "#333", count: 3 },
+  });
+
+  it("tagPickerDialog delegates to TagPickerDialog singleton", async () => {
+    showTagPickerMock.mockResolvedValueOnce(["foo"]);
+
+    await expect(
+      tagPickerDialog({
+        initialTags: ["foo", "bar"],
+        selectionCount: 2,
+      }),
+    ).resolves.toEqual(["foo"]);
+
+    expect(showTagPickerMock).toHaveBeenCalledWith({
+      initialTags: ["foo", "bar"],
+      selectionCount: 2,
     });
   });
 
-  afterEach(() => {
-    vi.runOnlyPendingTimers();
-    vi.useRealTimers();
-    document.body.innerHTML = "";
-    (TagPickerDialog as any).instance = undefined;
-    state.setTagMetadata({});
+  it("TagPickerDialog.getInstance returns singleton", () => {
+    const first = TagPickerDialog.getInstance();
+    const second = TagPickerDialog.getInstance();
+
+    expect(first).toBe(second);
   });
 
-  it("initializes modal and renders provided tags", async () => {
-    buildSkeleton();
-    const dialog = TagPickerDialog.getInstance();
-    const promise = dialog.show({ initialTags: ["alpha"], selectionCount: 3 });
+  it("TagPickerDialog.show delegates to showTagPicker", async () => {
+    showTagPickerMock.mockResolvedValueOnce(null);
 
-    vi.runAllTimers();
+    await expect(
+      TagPickerDialog.getInstance().show({
+        initialTags: ["alpha"],
+      }),
+    ).resolves.toBeNull();
 
-    const selected = document.querySelector("#bulk-selected-tags")?.textContent;
-    expect(selected).toContain("alpha");
-    expect(document.querySelector(".tag-picker-subtitle")?.textContent).toBe(
-      "3 bookmarks selected",
-    );
-
-    document.querySelector<HTMLElement>(".tag-picker-ok")?.click();
-    await expect(promise).resolves.toEqual(["alpha"]);
-  });
-
-  it("adds new tags via keyboard and returns them", async () => {
-    buildSkeleton();
-    const dialog = TagPickerDialog.getInstance();
-    const promise = dialog.show();
-
-    const input = document.querySelector<HTMLInputElement>(
-      "#bulk-tags-text-input",
-    );
-    input!.value = "foo";
-    input?.dispatchEvent(new Event("input", { bubbles: true }));
-    input?.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
-    );
-
-    input!.value = "bar";
-    input?.dispatchEvent(
-      new KeyboardEvent("keydown", { key: ",", bubbles: true }),
-    );
-
-    document.querySelector<HTMLElement>(".tag-picker-ok")?.click();
-
-    await expect(promise).resolves.toEqual(["foo", "bar"]);
-  });
-
-  it("supports tag removal via backspace", async () => {
-    buildSkeleton();
-    const dialog = TagPickerDialog.getInstance();
-    const promise = dialog.show({ initialTags: ["foo", "bar"] });
-
-    const input = document.querySelector<HTMLInputElement>(
-      "#bulk-tags-text-input",
-    );
-    input!.value = "";
-    input?.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "Backspace", bubbles: true }),
-    );
-
-    document.querySelector<HTMLElement>(".tag-picker-ok")?.click();
-
-    await expect(promise).resolves.toEqual(["foo"]);
-  });
-
-  it("cancels when backdrop is clicked", async () => {
-    buildSkeleton();
-    const dialog = TagPickerDialog.getInstance();
-    const promise = dialog.show();
-
-    document.querySelector<HTMLElement>(".modal-backdrop")?.click();
-
-    await expect(promise).resolves.toBeNull();
+    expect(showTagPickerMock).toHaveBeenCalledWith({
+      initialTags: ["alpha"],
+    });
   });
 });

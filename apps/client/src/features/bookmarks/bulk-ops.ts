@@ -52,8 +52,7 @@ export async function bulkFavorite(): Promise<void> {
     if (bm) bm.is_favorite = true;
   }
 
-  const { renderBookmarks } = await import("@features/bookmarks/bookmarks.ts");
-  renderBookmarks();
+  // React Context handles re-rendering automatically
   await updateCounts();
   showToast("Marked as favorite", "success");
 }
@@ -113,13 +112,10 @@ export async function bulkAddTags(): Promise<void> {
     }),
   );
 
-  const { clearSelections, renderBookmarks } =
-    await import("@features/bookmarks/bookmarks.ts");
-  const { renderSidebarTags } = await import("@features/bookmarks/search.ts");
+  const { clearSelections } = await import("@features/bookmarks/bookmarks.ts");
   clearSelections();
   await updateCounts();
-  renderBookmarks();
-  renderSidebarTags();
+  // React Context handles re-rendering automatically
   showToast("Tags added to selection", "success");
 }
 
@@ -155,13 +151,10 @@ export async function bulkRemoveTags(): Promise<void> {
     }),
   );
 
-  const { clearSelections, renderBookmarks } =
-    await import("@features/bookmarks/bookmarks.ts");
-  const { renderSidebarTags } = await import("@features/bookmarks/search.ts");
+  const { clearSelections } = await import("@features/bookmarks/bookmarks.ts");
   clearSelections();
   await updateCounts();
-  renderBookmarks();
-  renderSidebarTags();
+  // React Context handles re-rendering automatically
   showToast("Tags removed from selection", "success");
 }
 
@@ -189,10 +182,9 @@ export async function bulkArchive(): Promise<void> {
     }),
   );
 
-  const { clearSelections, renderBookmarks } =
-    await import("@features/bookmarks/bookmarks.ts");
+  const { clearSelections } = await import("@features/bookmarks/bookmarks.ts");
   clearSelections();
-  renderBookmarks();
+  // React Context handles re-rendering automatically
   await updateCounts();
   showToast(`${ids.length} bookmarks archived`, "success");
 }
@@ -214,10 +206,9 @@ export async function bulkUnarchive(): Promise<void> {
     }),
   );
 
-  const { clearSelections, renderBookmarks } =
-    await import("@features/bookmarks/bookmarks.ts");
+  const { clearSelections } = await import("@features/bookmarks/bookmarks.ts");
   clearSelections();
-  renderBookmarks();
+  // React Context handles re-rendering automatically
   await updateCounts();
   showToast(`${ids.length} bookmarks unarchived`, "success");
 }
@@ -286,13 +277,10 @@ export async function bulkAutoTag(): Promise<void> {
     }
   }
 
-  const { clearSelections, renderBookmarks } =
-    await import("@features/bookmarks/bookmarks.ts");
-  const { renderSidebarTags } = await import("@features/bookmarks/search.ts");
+  const { clearSelections } = await import("@features/bookmarks/bookmarks.ts");
   clearSelections();
   await updateCounts();
-  renderBookmarks();
-  renderSidebarTags();
+  // React Context handles re-rendering automatically
   showToast(
     taggedCount > 0
       ? `Auto-tagged ${taggedCount} bookmark(s)`

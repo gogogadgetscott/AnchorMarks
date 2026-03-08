@@ -3,7 +3,11 @@
  * Handles modals, toasts, and general UI functions
  */
 
-import * as state from "@features/state.ts";
+import {
+  getUIBridge,
+  getFoldersBridge,
+  getBookmarksBridge,
+} from "@contexts/context-bridge";
 import { parseTagInput } from "@utils/index.ts";
 import * as modalController from "@utils/modal-controller.ts";
 import { showToast as showToastReact, ToastType } from "@contexts/ToastContext";
@@ -87,7 +91,8 @@ function setText(id: string, value: string): void {
 
 function getTagCountFromRenderedBookmarks(): number {
   const unique = new Set<string>();
-  for (const bookmark of state.renderedBookmarks) {
+  const bookmarksBridge = getBookmarksBridge();
+  for (const bookmark of bookmarksBridge.getRenderedBookmarks()) {
     const raw = (bookmark as { tags?: unknown }).tags;
     if (!raw) continue;
 

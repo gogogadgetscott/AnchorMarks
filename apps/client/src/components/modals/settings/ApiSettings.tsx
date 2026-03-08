@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@contexts/AuthContext";
-import { regenerateApiKey, copyApiKey } from "@features/auth/auth.ts";
 
 export function ApiSettings() {
-  const { currentUser } = useAuth();
+  const { currentUser, regenerateApiKey, copyApiKey } = useAuth();
   const [apiKey, setApiKey] = useState("••••••••••••••••");
   const [showKey, setShowKey] = useState(false);
 
