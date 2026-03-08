@@ -316,7 +316,8 @@ export async function checkAuth(): Promise<boolean> {
 
 // Update user info display
 export function updateUserInfo(): void {
-  if (state.currentUser) {
+  const currentUser = getAuthBridge().getCurrentUser();
+  if (currentUser) {
     const userNames = document.querySelectorAll(".header-user-name");
     const userAvatars = document.querySelectorAll(".header-user-avatar");
     const userAvatarsLarge = document.querySelectorAll(
@@ -326,13 +327,13 @@ export function updateUserInfo(): void {
 
     // Use username if available, otherwise fall back to email
     const displayName =
-      state.currentUser.username || state.currentUser.email || "User";
+      currentUser.username || currentUser.email || "User";
     const initials = displayName.charAt(0).toUpperCase();
 
     userNames.forEach((el) => (el.textContent = displayName));
     userAvatars.forEach((el) => (el.textContent = initials));
     userAvatarsLarge.forEach((el) => (el.textContent = initials));
-    if (apiKeyValue) apiKeyValue.textContent = state.currentUser.api_key || "";
+    if (apiKeyValue) apiKeyValue.textContent = currentUser.api_key || "";
   }
 }
 
@@ -351,8 +352,9 @@ export async function regenerateApiKey(): Promise<void> {
     const data = await api<{ api_key: string }>("/auth/regenerate-key", {
       method: "POST",
     });
-    if (state.currentUser) {
-      state.currentUser.api_key = data.api_key;
+    const currentUser = getAuthBridge().getCurrentUser();
+    if (currentUser) {
+      getAuthBridge().setCurrentUser({ ...currentUser, api_key: data.api_key });
     }
     const apiKeyValue = document.getElementById("api-key-value");
     if (apiKeyValue) apiKeyValue.textContent = data.api_key;
@@ -366,8 +368,9 @@ export async function regenerateApiKey(): Promise<void> {
 
 // Copy API key
 export function copyApiKey(): void {
-  if (!state.currentUser?.api_key) return;
-  navigator.clipboard.writeText(state.currentUser.api_key);
+  const apiKey = getAuthBridge().getCurrentUser()?.api_key;
+  if (!apiKey) return;
+  navigator.clipboard.writeText(apiKey);
   showToast("API key copied!", "success");
 }
 
@@ -378,7 +381,10 @@ export async function updateProfile(email: string): Promise<boolean> {
       method: "PUT",
       body: JSON.stringify({ email }),
     });
-    if (state.currentUser) state.currentUser.email = data.email;
+    const currentUser = getAuthBridge().getCurrentUser();
+    if (currentUser) {
+      getAuthBridge().setCurrentUser({ ...currentUser, email: data.email });
+    }
     updateUserInfo();
     showToast("Profile updated!", "success");
     return true;

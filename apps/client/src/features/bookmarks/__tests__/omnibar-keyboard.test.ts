@@ -5,7 +5,7 @@ import {
   _testSetActiveIndex,
   _testSetOpen,
   _testGetState,
-} from "../omnibar";
+} from "../omnibar-controller";
 
 describe("Omnibar keyboard behavior for views", () => {
   beforeEach(() => {

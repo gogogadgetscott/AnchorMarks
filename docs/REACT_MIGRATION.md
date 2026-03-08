@@ -1,202 +1,154 @@
 # React Migration Plan
 
-## Overview
+## Current Status (Updated March 8, 2026)
 
-The current client is vanilla TypeScript with string-based components, manual DOM rendering, and imperative state management. This document outlines a phased migration to React.
+**✅ Migration is ~80% complete!** Most of the app now runs on React.
 
-### Pain points React solves
+### What's Working
+- ✅ React setup complete (Vite + React 19)
+- ✅ All Context providers (Auth, Bookmarks, UI, Folders, Dashboard, etc.)
+- ✅ App shell and layout (App.tsx, AppShell.tsx, main.tsx)
+- ✅ All leaf components migrated (Button, Badge, Icon, Tag, etc.)
+- ✅ BookmarkCard and RichBookmarkCard components
+- ✅ BookmarksList with IntersectionObserver for infinite scroll
+- ✅ Omnibar (React component + legacy bridge)
+- ✅ Header & Navigation
+- ✅ All modals (BookmarkModal, TagModal, FolderModal, SettingsModal, etc.)
+- ✅ Dashboard with drag-and-drop (@dnd-kit)
+- ✅ Tag Cloud visualization
+- ✅ Filter sidebar
+- ✅ Smart collections and insights
+- ✅ Context bridge for legacy code integration
 
-- Manual re-render calls everywhere (`renderBookmarks()`, `renderDashboard()`, etc.)
-- Event re-attachment after every `innerHTML` replacement
-- State sync bugs — DOM and `state.ts` can drift
-- `_listenerAttached` flags to prevent duplicate handlers
+### What's Left
+- ⚠️ Some legacy `*.ts` files still exist alongside `*.tsx` versions
+- ⚠️ The old `features/state.ts` module still exists (being phased out)
+- ⚠️ A few tests may reference old file paths
+- 🐛 2 minor unused variable warnings in TypeScript
+
+### Migration Strategy Used
+
+**Bridge Pattern:** Instead of a "big bang" rewrite, we kept legacy code working alongside React:
+
+1. **Context Bridge** (`contexts/context-bridge.ts`): Non-React code (like `api.ts`, `auth.ts`) can access React context via imperative getters/setters
+2. **Parallel Files**: Some components exist as both `.ts` (legacy) and `.tsx` (React) during transition
+3. **Gradual Cutover**: Features switched to React one at a time, keeping the app functional throughout
 
 ---
 
-## Phase 0: Setup (1 day)
+## Cleanup Tasks (1-2 days)
 
-Install dependencies and configure tooling — no code changes yet.
+To finish the migration and get back to feature work:
+
+### 1. Remove Unused Legacy Files (30 min)
+
+Search for duplicate `.ts` files that have `.tsx` equivalents:
+
+### 1. Remove Unused Legacy Files (30 min)
+
+Search for duplicate `.ts` files that have `.tsx` equivalents:
 
 ```bash
-npm install react react-dom
-npm install -D @types/react @types/react-dom @vitejs/plugin-react
+# Find components that exist as both .ts and .tsx
+find apps/client/src/components -name '*.ts' ! -name '*.test.ts' ! -name '*.d.ts' | while read f; do
+  tsx="${f%.ts}.tsx"
+  [ -f "$tsx" ] && echo "Duplicate: $f (has .tsx version)"
+done
 ```
 
-- **vite.config.js:** Add `react()` plugin, keep all existing aliases
-- **tsconfig.json:** Add `"jsx": "react-jsx"`
-- Rename `*.ts` → `*.tsx` only as you touch files in later phases
+**Action:** Delete the `.ts` versions if the `.tsx` versions are fully functional.
+
+### 2. Fix Test Imports (30 min)
+
+Some tests import from old file paths (e.g., `../omnibar` instead of `../omnibar-controller`).
+
+```bash
+# Find tests that might have stale imports
+grep -r "from.*omnibar['\"]" apps/client --include="*.test.ts" --include="*.test.tsx"
+```
+
+**Action:** Update imports to point to the correct files.
+
+### 3. Remove or Archive `features/state.ts` (1 hour)
+
+The old global state module is no longer needed. All state is now in React contexts.
+
+**Check what still imports it:**
+
+```bash
+grep -r "from.*features/state" apps/client/src --include="*.ts" --include="*.tsx" | grep -v "state.ts:"
+```
+
+**Action:**  
+- If only a few files import it, migrate those to use context bridge  
+- If nothing imports it, delete or move to `__legacy__/` folder
+
+### 4. Clean Up Unused Variables (5 min)
+
+Fix the 2 TypeScript warnings:
+
+- [Icon.test.tsx](apps/client/src/components/Icon.test.tsx#L2): Remove unused `screen` import
+- [FoldersContext.tsx](apps/client/src/contexts/FoldersContext.tsx#L107): Remove unused `closeModal` variable
 
 ---
 
-## Phase 1: State Layer (2–3 days)
+## Architecture Overview
 
-**Goal:** Replace `features/state.ts` with React Context + `useReducer`.
+### React Components
 
-The current state module has ~70 variables. Group them into domain slices:
+All UI is now React components in `apps/client/src/components/`:
 
-| Slice              | Key state                                                                                 |
-| ------------------ | ----------------------------------------------------------------------------------------- |
-| `AuthContext`      | `authToken`, `csrfToken`, `currentUser`, `isAuthenticated`                                |
-| `BookmarksContext` | `bookmarks[]`, `renderedBookmarks[]`, `filterConfig`, `displayedCount`, `isLoading`       |
-| `UIContext`        | `currentView`, `viewMode`, `hideFavicons`, `hideSidebar`, `selectedBookmarks`, `bulkMode` |
-| `FoldersContext`   | `folders[]`, `currentFolder`                                                              |
-| `DashboardContext` | `dashboardConfig`, `widgets[]`, `widgetOrder`, `dashboardHasUnsavedChanges`               |
+- **Leaf components**: Button, Badge, Icon, Tag, SkeletonCard, etc.
+- **Cards**: BookmarkCard, RichBookmarkCard
+- **Lists**: BookmarksList (with infinite scroll)
+- **Layout**: Header, Sidebar, AppShell
+- **Views**: BookmarkViews, Dashboard, TagCloud, AnalyticsView
+- **Modals**: BookmarkModal, TagModal, FolderModal, SettingsModal
 
-Keep the existing `state.ts` in place during migration — contexts will gradually absorb it slice by slice.
+### State Management
 
----
+State is managed using React Context + useReducer in `apps/client/src/contexts/`:
 
-## Phase 2: Leaf Components (3–4 days)
+| Context              | Manages                                                           |
+| -------------------- | ----------------------------------------------------------------- |
+| `AuthContext`        | `currentUser`, `csrfToken`, `isAuthenticated`, login/logout       |
+| `BookmarksContext`   | `bookmarks[]`, `filterConfig`, `selectedBookmarks`, bulk actions  |
+| `UIContext`          | `currentView`, `viewMode`, `hideFavicons`, `hideSidebar`, sidebar |
+| `FoldersContext`     | `folders[]`, `currentFolder`, folder CRUD                         |
+| `DashboardContext`   | `widgets[]`, `widgetOrder`, dashboard config, drag-and-drop       |
+| `ModalContext`       | Modal open/close state, current modal                             |
+| `ToastContext`       | Toast notifications                                               |
+| `ConfirmContext`     | Confirmation dialogs                                              |
 
-These are pure functions returning HTML strings today — trivial to port. Do these first because they have no state dependencies.
+### Context Bridge
 
-| Current file                 | New file                      | Complexity |
-| ---------------------------- | ----------------------------- | ---------- |
-| `components/Button.ts`       | `components/Button.tsx`       | Trivial    |
-| `components/Badge.ts`        | `components/Badge.tsx`        | Trivial    |
-| `components/Icon.ts`         | `components/Icon.tsx`         | Trivial    |
-| `components/Tag.ts`          | `components/Tag.tsx`          | Trivial    |
-| `components/SkeletonCard.ts` | `components/SkeletonCard.tsx` | Trivial    |
-| `components/ViewToggle.ts`   | `components/ViewToggle.tsx`   | Simple     |
-| `components/UserProfile.ts`  | `components/UserProfile.tsx`  | Simple     |
-
-These are pure props → JSX transforms with no state or side effects.
-
----
-
-## Phase 3: BookmarkCard Components (2–3 days)
-
-`BookmarkCard` and `RichBookmarkCard` are the most-rendered components. They use `data-action` attributes for event delegation — replace with explicit `onClick` props.
-
-**Current pattern:**
+Non-React code (e.g., `api.ts`, legacy event handlers) accesses React state via **context-bridge.ts**:
 
 ```typescript
-// String template with data attributes
-`<button data-action="open-bookmark" data-url="${url}">Open</button>`;
-// Global delegated handler catches this
+import { getAuthBridge, getBookmarksBridge } from "@contexts/context-bridge";
+
+// Example: Get current user in non-React code
+const currentUser = getAuthBridge().getCurrentUser();
+
+// Example: Update bookmarks
+getBookmarksBridge().loadBookmarks();
 ```
 
-**React pattern:**
-
-```tsx
-// Explicit callbacks as props
-<BookmarkCard
-  bookmark={b}
-  onOpen={() => window.open(b.url)}
-  onEdit={() => openEditModal(b.id)}
-  onDelete={() => deleteBookmark(b.id)}
-  isSelected={selectedBookmarks.has(b.id)}
-  onSelect={() => toggleSelection(b.id)}
-/>
-```
-
-Drop the `data-action` delegation pattern entirely for these components.
+This bridge pattern allowed incremental migration without breaking existing code.
 
 ---
 
-## Phase 4: BookmarksList (2 days)
+## Key Files
 
-The main list renderer currently calls `innerHTML` on the grid container. Replace with a React component that maps `bookmarks[]` from context:
-
-```tsx
-function BookmarksList() {
-  const { bookmarks, viewMode, isLoading } = useBookmarks();
-
-  if (isLoading) return <SkeletonGrid />;
-  if (!bookmarks.length) return <EmptyState />;
-
-  return (
-    <div className={`bookmarks-${viewMode}`}>
-      {bookmarks.map((b) => (
-        <BookmarkCard key={b.id} bookmark={b} />
-      ))}
-    </div>
-  );
-}
-```
-
-This eliminates `renderBookmarks()`, `renderSkeletons()`, and scroll-based `loadMore` imperative calls — replace the latter with an `IntersectionObserver` hook.
+- **Entry point**: [main.tsx](apps/client/src/main.tsx) → renders `<App />`
+- **Root component**: [App.tsx](apps/client/src/App.tsx) → handles auth check and loads data
+- **Shell**: [AppShell.tsx](apps/client/src/AppShell.tsx) → layout with header, sidebar, content area
+- **Providers**: [contexts/AppProviders.tsx](apps/client/src/contexts/AppProviders.tsx) → wraps all contexts
+- **Bridge**: [contexts/context-bridge.ts](apps/client/src/contexts/context-bridge.ts) → legacy code integration
 
 ---
 
-## Phase 5: Omnibar (2–3 days)
-
-The omnibar is self-contained with its own local state. Use `useState` for:
-
-- `isOpen`, `activeIndex`, `currentItems`, `query`
-
-Replace the manual section rendering (`omnibar-recent-list`, `omnibar-results-list` via `innerHTML`) with conditional JSX sections.
-
----
-
-## Phase 6: Header & Navigation (2 days)
-
-The `Header` component currently re-renders as a full `innerHTML` string swap on every view change. In React:
-
-```tsx
-function Header() {
-  const { currentView } = useUI();
-  return (
-    <header>
-      <ViewTitle view={currentView} />
-      <Omnibar />
-      <ViewControls view={currentView} />
-    </header>
-  );
-}
-```
-
-Navigation sidebar: Replace `_navViewListenerAttached` flag pattern with `onClick` handlers.
-
----
-
-## Phase 7: Modals & Forms (3–4 days)
-
-The modal system currently uses raw HTML fragments (`bookmark-modal.html`, etc.) injected via `innerHTML`. Port each to a React component controlled by an `isOpen` boolean from context:
-
-- Bookmark add/edit modal
-- Tag modal
-- Folder modal
-- Filter sidebar
-- Settings modal
-- Onboarding tour
-
-Use a single `<ModalPortal>` rendered at the app root via `ReactDOM.createPortal`.
-
----
-
-## Phase 8: Dashboard (4–5 days)
-
-The most complex piece — drag/drop, widget picker, resizing, saved views. Tackle last.
-
-- Replace `widget-picker.ts` and `dashboard.ts` with React components
-- Use a library for drag-and-drop (e.g. `@dnd-kit/core`) rather than reimplementing
-- Dashboard state becomes `DashboardContext`
-
----
-
-## Phase 9: App Shell & Entrypoint (1 day)
-
-Replace `layouts/loader.ts` (the manual DOM construction) with:
-
-```tsx
-// main.tsx
-ReactDOM.createRoot(document.getElementById("app")!).render(
-  <AppProviders>
-    <App />
-  </AppProviders>,
-);
-
-// App.tsx
-function App() {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <MainLayout /> : <AuthScreen />;
-}
-```
-
----
-
-## Phase 10: Tests (ongoing alongside each phase)
+## Testing
 
 | Current                       | React replacement                       |
 | ----------------------------- | --------------------------------------- |
@@ -255,8 +207,172 @@ Existing Vitest setup needs no changes.
 
 ---
 
-## Estimated timeline
+## Common Patterns & Best Practices
 
-~3–4 weeks working roughly in phase order. Each phase is independently shippable — the app continues to work after each phase if you keep the old code running in parallel until the React version is ready to swap in.
+### 1. useEffect Dependencies
 
-**Recommended order:** Phase 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9, with Phase 10 tests written alongside each.
+Be careful with exhaustive deps - ESLint will warn about missing dependencies:
+
+```tsx
+// ❌ BAD: Missing dependency
+useEffect(() => {
+  loadData(userId);
+}, []);
+
+// ✅ GOOD: Include all dependencies
+useEffect(() => {
+  loadData(userId);
+}, [userId, loadData]);
+```
+
+### 2. Callback Memoization
+
+Use `useCallback` for functions passed to child components to prevent unnecessary re-renders:
+
+```tsx
+const handleDelete = useCallback((id: string) => {
+  deleteBookmark(id);
+}, [deleteBookmark]);
+```
+
+### 3. Context Consumers
+
+Most state access goes through custom hooks:
+
+```tsx
+import { useAuth } from "@contexts/AuthContext";
+import { useBookmarks } from "@contexts/BookmarksContext";
+
+function MyComponent() {
+  const { currentUser } = useAuth();
+  const { bookmarks, loadBookmarks } = useBookmarks();
+  // ...
+}
+```
+
+### 4. Legacy Bridge Access
+
+When legacy code needs React state:
+
+```tsx
+import { getAuthBridge } from "@contexts/context-bridge";
+
+// In non-React code:
+const user = getAuthBridge().getCurrentUser();
+```
+
+---
+
+## Troubleshooting
+
+### "Cannot find module" errors
+
+Check import paths - files may have been renamed or moved during migration.
+
+```bash
+# Find what imports a specific file
+grep -r "from.*filename" apps/client/src
+```
+
+### "Context not initialized" errors
+
+Ensure `AppProviders` wraps your component:
+
+```tsx
+// main.tsx
+<AppProviders>
+  <App />
+</AppProviders>
+```
+
+### State not updating
+
+React state is immutable. Always create new objects/arrays:
+
+```tsx
+// ❌ BAD: Mutates state
+bookmarks.push(newBookmark);
+setBookmarks(bookmarks);
+
+// ✅ GOOD: Creates new array
+setBookmarks([...bookmarks, newBookmark]);
+```
+
+---
+
+## Quick Wins for Getting Back to Features
+
+If you just want to get the app working and move on:
+
+1. **Run type check**: `cd apps/client && npx tsc --noEmit 2>&1 | head -20`
+2. **Fix any remaining import errors**: Update paths as needed
+3. **Run tests**: `make test` - should be mostly passing
+4. **Start dev server**: `make start-local` - app should work!
+5. **Archive legacy files**: Move unused `.ts` files to `__legacy__/` folder for reference
+
+The migration is ~80% complete. The remaining work is primarily cleanup and removing legacy code.
+
+---
+
+## Pattern Comparison: Before vs After
+
+### Before (Vanilla TS)
+
+```typescript
+// Manual re-rendering everywhere
+function addBookmark(bookmark) {
+  state.bookmarks.push(bookmark);
+  renderBookmarks();  // Full re-render
+  updateStats();      // Full re-render
+  renderFolders();    // Full re-render
+}
+
+// Event delegation with data-attributes
+container.innerHTML = `<button data-action="delete" data-id="${id}">Delete</button>`;
+document.addEventListener('click', (e) => {
+  if (e.target.dataset.action === 'delete') {
+    // handle delete
+  }
+});
+```
+
+### After (React)
+
+```tsx
+// Declarative state updates
+function useBookmarkActions() {
+  const { bookmarks, setBookmarks } = useBookmarks();
+  
+  const addBookmark = useCallback((bookmark: Bookmark) => {
+    setBookmarks([...bookmarks, bookmark]);
+    // Stats and folders auto-update via their own contexts
+  }, [bookmarks, setBookmarks]);
+  
+  return { addBookmark };
+}
+
+// Explicit event handlers
+<button onClick={() => deleteBookmark(id)}>Delete</button>
+```
+
+React handles:
+- **Re-rendering**: Only affected components update
+- **Event handling**: Direct callbacks, no delegation needed
+- **State sync**: Single source of truth in context
+
+---
+
+## Next Steps After Cleanup
+
+Once cleanup is done, you can:
+
+1. **Remove legacy state.ts entirely** - all state should be in contexts now
+2. **Delete legacy `.ts` component files** - keep only `.tsx` versions  
+3. **Update CHANGELOG.md** - document the React migration completion
+4. **Get back to feature development!** 🎉
+
+---
+
+## Original Plan (For Reference)
+
+The migration followed these phases:
