@@ -8,7 +8,12 @@ All notable changes to AnchorMarks are documented here.
 
 ### Added
 
-- No unreleased entries yet.
+- **Dashboard drag-and-drop with @dnd-kit** — Dashboard widgets now use `@dnd-kit/core` for smooth, React-native drag-and-drop functionality with visual feedback and position snapping
+
+### Changed
+
+- React Dashboard components now handle widget dragging natively without relying on legacy DOM manipulation
+- Dashboard widget drag handles show grab cursor in edit mode for better UX
 
 ---
 

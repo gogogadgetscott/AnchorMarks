@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   DndContext,
   DragEndEvent,
+  DragStartEvent,
   DragMoveEvent,
   PointerSensor,
   useSensor,
@@ -73,6 +74,9 @@ export function DashboardGrid({
   const [widgetPositions, setWidgetPositions] = useState<
     Record<string, { x: number; y: number }>
   >({});
+  const [dragStartPositions, setDragStartPositions] = useState<
+    Record<string, { x: number; y: number }>
+  >({});
 
   // Configure drag sensors
   const sensors = useSensors(
@@ -83,34 +87,42 @@ export function DashboardGrid({
     }),
   );
 
-  const handleDragStart = (event: { active: { id: string } }) => {
-    setActiveWidgetId(event.active.id as string);
+  const handleDragStart = (event: DragStartEvent) => {
+    const widgetId = String(event.active.id);
+    const widget = widgets.find((w) => w.id === widgetId);
+    if (!widget) return;
+
+    setActiveWidgetId(widgetId);
+    setDragStartPositions((prev) => ({
+      ...prev,
+      [widgetId]: { x: widget.x || 0, y: widget.y || 0 },
+    }));
   };
 
   const handleDragMove = (event: DragMoveEvent) => {
     if (!event.active.id) return;
 
-    const widgetId = event.active.id as string;
+    const widgetId = String(event.active.id);
     const widget = widgets.find((w) => w.id === widgetId);
     if (!widget) return;
-
-    const deltaX = event.delta.x;
-    const deltaY = event.delta.y;
+    const startPos = dragStartPositions[widgetId] || {
+      x: widget.x || 0,
+      y: widget.y || 0,
+    };
 
     setWidgetPositions((prev) => {
-      const currentPos = prev[widgetId] || { x: widget.x || 0, y: widget.y || 0 };
       return {
         ...prev,
         [widgetId]: {
-          x: currentPos.x + deltaX,
-          y: currentPos.y + deltaY,
+          x: startPos.x + event.delta.x,
+          y: startPos.y + event.delta.y,
         },
       };
     });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const widgetId = event.active.id as string;
+    const widgetId = String(event.active.id);
     const widget = widgets.find((w) => w.id === widgetId);
     if (!widget) return;
 
@@ -124,6 +136,11 @@ export function DashboardGrid({
 
     setActiveWidgetId(null);
     setWidgetPositions((prev) => {
+      const next = { ...prev };
+      delete next[widgetId];
+      return next;
+    });
+    setDragStartPositions((prev) => {
       const next = { ...prev };
       delete next[widgetId];
       return next;

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useDraggable } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
 import { Icon } from "./Icon.tsx";
 import { PreviewWidgetContent } from "./PreviewWidgetContent.tsx";
 import { StaticWidgetContent } from "./StaticWidgetContent.tsx";
@@ -116,7 +115,7 @@ export function DashboardWidget({
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
   const optionsContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+  const { attributes, listeners, setNodeRef } = useDraggable({
     id: widget.id,
     disabled: !isEditing,
   });

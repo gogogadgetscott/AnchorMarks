@@ -634,6 +634,7 @@ export async function renderDashboard(): Promise<void> {
       linkedWidgetIdByWidgetId,
       tagAnalyticsData,
       onRemoveWidget: handleReactRemoveWidget,
+      onMoveWidget: (widgetId, x, y) => updateWidgetPosition(widgetId, x, y),
       onSortWidget: (widgetIndex, sort) => updateWidgetSort(widgetIndex, sort),
       onAddBookmarkToWidget: (widgetType, widgetId) => {
         void handleWidgetAddBookmark(widgetType, widgetId);
@@ -1308,6 +1309,19 @@ function updateWidgetColor(index: number, color: string): void {
     markDashboardModified();
     renderDashboard();
     showToast("Widget color updated", "success");
+  }
+}
+
+/**
+ * Update widget position
+ */
+function updateWidgetPosition(widgetId: string, x: number, y: number): void {
+  const index = state.dashboardWidgets.findIndex((w) => w.id === widgetId);
+  if (index >= 0 && state.dashboardWidgets[index]) {
+    state.dashboardWidgets[index].x = snapToGrid(x);
+    state.dashboardWidgets[index].y = snapToGrid(y);
+    markDashboardModified();
+    // No need to re-render since the position is already updated by React
   }
 }
 
