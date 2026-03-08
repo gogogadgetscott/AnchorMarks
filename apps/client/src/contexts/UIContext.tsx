@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { subscribe, setCurrentView as vanillaSetCurrentView } from "../features/state";
-import { registerUIBridge } from "./context-bridge";
+import { syncUIBridge } from "./context-bridge";
 import type { TourStep } from "../types/index";
 
 type ViewMode = "grid" | "list" | "compact";
@@ -193,23 +193,17 @@ export function UIProvider({ children }: { children: ReactNode }) {
     setCurrentFolderState(val);
   }, []);
 
-  // Register with context bridge for non-React code
+  // Sync current state into the bridge store so non-React code always reads fresh values
   useEffect(() => {
-    registerUIBridge({
-      getCurrentView: () => currentView,
+    syncUIBridge({
+      currentView,
+      currentFolder,
+      hideSidebar,
       setCurrentView,
-      getCurrentFolder: () => currentFolder,
       setCurrentFolder,
-      getHideSidebar: () => hideSidebar,
       setHideSidebar,
     });
-  }, [
-    currentView,
-    currentFolder,
-    hideSidebar,
-    setCurrentView,
-    setCurrentFolder,
-  ]);
+  }, [currentView, currentFolder, hideSidebar]);
 
   const setViewToolbarConfig = useCallback(
     (view: string, config: Record<string, unknown>) => {

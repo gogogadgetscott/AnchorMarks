@@ -301,6 +301,8 @@ export function Omnibar({
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsListRef = useRef<HTMLDivElement>(null);
   const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const filterConfigRef = useRef(filterConfig);
+  filterConfigRef.current = filterConfig;
   const searchFilterTimeout = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -340,9 +342,9 @@ export function Omnibar({
     }
 
     if (isCommandMode) {
-      if (filterConfig.search !== undefined) {
+      if (filterConfigRef.current.search !== undefined) {
         setFilterConfig({
-          ...filterConfig,
+          ...filterConfigRef.current,
           search: undefined,
         });
       }
@@ -350,18 +352,15 @@ export function Omnibar({
     }
 
     setFilterConfig({
-      ...filterConfig,
+      ...filterConfigRef.current,
       search: trimmed || undefined,
     });
-
-    // React components automatically re-render when filterConfig changes
-    // No need for explicit renderBookmarks() or renderActiveFilters() calls
 
     return () => {
       if (searchFilterTimeout.current)
         clearTimeout(searchFilterTimeout.current);
     };
-  }, [query, isCommandMode, currentView, filterConfig, setFilterConfig]);
+  }, [query, isCommandMode, currentView, setFilterConfig]);
 
   const open = useCallback(() => {
     if (blurTimeout.current) clearTimeout(blurTimeout.current);

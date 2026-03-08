@@ -8,7 +8,7 @@ import {
 } from "react";
 import { api } from "../services/api.ts";
 import * as state from "../features/state.ts";
-import { registerFoldersBridge } from "./context-bridge";
+import { syncFoldersBridge } from "./context-bridge";
 import type { Folder, Tag } from "../types/index";
 import { showToast } from "./ToastContext";
 import { showConfirm } from "./ConfirmContext";
@@ -55,10 +55,10 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
   >(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Register with context bridge for non-React code
+  // Sync current state into the bridge store so non-React code always reads fresh values
   useEffect(() => {
-    registerFoldersBridge({
-      getFolders: () => folders,
+    syncFoldersBridge({
+      folders,
       setFolders: (val) => {
         setFolders(val);
         state.setFolders(val);

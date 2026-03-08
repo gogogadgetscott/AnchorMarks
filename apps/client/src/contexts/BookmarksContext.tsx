@@ -6,7 +6,7 @@ import {
   type ReactNode,
   useEffect,
 } from "react";
-import { registerBookmarksBridge, getUIBridge } from "./context-bridge";
+import { syncBookmarksBridge, getUIBridge } from "./context-bridge";
 import { api } from "../services/api.ts";
 import { showToast } from "./ToastContext";
 import { showConfirm } from "./ConfirmContext";
@@ -141,21 +141,21 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
   );
   const [bulkMode, setBulkMode] = useState(false);
 
-  // Register with context bridge for non-React code
+  // Sync current state into the bridge store so non-React code always reads fresh values
   useEffect(() => {
-    registerBookmarksBridge({
-      getBookmarks: () => bookmarks,
+    syncBookmarksBridge({
+      bookmarks,
+      renderedBookmarks,
+      totalCount,
+      selectedBookmarks,
+      bulkMode,
       setBookmarks,
-      getRenderedBookmarks: () => renderedBookmarks,
       setRenderedBookmarks,
-      getTotalCount: () => totalCount,
       setTotalCount,
-      getSelectedBookmarks: () => selectedBookmarks,
       setSelectedBookmarks,
-      getBulkMode: () => bulkMode,
       setBulkMode,
     });
-  }, []); // Bridge is registered once on mount
+  }, [bookmarks, renderedBookmarks, totalCount, selectedBookmarks, bulkMode]);
 
   const setWidgetDataCache = useCallback((id: string, val: Bookmark[]) => {
     setWidgetDataCacheState((prev) => ({ ...prev, [id]: val }));

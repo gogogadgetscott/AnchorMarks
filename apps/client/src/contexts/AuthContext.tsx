@@ -8,7 +8,7 @@ import {
 } from "react";
 import type { User } from "../types/index";
 import { setAuthContextSetter } from "@features/auth/auth.ts";
-import { registerAuthBridge } from "./context-bridge";
+import { syncAuthBridge } from "./context-bridge";
 import { api } from "@services/api.ts";
 import { showToast } from "./ToastContext";
 import { showConfirm } from "./ConfirmContext";
@@ -77,17 +77,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  // Register with context bridge for non-React code
+  // Sync current state into the bridge store so non-React code always reads fresh values
   useEffect(() => {
-    registerAuthBridge({
-      getCsrfToken: () => csrfToken,
+    syncAuthBridge({
+      csrfToken,
+      currentUser,
+      isAuthenticated,
       setCsrfToken,
-      getCurrentUser: () => currentUser,
       setCurrentUser,
-      getIsAuthenticated: () => isAuthenticated,
       setIsAuthenticated,
     });
-  }, []);
+  }, [csrfToken, currentUser, isAuthenticated]);
 
   // Prefetch CSRF Token
   const prefetchCsrf = useCallback(async () => {
