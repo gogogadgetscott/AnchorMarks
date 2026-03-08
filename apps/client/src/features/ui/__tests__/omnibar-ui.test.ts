@@ -41,7 +41,7 @@ describe("UI Omnibar - Escape key", () => {
     const panel = document.getElementById("omnibar-panel") as HTMLElement;
 
     // Ensure the omnibar module is loaded so the handler's dynamic import resolves quickly
-    await import("@features/bookmarks/omnibar.ts");
+    await import("@features/bookmarks/omnibar-controller.ts");
 
     // Simulate opening/typing
     input.value = "something";

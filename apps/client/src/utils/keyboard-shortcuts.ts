@@ -80,7 +80,8 @@ class KeyboardShortcuts {
         if (searchInput) {
           searchInput.focus();
         }
-        const { openOmnibar } = await import("@features/bookmarks/omnibar.ts");
+        const { openOmnibar } =
+          await import("@features/bookmarks/omnibar-controller.ts");
         openOmnibar();
       },
     });
@@ -98,7 +99,8 @@ class KeyboardShortcuts {
         if (searchInput) {
           searchInput.focus();
         }
-        const { openOmnibar } = await import("@features/bookmarks/omnibar.ts");
+        const { openOmnibar } =
+          await import("@features/bookmarks/omnibar-controller.ts");
         openOmnibar();
       },
     });

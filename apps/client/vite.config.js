@@ -138,6 +138,7 @@ export default defineConfig({
             "src/features/bookmarks/bulk-ops.ts",
             "src/features/bookmarks/filters.ts",
             "src/features/bookmarks/tag-input.ts",
+            "src/features/bookmarks/omnibar-controller.ts",
           ],
           dashboard: ["src/features/bookmarks/dashboard.ts"],
           commands: ["src/features/bookmarks/commands.ts"],
