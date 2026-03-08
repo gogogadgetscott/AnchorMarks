@@ -39,7 +39,8 @@ export async function refreshOmnibarBookmarks(): Promise<void> {
   } catch (err) {
     const errText = String(err);
     const isRelativeUrlRuntimeWarning =
-      errText.includes("Failed to parse URL") || errText.includes("Invalid URL");
+      errText.includes("Failed to parse URL") ||
+      errText.includes("Invalid URL");
 
     if (!isRelativeUrlRuntimeWarning) {
       console.error("Failed to fetch bookmarks for omnibar:", err);
