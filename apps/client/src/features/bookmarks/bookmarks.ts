@@ -199,13 +199,10 @@ export async function loadBookmarks(): Promise<void> {
       initBookmarkViews();
     }
 
-    // Dynamic imports to avoid circular dependencies
-    const { renderSidebarTags } = await import("@features/bookmarks/search.ts");
+    // React sidebar and folder components automatically update from context
+    // Tour check still needs to happen
     // @ts-ignore
     const { checkWelcomeTour } = await import("@features/bookmarks/tour.ts");
-    const { renderFolders } = await import("@features/bookmarks/folders.ts");
-    renderSidebarTags();
-    renderFolders();
     checkWelcomeTour();
   } catch (err) {
     showToast("Failed to load bookmarks", "error");
@@ -558,7 +555,7 @@ export function toggleBookmarkSelection(
 
   state.setBulkMode(state.selectedBookmarks.size > 0);
   updateBulkUI();
-  renderBookmarks();
+  // React components automatically highlight based on selectedBookmarks state
 }
 
 // Clear all selections
@@ -567,7 +564,7 @@ export function clearSelections(): void {
   state.setBulkMode(false);
   state.setLastSelectedIndex(null);
   updateBulkUI();
-  renderBookmarks();
+  // React components automatically update selection UI
 }
 
 // Select all bookmarks
@@ -577,7 +574,7 @@ export function selectAllBookmarks(): void {
     state.setBulkMode(true);
   }
   updateBulkUI?.();
-  renderBookmarks();
+  // React components automatically highlight based on selectedBookmarks state
 }
 
 // Clear bookmarks selection
@@ -585,7 +582,7 @@ export function clearSelection(): void {
   state.selectedBookmarks.clear();
   state.setBulkMode(false);
   updateBulkUI?.();
-  renderBookmarks();
+  // React components automatically update selection UI
 }
 
 // Stub bulk action functions - to be implemented or delegated through React UI

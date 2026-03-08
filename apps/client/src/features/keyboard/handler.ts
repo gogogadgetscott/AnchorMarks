@@ -217,15 +217,12 @@ async function switchView(view: string): Promise<void> {
   const { saveSettings } = await import("@features/bookmarks/settings.ts");
   saveSettings({ current_view: view });
 
-  if (view === "dashboard") {
-    const { renderDashboard } =
-      await import("@features/bookmarks/dashboard.ts");
-    renderDashboard();
-  } else if (view === "tag-cloud") {
+  if (view === "tag-cloud") {
     const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
     await loadBookmarks();
-  } else {
+  } else if (view !== "dashboard") {
     const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
-    loadBookmarks();
+    await loadBookmarks();
   }
+  // Dashboard component handles its own rendering via React
 }

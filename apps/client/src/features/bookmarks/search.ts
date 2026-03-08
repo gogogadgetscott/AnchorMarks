@@ -104,21 +104,9 @@ export async function sidebarFilterTag(tag: string): Promise<void> {
     search: undefined,
   });
 
-  // Update view title
-  const viewTitle = document.getElementById("view-title");
-  if (viewTitle) {
-    if (newTags.length === 0) {
-      viewTitle.textContent = "Bookmarks";
-    } else {
-      viewTitle.textContent = `Tags: ${newTags.join(", ")}`;
-    }
-  }
-
   updateActiveNav();
-  renderActiveFilters();
-  const { renderBookmarks } = await import("@features/bookmarks/bookmarks.ts");
-  await renderBookmarks();
-  renderSidebarTags();
+  // React components automatically re-render when filterConfig changes
+  // No need for renderActiveFilters(), renderBookmarks(), or renderSidebarTags()
 }
 
 // Filter sidebar tags by search

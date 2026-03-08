@@ -69,15 +69,7 @@ afterEach(() => {
 });
 
 describe("folders module", () => {
-  it("renders folder tree with badges and drag data", () => {
-    foldersModule.renderFolders();
-    const items = document.querySelectorAll(".folder-item");
-    expect(items.length).toBeGreaterThan(0);
-    const child = document.querySelector('[data-folder="child"]');
-    expect(child?.querySelector(".folder-name")?.textContent).toBe("Child");
-  });
-
-  it("loads folders from API and updates selects", async () => {
+  it("loads folders from API and updates state", async () => {
     apiMock.mockResolvedValueOnce([
       { id: "new", name: "New", bookmark_count: 0 } as any,
     ]);

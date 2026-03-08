@@ -1,6 +1,5 @@
 import React from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { flushSync } from "react-dom";
 import { DashboardGrid } from "@components/DashboardGrid.tsx";
 import type {
   Bookmark,
@@ -87,27 +86,25 @@ export function renderReactDashboard({
     dashboardMountPoint = mountPoint;
   }
 
-  flushSync(() => {
-    dashboardRoot?.render(
-      React.createElement(DashboardGrid, {
-        widgets,
-        isEditMode: true,
-        previewBookmarksByWidgetId,
-        metricsByWidgetId,
-        linkedWidgetIdByWidgetId,
-        tagAnalyticsData,
-        onRemoveWidget,
-        onMoveWidget,
-        onResizeWidget,
-        onSortWidget,
-        onAddBookmarkToWidget,
-        onOpenAllWidgetBookmarks,
-        onShowWidgetInBookmarksView,
-        onChangeWidgetColor,
-        onTagAnalyticsSettingsChange,
-      }),
-    );
-  });
+  dashboardRoot?.render(
+    React.createElement(DashboardGrid, {
+      widgets,
+      isEditMode: true,
+      previewBookmarksByWidgetId,
+      metricsByWidgetId,
+      linkedWidgetIdByWidgetId,
+      tagAnalyticsData,
+      onRemoveWidget,
+      onMoveWidget,
+      onResizeWidget,
+      onSortWidget,
+      onAddBookmarkToWidget,
+      onOpenAllWidgetBookmarks,
+      onShowWidgetInBookmarksView,
+      onChangeWidgetColor,
+      onTagAnalyticsSettingsChange,
+    }),
+  );
 }
 
 export function unmountReactDashboard(): void {

@@ -114,46 +114,14 @@ function getTagCountFromRenderedBookmarks(): number {
 
 /** @deprecated Managed by React (Sidebar/Header) */
 export function updateStats(): void {
-  const bookmarkCount = state.totalCount;
-  const folderCount =
-    state.currentView === "dashboard"
-      ? state.dashboardWidgets.filter((w) => w.type === "folder").length
-      : state.folders.length;
-  const tagCount =
-    state.currentView === "dashboard"
-      ? state.dashboardWidgets.filter((w) => w.type === "tag").length
-      : getTagCountFromRenderedBookmarks();
-
-  setText("stat-bookmarks", String(bookmarkCount));
-  setText("stat-folders", String(folderCount));
-  setText("stat-tags", String(tagCount));
-  setText("folders-count", String(folderCount));
-  setText("stat-label-links", bookmarkCount === 1 ? "link" : "links");
-  setText("stat-label-folders", folderCount === 1 ? "folder" : "folders");
-  setText("stat-label-tags", tagCount === 1 ? "tag" : "tags");
+  // This function is no longer needed - React manages stats via Header component
+  // Skip execution safely
+  return;
 }
 
 /** @deprecated Use EmptyState React component */
 export function getEmptyStateMessage(): string {
-  const hasTagFilters = state.filterConfig.tags.length > 0;
-  const search = dom.searchInput?.value?.trim() ?? "";
-
-  if (hasTagFilters) {
-    return "<h3>No bookmarks with these tags</h3>";
-  }
-
-  if (search) {
-    return `<h3>No results found</h3><p>No bookmarks match \"${search}\".</p>`;
-  }
-
-  if (state.currentView === "favorites") {
-    return "<h3>You haven't added any favorites yet</h3>";
-  }
-
-  if (state.currentView === "archived") {
-    return "<h3>No archived bookmarks</h3>";
-  }
-
+  // This function is no longer needed - React manages empty state via EmptyState component
   return "";
 }
 

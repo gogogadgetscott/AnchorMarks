@@ -335,11 +335,7 @@ export function Omnibar({
     const trimmed = query.trim();
 
     if (currentView === "favorites" || currentView === "recent") {
-      searchFilterTimeout.current = setTimeout(() => {
-        import("@features/bookmarks/bookmarks.ts").then((m) =>
-          m.renderBookmarks(),
-        );
-      }, 120);
+      // View is handled by React context/components directly
       return;
     }
 
@@ -349,11 +345,6 @@ export function Omnibar({
           ...filterConfig,
           search: undefined,
         });
-        searchFilterTimeout.current = setTimeout(() => {
-          import("@features/bookmarks/bookmarks.ts").then((m) =>
-            m.renderBookmarks(),
-          );
-        }, 120);
       }
       return;
     }
@@ -363,17 +354,8 @@ export function Omnibar({
       search: trimmed || undefined,
     });
 
-    searchFilterTimeout.current = setTimeout(() => {
-      import("@features/bookmarks/filters.ts").then(async (m) => {
-        await m.applyFilters();
-        import("@features/bookmarks/search.ts").then((s) =>
-          s.renderActiveFilters(),
-        );
-        import("@features/bookmarks/filters.ts").then((f) =>
-          f.updateFilterButtonText(),
-        );
-      });
-    }, 120);
+    // React components automatically re-render when filterConfig changes
+    // No need for explicit renderBookmarks() or renderActiveFilters() calls
 
     return () => {
       if (searchFilterTimeout.current)

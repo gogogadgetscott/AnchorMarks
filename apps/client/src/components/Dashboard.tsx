@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { DashboardToolbar } from "./DashboardToolbar.tsx";
 import { renderDashboard } from "@features/bookmarks/dashboard.ts";
+import { SmartInsights } from "./SmartInsights";
 import { useUI } from "../contexts/UIContext";
 
 /**
@@ -21,6 +22,9 @@ export function Dashboard() {
     <>
       <DashboardToolbar />
       <div id="main-view-outlet" className="dashboard-freeform"></div>
+      <div className="dashboard-insights-section" style={{ marginTop: "2rem", padding: "1rem" }}>
+        <SmartInsights enabled={currentView === "dashboard"} />
+      </div>
     </>
   );
 }

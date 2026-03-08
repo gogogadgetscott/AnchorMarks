@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       getIsAuthenticated: () => isAuthenticated,
       setIsAuthenticated,
     });
-  }, [csrfToken, currentUser, isAuthenticated]);
+  }, []);
 
   // Prefetch CSRF Token
   const prefetchCsrf = useCallback(async () => {

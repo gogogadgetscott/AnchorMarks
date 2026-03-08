@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as state from "@features/state.ts";
 import { loadBookmarks } from "@features/bookmarks/bookmarks.ts";
 import {
-  renderSidebarTags,
   renderActiveFilters,
   clearAllFilters,
 } from "@features/bookmarks/search.ts";
@@ -99,8 +98,7 @@ describe("bookmarks filtering + active filter UI", () => {
       tagSort: "count_desc",
       tagMode: "OR",
     });
-
-    renderSidebarTags();
+    // renderSidebarTags() removed - React components handle sidebar rendering
   });
 
   it("renderActiveFilters shows folder, tags, and search chips", async () => {
@@ -129,20 +127,6 @@ describe("bookmarks filtering + active filter UI", () => {
     expect(
       chips.querySelector("#filter-tag-mode-btn")?.textContent?.trim(),
     ).toContain("Match: OR");
-  });
-
-  it("renderSidebarTags counts tags and toggles active class", () => {
-    const list = document.getElementById("sidebar-tags-list")!;
-    state.setFilterConfig({ ...state.filterConfig, tags: ["alpha"] });
-    renderSidebarTags();
-
-    const alphaItem = list.querySelector(
-      '.sidebar-tag-item[data-tag-name="alpha"]',
-    ) as HTMLElement | null;
-    expect(alphaItem).not.toBeNull();
-    expect(alphaItem?.querySelector(".tag-name")?.textContent).toBe("alpha");
-    expect(alphaItem?.classList.contains("active")).toBe(true);
-    expect(document.getElementById("tags-count")!.textContent).toContain("3");
   });
 
   it("clearAllFilters resets filters, hides section, and triggers load", async () => {

@@ -136,8 +136,14 @@ export async function api<T = unknown>(
   };
   // Always send CSRF token for state-changing requests
   const method = (options.method || "GET").toUpperCase();
-  const authBridge = getAuthBridge();
-  const csrfToken = authBridge.getCsrfToken();
+  let authBridge: ReturnType<typeof getAuthBridge> | null = null;
+  let csrfToken: string | null = null;
+  try {
+    authBridge = getAuthBridge();
+    csrfToken = authBridge.getCsrfToken();
+  } catch {
+    // AuthProvider not yet mounted - proceed without CSRF token
+  }
   if (["POST", "PUT", "DELETE", "PATCH"].includes(method) && csrfToken) {
     headers["X-CSRF-Token"] = csrfToken;
   }
@@ -182,17 +188,17 @@ export async function api<T = unknown>(
               }
             }
             const refreshedCsrfToken = getStringField(refreshData, "csrfToken");
-            if (refreshedCsrfToken) authBridge.setCsrfToken(refreshedCsrfToken);
+            if (refreshedCsrfToken && authBridge) authBridge.setCsrfToken(refreshedCsrfToken);
 
             const refreshedUser =
               refreshData && typeof refreshData.user === "object"
                 ? (refreshData.user as User)
                 : null;
-            if (refreshedUser) {
+            if (refreshedUser && authBridge) {
               authBridge.setCurrentUser(refreshedUser);
               authBridge.setIsAuthenticated(true);
             }
-            if (!refreshData) {
+            if (!refreshData && authBridge) {
               authBridge.setCsrfToken(null);
               authBridge.setCurrentUser(null);
               authBridge.setIsAuthenticated(false);
@@ -229,9 +235,11 @@ export async function api<T = unknown>(
               return data as T;
             }
             if (retryRes.status === 401) {
-              authBridge.setCsrfToken(null);
-              authBridge.setCurrentUser(null);
-              authBridge.setIsAuthenticated(false);
+              if (authBridge) {
+                authBridge.setCsrfToken(null);
+                authBridge.setCurrentUser(null);
+                authBridge.setIsAuthenticated(false);
+              }
               const { showAuthScreen } = await import("@features/auth/auth.ts");
               showAuthScreen();
               throw new Error("Session expired");
@@ -245,9 +253,11 @@ export async function api<T = unknown>(
               `API Error: ${retryRes.status} ${retryRes.statusText}`,
             );
             throw new Error(errMsg);
-          }
+        if (authBridge) {
+          authBridge.setCsrfToken(null);
+          authBridge.setCurrentUser(null);
+          authBridge.setIsAuthenticated(false);
         }
-        authBridge.setCsrfToken(null);
         authBridge.setCurrentUser(null);
         authBridge.setIsAuthenticated(false);
         const { showAuthScreen } = await import("@features/auth/auth.ts");
@@ -290,8 +300,10 @@ export async function api<T = unknown>(
           errorMessage.toLowerCase().includes("csrf") ||
           errorMessage.toLowerCase().includes("x-csrf-token")
         ) {
-          authBridge.setCsrfToken(null);
-          // Optionally trigger re-auth or reload UI
+          if (authBridge) {
+            authBridge.setCsrfToken(null);
+            // Optionally trigger re-auth or reload UI
+          }
         }
         throw new Error(errorMessage);
       }

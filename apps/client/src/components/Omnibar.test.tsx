@@ -88,7 +88,6 @@ vi.mock("@features/bookmarks/search.ts", () => ({
 }));
 
 vi.mock("@features/bookmarks/bookmarks.ts", () => ({
-  renderBookmarks: vi.fn(),
   loadBookmarks: vi.fn(),
 }));
 

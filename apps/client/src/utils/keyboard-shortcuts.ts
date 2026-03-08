@@ -230,13 +230,6 @@ class KeyboardShortcuts {
       handler: async () => {
         if (this.contextActions.setCurrentView) {
           this.contextActions.setCurrentView("dashboard");
-        } else {
-          // Fallback to bridge
-          const uiBridge = getUIBridge();
-          await uiBridge.setCurrentView("dashboard");
-          const { renderDashboard } =
-            await import("@features/bookmarks/dashboard.ts");
-          renderDashboard();
         }
       },
     });

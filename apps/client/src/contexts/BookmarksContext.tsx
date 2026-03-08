@@ -155,7 +155,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       getBulkMode: () => bulkMode,
       setBulkMode,
     });
-  }, [bookmarks, renderedBookmarks, totalCount, selectedBookmarks, bulkMode]);
+  }, []); // Bridge is registered once on mount
 
   const setWidgetDataCache = useCallback((id: string, val: Bookmark[]) => {
     setWidgetDataCacheState((prev) => ({ ...prev, [id]: val }));
