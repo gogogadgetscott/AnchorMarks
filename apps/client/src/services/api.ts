@@ -188,7 +188,8 @@ export async function api<T = unknown>(
               }
             }
             const refreshedCsrfToken = getStringField(refreshData, "csrfToken");
-            if (refreshedCsrfToken && authBridge) authBridge.setCsrfToken(refreshedCsrfToken);
+            if (refreshedCsrfToken && authBridge)
+              authBridge.setCsrfToken(refreshedCsrfToken);
 
             const refreshedUser =
               refreshData && typeof refreshData.user === "object"
@@ -198,14 +199,17 @@ export async function api<T = unknown>(
               authBridge.setCurrentUser(refreshedUser);
               authBridge.setIsAuthenticated(true);
             }
-            if (!refreshData && authBridge) {
-              authBridge.setCsrfToken(null);
-              authBridge.setCurrentUser(null);
-              authBridge.setIsAuthenticated(false);
+            if (!refreshData) {
+              if (authBridge) {
+                authBridge.setCsrfToken(null);
+                authBridge.setCurrentUser(null);
+                authBridge.setIsAuthenticated(false);
+              }
               const { showAuthScreen } = await import("@features/auth/auth.ts");
               showAuthScreen();
               throw new Error("Session expired");
             }
+
             // Retry original request once with new cookies
             const retryRes = await fetch(`${API_BASE}${endpoint}`, {
               ...options,
@@ -253,13 +257,15 @@ export async function api<T = unknown>(
               `API Error: ${retryRes.status} ${retryRes.statusText}`,
             );
             throw new Error(errMsg);
+          }
+        }
+
+        // If we get here, either this was a refresh call or refresh didn't succeed.
         if (authBridge) {
           authBridge.setCsrfToken(null);
           authBridge.setCurrentUser(null);
           authBridge.setIsAuthenticated(false);
         }
-        authBridge.setCurrentUser(null);
-        authBridge.setIsAuthenticated(false);
         const { showAuthScreen } = await import("@features/auth/auth.ts");
         showAuthScreen();
         throw new Error("Session expired");

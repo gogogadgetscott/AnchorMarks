@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import { AuthProvider } from "./AuthContext";
 import { BookmarksProvider } from "./BookmarksContext";
-import { UIProvider } from "./UIContext";
-import { FoldersProvider } from "./FoldersContext";
+import { ConfirmProvider } from "./ConfirmContext";
 import { DashboardProvider } from "./DashboardContext";
+import { FoldersProvider } from "./FoldersContext";
 import { ModalProvider } from "./ModalContext";
 import { ToastProvider } from "./ToastContext";
-import { ConfirmProvider } from "./ConfirmContext";
+import { UIProvider } from "./UIContext";
 
 /**
  * Composes all context providers into a single wrapper.

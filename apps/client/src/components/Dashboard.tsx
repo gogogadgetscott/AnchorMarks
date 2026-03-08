@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { DashboardToolbar } from "./DashboardToolbar.tsx";
-import { renderDashboard } from "@features/bookmarks/dashboard.ts";
 import { SmartInsights } from "./SmartInsights";
 import { useUI } from "../contexts/UIContext";
 
@@ -12,10 +11,7 @@ export function Dashboard() {
   const { currentView } = useUI();
 
   useEffect(() => {
-    // Render dashboard when the component mounts or currentView changes to dashboard
-    if (currentView === "dashboard") {
-      void renderDashboard();
-    }
+    // Dashboard uses React to render itself; no manual call needed
   }, [currentView]);
 
   return (
