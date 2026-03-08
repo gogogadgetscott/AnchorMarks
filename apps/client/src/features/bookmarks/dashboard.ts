@@ -1382,29 +1382,155 @@ export function filterDashboardBookmarks(term: string): Promise<void> {
  * Toggle layout settings panel
  */
 export function toggleLayoutSettings(): void {
-  const panel = document.getElementById("layout-settings-panel");
-  if (panel) {
-    panel.classList.toggle("hidden");
+  const dropdown = document.getElementById("layout-settings-dropdown");
+  if (dropdown) {
+    closeLayoutSettings();
+    return;
   }
+
+  showLayoutSettings();
 }
 
 /**
- * Show layout settings panel
+ * Show layout settings dropdown
  */
 export function showLayoutSettings(): void {
-  const panel = document.getElementById("layout-settings-panel");
-  if (panel) {
-    panel.classList.remove("hidden");
+  // Remove existing
+  document.getElementById("layout-settings-dropdown")?.remove();
+
+  const dropdown = document.createElement("div");
+  dropdown.id = "layout-settings-dropdown";
+  dropdown.className = "filter-dropdown"; // Reuse filter dropdown styles
+
+  dropdown.innerHTML = `
+    <div class="filter-dropdown-header">
+      <span class="filter-dropdown-title">Dashboard Layout</span>
+      <div class="filter-dropdown-actions">
+        <button class="btn-icon" id="layout-close-btn" title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="filter-dropdown-body">
+      <div class="filter-row">
+        <div class="filter-column">
+          <h4>Layout Actions</h4>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <button class="btn btn-outline btn-full" id="auto-position-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;margin-right:0.5rem">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+              </svg>
+              Auto Position Widgets
+            </button>
+            <button class="btn btn-outline btn-full ${state.snapToGrid ? "active" : ""}" id="snap-to-grid-toggle-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;margin-right:0.5rem">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+                <line x1="3" y1="12" x2="21" y2="12" stroke-dasharray="2,2"/><line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2,2"/>
+              </svg>
+              Snap to Grid ${state.snapToGrid ? "(ON)" : "(OFF)"}
+            </button>
+            <button class="btn btn-outline btn-full" id="clear-dashboard-btn" style="color: var(--danger-600); border-color: var(--danger-600);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;margin-right:0.5rem">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              Clear All Widgets
+            </button>
+          </div>
+        </div>
+        <div class="filter-column">
+          <h4>Info</h4>
+          <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6;">
+            <strong>Auto Position:</strong> Automatically arranges all widgets in a grid layout.<br><br>
+            <strong>Snap to Grid:</strong> When enabled, widgets snap to a 20px grid when dragging or resizing.<br><br>
+            <strong>Clear All:</strong> Removes all widgets from the dashboard. This action cannot be undone.
+          </p>
+          <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+            <div style="font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; margin-bottom: 0.5rem;">Statistics</div>
+            <div id="layout-stats-content" style="font-size: 0.875rem;"><strong>${state.dashboardWidgets.length}</strong> widget${state.dashboardWidgets.length !== 1 ? "s" : ""} on dashboard</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const headersContainer = document.getElementById("headers-container");
+  const mainHeader = document.getElementById("main-header");
+
+  if (headersContainer) {
+    // Insert into headers container as a sibling
+    if (mainHeader && mainHeader.parentElement === headersContainer) {
+      mainHeader.insertAdjacentElement("afterend", dropdown);
+    } else {
+      headersContainer.appendChild(dropdown);
+    }
+  } else if (mainHeader && mainHeader.style.display !== "none") {
+    // Fallback: insert after main header
+    mainHeader.style.position = "relative";
+    mainHeader.insertAdjacentElement("afterend", dropdown);
+  } else {
+    document.body.appendChild(dropdown);
   }
+
+  attachLayoutSettingsListeners();
+
+  setTimeout(() => {
+    document.addEventListener("click", handleLayoutSettingsClickOutside);
+  }, 0);
 }
 
 /**
  * Close layout settings panel
  */
 export function closeLayoutSettings(): void {
-  const panel = document.getElementById("layout-settings-panel");
-  if (panel) {
-    panel.classList.add("hidden");
+  const dropdown = document.getElementById("layout-settings-dropdown");
+  if (dropdown) {
+    dropdown.remove();
+  }
+  document.removeEventListener("click", handleLayoutSettingsClickOutside);
+}
+
+function attachLayoutSettingsListeners(): void {
+  document.getElementById("layout-close-btn")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    closeLayoutSettings();
+  });
+
+  document
+    .getElementById("auto-position-btn")
+    ?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      autoPositionWidgets();
+      updateLayoutStats();
+    });
+
+  document
+    .getElementById("clear-dashboard-btn")
+    ?.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      await clearDashboard();
+      updateLayoutStats();
+    });
+
+  document
+    .getElementById("snap-to-grid-toggle-btn")
+    ?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      state.setSnapToGrid(!state.snapToGrid);
+      showLayoutSettings();
+    });
+}
+
+function handleLayoutSettingsClickOutside(e: Event): void {
+  const target = e.target as HTMLElement;
+  if (
+    !target.closest("#layout-settings-dropdown") &&
+    !target.closest("#dashboard-layout-btn")
+  ) {
+    closeLayoutSettings();
   }
 }
 
@@ -1413,10 +1539,17 @@ export function closeLayoutSettings(): void {
  */
 export function updateLayoutStats(): void {
   const statsEl = document.getElementById("layout-stats");
-  if (!statsEl) return;
+  const statsContentEl = document.getElementById("layout-stats-content");
 
   const widgets = state.dashboardWidgets;
   const count = widgets.length;
+
+  if (statsContentEl) {
+    statsContentEl.innerHTML = `<strong>${count}</strong> widget${count === 1 ? "" : "s"} on dashboard`;
+  }
+
+  if (!statsEl) return;
+
   const totalArea = widgets.reduce(
     (sum, widget) => sum + getWidgetWidth(widget) * getWidgetHeight(widget),
     0,
