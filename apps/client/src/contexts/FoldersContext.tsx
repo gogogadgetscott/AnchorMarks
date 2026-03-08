@@ -63,6 +63,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
         setFolders(val);
         state.setFolders(val);
       },
+      loadFolders,
     });
   }, [folders]);
 

@@ -3,11 +3,16 @@
  * Handles bookmark import and export functionality
  */
 
-import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { downloadBlob } from "@utils/index.ts";
-import { closeModals } from "@utils/ui-helpers.ts";
-import { confirmDialog } from "@features/ui/confirm-dialog.ts";
+import { showConfirm } from "@/contexts/ConfirmContext";
+import {
+  getBookmarksBridge,
+  getFoldersBridge,
+  getAuthBridge,
+  getUIBridge,
+  API_BASE,
+} from "@/contexts/context-bridge";
 
 /**
  * Import HTML bookmarks file
@@ -25,14 +30,10 @@ export async function importHtml(
     body: JSON.stringify({ html }),
   });
 
-  // Reload data
-  const [{ loadBookmarks }, { loadFolders }] = await Promise.all([
-    import("@features/bookmarks/bookmarks.ts"),
-    import("@features/bookmarks/folders.ts"),
+  await Promise.all([
+    getBookmarksBridge().loadBookmarks(),
+    getFoldersBridge().loadFolders(),
   ]);
-  await Promise.all([loadBookmarks(), loadFolders()]);
-
-  // React Context handles re-rendering automatically
 
   const hasLog = !!(result.import_log && result.import_log.length > 0);
 
@@ -81,13 +82,10 @@ export async function importJson(
     body: JSON.stringify(importData),
   });
 
-  const [{ loadBookmarks }, { loadFolders }] = await Promise.all([
-    import("@features/bookmarks/bookmarks.ts"),
-    import("@features/bookmarks/folders.ts"),
+  await Promise.all([
+    getBookmarksBridge().loadBookmarks(),
+    getFoldersBridge().loadFolders(),
   ]);
-  await Promise.all([loadBookmarks(), loadFolders()]);
-
-  // React Context handles re-rendering automatically
 
   return {
     imported: result.imported,
@@ -110,13 +108,12 @@ export async function exportJson(): Promise<void> {
  * Export as HTML
  */
 export async function exportHtml(): Promise<void> {
-  const response = await fetch(`${state.API_BASE}/export?format=html`, {
+  const response = await fetch(`${API_BASE}/export?format=html`, {
     credentials: "include",
   });
 
   if (response.status === 401) {
-    const { logout } = await import("@features/auth/auth.ts");
-    logout();
+    getAuthBridge().logout();
     throw new Error("Session expired");
   }
 
@@ -131,7 +128,7 @@ export async function exportHtml(): Promise<void> {
  */
 export async function resetBookmarks(): Promise<number> {
   if (
-    !(await confirmDialog(
+    !(await showConfirm(
       "Reset all bookmarks? This will delete all your bookmarks and folders, and restore the example bookmarks. This cannot be undone!",
       {
         title: "Reset Bookmarks",
@@ -147,18 +144,14 @@ export async function resetBookmarks(): Promise<number> {
     { method: "POST" },
   );
 
-  state.setCurrentFolder(null);
-  state.setCurrentView("all");
+  const ui = getUIBridge();
+  ui.setCurrentFolder(null);
+  ui.setCurrentView("all");
 
-  const [{ loadFolders }, { loadBookmarks }] = await Promise.all([
-    import("@features/bookmarks/folders.ts"),
-    import("@features/bookmarks/bookmarks.ts"),
+  await Promise.all([
+    getFoldersBridge().loadFolders(),
+    getBookmarksBridge().loadBookmarks(),
   ]);
-  await Promise.all([loadFolders(), loadBookmarks()]);
-
-  const { updateActiveNav } = await import("@utils/ui-helpers.ts");
-  if (updateActiveNav) updateActiveNav();
-  closeModals();
 
   return data.bookmarks_created;
 }

@@ -86,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCsrfToken,
       setCurrentUser,
       setIsAuthenticated,
+      logout,
     });
   }, [csrfToken, currentUser, isAuthenticated]);
 

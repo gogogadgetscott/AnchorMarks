@@ -154,6 +154,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       setTotalCount,
       setSelectedBookmarks,
       setBulkMode,
+      loadBookmarks,
     });
   }, [bookmarks, renderedBookmarks, totalCount, selectedBookmarks, bulkMode]);
 

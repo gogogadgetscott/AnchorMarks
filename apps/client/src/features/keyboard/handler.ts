@@ -3,9 +3,9 @@
  * Handles global keyboard shortcuts and navigation
  */
 
-import * as state from "@features/state.ts";
 import { openOmnibar, closeOmnibar } from "@features/bookmarks/omnibar.ts";
-import { openModal, updateActiveNav } from "@utils/ui-helpers.ts";
+import { openModal } from "@utils/ui-helpers.ts";
+import { getBookmarksBridge, getUIBridge } from "@/contexts/context-bridge";
 
 /**
  * Handle global keyboard events
@@ -67,10 +67,9 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
 
   // Escape key
   if (key === "escape") {
-    if (state.bulkMode) {
-      const { clearSelections } =
-        await import("@features/bookmarks/bookmarks.ts");
-      clearSelections();
+    if (getBookmarksBridge().getBulkMode()) {
+      getBookmarksBridge().setSelectedBookmarks(new Set());
+      getBookmarksBridge().setBulkMode(false);
     } else {
       // Close omnibar if open
       closeOmnibar();
@@ -145,7 +144,7 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     const activeEl = document.activeElement;
     if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
-    state.setCurrentFolder(null);
+    getUIBridge().setCurrentFolder(null);
     await switchView("dashboard");
   }
 
@@ -154,7 +153,7 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     const activeEl = document.activeElement;
     if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
-    state.setCurrentFolder(null);
+    getUIBridge().setCurrentFolder(null);
     await switchView("tag-cloud");
   }
 
@@ -163,7 +162,7 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     const activeEl = document.activeElement;
     if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
-    state.setCurrentFolder(null);
+    getUIBridge().setCurrentFolder(null);
     await switchView("favorites");
   }
 
@@ -172,12 +171,12 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     const activeEl = document.activeElement;
     if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
     e.preventDefault();
-    state.setCurrentFolder(null);
+    getUIBridge().setCurrentFolder(null);
     await switchView("all");
   }
 
   // F11: Toggle fullscreen (on dashboard)
-  if (key === "f11" && state.currentView === "dashboard") {
+  if (key === "f11" && getUIBridge().getCurrentView() === "dashboard") {
     e.preventDefault();
     const { toggleFullscreen } =
       await import("@features/bookmarks/dashboard.ts");
@@ -185,8 +184,6 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
   }
 
   // ?: Shortcuts help (handled by keyboard-shortcuts.ts, but kept here as fallback)
-  // This is now handled by the new keyboard shortcuts system, but we keep this
-  // as a fallback in case the new system doesn't handle it
   if (key === "?" || e.key === "?") {
     const activeEl = document.activeElement;
     if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return;
@@ -208,21 +205,14 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
  * Shared view switching logic
  */
 async function switchView(view: string): Promise<void> {
-  await state.setCurrentView(view);
-  updateActiveNav();
-
-  // Header updates via React Context; legacy updateHeaderContent removed
+  await getUIBridge().setCurrentView(view);
 
   // Save current view to persist across refreshes
   const { saveSettings } = await import("@features/bookmarks/settings.ts");
   saveSettings({ current_view: view });
 
-  if (view === "tag-cloud") {
-    const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
-    await loadBookmarks();
-  } else if (view !== "dashboard") {
-    const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
-    await loadBookmarks();
+  if (view !== "dashboard") {
+    await getBookmarksBridge().loadBookmarks();
   }
   // Dashboard component handles its own rendering via React
 }

@@ -1,14 +1,14 @@
 import { useCallback } from "react";
-import { useUI } from "../contexts/UIContext";
+import { DashboardToolbar } from "./DashboardToolbar.tsx";
 import { useAuth } from "../contexts/AuthContext";
 import { useBookmarks } from "../contexts/BookmarksContext";
-import { Icon } from "./Icon.tsx";
-import { ViewToggle } from "./ViewToggle.tsx";
-import { UserProfile } from "./UserProfile.tsx";
-import { SelectionUI, BulkAction } from "./SelectionUI.tsx";
-import { DashboardToolbar } from "./DashboardToolbar.tsx";
-import { Omnibar } from "./Omnibar.tsx";
 import { useDashboard } from "../contexts/DashboardContext";
+import { useUI } from "../contexts/UIContext";
+import { Icon } from "./Icon.tsx";
+import { Omnibar } from "./Omnibar.tsx";
+import { SelectionUI, BulkAction } from "./SelectionUI.tsx";
+import { UserProfile } from "./UserProfile.tsx";
+import { ViewToggle } from "./ViewToggle.tsx";
 
 export function Header() {
   const {
@@ -117,7 +117,7 @@ export function Header() {
   const userName = currentUser?.username ?? "User";
 
   return (
-    <header className="header" id={`${currentView}-header`} role="banner">
+    <header className="header content-header" id={`${currentView}-header`} role="banner">
       {!isBulkMode ? (
         <div className="header-content header-normal-ui">
           <div className="header-left">

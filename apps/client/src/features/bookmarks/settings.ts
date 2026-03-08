@@ -38,6 +38,7 @@ export function initThemeControls(settings: UserSettings) {
 
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
+import { getUIBridge } from "@/contexts/context-bridge";
 
 // Load settings from server
 export async function loadSettings(): Promise<void> {
@@ -228,7 +229,7 @@ export function toggleSidebar(): void {
       "anchormarks_sidebar_collapsed",
       String(isCollapsed),
     );
-    state.setHideSidebar(isCollapsed);
+    getUIBridge().setHideSidebar(isCollapsed);
     // Also save to server settings for cross-device sync
     saveSettings({ hide_sidebar: isCollapsed ? 1 : 0 });
   }

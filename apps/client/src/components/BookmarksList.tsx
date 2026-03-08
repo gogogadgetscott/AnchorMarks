@@ -6,15 +6,7 @@ import { BookmarkCard } from "./BookmarkCard.tsx";
 import { RichBookmarkCard } from "./RichBookmarkCard.tsx";
 import { SkeletonCard } from "./SkeletonCard.tsx";
 import type { Bookmark } from "../types/index";
-// TODO (Phase 7): Replace these imports with context-based action handlers
-// once the modal and CRUD systems are ported to React.
-import {
-  deleteBookmark,
-  archiveBookmark,
-  unarchiveBookmark,
-  toggleFavorite,
-  editBookmark,
-} from "@features/bookmarks/bookmarks.ts";
+import { useBookmarkActions } from "@/contexts/useBookmarkActions";
 
 const SKELETON_COUNT = 6;
 
@@ -135,6 +127,13 @@ export function BookmarksList() {
   } = useBookmarks();
 
   const { viewMode, richLinkPreviewsEnabled, currentView } = useUI();
+  const {
+    archiveBookmark,
+    unarchiveBookmark,
+    deleteBookmark,
+    toggleFavorite,
+    editBookmark,
+  } = useBookmarkActions();
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 

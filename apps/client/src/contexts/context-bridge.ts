@@ -19,6 +19,7 @@ interface AuthStore {
   setCsrfToken: (val: string | null) => void;
   setCurrentUser: (val: User | null) => void;
   setIsAuthenticated: (val: boolean) => void;
+  logout: () => void;
 }
 
 const _auth: Partial<AuthStore> = {};
@@ -41,6 +42,7 @@ export function getAuthBridge() {
     setCurrentUser: (val: User | null) => s.setCurrentUser(val),
     getIsAuthenticated: () => s.isAuthenticated,
     setIsAuthenticated: (val: boolean) => s.setIsAuthenticated(val),
+    logout: () => s.logout(),
   };
 }
 
@@ -57,6 +59,7 @@ interface BookmarksStore {
   setTotalCount: (val: number) => void;
   setSelectedBookmarks: (val: Set<string>) => void;
   setBulkMode: (val: boolean) => void;
+  loadBookmarks: () => Promise<void>;
 }
 
 const _bookmarks: Partial<BookmarksStore> = {};
@@ -83,6 +86,7 @@ export function getBookmarksBridge() {
     setSelectedBookmarks: (val: Set<string>) => s.setSelectedBookmarks(val),
     getBulkMode: () => s.bulkMode,
     setBulkMode: (val: boolean) => s.setBulkMode(val),
+    loadBookmarks: () => s.loadBookmarks(),
   };
 }
 
@@ -123,6 +127,7 @@ export function getUIBridge() {
 interface FoldersStore {
   folders: Folder[];
   setFolders: (val: Folder[]) => void;
+  loadFolders: () => Promise<void>;
 }
 
 const _folders: Partial<FoldersStore> = {};
@@ -141,6 +146,7 @@ export function getFoldersBridge() {
   return {
     getFolders: () => s.folders,
     setFolders: (val: Folder[]) => s.setFolders(val),
+    loadFolders: () => s.loadFolders(),
   };
 }
 
