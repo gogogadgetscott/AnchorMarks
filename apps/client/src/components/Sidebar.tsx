@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useCallback } from "react";
 import { useUI } from "../contexts/UIContext";
 import { useBookmarks } from "../contexts/BookmarksContext";
 import { Icon } from "./Icon.tsx";
@@ -11,8 +12,15 @@ interface NavItem {
   countId?: string;
 }
 
-{ id: "analytics", label: "Analytics", icon: "bar-chart", section: "App" },
-{ id: "shortcuts", label: "Shortcuts", icon: "⌨️", section: "App" },
+const NAV_ITEMS: NavItem[] = [
+  { view: "dashboard", label: "Dashboard", icon: "dashboard", tooltip: "Dashboard" },
+  { view: "all", label: "Bookmarks", icon: "home", tooltip: "Bookmarks", countId: "bookmark-count" },
+  { view: "favorites", label: "Favorites", icon: "star", countId: "fav-count" },
+  { view: "recent", label: "Recent", icon: "clock", countId: "count-recent" },
+  { view: "most-used", label: "Most Used", icon: "activity", tooltip: "Most Used", countId: "count-most-used" },
+  { view: "archived", label: "Archived", icon: "archive", countId: "count-archived" },
+  { view: "tag-cloud", label: "Tag Cloud", icon: "cloud", tooltip: "Tag Cloud" },
+  { view: "analytics", label: "Analytics", icon: "bar-chart", tooltip: "Analytics" },
 ];
 
 function FolderItem({
@@ -45,12 +53,12 @@ function FolderItem({
             e.stopPropagation();
             setIsOpen(!isOpen);
           }}
-          style={{ visibility: hasChildren ? 'visible' : 'hidden' }}
+          style={{ visibility: hasChildren ? 'visible' : 'hidden', cursor: 'pointer', padding: '0 4px', fontSize: '10px' }}
         >
           {isOpen ? '▼' : '▶'}
         </span>
         <Icon name="folder" size={18} />
-        <span className="folder-name">{folder.name}</span>
+        <span className="folder-name" style={{ marginLeft: '4px' }}>{folder.name}</span>
       </div>
       {isOpen && hasChildren && (
         <div className="folder-children">
@@ -73,11 +81,14 @@ function FolderItem({
 export function Sidebar() {
   const { currentView, setCurrentView, currentFolder, setCurrentFolder } = useUI();
   const {
+    bookmarks,
     folders,
     totalCount,
     setFilterConfig,
     filterConfig,
-    tagMetadata
+    tagMetadata,
+    renderedBookmarks,
+    dashboardWidgets
   } = useBookmarks();
 
   const [tagSearch, setTagSearch] = useState("");
@@ -90,16 +101,12 @@ export function Sidebar() {
     setExpandedSections(next);
   };
 
-  const filteredTags = Object.keys(tagMetadata)
-    .filter(t => t.toLowerCase().includes(tagSearch.toLowerCase()))
-    .sort((a, b) => (tagMetadata[b].count || 0) - (tagMetadata[a].count || 0));
-
   // Calculate counts for badges
   const getBadgeCount = (view: string) => {
     switch (view) {
       case "all": return totalCount;
       case "favorites": return bookmarks.filter(b => b.is_favorite).length;
-      case "recent": return bookmarks.filter(b => b.visit_count > 0).length; // Simpler logic for now
+      case "recent": return bookmarks.filter(b => b.visit_count > 0).length;
       case "most-used": return bookmarks.filter(b => b.visit_count > 5).length;
       case "archived": return bookmarks.filter(b => b.is_archived).length;
       default: return 0;
@@ -109,18 +116,7 @@ export function Sidebar() {
   // Calculate stats for the bottom bar
   let bCount = totalCount;
   let fCount = folders.length;
-  let tCount = 0;
-
-  const tagSet = new Set();
-  renderedBookmarks.forEach((b) => {
-    if (b.tags) {
-      b.tags.split(",").forEach((t) => {
-        const tag = t.trim();
-        if (tag) tagSet.add(tag);
-      });
-    }
-  });
-  tCount = tagSet.size;
+  let tCount = Object.keys(tagMetadata).length;
 
   if (currentView === "dashboard") {
     fCount = dashboardWidgets.filter((w) => w.type === "folder").length;
@@ -140,8 +136,8 @@ export function Sidebar() {
   const handleNavClick = useCallback(
     async (view: string) => {
       setCurrentView(view);
+      setCurrentFolder(null); // Clear folder filter when clicking main nav
 
-      // Close mobile sidebar
       if (window.innerWidth <= 1024) {
         document.body.classList.remove("mobile-sidebar-open");
       }
@@ -149,36 +145,23 @@ export function Sidebar() {
       const { saveSettings } = await import("@features/bookmarks/settings.ts");
       saveSettings({ current_view: view });
 
-      if (view === "dashboard") {
-        const { renderDashboard } =
-          await import("@features/bookmarks/dashboard.ts");
-        renderDashboard();
-      } else if (view === "tag-cloud") {
-        const { renderTagCloud } =
-          await import("@features/bookmarks/tag-cloud.ts");
-        await renderTagCloud();
-      } else if (view === "analytics") {
-        const { renderAnalytics } = await import("@features/analytics.ts");
-        await renderAnalytics();
-      } else {
-        const { renderSkeletons, loadBookmarks } =
-          await import("@features/bookmarks/bookmarks.ts");
+      const { renderSkeletons, loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
+      if (view !== "dashboard" && view !== "tag-cloud" && view !== "analytics") {
         renderSkeletons();
         await loadBookmarks();
       }
     },
-    [setCurrentView],
+    [setCurrentView, setCurrentFolder],
   );
-
-  const handleSectionToggle = useCallback(async (section: string) => {
-    const { toggleSection } = await import("@features/bookmarks/settings.ts");
-    toggleSection(section);
-  }, []);
 
   const handleAddBookmark = useCallback(async () => {
     const { openModal } = await import("@utils/ui-helpers.ts");
     openModal("bookmark-modal");
   }, []);
+
+  const filteredTags = Object.keys(tagMetadata)
+    .filter(t => t.toLowerCase().includes(tagSearch.toLowerCase()))
+    .sort((a, b) => (tagMetadata[b].count || 0) - (tagMetadata[a].count || 0));
 
   return (
     <aside className="sidebar">
@@ -208,18 +191,18 @@ export function Sidebar() {
           {NAV_ITEMS.map(({ view, label, icon, tooltip, countId }) => (
             <div
               key={view}
-              className={`nav-item${currentView === view ? " active" : ""}`}
+              className={`nav-item${currentView === view && !currentFolder ? " active" : ""}`}
               data-view={view}
-              data-tooltip={tooltip}
               onClick={() => handleNavClick(view)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === "Enter" && handleNavClick(view)}
+              title={tooltip}
             >
               <Icon name={icon} size={20} />
               <span>{label}</span>
               {view !== "dashboard" && view !== "tag-cloud" && view !== "analytics" && (
-                <span className="badge">
+                <span className="badge" id={countId}>
                   {getBadgeCount(view)}
                 </span>
               )}
@@ -228,94 +211,97 @@ export function Sidebar() {
         </div>
 
         {/* Folders Section */}
-        <div className="sidebar-section">
-          <div
-            className="sidebar-section-header"
-            onClick={() => handleSectionToggle("folders")}
-          >
+        <div className={`sidebar-section ${expandedSections.has('folders') ? 'expanded' : ''}`}>
+          <div className="sidebar-section-header" onClick={() => toggleSection('folders')}>
             <Icon name="folder" size={16} />
             <span>Folders</span>
-            <span className="section-chevron">▼</span>
+            <span className="section-chevron">{expandedSections.has('folders') ? '▼' : '▶'}</span>
           </div>
-          <div className="sidebar-section-content">
-            {folders.filter(f => !f.parent_id).map(folder => (
-              <FolderItem
-                key={folder.id}
-                folder={folder}
-                allFolders={folders}
-                currentFolder={currentFolder}
-                onSelect={setCurrentFolder}
-              />
-            ))}
-          </div>
+          {expandedSections.has('folders') && (
+            <div className="sidebar-section-content">
+              {folders.filter(f => !f.parent_id).map(folder => (
+                <FolderItem
+                  key={folder.id}
+                  folder={folder}
+                  allFolders={folders}
+                  currentFolder={currentFolder}
+                  onSelect={setCurrentFolder}
+                />
+              ))}
+              {folders.length === 0 && (
+                <div className="text-tertiary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                  No folders yet
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Tags Section */}
-        <div className="sidebar-section" id="tags-section">
-          <div
-            className="sidebar-section-header"
-            onClick={() => handleSectionToggle("tags")}
-          >
+        <div className={`sidebar-section ${expandedSections.has('tags') ? 'expanded' : ''}`}>
+          <div className="sidebar-section-header" onClick={() => toggleSection('tags')}>
             <Icon name="tag" size={16} />
             <span>Tags</span>
-            <span className="section-chevron">▼</span>
+            <span className="section-chevron">{expandedSections.has('tags') ? '▼' : '▶'}</span>
           </div>
-          <div className="sidebar-section-content">
-            <div className="sidebar-search">
-              <input
-                type="text"
-                placeholder="Search tags..."
-                onChange={(e) => {/* Handle search */ }}
-              />
+          {expandedSections.has('tags') && (
+            <div className="sidebar-section-content">
+              <div className="sidebar-search">
+                <Icon name="search" size={14} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+                <input
+                  type="text"
+                  placeholder="Search tags..."
+                  value={tagSearch}
+                  onChange={(e) => setTagSearch(e.target.value)}
+                  style={{ paddingLeft: '28px' }}
+                />
+              </div>
+              <div className="tag-list" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                {filteredTags.slice(0, 20).map(tagName => (
+                  <div
+                    key={tagName}
+                    className={`sidebar-tag-item ${filterConfig.tags.includes(tagName) ? 'active' : ''}`}
+                    onClick={() => {
+                      const tags = filterConfig.tags.includes(tagName)
+                        ? filterConfig.tags.filter(t => t !== tagName)
+                        : [...filterConfig.tags, tagName];
+                      setFilterConfig({ ...filterConfig, tags });
+                      setCurrentView("all");
+                      setCurrentFolder(null);
+                    }}
+                  >
+                    <span className="tag-name">{tagName}</span>
+                    <span className="tag-count" style={{ marginLeft: 'auto', opacity: 0.6, fontSize: '0.75rem' }}>
+                      {tagMetadata[tagName].count}
+                    </span>
+                  </div>
+                ))}
+                {filteredTags.length === 0 && (
+                  <div className="text-tertiary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                    No tags found
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="tag-list">
-              {Object.keys(tagMetadata).slice(0, 15).map(tagName => (
-                <div
-                  key={tagName}
-                  className={`sidebar-tag-item ${filterConfig.tags.includes(tagName) ? 'active' : ''}`}
-                  onClick={() => {
-                    const tags = filterConfig.tags.includes(tagName)
-                      ? filterConfig.tags.filter(t => t !== tagName)
-                      : [...filterConfig.tags, tagName];
-                    setFilterConfig({ ...filterConfig, tags });
-                  }}
-                >
-                  <span className="tag-name">{tagName}</span>
-                  <span className="tag-count">{tagMetadata[tagName].count}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Quick Stats Bar */}
         <div className="stats-bar">
           <div className="stat-item">
             <Icon name="link" className="stat-icon" size={16} />
-            <span className="stat-value">
-              {bCount}
-            </span>
-            <span className="stat-label">
-              {pluralize(bCount, "link", "links")}
-            </span>
+            <span className="stat-value" id="stat-bookmarks">{bCount}</span>
+            <span className="stat-label">{pluralize(bCount, "link", "links")}</span>
           </div>
           <div className="stat-item">
             <Icon name="folder" className="stat-icon" size={16} />
-            <span className="stat-value">
-              {fCount}
-            </span>
-            <span className="stat-label">
-              {pluralize(fCount, "folder", "folders")}
-            </span>
+            <span className="stat-value" id="stat-folders">{fCount}</span>
+            <span className="stat-label">{pluralize(fCount, "folder", "folders")}</span>
           </div>
           <div className="stat-item">
             <Icon name="tag" className="stat-icon" size={16} />
-            <span className="stat-value">
-              {tCount}
-            </span>
-            <span className="stat-label">
-              {pluralize(tCount, "tag", "tags")}
-            </span>
+            <span className="stat-value" id="stat-tags">{tCount}</span>
+            <span className="stat-label">{pluralize(tCount, "tag", "tags")}</span>
           </div>
         </div>
       </nav>

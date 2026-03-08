@@ -108,13 +108,13 @@ describe("BookmarksList (React)", () => {
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
-  it("shows empty state when no bookmarks and no active filters", () => {
+  it("renders nothing when no bookmarks and no active filters", () => {
     mockBookmarksState.bookmarks = [];
-    render(<BookmarksList />);
-    expect(screen.getByText("No bookmarks yet.")).toBeTruthy();
+    const { container } = render(<BookmarksList />);
+    expect(container.innerHTML).toBe("");
   });
 
-  it("shows filter empty state when tags filter active but nothing matches", () => {
+  it("renders nothing when tags filter active but no results", () => {
     mockBookmarksState.bookmarks = [];
     mockBookmarksState.filterConfig = {
       sort: "newest",
@@ -122,11 +122,11 @@ describe("BookmarksList (React)", () => {
       tagMode: "OR",
       search: "",
     };
-    render(<BookmarksList />);
-    expect(screen.getByText("No bookmarks match your filters.")).toBeTruthy();
+    const { container } = render(<BookmarksList />);
+    expect(container.innerHTML).toBe("");
   });
 
-  it("shows filter empty state when search active but nothing matches", () => {
+  it("renders nothing when search active but no results", () => {
     mockBookmarksState.bookmarks = [];
     mockBookmarksState.filterConfig = {
       sort: "newest",
@@ -134,8 +134,8 @@ describe("BookmarksList (React)", () => {
       tagMode: "OR",
       search: "xyz-no-match",
     };
-    render(<BookmarksList />);
-    expect(screen.getByText("No bookmarks match your filters.")).toBeTruthy();
+    const { container } = render(<BookmarksList />);
+    expect(container.innerHTML).toBe("");
   });
 
   it("renders a BookmarkCard for each bookmark", () => {

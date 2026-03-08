@@ -22,28 +22,15 @@ export function App() {
 
     // Initialize global listeners
     Promise.all([
-      import("@features/ui/interactions.ts"),
-      import("@features/ui/tags.ts"),
       import("@features/keyboard/handler.ts"),
       import("@utils/event-cleanup.ts"),
       import("@features/auth/auth.ts").then((m) => m.checkAuth()),
     ]).then(
       ([
-        { initInteractions },
-        { initTagListeners },
         { handleKeyboard },
         { registerGlobalCleanup },
         isAuthed,
       ]) => {
-        if (!isAuthed) {
-          import("@features/ui/omnibar.ts").then(({ initOmnibarListeners }) => {
-            initOmnibarListeners();
-          });
-        }
-
-        initInteractions();
-        initTagListeners();
-
         const globalSignal = registerGlobalCleanup();
 
         document.addEventListener("keydown", handleKeyboard, {

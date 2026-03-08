@@ -20,6 +20,7 @@ interface RenderReactDashboardInput {
     cooccurrence: CooccurrenceItem[];
   };
   onRemoveWidget?: (widgetId: string) => void;
+  onMoveWidget?: (widgetId: string, x: number, y: number) => void;
   onSortWidget?: (
     widgetIndex: number,
     sort: "a-z" | "z-a" | "recent" | "most_visited",
@@ -55,6 +56,7 @@ export function renderReactDashboard({
   linkedWidgetIdByWidgetId = {},
   tagAnalyticsData,
   onRemoveWidget,
+  onMoveWidget,
   onSortWidget,
   onAddBookmarkToWidget,
   onOpenAllWidgetBookmarks,
@@ -93,6 +95,7 @@ export function renderReactDashboard({
         linkedWidgetIdByWidgetId,
         tagAnalyticsData,
         onRemoveWidget,
+        onMoveWidget,
         onSortWidget,
         onAddBookmarkToWidget,
         onOpenAllWidgetBookmarks,

@@ -6,7 +6,7 @@
 import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { downloadBlob } from "@utils/index.ts";
-import { showToast } from "@utils/ui-helpers.ts";
+import { closeModals } from "@utils/ui-helpers.ts";
 import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
 /**
@@ -32,7 +32,7 @@ export async function importHtml(file: File): Promise<{ imported: number; skippe
 
   // Update tag list
   const { renderSidebarTags } = await import("@features/bookmarks/search.ts");
-  await renderSidebarTags();
+  if (renderSidebarTags) await renderSidebarTags();
 
   const hasLog = !!(result.import_log && result.import_log.length > 0);
 
@@ -40,7 +40,8 @@ export async function importHtml(file: File): Promise<{ imported: number; skippe
     const logContent = result.import_log
       .map(
         (entry: { status: string; url: string; reason?: string }) =>
-          `[${entry.status.toUpperCase()}] ${entry.url}${entry.reason ? ` (${entry.reason})` : ""
+          `[${entry.status.toUpperCase()}] ${entry.url}${
+            entry.reason ? ` (${entry.reason})` : ""
           }`,
       )
       .join("\n");
@@ -85,7 +86,7 @@ export async function importJson(file: File): Promise<{ imported: number; skippe
   await Promise.all([loadBookmarks(), loadFolders()]);
 
   const { renderSidebarTags } = await import("@features/bookmarks/search.ts");
-  await renderSidebarTags();
+  if (renderSidebarTags) await renderSidebarTags();
 
   return {
     imported: result.imported,
@@ -101,7 +102,7 @@ export async function exportJson(): Promise<void> {
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: "application/json",
   });
-  downloadBlob(blob, "anchormarks-bookmarks.tson");
+  downloadBlob(blob, "anchormarks-bookmarks.json");
 }
 
 /**
@@ -144,7 +145,7 @@ export async function resetBookmarks(): Promise<number> {
     "/settings/reset-bookmarks",
     { method: "POST" },
   );
-
+  
   state.setCurrentFolder(null);
   state.setCurrentView("all");
 
@@ -153,6 +154,10 @@ export async function resetBookmarks(): Promise<number> {
     import("@features/bookmarks/bookmarks.ts"),
   ]);
   await Promise.all([loadFolders(), loadBookmarks()]);
+
+  const { updateActiveNav } = await import("@utils/ui-helpers.ts");
+  if (updateActiveNav) updateActiveNav();
+  closeModals();
 
   return data.bookmarks_created;
 }
@@ -184,7 +189,7 @@ export async function exportViews(): Promise<{ dashboard: number; bookmark: numb
     type: "application/json",
   });
   downloadBlob(blob, "anchormarks-views.json");
-
+  
   return {
     dashboard: (dashboardViews || []).length,
     bookmark: (bookmarkViews || []).length

@@ -5,6 +5,7 @@ import { BookmarksList } from "@components/BookmarksList.tsx";
 import { BulkBar } from "@components/BulkBar.tsx";
 import { AuthScreen } from "@components/AuthScreen.tsx";
 import { ModalPortal } from "@components/modals/ModalPortal.tsx";
+import { ConfirmDialog } from "@components/modals/ConfirmDialog.tsx";
 import { EmptyState } from "@components/EmptyState.tsx";
 import { useAuth } from "./contexts/AuthContext";
 import { useBookmarks } from "./contexts/BookmarksContext";
@@ -46,8 +47,9 @@ export function AppShell() {
         </div>
       )}
 
-      {/* React Modals */}
+      {/* React Modals & Overlays */}
       <ModalPortal />
+      <ConfirmDialog />
     </>
   );
 }

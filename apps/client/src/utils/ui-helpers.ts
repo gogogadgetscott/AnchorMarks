@@ -77,11 +77,75 @@ export function updateActiveNav(): void {}
 /** @deprecated Managed by React (Sidebar/Header) */
 export function updateCounts(): void {}
 
+function setText(id: string, value: string): void {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+function getTagCountFromRenderedBookmarks(): number {
+  const unique = new Set<string>();
+  for (const bookmark of state.renderedBookmarks) {
+    const raw = (bookmark as { tags?: unknown }).tags;
+    if (!raw) continue;
+
+    if (Array.isArray(raw)) {
+      for (const tag of raw) {
+        const t = String(tag).trim();
+        if (t) unique.add(t.toLowerCase());
+      }
+      continue;
+    }
+
+    for (const tag of String(raw).split(",")) {
+      const t = tag.trim();
+      if (t) unique.add(t.toLowerCase());
+    }
+  }
+  return unique.size;
+}
+
 /** @deprecated Managed by React (Sidebar/Header) */
-export function updateStats(): void {}
+export function updateStats(): void {
+  const bookmarkCount = state.totalCount;
+  const folderCount =
+    state.currentView === "dashboard"
+      ? state.dashboardWidgets.filter((w) => w.type === "folder").length
+      : state.folders.length;
+  const tagCount =
+    state.currentView === "dashboard"
+      ? state.dashboardWidgets.filter((w) => w.type === "tag").length
+      : getTagCountFromRenderedBookmarks();
+
+  setText("stat-bookmarks", String(bookmarkCount));
+  setText("stat-folders", String(folderCount));
+  setText("stat-tags", String(tagCount));
+  setText("folders-count", String(folderCount));
+  setText("stat-label-links", bookmarkCount === 1 ? "link" : "links");
+  setText("stat-label-folders", folderCount === 1 ? "folder" : "folders");
+  setText("stat-label-tags", tagCount === 1 ? "tag" : "tags");
+}
 
 /** @deprecated Use EmptyState React component */
 export function getEmptyStateMessage(): string {
+  const hasTagFilters = state.filterConfig.tags.length > 0;
+  const search = dom.searchInput?.value?.trim() ?? "";
+
+  if (hasTagFilters) {
+    return "<h3>No bookmarks with these tags</h3>";
+  }
+
+  if (search) {
+    return `<h3>No results found</h3><p>No bookmarks match \"${search}\".</p>`;
+  }
+
+  if (state.currentView === "favorites") {
+    return "<h3>You haven't added any favorites yet</h3>";
+  }
+
+  if (state.currentView === "archived") {
+    return "<h3>No archived bookmarks</h3>";
+  }
+
   return "";
 }
 

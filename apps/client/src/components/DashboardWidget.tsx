@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useDraggable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 import { Icon } from "./Icon.tsx";
 import { PreviewWidgetContent } from "./PreviewWidgetContent.tsx";
 import { StaticWidgetContent } from "./StaticWidgetContent.tsx";
@@ -15,6 +17,7 @@ interface DashboardWidgetProps {
   widget: DashboardWidgetType;
   widgetIndex: number;
   isEditing: boolean;
+  isDragging?: boolean;
   previewBookmarks?: Bookmark[];
   metrics?: Record<string, number>;
   linkedWidgetId: string;
@@ -95,6 +98,7 @@ export function DashboardWidget({
   widget,
   widgetIndex,
   isEditing,
+  isDragging = false,
   previewBookmarks = [],
   metrics = {},
   linkedWidgetId,
@@ -111,6 +115,11 @@ export function DashboardWidget({
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
   const optionsContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: widget.id,
+    disabled: !isEditing,
+  });
 
   useEffect(() => {
     if (!isOptionsOpen) return;
@@ -138,6 +147,8 @@ export function DashboardWidget({
     width: `${widget.w ?? legacyWidget.width ?? 320}px`,
     height: `${widget.h ?? legacyWidget.height ?? 260}px`,
     position: "absolute",
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : undefined,
   };
 
   const widgetCount =
@@ -153,15 +164,22 @@ export function DashboardWidget({
 
   return (
     <article
+      ref={setNodeRef}
       className="dashboard-widget-freeform"
       data-widget-index={widgetIndex}
       data-widget-id={widget.id}
       data-widget-type={widget.type}
       data-testid="dashboard-widget"
       style={style}
+      {...attributes}
     >
       <header className="widget-header" style={headerStyle}>
-        <span className="widget-drag-handle" aria-hidden="true">
+        <span
+          className="widget-drag-handle"
+          aria-hidden="true"
+          style={{ cursor: isEditing ? "grab" : "default" }}
+          {...listeners}
+        >
           <Icon name="dashboard" size={14} />
         </span>
         <h3>{widget.title}</h3>
