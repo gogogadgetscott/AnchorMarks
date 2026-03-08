@@ -761,8 +761,8 @@ function renderWidgetContent(
         .map((b) => {
           const hasColorClass = b.color ? "has-custom-color" : "";
           const colorStyle = b.color
-              ? `--bookmark-color: ${b.color}; background-color: color-mix(in srgb, ${b.color} 20%, var(--bg-primary)); border-left: 6px solid ${b.color};`
-              : "";
+            ? `--bookmark-color: ${b.color}; background-color: color-mix(in srgb, ${b.color} 20%, var(--bg-primary)); border-left: 6px solid ${b.color};`
+            : "";
           return `
         <div class="compact-item ${hasColorClass}" data-bookmark-id="${escapeHtml(b.id)}" style="${colorStyle}">
           <a class="compact-item-link" href="${escapeHtml(b.url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(b.title || b.url)}">
@@ -1085,13 +1085,10 @@ function openAllWidgetBookmarks(index: number): void {
   }
 
   if (bookmarks.length > 10) {
-    confirmDialog(
-      `Open ${bookmarks.length} bookmarks in new tabs?`,
-      {
-        title: "Open All Bookmarks",
-        destructive: false,
-      },
-    )
+    confirmDialog(`Open ${bookmarks.length} bookmarks in new tabs?`, {
+      title: "Open All Bookmarks",
+      destructive: false,
+    })
       .then((confirmed) => {
         if (confirmed) {
           bookmarks.forEach((bookmark) => {
@@ -1251,57 +1248,55 @@ function attachWidgetEventListeners(): void {
     });
 
   // Widget option buttons
-  document
-    .querySelectorAll<HTMLElement>(".widget-option")
-    .forEach((btn) => {
-      btn.addEventListener("click", async (e: Event) => {
-        e.stopPropagation();
-        const action = btn.dataset.action;
-        const index = parseInt(btn.dataset.widgetIndex || "", 10);
-        const widgetType = btn.dataset.widgetType;
-        const widgetId = btn.dataset.widgetId;
+  document.querySelectorAll<HTMLElement>(".widget-option").forEach((btn) => {
+    btn.addEventListener("click", async (e: Event) => {
+      e.stopPropagation();
+      const action = btn.dataset.action;
+      const index = parseInt(btn.dataset.widgetIndex || "", 10);
+      const widgetType = btn.dataset.widgetType;
+      const widgetId = btn.dataset.widgetId;
 
-        switch (action) {
-          case "widget-sort-az":
-            if (!isNaN(index)) {
-              updateWidgetSort(index, "a-z");
-            }
-            break;
-          case "widget-sort-za":
-            if (!isNaN(index)) {
-              updateWidgetSort(index, "z-a");
-            }
-            break;
-          case "widget-add-bookmark":
-            if (widgetType && widgetId) {
-              await handleWidgetAddBookmark(widgetType, widgetId);
-            }
-            break;
-          case "widget-open-all":
-            if (!isNaN(index)) {
-              openAllWidgetBookmarks(index);
-            }
-            break;
-          case "widget-show-in-view":
-            if (widgetType && widgetId) {
-              showWidgetInBookmarksView(widgetType, widgetId);
-            }
-            break;
-          case "change-widget-color":
-            if (!isNaN(index)) {
-              showWidgetColorPicker(index, btn);
-              // Don't close the options menu yet - color picker is open
-              return;
-            }
-            break;
-        }
+      switch (action) {
+        case "widget-sort-az":
+          if (!isNaN(index)) {
+            updateWidgetSort(index, "a-z");
+          }
+          break;
+        case "widget-sort-za":
+          if (!isNaN(index)) {
+            updateWidgetSort(index, "z-a");
+          }
+          break;
+        case "widget-add-bookmark":
+          if (widgetType && widgetId) {
+            await handleWidgetAddBookmark(widgetType, widgetId);
+          }
+          break;
+        case "widget-open-all":
+          if (!isNaN(index)) {
+            openAllWidgetBookmarks(index);
+          }
+          break;
+        case "widget-show-in-view":
+          if (widgetType && widgetId) {
+            showWidgetInBookmarksView(widgetType, widgetId);
+          }
+          break;
+        case "change-widget-color":
+          if (!isNaN(index)) {
+            showWidgetColorPicker(index, btn);
+            // Don't close the options menu yet - color picker is open
+            return;
+          }
+          break;
+      }
 
-        // Close the options menu after action (except for color picker)
-        if (!isNaN(index)) {
-          toggleWidgetOptions(index);
-        }
-      });
+      // Close the options menu after action (except for color picker)
+      if (!isNaN(index)) {
+        toggleWidgetOptions(index);
+      }
     });
+  });
 
   // Close options menus when clicking outside
   document.addEventListener("click", (e: Event) => {
@@ -1494,10 +1489,12 @@ export function closeLayoutSettings(): void {
 }
 
 function attachLayoutSettingsListeners(): void {
-  document.getElementById("layout-close-btn")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    closeLayoutSettings();
-  });
+  document
+    .getElementById("layout-close-btn")
+    ?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeLayoutSettings();
+    });
 
   document
     .getElementById("auto-position-btn")

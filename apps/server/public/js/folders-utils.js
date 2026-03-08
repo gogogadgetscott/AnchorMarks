@@ -1,1 +1,85 @@
-"use strict";(()=>{var g={},u=class{isDevelopment(){return g.env.DEV||g.env.MODE==="development"||d.getItem("anchormarks_debug")==="true"}shouldLog(e){return this.isDevelopment()?!0:e==="warn"||e==="error"}formatMessage(e,t){return t?`[${t}] ${e}`:e}debug(e,...t){this.shouldLog("debug")&&console.debug(this.formatMessage(e),...t)}info(e,...t){this.shouldLog("info")&&console.info(this.formatMessage(e),...t)}warn(e,...t){this.shouldLog("warn")&&console.warn(this.formatMessage(e),...t)}error(e,t,...n){if(this.shouldLog("error")){let o=this.formatMessage(e);t instanceof Error?console.error(o,t,...n):t?console.error(o,t,...n):console.error(o,...n)}}log(e,...t){this.info(e,...t)}},a=new u;function c(r){let e=document.createElement("div");return e.textContent=r,e.innerHTML}var d={getItem(r){try{return localStorage.getItem(r)}catch(e){return a.warn(`localStorage.getItem failed for key "${r}"`,e),null}},setItem(r,e){try{return localStorage.setItem(r,e),!0}catch(t){return a.warn(`localStorage.setItem failed for key "${r}"`,t),!1}},removeItem(r){try{return localStorage.removeItem(r),!0}catch(e){return a.warn(`localStorage.removeItem failed for key "${r}"`,e),!1}}};function f(r,e="None"){let t=(l,s)=>l.name.localeCompare(s.name),n=`<option value="">${c(e)}</option>`;function o(l=null,s=0){r.filter(i=>(i.parent_id||null)===l).sort(t).forEach(i=>{let m="&nbsp;&nbsp;&nbsp;".repeat(s);n+=`<option value="${i.id}">${m}${c(i.name)}</option>`,o(i.id,s+1)})}return o(null,0),n}window.anchormarks=window.anchormarks||{};window.anchormarks.buildFolderOptionsHTML=f;})();
+"use strict";
+(() => {
+  var g = {},
+    u = class {
+      isDevelopment() {
+        return (
+          g.env.DEV ||
+          g.env.MODE === "development" ||
+          d.getItem("anchormarks_debug") === "true"
+        );
+      }
+      shouldLog(e) {
+        return this.isDevelopment() ? !0 : e === "warn" || e === "error";
+      }
+      formatMessage(e, t) {
+        return t ? `[${t}] ${e}` : e;
+      }
+      debug(e, ...t) {
+        this.shouldLog("debug") && console.debug(this.formatMessage(e), ...t);
+      }
+      info(e, ...t) {
+        this.shouldLog("info") && console.info(this.formatMessage(e), ...t);
+      }
+      warn(e, ...t) {
+        this.shouldLog("warn") && console.warn(this.formatMessage(e), ...t);
+      }
+      error(e, t, ...n) {
+        if (this.shouldLog("error")) {
+          let o = this.formatMessage(e);
+          t instanceof Error
+            ? console.error(o, t, ...n)
+            : t
+              ? console.error(o, t, ...n)
+              : console.error(o, ...n);
+        }
+      }
+      log(e, ...t) {
+        this.info(e, ...t);
+      }
+    },
+    a = new u();
+  function c(r) {
+    let e = document.createElement("div");
+    return ((e.textContent = r), e.innerHTML);
+  }
+  var d = {
+    getItem(r) {
+      try {
+        return localStorage.getItem(r);
+      } catch (e) {
+        return (a.warn(`localStorage.getItem failed for key "${r}"`, e), null);
+      }
+    },
+    setItem(r, e) {
+      try {
+        return (localStorage.setItem(r, e), !0);
+      } catch (t) {
+        return (a.warn(`localStorage.setItem failed for key "${r}"`, t), !1);
+      }
+    },
+    removeItem(r) {
+      try {
+        return (localStorage.removeItem(r), !0);
+      } catch (e) {
+        return (a.warn(`localStorage.removeItem failed for key "${r}"`, e), !1);
+      }
+    },
+  };
+  function f(r, e = "None") {
+    let t = (l, s) => l.name.localeCompare(s.name),
+      n = `<option value="">${c(e)}</option>`;
+    function o(l = null, s = 0) {
+      r.filter((i) => (i.parent_id || null) === l)
+        .sort(t)
+        .forEach((i) => {
+          let m = "&nbsp;&nbsp;&nbsp;".repeat(s);
+          ((n += `<option value="${i.id}">${m}${c(i.name)}</option>`),
+            o(i.id, s + 1));
+        });
+    }
+    return (o(null, 0), n);
+  }
+  window.anchormarks = window.anchormarks || {};
+  window.anchormarks.buildFolderOptionsHTML = f;
+})();

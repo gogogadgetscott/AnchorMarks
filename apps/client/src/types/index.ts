@@ -150,7 +150,14 @@ export interface HeaderConfig {
   showFilterButton?: boolean;
   showViewToggle?: boolean;
   showAddButton?: boolean;
-  bulkActions?: ("archive" | "unarchive" | "move" | "tag" | "delete")[];
+  bulkActions?: (
+    | "archive"
+    | "unarchive"
+    | "move"
+    | "tag"
+    | "auto-tag"
+    | "delete"
+  )[];
 }
 
 export interface ActiveFilterItem {
