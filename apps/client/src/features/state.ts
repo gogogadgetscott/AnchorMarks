@@ -150,14 +150,7 @@ export let isLoadingMore: boolean = false;
 export let isLoading: boolean = false;
 
 // Drag and Drop State
-export let draggedWidget: HTMLElement | null = null;
 export let draggedSidebarItem: Folder | Tag | null = null;
-export let isDraggingWidget: boolean = false;
-export let dragStartPos = { x: 0, y: 0 };
-export let widgetStartPos = { x: 0, y: 0 };
-export let isResizing: boolean = false;
-export let resizingWidget: HTMLElement | null = null;
-export let resizeStartSize = { w: 0, h: 0 };
 
 // Sidebar Popout State
 export let sidebarPopout: HTMLElement | null = null;
@@ -505,37 +498,9 @@ export function setIsLoading(val: boolean) {
   isLoading = val;
   emit("isLoading", val);
 }
-export function setDraggedWidget(val: HTMLElement | null) {
-  draggedWidget = val;
-  emit("draggedWidget", val);
-}
 export function setDraggedSidebarItem(val: Folder | Tag | null) {
   draggedSidebarItem = val;
   emit("draggedSidebarItem", val);
-}
-export function setIsDraggingWidget(val: boolean) {
-  isDraggingWidget = val;
-  emit("isDraggingWidget", val);
-}
-export function setDragStartPos(val: { x: number; y: number }) {
-  dragStartPos = val;
-  emit("dragStartPos", val);
-}
-export function setWidgetStartPos(val: { x: number; y: number }) {
-  widgetStartPos = val;
-  emit("widgetStartPos", val);
-}
-export function setIsResizing(val: boolean) {
-  isResizing = val;
-  emit("isResizing", val);
-}
-export function setResizingWidget(val: HTMLElement | null) {
-  resizingWidget = val;
-  emit("resizingWidget", val);
-}
-export function setResizeStartSize(val: { w: number; h: number }) {
-  resizeStartSize = val;
-  emit("resizeStartSize", val);
 }
 export function setSidebarPopout(val: HTMLElement | null) {
   sidebarPopout = val;

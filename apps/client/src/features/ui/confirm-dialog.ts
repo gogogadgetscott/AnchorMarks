@@ -9,7 +9,7 @@ import {
   showTagPicker,
   type ConfirmOptions,
   type PromptOptions,
-  type TagPickerOptions
+  type TagPickerOptions,
 } from "@/contexts/ConfirmContext";
 
 /**
@@ -34,7 +34,8 @@ export const tagPickerDialog = (options?: TagPickerOptions) =>
 export class ConfirmDialog {
   public static getInstance() {
     return {
-      show: (message: string, options?: ConfirmOptions) => showConfirm(message, options)
+      show: (message: string, options?: ConfirmOptions) =>
+        showConfirm(message, options),
     };
   }
 }
@@ -42,7 +43,8 @@ export class ConfirmDialog {
 export class PromptDialog {
   public static getInstance() {
     return {
-      show: (message: string, options?: PromptOptions) => showPrompt(message, options)
+      show: (message: string, options?: PromptOptions) =>
+        showPrompt(message, options),
     };
   }
 }
@@ -50,7 +52,7 @@ export class PromptDialog {
 export class TagPickerDialog {
   public static getInstance() {
     return {
-      show: (options?: TagPickerOptions) => showTagPicker(options)
+      show: (options?: TagPickerOptions) => showTagPicker(options),
     };
   }
 }

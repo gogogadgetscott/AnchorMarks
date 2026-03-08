@@ -7,6 +7,7 @@ import {
   useEffect,
 } from "react";
 import * as state from "../features/state.ts";
+import { api } from "../services/api.ts";
 import type {
   Bookmark,
   Collection,
@@ -16,6 +17,18 @@ import type {
 } from "../types/index";
 
 export const BOOKMARKS_PER_PAGE = 50;
+
+interface BookmarksListResponse {
+  bookmarks: Bookmark[];
+  total: number;
+  tags?: Array<{
+    name: string;
+    color?: string;
+    icon?: string;
+    id?: string;
+    count?: number;
+  }>;
+}
 
 interface BookmarksState {
   bookmarks: Bookmark[];
@@ -39,6 +52,8 @@ interface BookmarksState {
 }
 
 interface BookmarksActions {
+  loadBookmarks: () => Promise<void>;
+  loadMoreBookmarks: () => Promise<void>;
   setBookmarks: (val: Bookmark[]) => void;
   setRenderedBookmarks: (val: Bookmark[]) => void;
   setFolders: (val: Folder[]) => void;
@@ -167,6 +182,122 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     setTotalCount(0);
   }, []);
 
+  const loadBookmarks = useCallback(async () => {
+    const currentFolder = state.currentFolder;
+    const currentView = state.currentView;
+    const currentCollection = state.currentCollection;
+    const filter = state.filterConfig;
+
+    if (currentView === "analytics") return;
+
+    setIsLoading(true);
+    resetPagination();
+
+    try {
+      const params = new URLSearchParams();
+      params.append("limit", String(BOOKMARKS_PER_PAGE));
+
+      let endpoint = "/bookmarks";
+
+      if (currentView === "collection" && currentCollection) {
+        endpoint = `/collections/${currentCollection}/bookmarks`;
+      }
+
+      if (currentView === "favorites") params.append("favorites", "true");
+      if (currentView === "archived") params.append("archived", "true");
+
+      if (
+        currentFolder &&
+        currentView !== "dashboard" &&
+        currentView !== "collection" &&
+        currentView !== "favorites" &&
+        currentView !== "archived" &&
+        currentView !== "recent"
+      ) {
+        params.append("folder_id", currentFolder);
+      }
+
+      if (filter.tags?.length) {
+        filter.tags.forEach((t) => params.append("tag", t));
+      }
+      if (filter.search) {
+        params.append("search", filter.search);
+      }
+      if (filter.sort) {
+        params.append("sort", filter.sort);
+      }
+
+      const queryString = params.toString();
+      const url = queryString ? `${endpoint}?${queryString}` : endpoint;
+
+      const data = await api<BookmarksListResponse>(url);
+      setBookmarks(data.bookmarks);
+      setRenderedBookmarks(data.bookmarks);
+      setTotalCount(data.total || data.bookmarks.length);
+
+      if (data.tags) {
+        const metadata: Record<
+          string,
+          { color?: string; icon?: string; id?: string; count?: number }
+        > = {};
+        data.tags.forEach(
+          (t: {
+            name: string;
+            color?: string;
+            icon?: string;
+            id?: string;
+            count?: number;
+          }) => {
+            metadata[t.name] = {
+              color: t.color,
+              icon: t.icon,
+              id: t.id,
+              count: t.count,
+            };
+          },
+        );
+        setTagMetadata(metadata);
+      }
+    } catch (err) {
+      console.error("Failed to load bookmarks:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [resetPagination]);
+
+  const loadMoreBookmarks = useCallback(async () => {
+    if (isLoadingMore || displayedCount >= totalCount) return;
+
+    setIsLoadingMore(true);
+
+    try {
+      const params = new URLSearchParams();
+      params.append("offset", String(displayedCount));
+      params.append("limit", String(BOOKMARKS_PER_PAGE));
+
+      const filter = state.filterConfig;
+      if (filter.tags?.length) {
+        filter.tags.forEach((t) => params.append("tag", t));
+      }
+      if (filter.search) {
+        params.append("search", filter.search);
+      }
+      if (filter.sort) {
+        params.append("sort", filter.sort);
+      }
+
+      const data = await api<BookmarksListResponse>(`/bookmarks?${params}`);
+      const newBookmarks = [...bookmarks, ...data.bookmarks];
+      setBookmarks(newBookmarks);
+      setRenderedBookmarks(newBookmarks);
+      setDisplayedCount((prev) => prev + data.bookmarks.length);
+    } catch (err) {
+      console.error("Failed to load more bookmarks:", err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [isLoadingMore, displayedCount, totalCount, bookmarks]);
+
   const value: BookmarksContextValue = {
     bookmarks,
     renderedBookmarks,
@@ -183,6 +314,8 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     selectedBookmarks,
     lastSelectedIndex,
     bulkMode,
+    loadBookmarks,
+    loadMoreBookmarks,
     setBookmarks: useCallback((val) => setBookmarks(val), []),
     setRenderedBookmarks: useCallback((val) => setRenderedBookmarks(val), []),
     setFolders: useCallback((val) => setFolders(val), []),

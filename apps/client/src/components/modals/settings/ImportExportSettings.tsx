@@ -6,14 +6,17 @@ import {
   exportJson,
   exportHtml,
   exportViews,
-  importViews
+  importViews,
 } from "@features/bookmarks/import-export.ts";
 
 export function ImportExportSettings() {
   const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
 
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>, type: 'bookmarks' | 'views') => {
+  const handleImport = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "bookmarks" | "views",
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -21,11 +24,14 @@ export function ImportExportSettings() {
     setImportStatus(`Importing ${type}...`);
 
     try {
-      if (type === 'bookmarks') {
-        const isHtml = file.name.toLowerCase().endsWith('.html');
+      if (type === "bookmarks") {
+        const isHtml = file.name.toLowerCase().endsWith(".html");
         const result = isHtml ? await importHtml(file) : await importJson(file);
 
-        showToast(`Imported ${result.imported} bookmarks!${result.skipped ? ` (${result.skipped} skipped)` : ""}`, "success");
+        showToast(
+          `Imported ${result.imported} bookmarks!${result.skipped ? ` (${result.skipped} skipped)` : ""}`,
+          "success",
+        );
         setImportStatus("Import successful! Reloading...");
         setTimeout(() => window.location.reload(), 1500);
       } else {
@@ -47,10 +53,16 @@ export function ImportExportSettings() {
     <div className="import-export-settings">
       <div className="settings-section">
         <h4>Bookmarks</h4>
-        <p className="text-tertiary" style={{ fontSize: "0.85rem", marginBottom: "1rem" }}>
-          Export or import your bookmarks. Supports AnchorMarks JSON and standard HTML formats.
+        <p
+          className="text-tertiary"
+          style={{ fontSize: "0.85rem", marginBottom: "1rem" }}
+        >
+          Export or import your bookmarks. Supports AnchorMarks JSON and
+          standard HTML formats.
         </p>
-        <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
+        <div
+          style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}
+        >
           <button className="btn btn-outline" onClick={() => exportJson()}>
             Export JSON
           </button>
@@ -66,7 +78,7 @@ export function ImportExportSettings() {
             className="form-input"
             accept=".json,.html"
             disabled={isImporting}
-            onChange={(e) => handleImport(e, 'bookmarks')}
+            onChange={(e) => handleImport(e, "bookmarks")}
           />
         </div>
       </div>
@@ -75,18 +87,29 @@ export function ImportExportSettings() {
 
       <div className="settings-section">
         <h4>Dashboard & App Views</h4>
-        <p className="text-tertiary" style={{ fontSize: "0.85rem", marginBottom: "1rem" }}>
+        <p
+          className="text-tertiary"
+          style={{ fontSize: "0.85rem", marginBottom: "1rem" }}
+        >
           Backup your custom dashboard layouts and filtered bookmark views.
         </p>
-        <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
-          <button className="btn btn-outline" onClick={async () => {
-            try {
-              const res = await exportViews();
-              showToast(`Exported ${res.dashboard + res.bookmark} views`, "success");
-            } catch (err: any) {
-              showToast(err.message, "error");
-            }
-          }}>
+        <div
+          style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}
+        >
+          <button
+            className="btn btn-outline"
+            onClick={async () => {
+              try {
+                const res = await exportViews();
+                showToast(
+                  `Exported ${res.dashboard + res.bookmark} views`,
+                  "success",
+                );
+              } catch (err: any) {
+                showToast(err.message, "error");
+              }
+            }}
+          >
             Export Views
           </button>
         </div>
@@ -98,13 +121,16 @@ export function ImportExportSettings() {
             className="form-input"
             accept=".json"
             disabled={isImporting}
-            onChange={(e) => handleImport(e, 'views')}
+            onChange={(e) => handleImport(e, "views")}
           />
         </div>
       </div>
 
       {importStatus && (
-        <div className={`import-status ${importStatus.startsWith('Error') ? 'error' : 'success'}`} style={{ marginTop: "1rem", fontSize: "0.85rem" }}>
+        <div
+          className={`import-status ${importStatus.startsWith("Error") ? "error" : "success"}`}
+          style={{ marginTop: "1rem", fontSize: "0.85rem" }}
+        >
           {importStatus}
         </div>
       )}

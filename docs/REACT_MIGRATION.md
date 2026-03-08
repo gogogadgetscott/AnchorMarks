@@ -212,14 +212,37 @@ Existing Vitest setup needs no changes.
 
 ## What to keep as-is
 
-| Module                  | Notes                              |
-| ----------------------- | ---------------------------------- |
-| `services/api.ts`       | Pure HTTP layer, no changes needed |
-| `services/websocket.ts` | Wrap in a `useWebSocket` hook      |
-| `utils/`                | All utilities stay as-is           |
-| `types/`                | All types stay as-is               |
-| `styles.css`            | No changes                         |
-| `apps/server/`          | Completely untouched               |
+| Module            | Notes                              |
+| ----------------- | ---------------------------------- |
+| `services/api.ts` | Pure HTTP layer, no changes needed |
+| `utils/`          | All utilities stay as-is           |
+| `types/`          | All types stay as-is               |
+| `styles.css`      | No changes                         |
+| `apps/server/`    | Completely untouched               |
+
+---
+
+## Completed
+
+- Phase 0: React setup (vite, tsconfig, dependencies)
+- Phase 1: State Layer - Contexts created (AuthContext, BookmarksContext, UIContext, FoldersContext, DashboardContext, ModalContext, ToastContext, ConfirmContext)
+- Phase 2: Leaf Components - All converted to .tsx
+- Phase 3: BookmarkCard Components - Converted
+- Phase 4: BookmarksList - Converted
+- Phase 5: Omnibar - Converted
+- Phase 6: Header & Navigation - Converted
+- Phase 7: Modals & Forms - All converted
+- Phase 8: Dashboard - Converted
+- Phase 9: App Shell - Converted (main.tsx, App.tsx)
+- Phase 10: Tests - Many .test.tsx files added
+- WebSocket: useWebSocket hook created, services/websocket.ts removed
+- Auth: auth.ts integrated with React context
+
+### Remaining Legacy Code
+
+- `features/*.ts` modules still exist but are not actively called for core operations
+- Legacy `.ts` component files still exist but are not imported by React components
+- Some components still reference vanilla state for backward compatibility
 
 ---
 

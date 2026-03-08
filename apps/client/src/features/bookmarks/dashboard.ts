@@ -635,6 +635,8 @@ export async function renderDashboard(): Promise<void> {
       tagAnalyticsData,
       onRemoveWidget: handleReactRemoveWidget,
       onMoveWidget: (widgetId, x, y) => updateWidgetPosition(widgetId, x, y),
+      onResizeWidget: (widgetId, width, height) =>
+        updateWidgetSize(widgetId, width, height),
       onSortWidget: (widgetIndex, sort) => updateWidgetSort(widgetIndex, sort),
       onAddBookmarkToWidget: (widgetType, widgetId) => {
         void handleWidgetAddBookmark(widgetType, widgetId);
@@ -1080,118 +1082,6 @@ export function initDashboardDragDrop(): void {
       dropZone.dataset.dragDropBound = "true";
     }
   }
-
-  outlet
-    .querySelectorAll<HTMLElement>(".dashboard-widget-freeform .widget-header")
-    .forEach((header) => {
-      if (header.dataset.dragBound === "true") {
-        return;
-      }
-
-      header.addEventListener("mousedown", (e: MouseEvent) => {
-        if (
-          (e.target as HTMLElement).closest(
-            ".remove-widget-btn, .widget-options-container",
-          )
-        ) {
-          return;
-        }
-
-        const widgetEl = (e.currentTarget as HTMLElement).closest(
-          ".dashboard-widget-freeform",
-        ) as HTMLElement;
-        if (!widgetEl) return;
-
-        const index = Number(widgetEl.dataset.widgetIndex);
-        if (isNaN(index)) return;
-
-        state.setDraggedWidget(widgetEl);
-        const startX = e.clientX;
-        const startY = e.clientY;
-        const origLeft = parseInt(widgetEl.style.left || "0", 10);
-        const origTop = parseInt(widgetEl.style.top || "0", 10);
-
-        function onMouseMove(moveEv: MouseEvent) {
-          const dx = moveEv.clientX - startX;
-          const dy = moveEv.clientY - startY;
-          const newX = snapToGrid(origLeft + dx);
-          const newY = snapToGrid(origTop + dy);
-          widgetEl.style.left = newX + "px";
-          widgetEl.style.top = newY + "px";
-          const widgetState = state.dashboardWidgets[index];
-          if (widgetState) {
-            widgetState.x = newX;
-            widgetState.y = newY;
-          }
-        }
-
-        function onMouseUp() {
-          document.removeEventListener("mousemove", onMouseMove);
-          document.removeEventListener("mouseup", onMouseUp);
-          state.setDraggedWidget(null);
-          markDashboardModified();
-        }
-
-        document.addEventListener("mousemove", onMouseMove);
-        document.addEventListener("mouseup", onMouseUp);
-        e.preventDefault();
-      });
-
-      header.dataset.dragBound = "true";
-    });
-
-  // Handle widget resizing
-  outlet
-    .querySelectorAll<HTMLElement>(
-      ".dashboard-widget-freeform .widget-resize-handle",
-    )
-    .forEach((handle) => {
-      if (handle.dataset.resizeBound === "true") {
-        return;
-      }
-
-      handle.addEventListener("mousedown", (e: MouseEvent) => {
-        const widgetEl = (e.currentTarget as HTMLElement).closest(
-          ".dashboard-widget-freeform",
-        ) as HTMLElement;
-        if (!widgetEl) return;
-
-        const index = Number(widgetEl.dataset.widgetIndex);
-        if (isNaN(index)) return;
-
-        const startX = e.clientX;
-        const startY = e.clientY;
-        const origWidth = widgetEl.offsetWidth;
-        const origHeight = widgetEl.offsetHeight;
-
-        function onMouseMove(moveEv: MouseEvent) {
-          const dx = moveEv.clientX - startX;
-          const dy = moveEv.clientY - startY;
-          const newWidth = snapToGrid(Math.max(200, origWidth + dx));
-          const newHeight = snapToGrid(Math.max(150, origHeight + dy));
-          widgetEl.style.width = newWidth + "px";
-          widgetEl.style.height = newHeight + "px";
-          const widgetState = state.dashboardWidgets[index];
-          if (widgetState) {
-            widgetState.w = newWidth;
-            widgetState.h = newHeight;
-          }
-        }
-
-        function onMouseUp() {
-          document.removeEventListener("mousemove", onMouseMove);
-          document.removeEventListener("mouseup", onMouseUp);
-          markDashboardModified();
-        }
-
-        document.addEventListener("mousemove", onMouseMove);
-        document.addEventListener("mouseup", onMouseUp);
-        e.preventDefault();
-        e.stopPropagation();
-      });
-
-      handle.dataset.resizeBound = "true";
-    });
 }
 
 /**
@@ -1322,6 +1212,25 @@ function updateWidgetPosition(widgetId: string, x: number, y: number): void {
     state.dashboardWidgets[index].y = snapToGrid(y);
     markDashboardModified();
     // No need to re-render since the position is already updated by React
+  }
+}
+
+/**
+ * Update widget size
+ */
+function updateWidgetSize(
+  widgetId: string,
+  width: number,
+  height: number,
+): void {
+  const index = state.dashboardWidgets.findIndex((w) => w.id === widgetId);
+  if (index >= 0 && state.dashboardWidgets[index]) {
+    const minWidth = 200;
+    const minHeight = 150;
+    state.dashboardWidgets[index].w = snapToGrid(Math.max(minWidth, width));
+    state.dashboardWidgets[index].h = snapToGrid(Math.max(minHeight, height));
+    markDashboardModified();
+    updateLayoutStats();
   }
 }
 

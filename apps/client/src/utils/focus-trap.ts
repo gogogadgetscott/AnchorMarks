@@ -78,16 +78,6 @@ class FocusTrap {
   }
 
   /**
-   * Focus the last focusable element
-   */
-  private focusLastElement(): void {
-    const focusable = this.getFocusableElements();
-    if (focusable.length > 0) {
-      focusable[focusable.length - 1].focus();
-    }
-  }
-
-  /**
    * Handle keyboard navigation within the trap
    */
   private handleKeyDown = (event: KeyboardEvent): void => {

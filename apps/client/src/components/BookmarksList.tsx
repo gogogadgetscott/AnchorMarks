@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef, useCallback } from "react";
+import { useMemo, useEffect, useRef, useCallback } from "react";
 import { api } from "@services/api.ts";
 import { BOOKMARKS_PER_PAGE, useBookmarks } from "@/contexts/index.ts";
 import { useUI } from "@/contexts/index.ts";
@@ -134,8 +134,7 @@ export function BookmarksList() {
     setFilterConfig,
   } = useBookmarks();
 
-  const { viewMode, hideFavicons, richLinkPreviewsEnabled, currentView } =
-    useUI();
+  const { viewMode, richLinkPreviewsEnabled, currentView } = useUI();
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 

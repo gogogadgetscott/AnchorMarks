@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import { useCallback } from "react";
 import { useUI } from "../contexts/UIContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useBookmarks } from "../contexts/BookmarksContext";
@@ -62,32 +62,33 @@ export function Header() {
   }, []);
 
   const handleBulkAction = useCallback(async (action: BulkAction) => {
-    const m = await import("@features/bookmarks/bookmarks.ts");
+    const m: any = await import("@features/bookmarks/bookmarks.ts");
     switch (action) {
       case "archive":
-        (m as Record<string, unknown>).bulkArchive?.();
+        m.bulkArchive?.();
         break;
       case "unarchive":
-        (m as Record<string, unknown>).bulkUnarchive?.();
+        m.bulkUnarchive?.();
         break;
       case "delete":
-        (m as Record<string, unknown>).bulkDelete?.();
+        m.bulkDelete?.();
         break;
       case "move":
-        (m as Record<string, unknown>).bulkMove?.();
+        m.bulkMove?.();
         break;
       case "tag":
-        (m as Record<string, unknown>).bulkTag?.();
+        m.bulkTag?.();
         break;
       case "auto-tag":
-        (m as Record<string, unknown>).bulkAutoTag?.();
+        m.bulkAutoTag?.();
         break;
     }
   }, []);
 
   const handleSaveDashboard = useCallback(async () => {
-    const { saveDashboard } = await import("@features/bookmarks/dashboard.ts");
-    saveDashboard?.();
+    const { saveDashboardStateSnapshot } =
+      await import("@features/bookmarks/dashboard.ts");
+    saveDashboardStateSnapshot?.();
   }, []);
 
   const handleShowViews = useCallback(async () => {

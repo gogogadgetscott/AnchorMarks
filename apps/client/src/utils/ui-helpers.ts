@@ -5,7 +5,6 @@
 
 import * as state from "@features/state.ts";
 import { parseTagInput } from "@utils/index.ts";
-import { logger } from "@utils/logger.ts";
 import * as modalController from "@utils/modal-controller.ts";
 import { showToast as showToastReact, ToastType } from "@contexts/ToastContext";
 
@@ -24,7 +23,9 @@ export const dom: {
 // Initialize DOM references
 export function initDom(): void {
   dom.searchInput = document.getElementById("search-input") as HTMLInputElement;
-  dom.bookmarkTagsInput = document.getElementById("bookmark-tags") as HTMLInputElement;
+  dom.bookmarkTagsInput = document.getElementById(
+    "bookmark-tags",
+  ) as HTMLInputElement;
   dom.tagSuggestions = document.getElementById("tag-suggestions");
 }
 
@@ -46,7 +47,9 @@ export function closeModals(): void {
 
 // Reset forms
 export async function resetForms(): Promise<void> {
-  const bookmarkForm = document.getElementById("bookmark-form") as HTMLFormElement;
+  const bookmarkForm = document.getElementById(
+    "bookmark-form",
+  ) as HTMLFormElement;
   const folderForm = document.getElementById("folder-form") as HTMLFormElement;
 
   if (bookmarkForm) bookmarkForm.reset();

@@ -14,6 +14,12 @@ All notable changes to AnchorMarks are documented here.
 
 - React Dashboard components now handle widget dragging natively without relying on legacy DOM manipulation
 - Dashboard widget drag handles show grab cursor in edit mode for better UX
+- Dashboard widget resizing now flows through React callbacks with persisted dimensions and snap-to-grid behavior
+- Removed unused legacy dashboard drag/resize state fields from `state.ts` and `DashboardContext` after React interaction migration
+- Removed the temporary `features/bookmarks/tag-cloud.ts` compatibility bridge; tag cloud now routes through React AppShell view rendering
+- **TypeScript compilation cleanup** — Fixed 40+ critical compile blockers: removed legacy `updateHeaderContent` calls from imperative views (replaced with React Context-based header updates), added missing bulk action function exports to bookmarks.ts, corrected bookmark property references (`click_count` vs `visit_count`), fixed dom property access for React-owned empty states
+- Removed legacy imperative header update code from keyboard shortcuts and command handlers
+- Bookmarks module now properly exports bulk action stubs (`bulkArchive`, `bulkDelete`, etc.) for type compatibility with Header component
 
 ---
 

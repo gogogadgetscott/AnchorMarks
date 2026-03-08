@@ -21,6 +21,7 @@ interface RenderReactDashboardInput {
   };
   onRemoveWidget?: (widgetId: string) => void;
   onMoveWidget?: (widgetId: string, x: number, y: number) => void;
+  onResizeWidget?: (widgetId: string, width: number, height: number) => void;
   onSortWidget?: (
     widgetIndex: number,
     sort: "a-z" | "z-a" | "recent" | "most_visited",
@@ -57,6 +58,7 @@ export function renderReactDashboard({
   tagAnalyticsData,
   onRemoveWidget,
   onMoveWidget,
+  onResizeWidget,
   onSortWidget,
   onAddBookmarkToWidget,
   onOpenAllWidgetBookmarks,
@@ -96,6 +98,7 @@ export function renderReactDashboard({
         tagAnalyticsData,
         onRemoveWidget,
         onMoveWidget,
+        onResizeWidget,
         onSortWidget,
         onAddBookmarkToWidget,
         onOpenAllWidgetBookmarks,

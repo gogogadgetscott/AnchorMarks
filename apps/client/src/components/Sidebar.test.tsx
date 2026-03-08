@@ -18,9 +18,6 @@ vi.mock("@features/bookmarks/bookmarks.ts", () => ({
 vi.mock("@features/bookmarks/dashboard.ts", () => ({
   renderDashboard: vi.fn(),
 }));
-vi.mock("@features/bookmarks/tag-cloud.ts", () => ({
-  renderTagCloud: vi.fn(() => Promise.resolve()),
-}));
 vi.mock("@features/analytics.ts", () => ({
   renderAnalytics: vi.fn(() => Promise.resolve()),
 }));
@@ -30,13 +27,13 @@ vi.mock("@utils/ui-helpers.ts", () => ({
   closeModals: vi.fn(),
 }));
 
-/** Renders Sidebar and exposes the setCurrentView from context */
+/** Renders Sidebar and exposes the currentView from context */
 function SidebarWithViewReader({
   onViewChange,
 }: {
   onViewChange?: (view: string) => void;
 }) {
-  const { currentView, setCurrentView } = useUI();
+  const { currentView } = useUI();
   React.useEffect(() => {
     onViewChange?.(currentView);
   }, [currentView, onViewChange]);

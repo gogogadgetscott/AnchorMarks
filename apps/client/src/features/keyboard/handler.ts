@@ -211,9 +211,7 @@ async function switchView(view: string): Promise<void> {
   await state.setCurrentView(view);
   updateActiveNav();
 
-  // Update header content for the new view
-  const { updateHeaderContent } = await import("@/App.ts");
-  await updateHeaderContent();
+  // Header updates via React Context; legacy updateHeaderContent removed
 
   // Save current view to persist across refreshes
   const { saveSettings } = await import("@features/bookmarks/settings.ts");
@@ -224,8 +222,8 @@ async function switchView(view: string): Promise<void> {
       await import("@features/bookmarks/dashboard.ts");
     renderDashboard();
   } else if (view === "tag-cloud") {
-    const { renderTagCloud } = await import("@features/bookmarks/tag-cloud.ts");
-    await renderTagCloud();
+    const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
+    await loadBookmarks();
   } else {
     const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
     loadBookmarks();

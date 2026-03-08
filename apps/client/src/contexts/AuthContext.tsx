@@ -3,9 +3,11 @@ import {
   useContext,
   useState,
   useCallback,
+  useEffect,
   type ReactNode,
 } from "react";
 import type { User } from "../types/index";
+import { setAuthContextSetter } from "@features/auth/auth.ts";
 
 interface AuthState {
   authToken: string | null;
@@ -45,6 +47,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
     initialState.isAuthenticated,
   );
+
+  useEffect(() => {
+    setAuthContextSetter((user, csrf, isAuth) => {
+      if (user) setCurrentUser(user);
+      if (csrf) setCsrfToken(csrf);
+      setIsAuthenticated(isAuth);
+    });
+  }, []);
 
   const value: AuthContextValue = {
     authToken,

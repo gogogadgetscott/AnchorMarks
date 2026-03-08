@@ -5,6 +5,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
+import { api } from "../services/api.ts";
 import type { Folder, Tag } from "../types/index";
 
 interface FoldersState {
@@ -12,9 +13,11 @@ interface FoldersState {
   currentFolder: string | null;
   currentCollection: string | null;
   draggedSidebarItem: Folder | Tag | null;
+  isLoading: boolean;
 }
 
 interface FoldersActions {
+  loadFolders: () => Promise<void>;
   setFolders: (val: Folder[]) => void;
   setCurrentFolder: (val: string | null) => void;
   setCurrentCollection: (val: string | null) => void;
@@ -34,12 +37,27 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
   const [draggedSidebarItem, setDraggedSidebarItem] = useState<
     Folder | Tag | null
   >(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const loadFolders = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await api<{ folders: Folder[] }>("/folders");
+      setFolders(data.folders || []);
+    } catch (err) {
+      console.error("Failed to load folders:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const value: FoldersContextValue = {
     folders,
     currentFolder,
     currentCollection,
     draggedSidebarItem,
+    isLoading,
+    loadFolders,
     setFolders: useCallback((val) => setFolders(val), []),
     setCurrentFolder: useCallback((val) => setCurrentFolder(val), []),
     setCurrentCollection: useCallback((val) => setCurrentCollection(val), []),

@@ -12,7 +12,9 @@ import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 /**
  * Import HTML bookmarks file
  */
-export async function importHtml(file: File): Promise<{ imported: number; skipped: number; hasLog: boolean }> {
+export async function importHtml(
+  file: File,
+): Promise<{ imported: number; skipped: number; hasLog: boolean }> {
   const html = await file.text();
   const result = await api<{
     imported: number;
@@ -26,7 +28,7 @@ export async function importHtml(file: File): Promise<{ imported: number; skippe
   // Reload data
   const [{ loadBookmarks }, { loadFolders }] = await Promise.all([
     import("@features/bookmarks/bookmarks.ts"),
-    import("@features/bookmarks/folders.ts")
+    import("@features/bookmarks/folders.ts"),
   ]);
   await Promise.all([loadBookmarks(), loadFolders()]);
 
@@ -55,14 +57,16 @@ export async function importHtml(file: File): Promise<{ imported: number; skippe
   return {
     imported: result.imported,
     skipped: result.skipped,
-    hasLog
+    hasLog,
   };
 }
 
 /**
  * Import JSON bookmarks file
  */
-export async function importJson(file: File): Promise<{ imported: number; skipped: number }> {
+export async function importJson(
+  file: File,
+): Promise<{ imported: number; skipped: number }> {
   const text = await file.text();
   const data = JSON.parse(text);
 
@@ -90,7 +94,7 @@ export async function importJson(file: File): Promise<{ imported: number; skippe
 
   return {
     imported: result.imported,
-    skipped: result.skipped
+    skipped: result.skipped,
   };
 }
 
@@ -145,7 +149,7 @@ export async function resetBookmarks(): Promise<number> {
     "/settings/reset-bookmarks",
     { method: "POST" },
   );
-  
+
   state.setCurrentFolder(null);
   state.setCurrentView("all");
 
@@ -165,7 +169,10 @@ export async function resetBookmarks(): Promise<number> {
 /**
  * Export dashboard views and bookmark views as JSON
  */
-export async function exportViews(): Promise<{ dashboard: number; bookmark: number }> {
+export async function exportViews(): Promise<{
+  dashboard: number;
+  bookmark: number;
+}> {
   const [dashboardViews, bookmarkViews] = await Promise.all([
     api<any[]>("/dashboard/views"),
     api<any[]>("/bookmark/views"),
@@ -189,17 +196,19 @@ export async function exportViews(): Promise<{ dashboard: number; bookmark: numb
     type: "application/json",
   });
   downloadBlob(blob, "anchormarks-views.json");
-  
+
   return {
     dashboard: (dashboardViews || []).length,
-    bookmark: (bookmarkViews || []).length
+    bookmark: (bookmarkViews || []).length,
   };
 }
 
 /**
  * Import dashboard views and bookmark views from JSON file
  */
-export async function importViews(file: File): Promise<{ dashboard: number; bookmark: number; skipped: number }> {
+export async function importViews(
+  file: File,
+): Promise<{ dashboard: number; bookmark: number; skipped: number }> {
   const text = await file.text();
   const data = JSON.parse(text);
 
@@ -252,7 +261,7 @@ export async function importViews(file: File): Promise<{ dashboard: number; book
   return {
     dashboard: importedDashboard,
     bookmark: importedBookmark,
-    skipped
+    skipped,
   };
 }
 

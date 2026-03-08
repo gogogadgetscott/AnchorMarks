@@ -11,6 +11,10 @@ import {
   dom,
   showToast,
   closeModals,
+  updateCounts,
+  updateActiveNav,
+  updateBulkUI,
+  updateStats,
 } from "@utils/ui-helpers.ts";
 import { Bookmark, Tag } from "../../types/index";
 import {
@@ -18,10 +22,7 @@ import {
   RestoreBookmarkViewResponse,
 } from "../../types/api";
 import { updateFilterButtonVisibility } from "@features/bookmarks/filters.ts";
-import {
-  BookmarkCard as createBookmarkCard,
-  SkeletonCard,
-} from "@components/index.ts";
+import { BookmarkCard as createBookmarkCard } from "@components/index.ts";
 export { createBookmarkCard };
 
 import { confirmDialog, promptDialog } from "@features/ui/confirm-dialog.ts";
@@ -38,7 +39,7 @@ export function invalidateTagMetadataCache(): void {
  * Render skeletons while loading
  */
 /** @deprecated Managed by React (BookmarksList) */
-export function renderSkeletons(): void { }
+export function renderSkeletons(): void {}
 
 // Load bookmarks from server
 export async function loadBookmarks(): Promise<void> {
@@ -87,8 +88,8 @@ export async function loadBookmarks(): Promise<void> {
         state.currentView === "most-used"
           ? "most_visited"
           : state.filterConfig.sort ||
-          state.dashboardConfig.bookmarkSort ||
-          "recently_added";
+            state.dashboardConfig.bookmarkSort ||
+            "recently_added";
       params.append("sort", sortOption);
 
       // Server handles all filtering for favorites, archived, recent, and most-used views
@@ -131,9 +132,9 @@ export async function loadBookmarks(): Promise<void> {
       api<any>(endpoint),
       shouldFetchTags
         ? api<any[]>("/tags").catch((err: unknown) => {
-          logger.error("Failed to load tag metadata", err);
-          return null;
-        })
+            logger.error("Failed to load tag metadata", err);
+            return null;
+          })
         : Promise.resolve(null),
     ]);
 
@@ -177,16 +178,14 @@ export async function loadBookmarks(): Promise<void> {
         await import("@features/bookmarks/dashboard.ts");
       renderDashboard();
     } else if (state.currentView === "tag-cloud") {
-      const { renderTagCloud } =
-        await import("@features/bookmarks/tag-cloud.ts");
-      await renderTagCloud();
+      // Tag cloud is rendered by React AppShell; data is refreshed above.
     } else {
       renderBookmarks();
     }
-    await updateCounts();
+    await updateCounts?.();
 
     // Update active nav to reflect current view
-    updateActiveNav();
+    updateActiveNav?.();
 
     // Initialize bookmark views UI only for all/folder views
     if (
@@ -337,20 +336,11 @@ export function renderBookmarks(): void {
 
   // The global state has already been updated by loadBookmarks or filter changes.
   // BookmarksList (React) automatically re-renders when useBookmarks() signals
-  // changes to the Context. We just need to ensure the empty-state container
-  // is hidden since React handles the empty state internally now.
-  const emptyState = dom.emptyState || document.getElementById("empty-state");
-  if (emptyState) {
-    if (filtered.length === 0) {
-      emptyState.innerHTML = getEmptyStateMessage();
-      emptyState.classList.remove("hidden");
-    } else {
-      emptyState.classList.add("hidden");
-    }
-  }
+  // changes to the Context. React handles the empty state internally now.
+  // Legacy empty-state container is deprecated.
 
   // Update stats to show the current filtered count (legacy system still needs this)
-  updateStats();
+  updateStats?.();
 }
 
 // Load more bookmarks for infinite scroll
@@ -406,8 +396,8 @@ export async function loadMoreBookmarks(): Promise<void> {
         state.currentView === "most-used"
           ? "most_visited"
           : state.filterConfig.sort ||
-          state.dashboardConfig.bookmarkSort ||
-          "recently_added";
+            state.dashboardConfig.bookmarkSort ||
+            "recently_added";
       params.append("sort", sortOption);
     }
 
@@ -470,8 +460,7 @@ export async function fetchMetadata(url: string): Promise<{
 const attachedContainers = new WeakSet<HTMLElement>();
 
 export function attachBookmarkCardListeners(): void {
-  const container =
-    dom.mainViewOutlet || document.getElementById("main-view-outlet");
+  const container = document.getElementById("main-view-outlet");
   if (!container || attachedContainers.has(container)) return;
   attachedContainers.add(container);
 
@@ -581,8 +570,36 @@ export function selectAllBookmarks(): void {
   if (state.selectedBookmarks.size > 0) {
     state.setBulkMode(true);
   }
-  updateBulkUI();
+  updateBulkUI?.();
   renderBookmarks();
+}
+
+// Clear bookmarks selection
+export function clearSelection(): void {
+  state.selectedBookmarks.clear();
+  state.setBulkMode(false);
+  updateBulkUI?.();
+  renderBookmarks();
+}
+
+// Stub bulk action functions - to be implemented or delegated through React UI
+export function bulkArchive(): void {
+  // Bulk archive handled through React Context
+}
+export function bulkUnarchive(): void {
+  // Bulk unarchive handled through React Context
+}
+export function bulkDelete(): void {
+  // Bulk delete handled through React Context
+}
+export function bulkMove(): void {
+  // Bulk move handled through React Context
+}
+export function bulkTag(): void {
+  // Bulk tag handled through React Context
+}
+export function bulkAutoTag(): void {
+  // Bulk auto-tag handled through React Context
 }
 
 // Helper to find bookmark in main list or widget cache

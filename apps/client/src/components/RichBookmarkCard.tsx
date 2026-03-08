@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Icon } from "./Icon.tsx";
 import { Tag } from "./Tag.tsx";
 import { Button } from "./Button.tsx";

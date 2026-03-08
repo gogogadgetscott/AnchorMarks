@@ -25,14 +25,6 @@ interface DashboardState {
   dashboardHasUnsavedChanges: boolean;
   savedDashboardState: string | null;
   currentDashboardTab: string | null;
-  // Drag/resize state
-  draggedWidget: HTMLElement | null;
-  isDraggingWidget: boolean;
-  dragStartPos: { x: number; y: number };
-  widgetStartPos: { x: number; y: number };
-  isResizing: boolean;
-  resizingWidget: HTMLElement | null;
-  resizeStartSize: { w: number; h: number };
   // Sidebar popout
   sidebarPopout: HTMLElement | null;
   popoutTimeout: ReturnType<typeof setTimeout> | null;
@@ -49,13 +41,6 @@ interface DashboardActions {
   setDashboardHasUnsavedChanges: (val: boolean) => void;
   setSavedDashboardState: (val: string | null) => void;
   setCurrentDashboardTab: (val: string | null) => void;
-  setDraggedWidget: (val: HTMLElement | null) => void;
-  setIsDraggingWidget: (val: boolean) => void;
-  setDragStartPos: (val: { x: number; y: number }) => void;
-  setWidgetStartPos: (val: { x: number; y: number }) => void;
-  setIsResizing: (val: boolean) => void;
-  setResizingWidget: (val: HTMLElement | null) => void;
-  setResizeStartSize: (val: { w: number; h: number }) => void;
   setSidebarPopout: (val: HTMLElement | null) => void;
   setPopoutTimeout: (val: ReturnType<typeof setTimeout> | null) => void;
   setTagSuggestTimeout: (val: ReturnType<typeof setTimeout> | null) => void;
@@ -94,15 +79,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [currentDashboardTab, setCurrentDashboardTab] = useState<string | null>(
     null,
   );
-  const [draggedWidget, setDraggedWidget] = useState<HTMLElement | null>(null);
-  const [isDraggingWidget, setIsDraggingWidget] = useState(false);
-  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
-  const [widgetStartPos, setWidgetStartPos] = useState({ x: 0, y: 0 });
-  const [isResizing, setIsResizing] = useState(false);
-  const [resizingWidget, setResizingWidget] = useState<HTMLElement | null>(
-    null,
-  );
-  const [resizeStartSize, setResizeStartSize] = useState({ w: 0, h: 0 });
   const [sidebarPopout, setSidebarPopout] = useState<HTMLElement | null>(null);
   const [popoutTimeout, setPopoutTimeout] = useState<ReturnType<
     typeof setTimeout
@@ -141,27 +117,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         case "currentDashboardTab":
           setCurrentDashboardTab(value as string | null);
           break;
-        case "draggedWidget":
-          setDraggedWidget(value as HTMLElement | null);
-          break;
-        case "isDraggingWidget":
-          setIsDraggingWidget(value as boolean);
-          break;
-        case "dragStartPos":
-          setDragStartPos(value as { x: number; y: number });
-          break;
-        case "widgetStartPos":
-          setWidgetStartPos(value as { x: number; y: number });
-          break;
-        case "isResizing":
-          setIsResizing(value as boolean);
-          break;
-        case "resizingWidget":
-          setResizingWidget(value as HTMLElement | null);
-          break;
-        case "resizeStartSize":
-          setResizeStartSize(value as { w: number; h: number });
-          break;
         case "sidebarPopout":
           setSidebarPopout(value as HTMLElement | null);
           break;
@@ -185,13 +140,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     dashboardHasUnsavedChanges,
     savedDashboardState,
     currentDashboardTab,
-    draggedWidget,
-    isDraggingWidget,
-    dragStartPos,
-    widgetStartPos,
-    isResizing,
-    resizingWidget,
-    resizeStartSize,
     sidebarPopout,
     popoutTimeout,
     tagSuggestTimeout,
@@ -219,13 +167,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       (val) => setCurrentDashboardTab(val),
       [],
     ),
-    setDraggedWidget: useCallback((val) => setDraggedWidget(val), []),
-    setIsDraggingWidget: useCallback((val) => setIsDraggingWidget(val), []),
-    setDragStartPos: useCallback((val) => setDragStartPos(val), []),
-    setWidgetStartPos: useCallback((val) => setWidgetStartPos(val), []),
-    setIsResizing: useCallback((val) => setIsResizing(val), []),
-    setResizingWidget: useCallback((val) => setResizingWidget(val), []),
-    setResizeStartSize: useCallback((val) => setResizeStartSize(val), []),
     setSidebarPopout: useCallback((val) => setSidebarPopout(val), []),
     setPopoutTimeout: useCallback((val) => setPopoutTimeout(val), []),
     setTagSuggestTimeout: useCallback((val) => setTagSuggestTimeout(val), []),

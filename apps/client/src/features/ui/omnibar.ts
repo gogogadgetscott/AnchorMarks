@@ -11,7 +11,9 @@ import {
  * Keeps old imperative entrypoint used by tests and fallback flows.
  */
 export function initOmnibarListeners(): void {
-  const input = document.getElementById("search-input") as HTMLInputElement | null;
+  const input = document.getElementById(
+    "search-input",
+  ) as HTMLInputElement | null;
   if (!input || input.dataset.omnibarInitialized === "true") return;
 
   input.dataset.omnibarInitialized = "true";

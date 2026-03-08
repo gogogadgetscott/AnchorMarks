@@ -26,6 +26,7 @@ interface DashboardWidgetProps {
   };
   onEdit?: (widgetId: string) => void;
   onRemove?: (widgetId: string) => void;
+  onResizeWidget?: (widgetId: string, width: number, height: number) => void;
   onSortWidget?: (
     widgetIndex: number,
     sort: "a-z" | "z-a" | "recent" | "most_visited",
@@ -104,6 +105,7 @@ export function DashboardWidget({
   tagAnalyticsData,
   onEdit,
   onRemove,
+  onResizeWidget,
   onSortWidget,
   onAddBookmarkToWidget,
   onOpenAllWidgetBookmarks,
@@ -111,8 +113,15 @@ export function DashboardWidget({
   onChangeWidgetColor,
   onTagAnalyticsSettingsChange,
 }: DashboardWidgetProps) {
+  const MIN_WIDGET_WIDTH = 200;
+  const MIN_WIDGET_HEIGHT = 150;
+
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
+  const [liveSize, setLiveSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
   const optionsContainerRef = useRef<HTMLDivElement | null>(null);
 
   const { attributes, listeners, setNodeRef } = useDraggable({
@@ -143,11 +152,48 @@ export function DashboardWidget({
   const style: CSSProperties = {
     left: `${widget.x || 0}px`,
     top: `${widget.y || 0}px`,
-    width: `${widget.w ?? legacyWidget.width ?? 320}px`,
-    height: `${widget.h ?? legacyWidget.height ?? 260}px`,
+    width: `${liveSize?.width ?? widget.w ?? legacyWidget.width ?? 320}px`,
+    height: `${liveSize?.height ?? widget.h ?? legacyWidget.height ?? 260}px`,
     position: "absolute",
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 1000 : undefined,
+  };
+
+  const handleResizeStart = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!isEditing) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startWidth = liveSize?.width ?? widget.w ?? legacyWidget.width ?? 320;
+    const startHeight =
+      liveSize?.height ?? widget.h ?? legacyWidget.height ?? 260;
+
+    let nextWidth = startWidth;
+    let nextHeight = startHeight;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+
+      nextWidth = Math.max(MIN_WIDGET_WIDTH, startWidth + dx);
+      nextHeight = Math.max(MIN_WIDGET_HEIGHT, startHeight + dy);
+      setLiveSize({ width: nextWidth, height: nextHeight });
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+      setLiveSize(null);
+      onResizeWidget?.(widget.id, nextWidth, nextHeight);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
   };
 
   const widgetCount =
@@ -327,7 +373,11 @@ export function DashboardWidget({
           onTagAnalyticsSettingsChange,
         )}
       </div>
-      <div className="widget-resize-handle" title="Drag to resize"></div>
+      <div
+        className="widget-resize-handle"
+        title="Drag to resize"
+        onMouseDown={handleResizeStart}
+      ></div>
     </article>
   );
 }

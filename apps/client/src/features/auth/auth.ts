@@ -14,6 +14,16 @@ import { logger } from "@utils/logger.ts";
 import type { User } from "../../types/index";
 import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
+let authContextSetter:
+  | ((user: User | null, csrf: string | null, isAuth: boolean) => void)
+  | null = null;
+
+export function setAuthContextSetter(
+  setter: (user: User | null, csrf: string | null, isAuth: boolean) => void,
+) {
+  authContextSetter = setter;
+}
+
 // Auth form HTML templates
 const LOGIN_FORM_HTML = `
   <form id="login-form" class="auth-form" method="post" autocomplete="on">
@@ -217,13 +227,8 @@ export async function login(email: string, password: string): Promise<boolean> {
     state.setCsrfToken(data.csrfToken);
     state.setCurrentUser(data.user);
     state.setIsAuthenticated(true);
-    // Refresh header/profile display immediately after login
-    updateUserInfo();
+    authContextSetter?.(data.user, data.csrfToken, true);
     showMainApp();
-    // Connect WebSocket for real-time updates
-    import("@services/websocket.ts").then(({ connectWebSocket }) =>
-      connectWebSocket(),
-    );
     showToast("Welcome back!", "success");
     return true;
   } catch (err) {
@@ -251,11 +256,8 @@ export async function register(
     state.setCsrfToken(data.csrfToken);
     state.setCurrentUser(data.user);
     state.setIsAuthenticated(true);
+    authContextSetter?.(data.user, data.csrfToken, true);
     showMainApp();
-    // Connect WebSocket for real-time updates
-    import("@services/websocket.ts").then(({ connectWebSocket }) =>
-      connectWebSocket(),
-    );
     showToast("Account created successfully!", "success");
     return true;
   } catch (err) {
@@ -268,19 +270,15 @@ export async function register(
 
 // Logout
 export function logout(): void {
-  // Disconnect WebSocket before logout
-  import("@services/websocket.ts").then(({ disconnectWebSocket }) =>
-    disconnectWebSocket(),
-  );
   api("/auth/logout", { method: "POST" })
     .catch((err) => {
-      // Log logout errors but don't block logout process
       logger.error("Logout failed", err);
     })
     .finally(() => {
       state.setCsrfToken(null);
       state.setCurrentUser(null);
       state.setIsAuthenticated(false);
+      authContextSetter?.(null, null, false);
       showAuthScreen();
     });
 }
@@ -295,7 +293,7 @@ export async function checkAuth(): Promise<boolean> {
     state.setCurrentUser(data.user);
     state.setCsrfToken(data.csrfToken);
     state.setIsAuthenticated(true);
-    // Clear any previous error banner
+    authContextSetter?.(data.user, data.csrfToken, true);
     hideServerStatusBanner();
     return true;
   } catch (err) {
@@ -303,11 +301,9 @@ export async function checkAuth(): Promise<boolean> {
     state.setCsrfToken(null);
     state.setCurrentUser(null);
     state.setIsAuthenticated(false);
+    authContextSetter?.(null, null, false);
     showAuthScreen();
-
-    // Handle server/connection errors
     handleApiError(err, true);
-
     return false;
   }
 }

@@ -157,8 +157,8 @@ class KeyboardShortcuts {
       category: "Views",
       global: true,
       handler: async () => {
-        const { setViewMode } = await import("../App.ts");
-        await setViewMode("grid");
+        const { setViewMode } = await import("@features/state.ts");
+        setViewMode("grid");
       },
     });
 
@@ -168,8 +168,8 @@ class KeyboardShortcuts {
       category: "Views",
       global: true,
       handler: async () => {
-        const { setViewMode } = await import("../App.ts");
-        await setViewMode("list");
+        const { setViewMode } = await import("@features/state.ts");
+        setViewMode("list");
       },
     });
 
@@ -179,8 +179,8 @@ class KeyboardShortcuts {
       category: "Views",
       global: true,
       handler: async () => {
-        const { setViewMode } = await import("../App.ts");
-        await setViewMode("compact");
+        const { setViewMode } = await import("@features/state.ts");
+        setViewMode("compact");
       },
     });
 
@@ -192,8 +192,7 @@ class KeyboardShortcuts {
       global: true,
       handler: async () => {
         await state.setCurrentView("dashboard");
-        const { updateHeaderContent } = await import("../App.ts");
-        await updateHeaderContent();
+        // Header updates via React Context; legacy updateHeaderContent removed
         const { renderDashboard } =
           await import("@features/bookmarks/dashboard.ts");
         renderDashboard();
@@ -208,8 +207,6 @@ class KeyboardShortcuts {
       handler: async () => {
         await state.setCurrentView("all");
         state.setCurrentFolder(null);
-        const { updateHeaderContent } = await import("../App.ts");
-        await updateHeaderContent();
         const { loadBookmarks } =
           await import("@features/bookmarks/bookmarks.ts");
         await loadBookmarks();
@@ -223,8 +220,6 @@ class KeyboardShortcuts {
       global: true,
       handler: async () => {
         await state.setCurrentView("favorites");
-        const { updateHeaderContent } = await import("../App.ts");
-        await updateHeaderContent();
         const { loadBookmarks } =
           await import("@features/bookmarks/bookmarks.ts");
         await loadBookmarks();

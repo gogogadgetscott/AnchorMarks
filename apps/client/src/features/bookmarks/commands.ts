@@ -115,8 +115,8 @@ export function getOmnibarCommands(filterText: string = ""): Command[] {
         updateActiveNav();
         const viewTitle = document.getElementById("view-title");
         if (viewTitle) viewTitle.textContent = "Tag Cloud";
-        import("@features/bookmarks/tag-cloud.ts").then(
-          async ({ renderTagCloud }) => await renderTagCloud(),
+        import("@features/bookmarks/bookmarks.ts").then(({ loadBookmarks }) =>
+          loadBookmarks(),
         );
       },
       icon: "☁️",
@@ -277,14 +277,13 @@ export function getOmnibarCommands(filterText: string = ""): Command[] {
           // Switch to dashboard first, then toggle fullscreen
           state.setCurrentView("dashboard");
           updateActiveNav();
-          Promise.all([
-            import("@/App.ts"),
-            import("@features/bookmarks/dashboard.ts"),
-          ]).then(([appModule, dashboardModule]) => {
-            appModule.updateHeaderContent();
-            dashboardModule.renderDashboard();
-            setTimeout(() => dashboardModule.toggleFullscreen(), 100);
-          });
+          Promise.all([import("@features/bookmarks/dashboard.ts")]).then(
+            ([dashboardModule]) => {
+              // Header is now React-based and updates via Context; legacy updateHeaderContent removed
+              dashboardModule.renderDashboard();
+              setTimeout(() => dashboardModule.toggleFullscreen(), 100);
+            },
+          );
         }
       },
       icon: "⛶",

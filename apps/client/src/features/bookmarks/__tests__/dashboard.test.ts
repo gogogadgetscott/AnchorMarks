@@ -6,7 +6,6 @@ import {
   restoreView,
   filterDashboardBookmarks,
   updateLayoutStats,
-  initDashboardDragDrop,
 } from "@features/bookmarks/dashboard.ts";
 
 const { apiMock, loadSettingsSpy, saveSettingsSpy } = vi.hoisted(() => ({
@@ -294,7 +293,13 @@ describe("Dashboard interactivity helpers", () => {
     loadBookmarksSpy.mockClear();
   });
 
-  it("dragging a widget updates its position state", () => {
+  it("filterDashboardBookmarks updates search term and calls loader", async () => {
+    await filterDashboardBookmarks("searchterm");
+    expect(state.filterConfig.search).toBe("searchterm");
+    expect(loadBookmarksSpy).toHaveBeenCalled();
+  });
+
+  it("resizing a widget updates its size state", () => {
     state.setDashboardWidgets([
       {
         id: "w1",
@@ -302,43 +307,50 @@ describe("Dashboard interactivity helpers", () => {
         linkedId: "foo",
         x: 0,
         y: 0,
-        width: 50,
-        height: 50,
-        title: "DragMe",
+        width: 220,
+        height: 180,
+        title: "ResizeMe",
       },
     ] as any);
     renderDashboard();
-
-    initDashboardDragDrop();
 
     const widget = document.querySelector(
       ".dashboard-widget-freeform",
     ) as HTMLElement;
     expect(widget).toBeTruthy();
 
-    const header = widget.querySelector(".widget-header") as HTMLElement;
-    header.dispatchEvent(
-      new MouseEvent("mousedown", { clientX: 0, clientY: 0 }),
-    );
-    // move the pointer by 30x20 pixels
-    document.dispatchEvent(
-      new MouseEvent("mousemove", { clientX: 30, clientY: 20 }),
-    );
-    document.dispatchEvent(
-      new MouseEvent("mouseup", { clientX: 30, clientY: 20 }),
+    const resizeHandle = widget.querySelector(
+      ".widget-resize-handle",
+    ) as HTMLElement;
+    resizeHandle.dispatchEvent(
+      new MouseEvent("mousedown", {
+        bubbles: true,
+        cancelable: true,
+        clientX: 0,
+        clientY: 0,
+      }),
     );
 
-    const updatedWidget = state.dashboardWidgets[0];
-    expect(updatedWidget.x).not.toBe(0);
-    expect(updatedWidget.y).not.toBe(0);
-    expect(widget.style.left).toBe(`${updatedWidget.x}px`);
-    expect(widget.style.top).toBe(`${updatedWidget.y}px`);
-  });
+    document.dispatchEvent(
+      new MouseEvent("mousemove", {
+        bubbles: true,
+        cancelable: true,
+        clientX: 40,
+        clientY: 30,
+      }),
+    );
+    document.dispatchEvent(
+      new MouseEvent("mouseup", {
+        bubbles: true,
+        cancelable: true,
+        clientX: 40,
+        clientY: 30,
+      }),
+    );
 
-  it("filterDashboardBookmarks updates search term and calls loader", async () => {
-    await filterDashboardBookmarks("searchterm");
-    expect(state.filterConfig.search).toBe("searchterm");
-    expect(loadBookmarksSpy).toHaveBeenCalled();
+    const updatedWidget = state.dashboardWidgets[0] as any;
+    expect(updatedWidget.w ?? updatedWidget.width).toBe(260);
+    expect(updatedWidget.h ?? updatedWidget.height).toBe(220);
   });
 
   it("updateLayoutStats writes counts to the stats element", () => {

@@ -46,7 +46,9 @@ export function AppShell() {
           <div
             className="sidebar-backdrop"
             id="sidebar-backdrop"
-            onClick={() => document.body.classList.remove("mobile-sidebar-open")}
+            onClick={() =>
+              document.body.classList.remove("mobile-sidebar-open")
+            }
           ></div>
 
           <Sidebar />
@@ -58,12 +60,12 @@ export function AppShell() {
             </div>
 
             <div id="bulk-bar-container">
-              {bulkMode && currentView !== "tag-cloud" && currentView !== "analytics" && <BulkBar />}
+              {bulkMode &&
+                currentView !== "tag-cloud" &&
+                currentView !== "analytics" && <BulkBar />}
             </div>
 
-            <div className="content-body">
-              {renderMainContent()}
-            </div>
+            <div className="content-body">{renderMainContent()}</div>
           </main>
         </div>
       )}

@@ -1,5 +1,3 @@
-import React from "react";
-
 interface BadgeProps {
   content: string | number;
   id?: string;

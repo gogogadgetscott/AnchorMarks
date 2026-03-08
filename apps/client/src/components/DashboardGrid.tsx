@@ -29,6 +29,7 @@ interface DashboardGridProps {
   onEditWidget?: (widgetId: string) => void;
   onRemoveWidget?: (widgetId: string) => void;
   onMoveWidget?: (widgetId: string, x: number, y: number) => void;
+  onResizeWidget?: (widgetId: string, width: number, height: number) => void;
   onSortWidget?: (
     widgetIndex: number,
     sort: "a-z" | "z-a" | "recent" | "most_visited",
@@ -63,6 +64,7 @@ export function DashboardGrid({
   onEditWidget,
   onRemoveWidget,
   onMoveWidget,
+  onResizeWidget,
   onSortWidget,
   onAddBookmarkToWidget,
   onOpenAllWidgetBookmarks,
@@ -126,7 +128,10 @@ export function DashboardGrid({
     const widget = widgets.find((w) => w.id === widgetId);
     if (!widget) return;
 
-    const finalPos = widgetPositions[widgetId] || { x: widget.x || 0, y: widget.y || 0 };
+    const finalPos = widgetPositions[widgetId] || {
+      x: widget.x || 0,
+      y: widget.y || 0,
+    };
 
     // Ensure positions are non-negative
     const x = Math.max(0, finalPos.x);
@@ -192,10 +197,13 @@ export function DashboardGrid({
                 isDragging={activeWidgetId === widget.id}
                 previewBookmarks={previewBookmarksByWidgetId[widget.id] ?? []}
                 metrics={metricsByWidgetId[widget.id] ?? {}}
-                linkedWidgetId={linkedWidgetIdByWidgetId[widget.id] ?? widget.id}
+                linkedWidgetId={
+                  linkedWidgetIdByWidgetId[widget.id] ?? widget.id
+                }
                 tagAnalyticsData={tagAnalyticsData}
                 onEdit={onEditWidget}
                 onRemove={onRemoveWidget}
+                onResizeWidget={onResizeWidget}
                 onSortWidget={onSortWidget}
                 onAddBookmarkToWidget={onAddBookmarkToWidget}
                 onOpenAllWidgetBookmarks={onOpenAllWidgetBookmarks}
