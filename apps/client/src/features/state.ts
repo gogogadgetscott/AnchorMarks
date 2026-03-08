@@ -3,9 +3,9 @@ import { safeLocalStorage } from "../utils/index.ts";
 
 export function applyTheme(settings: UserSettings) {
   if (settings.theme === "system") {
-    document.body.removeAttribute("data-theme");
+    document.documentElement.removeAttribute("data-theme");
   } else {
-    document.body.setAttribute("data-theme", settings.theme);
+    document.documentElement.setAttribute("data-theme", settings.theme);
   }
 }
 /**
