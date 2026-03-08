@@ -11,8 +11,8 @@
 
 .PHONY: help \
 	build-frontend build-docker build-test-docker \
-	start dev-full start-backend start-frontend start-all start-docker start-prod stop stop-all restart-all \
-	test-backend test-backend-local test-frontend test-frontend-local test-all test-coverage \
+	start start-local start-backend start-frontend start-local start-docker start-prod stop stop-all restart-local \
+	test-backend test-backend-local test-frontend test-frontend-local test-local test-coverage \
 	test-backend-watch test-frontend-watch \
 	test-docker test-docker-backend test-docker-frontend \
 	test-e2e test-e2e-ui test-e2e-debug test-e2e-headed \
@@ -99,9 +99,7 @@ rebuild-docker: ## Rebuild Docker containers from scratch (ensures database dir 
 # ============================================================================
 # START/STOP TARGETS
 # ============================================================================
-start: start-all ## Alias for start-all (start backend and frontend)
-
-dev-full: start-all ## Alias for start-all (full stack with HMR)
+start: start-local ## Alias for start-local (start backend and frontend)
 
 start-backend: ## Start backend server in development mode
 	@echo "$(BLUE)Starting backend server...$(NC)"
@@ -111,7 +109,7 @@ start-frontend: ## Start frontend dev server with Vite
 	@echo "$(BLUE)Starting Vite dev server...$(NC)"
 	@cd $(FRONTEND_DIR) && npx vite
 
-start-all: ## Start both backend and frontend concurrently
+start-local: ## Start both backend and frontend concurrently
 	@echo "$(BLUE)Starting development environment...$(NC)"
 	@npx concurrently "make start-backend" "make start-frontend"
 
@@ -157,12 +155,14 @@ stop-docker: ## Stop Docker containers
 
 restart-docker: stop-docker start-docker ## Restart Docker containers
 
-restart-all: stop-all start-all ## Restart all development processes
+restart-local: stop-all start-local ## Restart all development processes
 
 # ============================================================================
 # TEST TARGETS (default: run in Docker to avoid native addon/libc issues)
 # ============================================================================
-test: test-all ## Run all tests (alias for test-all)
+test: test-local ## Run all tests (alias for test-local)
+
+test-local: test-backend-local test-frontend-local ## Run all tests on host (requires compatible better-sqlite3 build)	
 
 test-backend-local: ## Run backend tests on host (requires compatible better-sqlite3 build)
 	@echo "$(BLUE)Running backend tests on host...$(NC)"
@@ -183,8 +183,6 @@ test-frontend-local: ## Run frontend tests on host
 test-frontend-watch: ## Run frontend tests in watch mode
 	@echo "$(BLUE)Running frontend tests in watch mode...$(NC)"
 	@cd $(FRONTEND_DIR) && npm run test:watch
-
-test-all: test-docker ## Run all tests (backend + frontend in Docker)
 
 test-coverage: ## Generate test coverage reports
 	@echo "$(BLUE)Generating test coverage...$(NC)"

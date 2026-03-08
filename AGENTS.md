@@ -5,7 +5,7 @@
 AnchorMarks is a self-hosted bookmark manager (Node.js/Express/SQLite backend, Vanilla TS frontend).
 
 - **Setup**: `npm install`
-- **Dev**: `make dev-full` (Full stack with HMR)
+- **Dev**: `make start-local` (Full stack with HMR)
 - **Help**: `make help` for all commands.
 - **Reference**: See [README.md](README.md) and [CONTRIBUTING.md](CONTRIBUTING.md) for full setup and workflow details.
 

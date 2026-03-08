@@ -163,7 +163,7 @@ The project uses [Vitest](https://vitest.dev/) for unit/integration tests and [P
 
 ```bash
 # Run unit/integration tests
-make test-all          # Run all tests
+make test-local        # Run all tests local
 make test-backend      # Backend only
 make test-frontend     # Frontend only
 make test-coverage     # Coverage report
@@ -213,7 +213,7 @@ See [SECURITY.md](SECURITY.md) for details.
 - Start backend only: `make run-backend`
 - Start frontend HMR: `make run-frontend` (requires backend running)
 - Full stack dev: `make run-all`
-- Run unit tests: `make test-all`, coverage: `make test-coverage`
+- Run unit tests: `make test-local`, coverage: `make test-coverage`
 - Run E2E tests: `make test-e2e` (requires backend running on port 3000)
 - Lint & format: `make lint-code` or `make lint-check`
 - Docker during local dev: `make run-docker` then `make logs-docker`
@@ -253,7 +253,7 @@ make run-docker
 To run the test suite inside a container (installs dev dependencies temporarily):
 
 ```bash
-docker compose -f tooling/docker/docker-compose.yml run --rm anchormarks make test-all
+docker compose -f tooling/docker/docker-compose.yml run --rm anchormarks make test-local
 ```
 
 ### Database settings_json (auto-migrated)

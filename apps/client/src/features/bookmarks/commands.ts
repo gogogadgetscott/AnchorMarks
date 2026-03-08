@@ -436,8 +436,8 @@ export function getOmnibarCommands(filterText: string = ""): Command[] {
           import("@features/bookmarks/search.ts").then(({ sidebarFilterTag }) =>
             sidebarFilterTag(tagName),
           );
-          import("@features/bookmarks/omnibar-controller.ts").then(({ closeOmnibar }) =>
-            closeOmnibar(),
+          import("@features/bookmarks/omnibar-controller.ts").then(
+            ({ closeOmnibar }) => closeOmnibar(),
           );
         },
         icon: "#",
@@ -478,8 +478,8 @@ export function getOmnibarCommands(filterText: string = ""): Command[] {
         import("@features/bookmarks/search.ts").then(
           ({ renderActiveFilters }) => renderActiveFilters(),
         );
-        import("@features/bookmarks/omnibar-controller.ts").then(({ closeOmnibar }) =>
-          closeOmnibar(),
+        import("@features/bookmarks/omnibar-controller.ts").then(
+          ({ closeOmnibar }) => closeOmnibar(),
         );
       },
       icon: "🔍",

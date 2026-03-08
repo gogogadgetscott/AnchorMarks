@@ -25,7 +25,7 @@ Get AnchorMarks running in 5 minutes!
 npm install
 
 # 2. Start the full development stack
-make dev-full
+make start-local
 
 # 3. Open http://localhost:3000 (or http://localhost:5173 for frontend)
 ```
@@ -97,7 +97,7 @@ Choose one of the following options:
 **Using Makefile (recommended):**
 
 ```bash
-make dev-full      # Full stack (backend + frontend with HMR)
+make start-local      # Full stack (backend + frontend with HMR)
 make dev           # Backend only (serves classic UI)
 make dev-vite      # Frontend only with HMR (requires separate backend)
 ```
@@ -112,7 +112,7 @@ make help          # Display all available Makefile targets
 
 Open http://localhost:3000 in your browser and create an account!
 
-If using `make dev-full` or `make dev-vite`, you can also access:
+If using `make start-local` or `make dev-vite`, you can also access:
 
 - Vite dev frontend: http://localhost:5173 (with hot reload)
 

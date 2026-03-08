@@ -12,15 +12,15 @@ Thanks for your interest in improving AnchorMarks! This project was built with A
 
 Use the `Makefile` for all development tasks:
 
-| Command         | Description                                          |
-| :-------------- | :--------------------------------------------------- |
-| `make dev-full` | Start full dev stack (backend + Vite frontend HMR)   |
-| `make dev`      | Start backend only                                   |
-| `make dev-vite` | Start Vite frontend only (requires separate backend) |
-| `make test`     | Run all tests                                        |
-| `make lint`     | Format and lint all code                             |
-| `make build`    | Build for production                                 |
-| `make clean`    | Clean build artifacts                                |
+| Command            | Description                                          |
+| :----------------- | :--------------------------------------------------- |
+| `make start-local` | Start full dev stack (backend + Vite frontend HMR)   |
+| `make dev`         | Start backend only                                   |
+| `make dev-vite`    | Start Vite frontend only (requires separate backend) |
+| `make test`        | Run all tests                                        |
+| `make lint`        | Format and lint all code                             |
+| `make build`       | Build for production                                 |
+| `make clean`       | Clean build artifacts                                |
 
 ---
 
