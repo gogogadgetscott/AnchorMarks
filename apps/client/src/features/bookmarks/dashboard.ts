@@ -7,7 +7,7 @@ import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import type { Bookmark, DashboardWidget } from "@types";
 import type { DashboardViewResponse } from "../../types/api";
-import { showToast } from "@utils/ui-helpers.ts";
+import { showToast, openModal, resetForms } from "@utils/ui-helpers.ts";
 import { confirmDialog, promptDialog } from "@features/ui/confirm-dialog.ts";
 import { Button } from "@components/index.ts";
 import { escapeHtml } from "@utils/index.ts";
@@ -68,6 +68,25 @@ function getWidgetLinkedId(widget: DashboardWidget): string | undefined {
 function getWidgetCacheKey(widget: DashboardWidget): string {
   const linkedId = getWidgetLinkedId(widget) || widget.id;
   return `${widget.type}:${linkedId}`;
+}
+
+/**
+ * Calculate contrasting text color (white or black) based on background color luminance
+ */
+function getContrastTextColor(hexColor: string): string {
+  // Remove # if present
+  const hex = hexColor.replace("#", "");
+
+  // Convert to RGB
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+
+  // Calculate relative luminance using sRGB formula
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  // Return white for dark backgrounds, black for light backgrounds
+  return luminance > 0.5 ? "#000000" : "#ffffff";
 }
 
 function getWidgetBookmarks(widget: DashboardWidget): Bookmark[] {
@@ -604,13 +623,18 @@ function renderDashboardWidget(widget: DashboardWidget, index: number): string {
   const width = getWidgetWidth(widget);
   const height = getWidgetHeight(widget);
 
+  // Calculate appropriate text color for custom widget colors
+  const headerStyle = widget.color
+    ? `background-color:${widget.color};border-color:${widget.color};color:${getContrastTextColor(widget.color)}`
+    : "";
+
   return `
     <div class="dashboard-widget-freeform" 
          data-widget-index="${index}" 
          data-widget-id="${escapeHtml(widget.id)}"
          data-widget-type="${escapeHtml(widget.type)}"
          style="position:absolute;left:${widget.x || 0}px;top:${widget.y || 0}px;width:${width}px;height:${height}px">
-      <div class="widget-header" ${widget.color ? `data-color="${widget.color}"` : ""}>
+      <div class="widget-header" ${headerStyle ? `style="${headerStyle}"` : ""}>
         <div class="widget-drag-handle" title="Drag to move">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
             <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
@@ -619,11 +643,54 @@ function renderDashboardWidget(widget: DashboardWidget, index: number): string {
         </div>
         <h3>${escapeHtml(widgetData.title)}</h3>
         <span class="widget-count">${widgetData.count}</span>
-        <button class="btn-icon small remove-widget-btn" data-widget-index="${index}" aria-label="Remove widget">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+        <div class="widget-actions">
+          <div class="widget-options-container">
+            <button class="btn-icon small widget-options-btn" data-action="toggle-widget-options" data-index="${index}" title="Options">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+                <circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>
+              </svg>
+            </button>
+            <div class="widget-options-menu hidden" data-widget-index="${index}">
+              ${
+                widget.type !== "tag-analytics"
+                  ? `
+              <button class="widget-option" data-action="widget-sort-az" data-widget-index="${index}" data-widget-type="${widget.type}" data-widget-id="${getWidgetLinkedId(widget) || widget.id}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 6h18M3 12h12M3 18h6"/></svg>
+                Sort A-Z
+              </button>
+              <button class="widget-option" data-action="widget-sort-za" data-widget-index="${index}" data-widget-type="${widget.type}" data-widget-id="${getWidgetLinkedId(widget) || widget.id}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 6h6M3 12h12M3 18h18"/></svg>
+                Sort Z-A
+              </button>
+              <div class="widget-option-divider"></div>
+              <button class="widget-option" data-action="widget-add-bookmark" data-widget-type="${widget.type}" data-widget-id="${getWidgetLinkedId(widget) || widget.id}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Bookmark
+              </button>
+              <button class="widget-option" data-action="widget-open-all" data-widget-index="${index}" data-widget-type="${widget.type}" data-widget-id="${getWidgetLinkedId(widget) || widget.id}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Open All
+              </button>
+              <button class="widget-option" data-action="widget-show-in-view" data-widget-type="${widget.type}" data-widget-id="${getWidgetLinkedId(widget) || widget.id}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Show in Bookmarks
+              </button>
+              <div class="widget-option-divider"></div>
+              `
+                  : ""
+              }
+              <button class="widget-option" data-action="change-widget-color" data-widget-index="${index}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20"/></svg>
+                Change Color
+              </button>
+            </div>
+          </div>
+          <button class="btn-icon small remove-widget-btn" data-widget-index="${index}" aria-label="Remove widget">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
       </div>
       <div class="widget-body">
         ${renderWidgetContent(widget, widgetData)}
@@ -691,9 +758,13 @@ function renderWidgetContent(
   return `
     <div class="compact-list">
       ${sortedBookmarks
-        .map(
-          (b) => `
-        <div class="compact-item" data-bookmark-id="${escapeHtml(b.id)}">
+        .map((b) => {
+          const hasColorClass = b.color ? "has-custom-color" : "";
+          const colorStyle = b.color
+              ? `--bookmark-color: ${b.color}; background-color: color-mix(in srgb, ${b.color} 20%, var(--bg-primary)); border-left: 6px solid ${b.color};`
+              : "";
+          return `
+        <div class="compact-item ${hasColorClass}" data-bookmark-id="${escapeHtml(b.id)}" style="${colorStyle}">
           <a class="compact-item-link" href="${escapeHtml(b.url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(b.title || b.url)}">
             <span class="compact-favicon">
               ${b.favicon ? `<img src="${escapeHtml(b.favicon)}" alt="" />` : '<span class="favicon-placeholder">🔗</span>'}
@@ -745,8 +816,8 @@ function renderWidgetContent(
             })}
           </div>
         </div>
-      `,
-        )
+      `;
+        })
         .join("")}
     </div>
   `;
@@ -944,6 +1015,212 @@ export function initDashboardDragDrop(): void {
 }
 
 /**
+ * Toggle widget options menu
+ */
+function toggleWidgetOptions(index: number): void {
+  const menu = document.querySelector(
+    `.widget-options-menu[data-widget-index="${index}"]`,
+  ) as HTMLElement | null;
+  if (menu) {
+    menu.classList.toggle("hidden");
+  }
+}
+
+/**
+ * Update widget sort order
+ */
+function updateWidgetSort(
+  index: number,
+  sort: "a-z" | "z-a" | "recent" | "most_visited",
+): void {
+  if (index >= 0 && index < state.dashboardWidgets.length) {
+    state.dashboardWidgets[index].sort = sort;
+    markDashboardModified();
+    renderDashboard();
+    showToast(`Widget sorted ${sort.toUpperCase()}`, "success");
+  }
+}
+
+/**
+ * Handle adding a bookmark to a widget's folder or tag
+ */
+async function handleWidgetAddBookmark(
+  widgetType: string,
+  widgetId: string,
+): Promise<void> {
+  try {
+    await resetForms();
+
+    if (widgetType === "folder") {
+      const folderSelect = document.getElementById(
+        "bookmark-folder",
+      ) as HTMLSelectElement;
+      if (folderSelect) folderSelect.value = widgetId;
+    } else if (widgetType === "tag") {
+      const tagsInput = document.getElementById(
+        "bookmark-tags",
+      ) as HTMLInputElement;
+      if (tagsInput) tagsInput.value = widgetId;
+    }
+
+    openModal("bookmark-modal");
+  } catch (err) {
+    console.error("Failed to show bookmark form:", err);
+    showToast("Failed to open bookmark form", "error");
+  }
+}
+
+/**
+ * Open all bookmarks in a widget
+ */
+function openAllWidgetBookmarks(index: number): void {
+  if (index < 0 || index >= state.dashboardWidgets.length) return;
+
+  const widget = state.dashboardWidgets[index];
+  const bookmarks = getWidgetBookmarks(widget);
+
+  if (bookmarks.length === 0) {
+    showToast("No bookmarks to open", "info");
+    return;
+  }
+
+  if (bookmarks.length > 10) {
+    confirmDialog(
+      `Open ${bookmarks.length} bookmarks in new tabs?`,
+      {
+        title: "Open All Bookmarks",
+        destructive: false,
+      },
+    )
+      .then((confirmed) => {
+        if (confirmed) {
+          bookmarks.forEach((bookmark) => {
+            window.open(bookmark.url, "_blank", "noopener,noreferrer");
+          });
+        }
+      })
+      .catch((err) => {
+        console.error("Error in confirmDialog:", err);
+      });
+  } else {
+    bookmarks.forEach((bookmark) => {
+      window.open(bookmark.url, "_blank", "noopener,noreferrer");
+    });
+  }
+}
+
+/**
+ * Show widget content in the bookmarks view
+ */
+async function showWidgetInBookmarksView(
+  widgetType: string,
+  widgetId: string,
+): Promise<void> {
+  try {
+    if (widgetType === "folder") {
+      state.setFilterConfig({ ...state.filterConfig, folder: widgetId });
+      await state.setCurrentView("bookmarks");
+    } else if (widgetType === "tag") {
+      state.setFilterConfig({ ...state.filterConfig, tags: [widgetId] });
+      await state.setCurrentView("bookmarks");
+    }
+
+    const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
+    await loadBookmarks();
+
+    showToast("Switched to bookmarks view", "success");
+  } catch (err) {
+    console.error("Failed to show widget in bookmarks view:", err);
+    showToast("Failed to switch view", "error");
+  }
+}
+
+/**
+ * Show widget color picker dropdown
+ */
+function showWidgetColorPicker(index: number, button: HTMLElement): void {
+  const existingPicker = document.querySelector(".widget-color-picker");
+  if (existingPicker) existingPicker.remove();
+
+  const widget = state.dashboardWidgets[index];
+  if (!widget) return;
+
+  const colors = [
+    { name: "Blue", value: "#6366f1" },
+    { name: "Purple", value: "#a855f7" },
+    { name: "Pink", value: "#ec4899" },
+    { name: "Red", value: "#ef4444" },
+    { name: "Orange", value: "#f97316" },
+    { name: "Yellow", value: "#eab308" },
+    { name: "Green", value: "#10b981" },
+    { name: "Teal", value: "#14b8a6" },
+    { name: "Cyan", value: "#06b6d4" },
+    { name: "Indigo", value: "#4f46e5" },
+    { name: "Gray", value: "#6b7280" },
+    { name: "Slate", value: "#475569" },
+  ];
+
+  const picker = document.createElement("div");
+  picker.className = "widget-color-picker";
+  picker.innerHTML = `
+        <div class="color-picker-grid">
+            ${colors
+              .map(
+                (c) => `
+                <button class="color-picker-option" 
+                        data-color="${c.value}" 
+                        title="${c.name}"
+                        style="background: ${c.value}">
+                    ${widget.color === c.value ? '<span class="color-check">✓</span>' : ""}
+                </button>
+            `,
+              )
+              .join("")}
+        </div>
+    `;
+
+  const rect = button.getBoundingClientRect();
+  picker.style.position = "fixed";
+  picker.style.top = `${rect.bottom + 8}px`;
+  // Right-align the picker to the button
+  picker.style.right = `${window.innerWidth - rect.right}px`;
+
+  document.body.appendChild(picker);
+
+  picker.querySelectorAll(".color-picker-option").forEach((opt: Element) => {
+    opt.addEventListener("click", (e: Event) => {
+      e.stopPropagation();
+      const color = (opt as HTMLElement).dataset.color;
+      if (color) {
+        updateWidgetColor(index, color);
+      }
+      picker.remove();
+    });
+  });
+
+  setTimeout(() => {
+    document.addEventListener("click", function closePickerHandler(e) {
+      if (!picker.contains(e.target as Node)) {
+        picker.remove();
+        document.removeEventListener("click", closePickerHandler);
+      }
+    });
+  }, 100);
+}
+
+/**
+ * Update widget color
+ */
+function updateWidgetColor(index: number, color: string): void {
+  if (state.dashboardWidgets[index]) {
+    state.dashboardWidgets[index].color = color;
+    markDashboardModified();
+    renderDashboard();
+    showToast("Widget color updated", "success");
+  }
+}
+
+/**
  * Attach event listeners to widget buttons
  */
 function attachWidgetEventListeners(): void {
@@ -959,6 +1236,84 @@ function attachWidgetEventListeners(): void {
         }
       });
     });
+
+  // Widget options toggle buttons
+  document
+    .querySelectorAll<HTMLElement>(".widget-options-btn")
+    .forEach((btn) => {
+      btn.addEventListener("click", (e: Event) => {
+        e.stopPropagation();
+        const index = parseInt(btn.dataset.index || "", 10);
+        if (!isNaN(index)) {
+          toggleWidgetOptions(index);
+        }
+      });
+    });
+
+  // Widget option buttons
+  document
+    .querySelectorAll<HTMLElement>(".widget-option")
+    .forEach((btn) => {
+      btn.addEventListener("click", async (e: Event) => {
+        e.stopPropagation();
+        const action = btn.dataset.action;
+        const index = parseInt(btn.dataset.widgetIndex || "", 10);
+        const widgetType = btn.dataset.widgetType;
+        const widgetId = btn.dataset.widgetId;
+
+        switch (action) {
+          case "widget-sort-az":
+            if (!isNaN(index)) {
+              updateWidgetSort(index, "a-z");
+            }
+            break;
+          case "widget-sort-za":
+            if (!isNaN(index)) {
+              updateWidgetSort(index, "z-a");
+            }
+            break;
+          case "widget-add-bookmark":
+            if (widgetType && widgetId) {
+              await handleWidgetAddBookmark(widgetType, widgetId);
+            }
+            break;
+          case "widget-open-all":
+            if (!isNaN(index)) {
+              openAllWidgetBookmarks(index);
+            }
+            break;
+          case "widget-show-in-view":
+            if (widgetType && widgetId) {
+              showWidgetInBookmarksView(widgetType, widgetId);
+            }
+            break;
+          case "change-widget-color":
+            if (!isNaN(index)) {
+              showWidgetColorPicker(index, btn);
+              // Don't close the options menu yet - color picker is open
+              return;
+            }
+            break;
+        }
+
+        // Close the options menu after action (except for color picker)
+        if (!isNaN(index)) {
+          toggleWidgetOptions(index);
+        }
+      });
+    });
+
+  // Close options menus when clicking outside
+  document.addEventListener("click", (e: Event) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest(".widget-options-container")) {
+      document
+        .querySelectorAll<HTMLElement>(".widget-options-menu")
+        .forEach((menu) => {
+          menu.classList.add("hidden");
+        });
+    }
+  });
 }
 
 /**

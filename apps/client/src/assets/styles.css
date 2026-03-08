@@ -3913,6 +3913,13 @@ body.tag-cloud-active .content-body {
   flex: 1;
 }
 
+.modal-header h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  flex: 1;
+}
+
 /* Close button (X) styling */
 .modal-close {
   display: flex;
@@ -3942,6 +3949,13 @@ body.tag-cloud-active .content-body {
 }
 
 .modal-content form {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal-body {
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -5829,6 +5843,7 @@ body.dragging-widget .widget-sidebar-overlay {
   align-items: center;
   gap: 0.5rem;
   background: #3b82f6;
+  color: var(--text-primary);
   border-radius: 0;
   min-height: 32px;
 }
@@ -5925,15 +5940,16 @@ body.dragging-widget .widget-sidebar-overlay {
 
 .widget-actions button,
 .widget-actions .widget-action-btn {
-  color: rgba(255, 255, 255, 0.8);
+  color: currentColor;
   background: none;
   border: none;
   padding: 2px;
   cursor: pointer;
+  opacity: 0.8;
 }
 
 .widget-actions button:hover {
-  color: #fff;
+  opacity: 1;
 }
 
 .widget-actions svg {
@@ -6508,6 +6524,7 @@ body.dragging-widget .widget-sidebar-overlay {
   right: 0;
   min-width: 180px;
   background: var(--modal-bg);
+  color: #000;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
@@ -6528,11 +6545,32 @@ body.dragging-widget .widget-sidebar-overlay {
   padding: 0.5rem 0.75rem;
   border: none;
   background: transparent;
-  color: var(--text-primary);
+  color: #000;
   font-size: 0.8125rem;
   text-align: left;
   cursor: pointer;
   transition: background var(--transition-fast);
+}
+
+/* Override .widget-actions button color inheritance for menu items */
+.widget-options-menu .widget-option,
+.widget-options-menu .widget-option:visited,
+[data-theme="light"] .widget-options-menu .widget-option {
+  color: #000;
+}
+
+[data-theme="dark"] .widget-options-menu,
+[data-theme="ocean"] .widget-options-menu,
+[data-theme="sunset"] .widget-options-menu,
+[data-theme="midnight"] .widget-options-menu {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .widget-options-menu .widget-option,
+[data-theme="ocean"] .widget-options-menu .widget-option,
+[data-theme="sunset"] .widget-options-menu .widget-option,
+[data-theme="midnight"] .widget-options-menu .widget-option {
+  color: var(--text-primary);
 }
 
 .widget-option:hover {
@@ -6596,6 +6634,27 @@ body.dragging-widget .widget-sidebar-overlay {
   font-size: 16px;
   font-weight: bold;
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Color swatch buttons for widget color picker */
+.color-swatch {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.color-swatch:hover {
+  transform: scale(1.1);
+  border-color: var(--text-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.color-swatch:active {
+  transform: scale(0.95);
 }
 
 /* Sidebar drag states */
@@ -7124,10 +7183,6 @@ body.dragging-widget .widget-sidebar-overlay {
   font-weight: 500;
   color: var(--text-primary);
   margin: 0 0.125rem;
-}
-
-#settings-shortcuts {
-  /* Only show when active - default display: none from .settings-panel */
 }
 
 #settings-shortcuts.active {
