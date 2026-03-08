@@ -46,6 +46,24 @@ class KeyboardShortcuts {
    * Register default shortcuts
    */
   registerDefaultShortcuts(): void {
+    // Search - / (opens omnibar)
+    this.register({
+      key: "/",
+      description: "Focus search (opens omnibar)",
+      category: "Navigation",
+      global: true,
+      handler: async () => {
+        const searchInput = document.getElementById(
+          "search-input",
+        ) as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+        }
+        const { openOmnibar } = await import("@features/bookmarks/omnibar.ts");
+        openOmnibar();
+      },
+    });
+
     // Search - Ctrl+K (opens omnibar)
     this.register({
       key: "ctrl k",

@@ -124,7 +124,7 @@ export let tourState = {
     },
     {
       title: "🔍 Search in Seconds",
-      description: "Use Ctrl+K to search all your bookmarks instantly.",
+      description: "Use Ctrl+K or / to search all your bookmarks instantly.",
       target: "search-input",
       position: "bottom",
     },

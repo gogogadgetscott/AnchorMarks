@@ -20,7 +20,7 @@ export function Omnibar(options: OmnibarOptions = {}): string {
   const {
     id = "search-input",
     placeholder = "Search or type > for commands...",
-    shortcut = "Ctrl+K",
+    shortcut = "Ctrl+K or /",
     showDropdown = true,
   } = options;
 

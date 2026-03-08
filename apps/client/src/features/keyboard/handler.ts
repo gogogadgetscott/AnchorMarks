@@ -30,6 +30,30 @@ export async function handleKeyboard(e: KeyboardEvent): Promise<void> {
     return; // Don't process through other handlers
   }
 
+  // Early handler for '/' to open omnibar outside text inputs.
+  // This is handled synchronously to prevent browser quick-find behavior.
+  const isSlashShortcut =
+    !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && e.key === "/";
+  if (isSlashShortcut) {
+    const activeEl = document.activeElement as HTMLElement | null;
+    const isTypingInField =
+      !!activeEl &&
+      (["INPUT", "TEXTAREA"].includes(activeEl.tagName) ||
+        activeEl.isContentEditable);
+
+    if (!isTypingInField) {
+      e.preventDefault();
+      const searchInput = document.getElementById(
+        "search-input",
+      ) as HTMLInputElement;
+      if (searchInput) {
+        searchInput.focus();
+      }
+      openOmnibar();
+      return;
+    }
+  }
+
   // Try new keyboard shortcuts system first
   const { keyboardShortcuts } = await import("@utils/keyboard-shortcuts.ts");
   if (keyboardShortcuts.handleKeyPress(e)) {
