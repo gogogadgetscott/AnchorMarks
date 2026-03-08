@@ -1,18 +1,17 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  type ReactNode,
+type ReactNode,
+useEffect,
 } from "react";
-import type { Bookmark, Collection, FilterConfig } from "../types/index";
+import * as state from "../features/state.ts";
+import type { Bookmark, Collection, FilterConfig, Folder, DashboardWidget } from "../types/index";
 
 export const BOOKMARKS_PER_PAGE = 50;
 
 interface BookmarksState {
   bookmarks: Bookmark[];
   renderedBookmarks: Bookmark[];
+  folders: Folder[];
   collections: Collection[];
+  dashboardWidgets: DashboardWidget[];
   totalCount: number;
   widgetDataCache: Record<string, Bookmark[]>;
   filterConfig: FilterConfig;
@@ -31,7 +30,9 @@ interface BookmarksState {
 interface BookmarksActions {
   setBookmarks: (val: Bookmark[]) => void;
   setRenderedBookmarks: (val: Bookmark[]) => void;
+  setFolders: (val: Folder[]) => void;
   setCollections: (val: Collection[]) => void;
+  setDashboardWidgets: (val: DashboardWidget[]) => void;
   setTotalCount: (val: number) => void;
   setWidgetDataCache: (id: string, val: Bookmark[]) => void;
   clearWidgetDataCache: () => void;
@@ -65,7 +66,9 @@ const initialFilterConfig: FilterConfig = {
 export function BookmarksProvider({ children }: { children: ReactNode }) {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [renderedBookmarks, setRenderedBookmarks] = useState<Bookmark[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
+  const [dashboardWidgets, setDashboardWidgets] = useState<DashboardWidget[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [widgetDataCache, setWidgetDataCacheState] = useState<
     Record<string, Bookmark[]>
@@ -73,7 +76,10 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
   const [filterConfig, setFilterConfig] =
     useState<FilterConfig>(initialFilterConfig);
   const [tagMetadata, setTagMetadata] = useState<
-    Record<string, { color?: string; icon?: string; id?: string; count?: number }>
+    Record<
+      string,
+      { color?: string; icon?: string; id?: string; count?: number }
+    >
   >({});
   const [displayedCount, setDisplayedCount] = useState(BOOKMARKS_PER_PAGE);
   const [isLoading, setIsLoading] = useState(false);
@@ -85,6 +91,27 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     null,
   );
   const [bulkMode, setBulkMode] = useState(false);
+
+  useEffect(() => {
+    return state.subscribe((key, value) => {
+      switch (key) {
+        case "bookmarks": setBookmarks(value as Bookmark[]); break;
+        case "renderedBookmarks": setRenderedBookmarks(value as Bookmark[]); break;
+        case "folders": setFolders(value as Folder[]); break;
+        case "collections": setCollections(value as Collection[]); break;
+        case "dashboardWidgets": setDashboardWidgets(value as DashboardWidget[]); break;
+        case "totalCount": setTotalCount(value as number); break;
+        case "filterConfig": setFilterConfig(value as FilterConfig); break;
+        case "tagMetadata": setTagMetadata(value as any); break;
+        case "displayedCount": setDisplayedCount(value as number); break;
+        case "isLoading": setIsLoading(value as boolean); break;
+        case "isLoadingMore": setIsLoadingMore(value as boolean); break;
+        case "selectedBookmarks": setSelectedBookmarks(value as Set<string>); break;
+        case "lastSelectedIndex": setLastSelectedIndex(value as number | null); break;
+        case "bulkMode": setBulkMode(value as boolean); break;
+      }
+    });
+  }, []);
 
   const setWidgetDataCache = useCallback((id: string, val: Bookmark[]) => {
     setWidgetDataCacheState((prev) => ({ ...prev, [id]: val }));
@@ -102,7 +129,9 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
   const value: BookmarksContextValue = {
     bookmarks,
     renderedBookmarks,
+    folders,
     collections,
+    dashboardWidgets,
     totalCount,
     widgetDataCache,
     filterConfig,
@@ -115,7 +144,9 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     bulkMode,
     setBookmarks: useCallback((val) => setBookmarks(val), []),
     setRenderedBookmarks: useCallback((val) => setRenderedBookmarks(val), []),
+    setFolders: useCallback((val) => setFolders(val), []),
     setCollections: useCallback((val) => setCollections(val), []),
+    setDashboardWidgets: useCallback((val) => setDashboardWidgets(val), []),
     setTotalCount: useCallback((val) => setTotalCount(val), []),
     setWidgetDataCache,
     clearWidgetDataCache,

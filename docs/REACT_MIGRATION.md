@@ -34,13 +34,13 @@ npm install -D @types/react @types/react-dom @vitejs/plugin-react
 
 The current state module has ~70 variables. Group them into domain slices:
 
-| Slice | Key state |
-|-------|-----------|
-| `AuthContext` | `authToken`, `csrfToken`, `currentUser`, `isAuthenticated` |
-| `BookmarksContext` | `bookmarks[]`, `renderedBookmarks[]`, `filterConfig`, `displayedCount`, `isLoading` |
-| `UIContext` | `currentView`, `viewMode`, `hideFavicons`, `hideSidebar`, `selectedBookmarks`, `bulkMode` |
-| `FoldersContext` | `folders[]`, `currentFolder` |
-| `DashboardContext` | `dashboardConfig`, `widgets[]`, `widgetOrder`, `dashboardHasUnsavedChanges` |
+| Slice              | Key state                                                                                 |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| `AuthContext`      | `authToken`, `csrfToken`, `currentUser`, `isAuthenticated`                                |
+| `BookmarksContext` | `bookmarks[]`, `renderedBookmarks[]`, `filterConfig`, `displayedCount`, `isLoading`       |
+| `UIContext`        | `currentView`, `viewMode`, `hideFavicons`, `hideSidebar`, `selectedBookmarks`, `bulkMode` |
+| `FoldersContext`   | `folders[]`, `currentFolder`                                                              |
+| `DashboardContext` | `dashboardConfig`, `widgets[]`, `widgetOrder`, `dashboardHasUnsavedChanges`               |
 
 Keep the existing `state.ts` in place during migration — contexts will gradually absorb it slice by slice.
 
@@ -50,15 +50,15 @@ Keep the existing `state.ts` in place during migration — contexts will gradual
 
 These are pure functions returning HTML strings today — trivial to port. Do these first because they have no state dependencies.
 
-| Current file | New file | Complexity |
-|---|---|---|
-| `components/Button.ts` | `components/Button.tsx` | Trivial |
-| `components/Badge.ts` | `components/Badge.tsx` | Trivial |
-| `components/Icon.ts` | `components/Icon.tsx` | Trivial |
-| `components/Tag.ts` | `components/Tag.tsx` | Trivial |
-| `components/SkeletonCard.ts` | `components/SkeletonCard.tsx` | Trivial |
-| `components/ViewToggle.ts` | `components/ViewToggle.tsx` | Simple |
-| `components/UserProfile.ts` | `components/UserProfile.tsx` | Simple |
+| Current file                 | New file                      | Complexity |
+| ---------------------------- | ----------------------------- | ---------- |
+| `components/Button.ts`       | `components/Button.tsx`       | Trivial    |
+| `components/Badge.ts`        | `components/Badge.tsx`        | Trivial    |
+| `components/Icon.ts`         | `components/Icon.tsx`         | Trivial    |
+| `components/Tag.ts`          | `components/Tag.tsx`          | Trivial    |
+| `components/SkeletonCard.ts` | `components/SkeletonCard.tsx` | Trivial    |
+| `components/ViewToggle.ts`   | `components/ViewToggle.tsx`   | Simple     |
+| `components/UserProfile.ts`  | `components/UserProfile.tsx`  | Simple     |
 
 These are pure props → JSX transforms with no state or side effects.
 
@@ -69,13 +69,15 @@ These are pure props → JSX transforms with no state or side effects.
 `BookmarkCard` and `RichBookmarkCard` are the most-rendered components. They use `data-action` attributes for event delegation — replace with explicit `onClick` props.
 
 **Current pattern:**
+
 ```typescript
 // String template with data attributes
-`<button data-action="open-bookmark" data-url="${url}">Open</button>`
+`<button data-action="open-bookmark" data-url="${url}">Open</button>`;
 // Global delegated handler catches this
 ```
 
 **React pattern:**
+
 ```tsx
 // Explicit callbacks as props
 <BookmarkCard
@@ -105,7 +107,9 @@ function BookmarksList() {
 
   return (
     <div className={`bookmarks-${viewMode}`}>
-      {bookmarks.map(b => <BookmarkCard key={b.id} bookmark={b} />)}
+      {bookmarks.map((b) => (
+        <BookmarkCard key={b.id} bookmark={b} />
+      ))}
     </div>
   );
 }
@@ -118,6 +122,7 @@ This eliminates `renderBookmarks()`, `renderSkeletons()`, and scroll-based `load
 ## Phase 5: Omnibar (2–3 days)
 
 The omnibar is self-contained with its own local state. Use `useState` for:
+
 - `isOpen`, `activeIndex`, `currentItems`, `query`
 
 Replace the manual section rendering (`omnibar-recent-list`, `omnibar-results-list` via `innerHTML`) with conditional JSX sections.
@@ -176,10 +181,10 @@ Replace `layouts/loader.ts` (the manual DOM construction) with:
 
 ```tsx
 // main.tsx
-ReactDOM.createRoot(document.getElementById('app')!).render(
+ReactDOM.createRoot(document.getElementById("app")!).render(
   <AppProviders>
     <App />
-  </AppProviders>
+  </AppProviders>,
 );
 
 // App.tsx
@@ -193,11 +198,11 @@ function App() {
 
 ## Phase 10: Tests (ongoing alongside each phase)
 
-| Current | React replacement |
-|---|---|
+| Current                       | React replacement                       |
+| ----------------------------- | --------------------------------------- |
 | Component string-output tests | `@testing-library/react` render + query |
-| `jsdom` (already installed) | Keep — RTL uses it |
-| Manual DOM event tests | `fireEvent` / `userEvent` |
+| `jsdom` (already installed)   | Keep — RTL uses it                      |
+| Manual DOM event tests        | `fireEvent` / `userEvent`               |
 
 Add to devDependencies: `@testing-library/react`, `@testing-library/user-event`.
 
@@ -207,14 +212,14 @@ Existing Vitest setup needs no changes.
 
 ## What to keep as-is
 
-| Module | Notes |
-|--------|-------|
-| `services/api.ts` | Pure HTTP layer, no changes needed |
-| `services/websocket.ts` | Wrap in a `useWebSocket` hook |
-| `utils/` | All utilities stay as-is |
-| `types/` | All types stay as-is |
-| `styles.css` | No changes |
-| `apps/server/` | Completely untouched |
+| Module                  | Notes                              |
+| ----------------------- | ---------------------------------- |
+| `services/api.ts`       | Pure HTTP layer, no changes needed |
+| `services/websocket.ts` | Wrap in a `useWebSocket` hook      |
+| `utils/`                | All utilities stay as-is           |
+| `types/`                | All types stay as-is               |
+| `styles.css`            | No changes                         |
+| `apps/server/`          | Completely untouched               |
 
 ---
 

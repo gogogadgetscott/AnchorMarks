@@ -15,7 +15,7 @@ import {
   openModal,
   updateActiveNav,
 } from "@utils/ui-helpers.ts";
-import { Badge } from "@components/index.ts";
+import { Badge } from "@components/Badge.ts";
 import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
 /**

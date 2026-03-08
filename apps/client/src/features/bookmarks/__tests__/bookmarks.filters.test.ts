@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as state from "@features/state.ts";
-import {
-  loadBookmarks,
-  renderBookmarks,
-} from "@features/bookmarks/bookmarks.ts";
+import { loadBookmarks } from "@features/bookmarks/bookmarks.ts";
 import {
   renderSidebarTags,
   renderActiveFilters,
@@ -179,23 +176,29 @@ describe("bookmarks filtering + active filter UI", () => {
     ).toBe(true);
   });
 
-  it("renderBookmarks filters by tag mode AND and updates empty state", async () => {
+  it("loadBookmarks sends tags + tagMode for AND matching", async () => {
     state.setFilterConfig({
       ...state.filterConfig,
       tags: ["alpha", "beta"],
       tagMode: "AND",
     });
 
-    await loadBookmarks();
-    renderBookmarks();
+    const apiModule = await import("@services/api.ts");
+    const api = apiModule.api as ReturnType<typeof vi.fn>;
+    api.mockClear();
 
-    expect(state.renderedBookmarks.length).toBe(0);
-    expect(
-      document.getElementById("empty-state")!.classList.contains("hidden"),
-    ).toBe(false);
-    expect(document.getElementById("empty-state")!.innerHTML).toContain(
-      "No bookmarks with these tags",
-    );
+    await loadBookmarks();
+
+    const calledEndpoint = api.mock.calls
+      .map((args: any[]) => args[0] as string)
+      .find(
+        (endpoint) =>
+          typeof endpoint === "string" && endpoint.startsWith("/bookmarks"),
+      );
+
+    expect(calledEndpoint).toBeDefined();
+    expect(decodeURIComponent(calledEndpoint!)).toContain("tags=alpha,beta");
+    expect(decodeURIComponent(calledEndpoint!)).toContain("tagMode=AND");
   });
 
   it("loadBookmarks includes search + folder filters", async () => {

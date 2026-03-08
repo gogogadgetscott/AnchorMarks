@@ -10,7 +10,7 @@ import {
 } from "@features/bookmarks/commands.ts";
 import type { Command } from "../../types/index";
 import { escapeHtml, safeLocalStorage } from "@utils/index.ts";
-import { Icon } from "@components/index.ts";
+import { Icon } from "@components/Icon.ts";
 
 const RECENT_SEARCHES_KEY = "anchormarks_recent_searches";
 const MAX_RECENT_SEARCHES = 10;

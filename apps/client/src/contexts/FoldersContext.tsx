@@ -43,10 +43,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     setFolders: useCallback((val) => setFolders(val), []),
     setCurrentFolder: useCallback((val) => setCurrentFolder(val), []),
     setCurrentCollection: useCallback((val) => setCurrentCollection(val), []),
-    setDraggedSidebarItem: useCallback(
-      (val) => setDraggedSidebarItem(val),
-      [],
-    ),
+    setDraggedSidebarItem: useCallback((val) => setDraggedSidebarItem(val), []),
   };
 
   return (

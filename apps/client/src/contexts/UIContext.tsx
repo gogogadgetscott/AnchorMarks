@@ -51,6 +51,7 @@ interface UIState {
   tagCloudDefaultShowAll: boolean;
   isFullscreen: boolean;
   isInitialLoad: boolean;
+  isWidgetPickerOpen: boolean;
   showingAllTags: boolean;
   allSidebarTags: { name: string; count: number }[];
   tourState: TourState;
@@ -72,14 +73,12 @@ interface UIActions {
   setTagCloudDefaultShowAll: (val: boolean) => void;
   setIsFullscreen: (val: boolean) => void;
   setIsInitialLoad: (val: boolean) => void;
+  setIsWidgetPickerOpen: (val: boolean) => void;
   setShowingAllTags: (val: boolean) => void;
   setAllSidebarTags: (val: { name: string; count: number }[]) => void;
   setTourState: (val: TourState) => void;
   setLastTagRenameAction: (val: { from: string; to: string } | null) => void;
-  setViewToolbarConfig: (
-    view: string,
-    config: Record<string, unknown>,
-  ) => void;
+  setViewToolbarConfig: (view: string, config: Record<string, unknown>) => void;
 }
 
 type UIContextValue = UIState & UIActions;
@@ -145,6 +144,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [tagCloudDefaultShowAll, setTagCloudDefaultShowAll] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isWidgetPickerOpen, setIsWidgetPickerOpen] = useState(false);
   const [showingAllTags, setShowingAllTags] = useState(false);
   const [allSidebarTags, setAllSidebarTags] = useState<
     { name: string; count: number }[]
@@ -195,6 +195,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
     tagCloudDefaultShowAll,
     isFullscreen,
     isInitialLoad,
+    isWidgetPickerOpen,
     showingAllTags,
     allSidebarTags,
     tourState,
@@ -225,6 +226,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
     ),
     setIsFullscreen: useCallback((val) => setIsFullscreen(val), []),
     setIsInitialLoad: useCallback((val) => setIsInitialLoad(val), []),
+    setIsWidgetPickerOpen: useCallback((val) => setIsWidgetPickerOpen(val), []),
     setShowingAllTags: useCallback((val) => setShowingAllTags(val), []),
     setAllSidebarTags: useCallback((val) => setAllSidebarTags(val), []),
     setTourState: useCallback((val) => setTourState(val), []),

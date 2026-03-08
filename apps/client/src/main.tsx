@@ -1,15 +1,23 @@
-// Import styles first (Vite will process and inject them)
 import "@assets/styles.css";
 
-// Import the component loader
-import { loadComponents } from "@layouts/loader.ts";
-
-// Initialize global error handlers before anything else
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { AppProviders } from "./contexts/AppProviders";
+import { App } from "./App";
 import { initGlobalErrorHandlers } from "@utils/error-handler.ts";
+
 initGlobalErrorHandlers();
 
-// Initialize components immediately
-loadComponents();
+const appRoot = document.getElementById("app");
+if (appRoot) {
+  createRoot(appRoot).render(
+    <React.StrictMode>
+      <AppProviders>
+        <App />
+      </AppProviders>
+    </React.StrictMode>,
+  );
+}
 
 // Register Service Worker for offline support and caching
 if ("serviceWorker" in navigator) {
@@ -24,7 +32,3 @@ if ("serviceWorker" in navigator) {
       });
   });
 }
-
-// Import the main app module which will initialize everything
-// Now that components are in the DOM, App.js can find them
-import "./App.ts";

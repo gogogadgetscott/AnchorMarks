@@ -6604,6 +6604,13 @@ body.dragging-widget .widget-sidebar-overlay {
   animation: fadeIn 0.15s ease;
 }
 
+/* Inline Widget Color Picker (inside options menu) */
+.widget-color-picker-inline {
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.25rem;
+  border-top: 1px solid var(--border-color);
+}
+
 .color-picker-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

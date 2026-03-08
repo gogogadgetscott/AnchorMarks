@@ -4,6 +4,7 @@ import { BookmarksProvider } from "./BookmarksContext";
 import { UIProvider } from "./UIContext";
 import { FoldersProvider } from "./FoldersContext";
 import { DashboardProvider } from "./DashboardContext";
+import { ModalProvider } from "./ModalContext";
 
 /**
  * Composes all context providers into a single wrapper.
@@ -15,7 +16,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <UIProvider>
         <FoldersProvider>
           <BookmarksProvider>
-            <DashboardProvider>{children}</DashboardProvider>
+            <DashboardProvider>
+              <ModalProvider>{children}</ModalProvider>
+            </DashboardProvider>
           </BookmarksProvider>
         </FoldersProvider>
       </UIProvider>

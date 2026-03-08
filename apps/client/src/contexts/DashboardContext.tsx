@@ -86,12 +86,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   >(null);
   const [dashboardHasUnsavedChanges, setDashboardHasUnsavedChanges] =
     useState(false);
-  const [savedDashboardState, setSavedDashboardState] = useState<
-    string | null
-  >(null);
-  const [currentDashboardTab, setCurrentDashboardTab] = useState<
-    string | null
-  >(null);
+  const [savedDashboardState, setSavedDashboardState] = useState<string | null>(
+    null,
+  );
+  const [currentDashboardTab, setCurrentDashboardTab] = useState<string | null>(
+    null,
+  );
   const [draggedWidget, setDraggedWidget] = useState<HTMLElement | null>(null);
   const [isDraggingWidget, setIsDraggingWidget] = useState(false);
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });

@@ -246,7 +246,7 @@ const pendingMetadataFetches = new Set<string>();
 let ogImageObserver: IntersectionObserver | null = null;
 
 export function renderBookmarks(): void {
-  // Only render if we're in a bookmark-rendering view (don't overwrite analytics/dashboard/tag-cloud)
+  // Only update state if we're in a bookmark-rendering view
   if (
     state.currentView === "dashboard" ||
     state.currentView === "tag-cloud" ||
@@ -257,31 +257,9 @@ export function renderBookmarks(): void {
 
   updateFilterButtonVisibility();
 
-  const container =
-    (dom.mainViewOutlet?.isConnected ? dom.mainViewOutlet : null) ||
-    document.getElementById("main-view-outlet");
-  const emptyState = dom.emptyState || document.getElementById("empty-state");
   const searchInput =
     dom.searchInput || document.getElementById("search-input");
 
-  if (!container) return;
-
-  // Set container class based on view mode
-  const classMap = {
-    grid: "bookmarks-grid",
-    list: "bookmarks-list",
-    compact: "bookmarks-compact",
-  };
-  let containerClass = classMap[state.viewMode] || "bookmarks-grid";
-
-  if (state.richLinkPreviewsEnabled && state.viewMode === "grid") {
-    containerClass += " rich-link-previews";
-  }
-
-  container.className = containerClass;
-
-  // Server handles all filtering for these views - just render what server sends
-  // Check this FIRST before calculating searchTerm to avoid any filter application
   let filtered: Bookmark[];
 
   if (
@@ -290,29 +268,15 @@ export function renderBookmarks(): void {
     state.currentView === "recent" ||
     state.currentView === "most-used"
   ) {
-    // These views: server handles ALL filtering and sorting
-    // Just render what server sends - no client-side filtering needed
     filtered = [...state.bookmarks];
 
     if (state.currentView === "recent") {
-      // Recent view: server returns sorted by created_at DESC, limit 20
       filtered = filtered.slice(0, 20);
     }
     if (state.currentView === "most-used") {
-      // Most-used view: only show bookmarks that have been clicked at least once
       filtered = filtered.filter((b) => (b.click_count || 0) > 0);
     }
-    // For favorites and archived, use all bookmarks returned by server
-
-    // Skip all filtering logic below, go straight to rendering
-    // (filtered is already set above, just continue to shared rendering logic)
   } else {
-    // Apply filters for other views (all, folder, etc.)
-    // Server already filters by is_archived=0 for non-archived views
-    // Client-side filtering for search and tags (if not bypassed by server)
-
-    // When server was given a search param (all/folder/collection), it already filtered; don't re-apply
-    // client-side (avoids mismatch: server uses multi-word AND, client was using full-string includes).
     const searchSource =
       state.filterConfig.search ??
       ((searchInput as HTMLInputElement)?.value || "");
@@ -322,6 +286,7 @@ export function renderBookmarks(): void {
     const serverAlreadyFilteredSearch =
       state.filterConfig.search?.trim() &&
       ["all", "folder", "collection"].includes(state.currentView);
+
     if (searchTerm && !serverAlreadyFilteredSearch) {
       filtered = filtered.filter(
         (b) =>
@@ -332,19 +297,16 @@ export function renderBookmarks(): void {
     }
 
     if (state.filterConfig.tags.length > 0) {
-      // Normalize tags for robust comparison (trim & case-insensitive)
       const filterTags = state.filterConfig.tags.map((t) =>
         t.trim().toLowerCase(),
       );
 
-      // Helper: extract normalized tags from bookmark (support string or array)
       const getNormalizedTags = (bookmark: Bookmark): string[] => {
         const raw = bookmark.tags;
         if (!raw) return [];
         if (Array.isArray(raw)) {
           return raw.map((t) => String(t).trim().toLowerCase()).filter(Boolean);
         }
-        // If object with 'name' fields (edge case), try to extract
         if (typeof raw === "object") {
           try {
             return Object.values(raw)
@@ -363,28 +325,14 @@ export function renderBookmarks(): void {
           .filter(Boolean);
       };
 
-      // Debugging: examine why filtering might remove all bookmarks
-      let matchedCount = 0;
-      const sampleDetails: Array<any> = [];
-
-      filtered = filtered.filter((b, idx) => {
+      filtered = filtered.filter((b) => {
         const bTags = getNormalizedTags(b);
-        const matches =
-          state.filterConfig.tagMode === "AND"
-            ? filterTags.every((t) => bTags.includes(t))
-            : filterTags.some((t) => bTags.includes(t));
-
-        if (idx < 10) {
-          sampleDetails.push({ idx, bTags, matches, raw: b.tags });
-        }
-        if (matches) matchedCount++;
-        return matches;
+        return state.filterConfig.tagMode === "AND"
+          ? filterTags.every((t) => bTags.includes(t))
+          : filterTags.some((t) => bTags.includes(t));
       });
-
-      logger.info(
-        `Tag filter debug: filterTags=${JSON.stringify(filterTags)} matched=${matchedCount}/${state.bookmarks.length} samples=${JSON.stringify(sampleDetails)}`,
-      );
     }
+
     const sort = state.filterConfig.sort;
     filtered.sort((a, b) => {
       switch (sort) {
@@ -413,154 +361,22 @@ export function renderBookmarks(): void {
   }
 
   state.setRenderedBookmarks(filtered);
-  logger.info(
-    `renderBookmarks: currentView=${state.currentView} filterTags=${JSON.stringify(state.filterConfig.tags)} rendered=${filtered.length}`,
-  );
 
-  if (filtered.length === 0) {
-    container.innerHTML = "";
-    if (emptyState) {
+  // The global state has already been updated by loadBookmarks or filter changes.
+  // BookmarksList (React) automatically re-renders when useBookmarks() signals
+  // changes to the Context. We just need to ensure the empty-state container
+  // is hidden since React handles the empty state internally now.
+  const emptyState = dom.emptyState || document.getElementById("empty-state");
+  if (emptyState) {
+    if (filtered.length === 0) {
       emptyState.innerHTML = getEmptyStateMessage();
       emptyState.classList.remove("hidden");
-    }
-    return;
-  }
-
-  if (emptyState) emptyState.classList.add("hidden");
-
-  // --- Virtualization logic ---
-  const containerWidth = container.clientWidth || 1000;
-  const scrollContainer = (container.closest(".main-content") ||
-    container) as HTMLElement;
-
-  let itemsPerRow = 1;
-  let rowHeight = 120;
-
-  if (state.viewMode === "grid") {
-    itemsPerRow = Math.max(1, Math.floor((containerWidth + 20) / (320 + 20)));
-    rowHeight = 352;
-  } else if (state.viewMode === "compact") {
-    rowHeight = 40;
-  }
-
-  const BUFFER_ROWS = 2;
-  const totalRows = Math.ceil(filtered.length / itemsPerRow);
-  const viewportHeight = scrollContainer.clientHeight || 1000;
-  const scrollTop = scrollContainer.scrollTop || 0;
-
-  const containerRect = container.getBoundingClientRect();
-  const scrollRect = scrollContainer.getBoundingClientRect();
-  const containerOffsetTop = containerRect.top - scrollRect.top + scrollTop;
-  const relativeScrollTop = Math.max(0, scrollTop - containerOffsetTop);
-
-  const visibleRows = Math.ceil(viewportHeight / rowHeight) + BUFFER_ROWS * 2;
-  const startRow = Math.max(
-    0,
-    Math.floor(relativeScrollTop / rowHeight) - BUFFER_ROWS,
-  );
-  const endRow = Math.min(totalRows, startRow + visibleRows);
-
-  const startIndex = startRow * itemsPerRow;
-  const endIndex = Math.min(filtered.length, endRow * itemsPerRow);
-
-  const targetBookmarks = filtered.slice(startIndex, endIndex);
-  const targetIdSet = new Set(targetBookmarks.map((b) => b.id));
-
-  // Sync DOM nodes
-  const children = Array.from(container.children) as HTMLElement[];
-  const existingNodesMap = new Map<string, HTMLElement>();
-  children.forEach((child) => {
-    const id = child.dataset.bookmarkId;
-    if (id && targetIdSet.has(id)) {
-      existingNodesMap.set(id, child);
     } else {
-      container.removeChild(child);
+      emptyState.classList.add("hidden");
     }
-  });
-
-  const cardRenderer =
-    state.richLinkPreviewsEnabled && state.viewMode === "grid"
-      ? RichBookmarkCard
-      : createBookmarkCard;
-
-  targetBookmarks.forEach((b, i) => {
-    let el = existingNodesMap.get(b.id);
-    const bookmarkForCard = b as Bookmark & Record<string, unknown>;
-    const html = cardRenderer(bookmarkForCard, startIndex + i);
-    const stableHTML = el
-      ? html.replace(/entrance-animation|delay-\d+/g, "")
-      : html;
-
-    if (!el) {
-      el = document.createElement("div");
-      el.className = "bookmark-card-wrapper";
-      el.dataset.bookmarkId = b.id;
-      el.innerHTML = stableHTML;
-      container.insertBefore(el, container.children[i] || null);
-    } else {
-      if (container.children[i] !== el)
-        container.insertBefore(el, container.children[i]);
-      if (el.innerHTML !== stableHTML) el.innerHTML = stableHTML;
-    }
-  });
-
-  container.style.paddingTop = `${startRow * rowHeight}px`;
-  container.style.paddingBottom = `${Math.max(0, (totalRows - endRow) * rowHeight)}px`;
-
-  // Attach listeners once
-  const scrollHandlerMap = window._bookmarkScrollHandlerMap || new WeakMap();
-  window._bookmarkScrollHandlerMap = scrollHandlerMap;
-
-  const debounce = <T extends (...args: unknown[]) => void>(
-    fn: T,
-    delay: number,
-  ): T => {
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    return ((...args: Parameters<T>) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => fn(...args), delay);
-    }) as T;
-  };
-
-  const syncLayout = debounce(() => {
-    // Don't re-render bookmarks when on dashboard, tag-cloud, or analytics (scroll would overwrite their content)
-    if (
-      state.currentView === "dashboard" ||
-      state.currentView === "tag-cloud" ||
-      state.currentView === "analytics"
-    ) {
-      return;
-    }
-    renderBookmarks();
-
-    // Infinite scroll detection: check if near bottom
-    const scrollBottom =
-      scrollContainer.scrollTop + scrollContainer.clientHeight;
-    // Lower threshold for grid view to account for larger cards
-    const threshold =
-      scrollContainer.scrollHeight - (state.viewMode === "grid" ? 1000 : 500);
-
-    if (scrollBottom > threshold) {
-      loadMoreBookmarks();
-    }
-  }, 16);
-
-  if (!scrollHandlerMap.has(scrollContainer)) {
-    scrollHandlerMap.set(scrollContainer, syncLayout);
-    scrollContainer.addEventListener("scroll", syncLayout, { passive: true });
-    window.addEventListener("resize", syncLayout, { passive: true });
   }
 
-  // Defer non-critical work
-  setTimeout(() => {
-    attachBookmarkCardListeners();
-    updateBulkUI();
-    if (state.richLinkPreviewsEnabled && state.viewMode === "grid") {
-      lazyLoadOGImages();
-    }
-  }, 50);
-
-  // Update stats to show the current filtered count
+  // Update stats to show the current filtered count (legacy system still needs this)
   updateStats();
 }
 

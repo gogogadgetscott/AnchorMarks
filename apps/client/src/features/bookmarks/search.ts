@@ -7,7 +7,8 @@ import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { escapeHtml, parseTagInput, pluralize } from "@utils/index.ts";
 import { showToast, updateActiveNav } from "@utils/ui-helpers.ts";
-import { Badge, Icon } from "@components/index.ts";
+import { Badge } from "@components/Badge.ts";
+import { Icon } from "@components/Icon.ts";
 import type { Collection, Tag } from "../../types/index";
 
 /** Tag with count and optional parent path, used in tag stats list */
