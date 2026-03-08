@@ -179,10 +179,7 @@ export async function api<T = unknown>(
                 refreshData = null;
               }
             }
-            const refreshedCsrfToken = getStringField(
-              refreshData,
-              "csrfToken",
-            );
+            const refreshedCsrfToken = getStringField(refreshData, "csrfToken");
             if (refreshedCsrfToken) state.setCsrfToken(refreshedCsrfToken);
 
             const refreshedUser =
