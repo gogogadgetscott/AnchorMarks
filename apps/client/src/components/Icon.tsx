@@ -210,6 +210,9 @@ const icons: Record<string, React.ReactNode> = {
       <circle cx="15" cy="19" r="1" />
     </>
   ),
+  "chevron-down": <polyline points="6 9 12 15 18 9" />,
+  "chevron-right": <polyline points="9 6 15 12 9 18" />,
+  "chevron-up": <polyline points="18 15 12 9 6 15" />,
 };
 
 export function Icon({

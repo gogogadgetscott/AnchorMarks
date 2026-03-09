@@ -56,6 +56,8 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
+const FOLDER_INDENT_PX = 14;
+
 function FolderItem({
   folder,
   allFolders,
@@ -77,29 +79,27 @@ function FolderItem({
   return (
     <div
       className="folder-item-container"
-      style={{ paddingLeft: `${depth * 12}px` }}
+      style={{ paddingLeft: `${depth * FOLDER_INDENT_PX}px` }}
     >
       <div
         className={`nav-item folder-item ${isActive ? "active" : ""}`}
         onClick={() => onSelect(isActive ? null : folder.id)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === "Enter" && onSelect(isActive ? null : folder.id)}
       >
         <span
-          className="folder-toggle"
+          className={`folder-toggle${hasChildren ? "" : " folder-toggle-hidden"}`}
           onClick={(e) => {
             e.stopPropagation();
             setIsOpen(!isOpen);
           }}
-          style={{
-            visibility: hasChildren ? "visible" : "hidden",
-            cursor: "pointer",
-            padding: "0 4px",
-            fontSize: "10px",
-          }}
+          aria-label={isOpen ? "Collapse folder" : "Expand folder"}
         >
-          {isOpen ? "▼" : "▶"}
+          <Icon name={isOpen ? "chevron-down" : "chevron-right"} size={12} />
         </span>
-        <Icon name="folder" size={18} />
-        <span className="folder-name" style={{ marginLeft: "4px" }}>
+        <Icon name="folder" size={16} />
+        <span className="folder-name">
           {folder.name}
         </span>
       </div>
@@ -282,11 +282,15 @@ export function Sidebar() {
           <div
             className="sidebar-section-header"
             onClick={() => toggleSection("folders")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && toggleSection("folders")}
+            aria-expanded={expandedSections.has("folders")}
           >
-            <Icon name="folder" size={16} />
+            <Icon name="folder" size={15} />
             <span>Folders</span>
             <span className="section-chevron">
-              {expandedSections.has("folders") ? "▼" : "▶"}
+              <Icon name={expandedSections.has("folders") ? "chevron-down" : "chevron-right"} size={14} />
             </span>
           </div>
           {expandedSections.has("folders") && (
@@ -303,10 +307,7 @@ export function Sidebar() {
                   />
                 ))}
               {folders.length === 0 && (
-                <div
-                  className="text-tertiary"
-                  style={{ padding: "0.5rem 1rem", fontSize: "0.85rem" }}
-                >
+                <div className="sidebar-empty-state">
                   No folders yet
                 </div>
               )}
@@ -321,11 +322,15 @@ export function Sidebar() {
           <div
             className="sidebar-section-header"
             onClick={() => toggleSection("tags")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && toggleSection("tags")}
+            aria-expanded={expandedSections.has("tags")}
           >
-            <Icon name="tag" size={16} />
+            <Icon name="tag" size={15} />
             <span>Tags</span>
             <span className="section-chevron">
-              {expandedSections.has("tags") ? "▼" : "▶"}
+              <Icon name={expandedSections.has("tags") ? "chevron-down" : "chevron-right"} size={14} />
             </span>
           </div>
           {expandedSections.has("tags") && (
@@ -334,26 +339,16 @@ export function Sidebar() {
                 <Icon
                   name="search"
                   size={14}
-                  style={{
-                    position: "absolute",
-                    left: "8px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    opacity: 0.5,
-                  }}
+                  className="sidebar-search-icon"
                 />
                 <input
                   type="text"
                   placeholder="Search tags..."
                   value={tagSearch}
                   onChange={(e) => setTagSearch(e.target.value)}
-                  style={{ paddingLeft: "28px" }}
                 />
               </div>
-              <div
-                className="tag-list"
-                style={{ maxHeight: "300px", overflowY: "auto" }}
-              >
+              <div className="tag-list">
                 {filteredTags.slice(0, 20).map((tagName) => (
                   <div
                     key={tagName}
@@ -366,25 +361,27 @@ export function Sidebar() {
                       setCurrentView("all");
                       setCurrentFolder(null);
                     }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const tags = filterConfig.tags.includes(tagName)
+                          ? filterConfig.tags.filter((t) => t !== tagName)
+                          : [...filterConfig.tags, tagName];
+                        setFilterConfig({ ...filterConfig, tags });
+                        setCurrentView("all");
+                        setCurrentFolder(null);
+                      }
+                    }}
                   >
                     <span className="tag-name">{tagName}</span>
-                    <span
-                      className="tag-count"
-                      style={{
-                        marginLeft: "auto",
-                        opacity: 0.6,
-                        fontSize: "0.75rem",
-                      }}
-                    >
+                    <span className="tag-count">
                       {tagMetadata[tagName].count}
                     </span>
                   </div>
                 ))}
                 {filteredTags.length === 0 && (
-                  <div
-                    className="text-tertiary"
-                    style={{ padding: "0.5rem 1rem", fontSize: "0.85rem" }}
-                  >
+                  <div className="sidebar-empty-state">
                     No tags found
                   </div>
                 )}
@@ -429,27 +426,13 @@ export function Sidebar() {
         <a
           href="/help.html"
           target="_blank"
-          className="btn btn-ghost btn-full"
+          className="btn btn-ghost btn-full sidebar-help-link"
           title="Help & Documentation"
-          style={{
-            justifyContent: "flex-start",
-            gap: "0.75rem",
-            color: "var(--text-secondary)",
-          }}
         >
           <Icon name="help" size={18} />
           <span>Help &amp; Docs</span>
         </a>
-        <div
-          id="app-version"
-          style={{
-            padding: "0.5rem 1rem",
-            textAlign: "center",
-            color: "var(--text-tertiary)",
-            fontSize: "0.75rem",
-            opacity: 0.7,
-          }}
-        >
+        <div id="app-version" className="sidebar-version">
           v{import.meta.env.VITE_APP_VERSION}
         </div>
       </div>
