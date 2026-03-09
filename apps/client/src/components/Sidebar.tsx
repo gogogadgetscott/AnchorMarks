@@ -89,7 +89,7 @@ function FolderItem({
         onKeyDown={(e) => e.key === "Enter" && onSelect(isActive ? null : folder.id)}
       >
         <span
-          className={["folder-toggle", !hasChildren && "folder-toggle-hidden"].filter(Boolean).join(" ")}
+          className={`folder-toggle${hasChildren ? "" : " folder-toggle-hidden"}`}
           onClick={(e) => {
             e.stopPropagation();
             setIsOpen(!isOpen);
@@ -99,9 +99,7 @@ function FolderItem({
           <Icon name={isOpen ? "chevron-down" : "chevron-right"} size={12} />
         </span>
         <Icon name="folder" size={16} />
-        <span className="folder-name">
-          {folder.name}
-        </span>
+        <span className="folder-name">{folder.name}</span>
       </div>
       {isOpen && hasChildren && (
         <div className="folder-children">
@@ -290,7 +288,10 @@ export function Sidebar() {
             <Icon name="folder" size={15} />
             <span>Folders</span>
             <span className="section-chevron">
-              <Icon name={expandedSections.has("folders") ? "chevron-down" : "chevron-right"} size={14} />
+              <Icon
+                name={expandedSections.has("folders") ? "chevron-down" : "chevron-right"}
+                size={14}
+              />
             </span>
           </div>
           {expandedSections.has("folders") && (
@@ -307,9 +308,7 @@ export function Sidebar() {
                   />
                 ))}
               {folders.length === 0 && (
-                <div className="sidebar-empty-state">
-                  No folders yet
-                </div>
+                <div className="sidebar-empty-state">No folders yet</div>
               )}
             </div>
           )}
@@ -330,7 +329,10 @@ export function Sidebar() {
             <Icon name="tag" size={15} />
             <span>Tags</span>
             <span className="section-chevron">
-              <Icon name={expandedSections.has("tags") ? "chevron-down" : "chevron-right"} size={14} />
+              <Icon
+                name={expandedSections.has("tags") ? "chevron-down" : "chevron-right"}
+                size={14}
+              />
             </span>
           </div>
           {expandedSections.has("tags") && (
@@ -381,9 +383,7 @@ export function Sidebar() {
                   </div>
                 ))}
                 {filteredTags.length === 0 && (
-                  <div className="sidebar-empty-state">
-                    No tags found
-                  </div>
+                  <div className="sidebar-empty-state">No tags found</div>
                 )}
               </div>
             </div>
@@ -426,7 +426,7 @@ export function Sidebar() {
         <a
           href="/help.html"
           target="_blank"
-          className="sidebar-help-link"
+          className="btn btn-ghost btn-full sidebar-help-link"
           title="Help & Documentation"
         >
           <Icon name="help" size={18} />
