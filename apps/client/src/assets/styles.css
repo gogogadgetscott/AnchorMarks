@@ -4555,6 +4555,61 @@ body.tag-cloud-active .content-body {
   ) !important;
 }
 
+/* Rich bookmark card with custom color */
+.rich-bookmark-card.has-custom-color {
+  background: color-mix(
+    in srgb,
+    var(--bookmark-color) 20%,
+    var(--bg-secondary)
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--bookmark-color) 40%,
+    var(--border-color)
+  ) !important;
+  border-left: 8px solid var(--bookmark-color) !important;
+}
+
+.rich-bookmark-card.has-custom-color:hover {
+  background: color-mix(
+    in srgb,
+    var(--bookmark-color) 28%,
+    var(--bg-secondary)
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--bookmark-color) 50%,
+    var(--border-color)
+  ) !important;
+}
+
+[data-theme="dark"] .rich-bookmark-card.has-custom-color {
+  background: color-mix(
+    in srgb,
+    var(--bookmark-color) 18%,
+    var(--bg-secondary)
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--bookmark-color) 35%,
+    var(--border-color)
+  ) !important;
+  border-left: 8px solid color-mix(in srgb, var(--bookmark-color) 80%, white) !important;
+}
+
+[data-theme="dark"] .rich-bookmark-card.has-custom-color:hover {
+  background: color-mix(
+    in srgb,
+    var(--bookmark-color) 25%,
+    var(--bg-secondary)
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--bookmark-color) 45%,
+    var(--border-color)
+  ) !important;
+}
+
 /* Tag modal needs higher z-index since it opens from within settings modal */
 #tag-modal {
   z-index: 1100;

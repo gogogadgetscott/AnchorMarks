@@ -127,13 +127,37 @@ export function RichBookmarkCard({
     </div>
   );
 
+  const colorStyle = bookmark.color
+    ? ({
+        "--bookmark-color": bookmark.color,
+        backgroundColor: bookmark.color,
+      } as React.CSSProperties)
+    : undefined;
+
   const delayClass = `delay-${index % 10}`;
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't open if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') ||
+      target.closest('a') ||
+      target.closest('input') ||
+      target.closest('label.bookmark-select') ||
+      target.closest('.bookmark-actions')
+    ) {
+      return;
+    }
+    onOpen();
+  };
 
   return (
     <div
-      className={`rich-bookmark-card ${isSelected ? "selected" : ""} entrance-animation ${delayClass}`}
+      className={`rich-bookmark-card ${isSelected ? "selected" : ""} ${bookmark.color ? "has-custom-color" : ""} entrance-animation ${delayClass}`}
       data-id={bookmark.id}
       data-index={index}
+      style={colorStyle}
+      onClick={handleCardClick}
     >
       <label className="bookmark-select">
         <input
@@ -165,14 +189,6 @@ export function RichBookmarkCard({
         )}
         {tagsEl}
         <div className="bookmark-actions">
-          <Button
-            text="Open"
-            variant="primary"
-            className="bookmark-action-btn"
-            icon="external"
-            title="Open bookmark"
-            onClick={onOpen}
-          />
           <Button
             text="Edit"
             variant="secondary"
@@ -223,6 +239,15 @@ export function RichBookmarkCard({
             title="Delete bookmark"
             onClick={onDelete}
           />
+          <Button
+            text="Open"
+            variant="primary"
+            className="bookmark-action-btn"
+            icon="external"
+            title="Open bookmark"
+            onClick={onOpen}
+          />
+          
         </div>
       </div>
     </div>

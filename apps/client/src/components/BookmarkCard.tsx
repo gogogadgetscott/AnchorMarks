@@ -124,6 +124,21 @@ export function BookmarkCard({
 
   const delayClass = `delay-${index % 10}`;
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't open if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') ||
+      target.closest('a') ||
+      target.closest('input') ||
+      target.closest('label.bookmark-select') ||
+      target.closest('.bookmark-actions')
+    ) {
+      return;
+    }
+    onOpen();
+  };
+
   const actions = (
     <div className="bookmark-actions">
       <Button
@@ -194,6 +209,7 @@ export function BookmarkCard({
       role="listitem"
       tabIndex={0}
       aria-label={bookmark.title}
+      onClick={handleCardClick}
     >
       <label className="bookmark-select">
         <input
