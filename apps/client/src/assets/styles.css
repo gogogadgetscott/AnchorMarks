@@ -2458,7 +2458,14 @@ body.sidebar-collapsed .nav-section-header {
   gap: 0.625rem;
   color: var(--text-secondary);
   text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.625rem;
+  color: var(--text-secondary);
+  text-decoration: none;
   font-size: 0.8125rem;
+  font-weight: 500;
   font-weight: 500;
   padding: 0.5rem 0.625rem;
   border-radius: var(--radius-md);
@@ -2486,6 +2493,14 @@ body.sidebar-collapsed .nav-section-header {
   color: var(--text-secondary) !important;
   font-size: 0.8125rem;
   padding: 0.5rem 0.625rem;
+  border-radius: var(--radius-md);
+  width: 100%;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.sidebar-help-link:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .sidebar-version {
