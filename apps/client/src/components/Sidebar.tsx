@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { api } from "../services/api.ts";
 import { useUI } from "../contexts/UIContext";
 import { useBookmarks } from "../contexts/BookmarksContext";
 import { useFolders } from "../contexts/FoldersContext";
@@ -137,6 +138,13 @@ export function Sidebar() {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["folders", "tags"]),
   );
+  const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    api<Record<string, number>>("/bookmarks/counts")
+      .then((data) => setViewCounts(data))
+      .catch(() => {});
+  }, [bookmarks]);
 
   const toggleSection = (id: string) => {
     const next = new Set(expandedSections);
@@ -145,19 +153,19 @@ export function Sidebar() {
     setExpandedSections(next);
   };
 
-  // Calculate counts for badges
+  // Calculate counts for badges using server-provided counts
   const getBadgeCount = (view: string) => {
     switch (view) {
       case "all":
-        return totalCount;
+        return viewCounts.all ?? totalCount;
       case "favorites":
-        return bookmarks.filter((b) => b.is_favorite).length;
+        return viewCounts.favorites ?? 0;
       case "recent":
-        return bookmarks.filter((b) => b.click_count ?? 0 > 0).length;
+        return viewCounts.recent ?? 0;
       case "most-used":
-        return bookmarks.filter((b) => b.click_count ?? 0 > 5).length;
+        return viewCounts.most_used ?? 0;
       case "archived":
-        return bookmarks.filter((b) => b.is_archived).length;
+        return viewCounts.archived ?? 0;
       default:
         return 0;
     }
@@ -209,7 +217,7 @@ export function Sidebar() {
         view !== "tag-cloud" &&
         view !== "analytics"
       ) {
-        await loadBookmarks();
+        await loadBookmarks({ view });
       }
     },
     [setCurrentView, setCurrentFolder, loadBookmarks],

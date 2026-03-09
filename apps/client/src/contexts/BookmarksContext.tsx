@@ -223,6 +223,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
 
       if (currentView === "favorites") params.append("favorites", "true");
       if (currentView === "archived") params.append("archived", "true");
+      if (currentView === "most-used") params.append("most_used", "true");
 
       if (
         currentFolder &&
@@ -230,7 +231,8 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         currentView !== "collection" &&
         currentView !== "favorites" &&
         currentView !== "archived" &&
-        currentView !== "recent"
+        currentView !== "recent" &&
+        currentView !== "most-used"
       ) {
         params.append("folder_id", currentFolder);
         if (includeChildBookmarks) {
@@ -245,7 +247,10 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       if (activeFilters.search) {
         params.append("search", activeFilters.search);
       }
-      if (activeFilters.sort) {
+      // most-used view always sorts by click count; respect filterConfig for other views
+      if (currentView === "most-used") {
+        params.append("sort", "most_visited");
+      } else if (activeFilters.sort) {
         params.append("sort", activeFilters.sort);
       }
 
@@ -336,13 +341,18 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       params.append("offset", String(displayedCount));
       params.append("limit", String(BOOKMARKS_PER_PAGE));
 
+      if (currentView === "favorites") params.append("favorites", "true");
+      if (currentView === "archived") params.append("archived", "true");
+      if (currentView === "most-used") params.append("most_used", "true");
+
       if (
         currentFolder &&
         currentView !== "dashboard" &&
         currentView !== "collection" &&
         currentView !== "favorites" &&
         currentView !== "archived" &&
-        currentView !== "recent"
+        currentView !== "recent" &&
+        currentView !== "most-used"
       ) {
         params.append("folder_id", currentFolder);
         if (includeChildBookmarks) {
@@ -357,7 +367,9 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       if (filterConfig.search) {
         params.append("search", filterConfig.search);
       }
-      if (filterConfig.sort) {
+      if (currentView === "most-used") {
+        params.append("sort", "most_visited");
+      } else if (filterConfig.sort) {
         params.append("sort", filterConfig.sort);
       }
 

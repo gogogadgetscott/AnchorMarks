@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useBookmarks } from "../contexts/BookmarksContext";
 import { useUI } from "../contexts/UIContext";
+import { setFilterConfig as vanillaSetFilterConfig } from "../features/state";
 import { Icon } from "./Icon.tsx";
 import { pluralize, safeLocalStorage } from "@utils/index.ts";
 
@@ -123,7 +124,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 export function TagCloud() {
-  const { tagMetadata, filterConfig, setFilterConfig } = useBookmarks();
+  const { tagMetadata, setTagMetadata, fetchTagStats, filterConfig, setFilterConfig } = useBookmarks();
   const { setCurrentView } = useUI();
   const [showAll, setShowAll] = useState(() => {
     const stored = safeLocalStorage.getItem("anchormarks_tag_cloud_show_all");
@@ -131,6 +132,17 @@ export function TagCloud() {
   });
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [canvasHeight, setCanvasHeight] = useState(600);
+
+  useEffect(() => {
+    fetchTagStats().then((tagStats) => {
+      if (tagStats.length === 0) return;
+      const metadata: Record<string, { color?: string; icon?: string; id?: string; count?: number }> = {};
+      tagStats.forEach((t) => {
+        metadata[t.name] = { color: t.color, id: t.id, count: t.count };
+      });
+      setTagMetadata(metadata);
+    });
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -184,12 +196,14 @@ export function TagCloud() {
     [canvasHeight],
   );
 
-  const handleTagClick = (tagName: string) => {
-    setCurrentView("all");
-    setFilterConfig({
-      ...filterConfig,
-      tags: [tagName],
-    });
+  const handleTagClick = async (tagName: string) => {
+    const newFilter = { ...filterConfig, tags: [tagName] };
+    setFilterConfig(newFilter);
+    vanillaSetFilterConfig(newFilter);
+    await setCurrentView("all");
+    // Update the filter button count in the header
+    const { updateFilterButtonText } = await import("../features/bookmarks/filters.ts");
+    updateFilterButtonText();
   };
 
   const handleToggleShowAll = () => {

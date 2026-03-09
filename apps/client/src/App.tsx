@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAuth } from "./contexts/AuthContext";
 import { useBookmarks } from "./contexts/BookmarksContext";
 import { useFolders } from "./contexts/FoldersContext";
@@ -17,6 +17,13 @@ export function App() {
   // Inject React context actions into keyboard shortcuts system
   useKeyboardShortcuts();
 
+  // Keep a stable ref to loadBookmarks so the init effect doesn't re-fire
+  // every time filterConfig changes (which recreates the loadBookmarks callback).
+  const loadBookmarksRef = useRef(loadBookmarks);
+  useEffect(() => {
+    loadBookmarksRef.current = loadBookmarks;
+  }, [loadBookmarks]);
+
   // Check authentication status on mount
   useEffect(() => {
     checkAuth();
@@ -27,15 +34,9 @@ export function App() {
       setIsInitialLoad(false);
       loadSettings();
       loadFolders();
-      loadBookmarks();
+      loadBookmarksRef.current();
     }
-  }, [
-    isAuthenticated,
-    loadSettings,
-    loadFolders,
-    loadBookmarks,
-    setIsInitialLoad,
-  ]);
+  }, [isAuthenticated, loadSettings, loadFolders, setIsInitialLoad]);
 
   // Reload bookmarks when view changes (except dashboard, analytics, and folder)
   // Note: folder view is handled by Sidebar folder click which calls loadBookmarks with folderId

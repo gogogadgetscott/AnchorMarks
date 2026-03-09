@@ -34,11 +34,13 @@ function listBookmarks(db, userId, opts = {}) {
     limit,
     offset,
     archived,
+    most_used,
   } = opts;
 
   const isFavoritesView = favorites === true || favorites === "true";
   const isArchivedView = archived === true || archived === "true";
-  const hasSearch = !!(search && !isFavoritesView && !isArchivedView);
+  const isMostUsedView = most_used === true || most_used === "true";
+  const hasSearch = !!(search && !isFavoritesView && !isArchivedView && !isMostUsedView);
 
   // Define the base FROM and JOINs
   let baseFrom;
@@ -116,6 +118,12 @@ function listBookmarks(db, userId, opts = {}) {
   if (isFavoritesView) {
     query += " AND COALESCE(b.is_favorite, 0) = 1";
     countQuery += " AND COALESCE(b.is_favorite, 0) = 1";
+  }
+
+  // Handle most-used filter
+  if (isMostUsedView) {
+    query += " AND b.click_count > 0";
+    countQuery += " AND b.click_count > 0";
   }
 
   // Handle search matching
@@ -227,10 +235,15 @@ function listBookmarks(db, userId, opts = {}) {
 
   if (limit) {
     const total = db.prepare(countQuery).get(...params).total;
-    const safeLimit = Math.max(
+    let safeLimit = Math.max(
       1,
       Math.min(10000, parseInt(String(limit), 10) || 50),
     );
+    let effectiveTotal = total;
+    if (isMostUsedView) {
+      safeLimit = Math.max(1, Math.ceil(total * 0.2));
+      effectiveTotal = safeLimit;
+    }
     const safeOffset = Math.max(0, parseInt(String(offset), 10) || 0);
     query += " LIMIT ? OFFSET ?";
     params.push(safeLimit, safeOffset);
@@ -240,7 +253,7 @@ function listBookmarks(db, userId, opts = {}) {
         const { _tags, ...rest } = b;
         return { ...rest, tags: _tags };
       });
-    return { bookmarks, total };
+    return { bookmarks, total: effectiveTotal };
   }
 
   let bookmarks = db.prepare(query).all(...params);

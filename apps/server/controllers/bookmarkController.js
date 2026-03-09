@@ -5,6 +5,7 @@ const {
 } = require("../services/tagService");
 const { normalizeTagColorOverrides } = require("../utils/tagUtils");
 const bookmarkModel = require("../models/bookmark");
+const tagModel = require("../models/tag");
 const { isPrivateAddress } = require("../utils/ssrfUtils");
 const config = require("../config");
 const { broadcast } = require("../services/websocketService");
@@ -32,6 +33,7 @@ function listBookmarks(req, res) {
     include_children,
     search,
     favorites,
+    most_used,
     tags,
     tagMode,
     sort,
@@ -50,6 +52,7 @@ function listBookmarks(req, res) {
       include_children,
       search,
       favorites,
+      most_used,
       tags,
       tagMode,
       sort,
@@ -61,11 +64,15 @@ function listBookmarks(req, res) {
       result.bookmarks.forEach((b) => {
         b.tags_detailed = parseTagsDetailed(b.tags_detailed);
       });
+      const safeOffset = parseInt(offset) || 0;
+      const responseTags =
+        safeOffset === 0 ? tagModel.listTags(db, req.user.id) : undefined;
       return res.json({
         bookmarks: result.bookmarks,
         total: result.total,
         limit: parseInt(limit) || undefined,
-        offset: parseInt(offset) || 0,
+        offset: safeOffset,
+        ...(responseTags ? { tags: responseTags } : {}),
       });
     }
     result.bookmarks.forEach((b) => {

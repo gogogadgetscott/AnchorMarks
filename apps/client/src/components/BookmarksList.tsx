@@ -45,9 +45,9 @@ function applyFilters(
     currentView === "recent" ||
     currentView === "most-used"
   ) {
-    if (currentView === "recent") result = result.slice(0, 20);
+    if (currentView === "recent") return result.slice(0, 20);
     if (currentView === "most-used")
-      result = result.filter((b) => (b.click_count || 0) > 0);
+      return result.filter((b) => (b.click_count || 0) > 0);
     return result.slice(0, displayedCount);
   }
 
@@ -270,7 +270,8 @@ export function BookmarksList() {
 
   const useRichCard = richLinkPreviewsEnabled && viewMode === "grid";
   const hasMore =
-    displayedCount < bookmarks.length || bookmarks.length < totalCount;
+    currentView !== "most-used" &&
+    (displayedCount < bookmarks.length || bookmarks.length < totalCount);
 
   return (
     <>
