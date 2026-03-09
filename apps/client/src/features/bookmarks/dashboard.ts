@@ -230,7 +230,7 @@ export async function initDashboardViews(): Promise<void> {
 /**
  * Show views dropdown menu
  */
-async function showViewsMenu(): Promise<void> {
+export async function showViewsMenu(): Promise<void> {
   // Clean up existing dropdown
   closeViewsDropdown(new MouseEvent("click"));
 

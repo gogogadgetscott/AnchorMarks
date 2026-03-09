@@ -112,17 +112,11 @@ export function Header() {
     toggleLayoutSettings?.();
   }, []);
 
-    const handleViewsClick = useCallback(async () => {
-      try {
-        const { api } = await import("@services/api.ts");
-        const views = await api("/bookmark/views");
-        window.dispatchEvent(
-          new CustomEvent("bookmark-views:open", { detail: { views } })
-        );
-      } catch (err) {
-        console.error("Failed to load views:", err);
-      }
-    }, []);
+  const handleViewsClick = useCallback(async () => {
+    // Import and show the dashboard views menu
+    const { showViewsMenu } = await import("@features/bookmarks/dashboard.ts");
+    showViewsMenu?.();
+  }, []);
 
   const handleFilterClick = useCallback(async () => {
     const { toggleFilterDropdown } = await import("@features/bookmarks/filters.ts");
@@ -175,7 +169,6 @@ export function Header() {
                     onFullscreenClick={handleToggleFullscreen}
                     onLayoutSettingsClick={handleLayoutSettings}
                   />
-                  <BookmarkViews />
                 </div>
                 <UserProfile
                   name={userName}
@@ -207,6 +200,7 @@ export function Header() {
                     onModeChange={setViewMode}
                   />
                 )}
+                <BookmarkViews />
                 <UserProfile
                   name={userName}
                   avatarChar={avatarChar}

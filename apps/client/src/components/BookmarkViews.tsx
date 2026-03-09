@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@services/api.ts";
 import { Icon } from "./Icon.tsx";
 import { useToast } from "@contexts/ToastContext";
@@ -8,33 +8,29 @@ import type { BookmarkViewResponse } from "@/types/api";
 export function BookmarkViews() {
   const [open, setOpen] = useState(false);
   const [views, setViews] = useState<BookmarkViewResponse[]>([]);
-  const [hasLegacyButton, setHasLegacyButton] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const { showToast } = useToast();
 
   useEffect(() => {
-    // If a legacy views button exists (rendered by DashboardToolbar or legacy code),
-    // attach a click handler so it opens the React dropdown. This prevents duplicate
-    // UI while keeping the button placement consistent.
-    const legacyBtn = document.getElementById(
-      "views-btn",
-    ) as HTMLButtonElement | null;
-    if (legacyBtn) {
-      const handler = (e: MouseEvent) => {
-        e.stopPropagation();
-        fetchAndOpen();
-      };
-      legacyBtn.addEventListener("click", handler);
-      // If legacy button present, hide the internal button to avoid duplicate controls
-      // (we'll still render the dropdown when opened via events).
-      setTimeout(() => {
-        setHasLegacyButton(true);
-      }, 0);
+    if (!open) return;
 
-      return () => {
-        legacyBtn.removeEventListener("click", handler);
-      };
-    }
+    const handlePointerDown = (event: PointerEvent) => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      if (!container.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown, true);
+    };
+  }, [open]);
+
+  useEffect(() => {
     function onOpen(e: any) {
       const incoming = e?.detail?.views ?? [];
       setViews(Array.isArray(incoming) ? incoming : []);
@@ -92,7 +88,6 @@ export function BookmarkViews() {
 
   async function handleRestore(id: string) {
     try {
-      // Delegate to legacy module which knows how to apply the view
       const mod = await import("@features/bookmarks/bookmarks.ts");
       await mod.restoreBookmarkView(id);
       setOpen(false);
@@ -116,44 +111,81 @@ export function BookmarkViews() {
 
   function dropdownStyle() {
     const btn = btnRef.current;
-    if (!btn)
-      return { position: "absolute", top: 48, right: 8 } as React.CSSProperties;
+    const dropdownWidth = 280;
+
+    if (!btn) {
+      return {
+        position: "absolute" as const,
+        top: 48,
+        right: 8,
+        width: dropdownWidth,
+        background: "var(--bg-secondary)",
+        border: "1px solid var(--border-color)",
+        borderRadius: 6,
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+        zIndex: 1400,
+        padding: "0.5rem",
+        display: "block",
+      };
+    }
+
     const rect = btn.getBoundingClientRect();
+    const left = Math.max(
+      8,
+      Math.min(window.innerWidth - dropdownWidth - 8, rect.left),
+    );
+
     return {
-      position: "fixed",
+      position: "fixed" as const,
       top: rect.bottom + 8,
-      left: Math.max(8, rect.left + rect.width / 2 - 140),
-      minWidth: 280,
-      zIndex: 1200,
-    } as React.CSSProperties;
+      left,
+      width: dropdownWidth,
+      background: "var(--bg-secondary)",
+      border: "1px solid var(--border-color)",
+      borderRadius: 6,
+      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+      zIndex: 1400,
+      padding: "0.5rem",
+      display: "block",
+    };
   }
 
   return (
-    <div className="bookmark-views-container" style={{ position: "relative" }}>
-      {!hasLegacyButton && (
-        <button
-          id="bookmark-views-btn"
-          ref={btnRef}
-          className="btn btn-secondary"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (open) setOpen(false);
-            else fetchAndOpen();
-          }}
-          title="Views"
-          aria-haspopup="true"
-        >
-          <Icon name="bookmark" size={16} /> Views
-        </button>
-      )}
+    <div
+      ref={containerRef}
+      className="bookmark-views-container"
+      style={{ position: "relative" }}
+    >
+      <button
+        id="bookmark-views-btn"
+        ref={btnRef}
+        className="btn btn-secondary"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (open) {
+            setOpen(false);
+          } else {
+            fetchAndOpen();
+          }
+        }}
+        title="Views"
+        aria-haspopup="true"
+      >
+        <Icon name="link" size={16} /> Views
+      </button>
 
       {open && (
-        <div className="dropdown-menu" style={dropdownStyle()} role="dialog">
+        <div
+          className="bookmark-views-dropdown"
+          style={dropdownStyle()}
+          role="dialog"
+        >
           <div
             style={{
               padding: "0.5rem",
               fontWeight: 600,
               borderBottom: "1px solid var(--border-color)",
+              color: "var(--text-primary)",
             }}
           >
             Bookmark Views
@@ -183,7 +215,14 @@ export function BookmarkViews() {
                   <button
                     className="link-like"
                     onClick={() => handleRestore(v.id)}
-                    style={{ textAlign: "left", flex: 1 }}
+                    style={{
+                      textAlign: "left",
+                      flex: 1,
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--text-primary)",
+                      cursor: "pointer",
+                    }}
                   >
                     {v.name}
                   </button>
