@@ -43,9 +43,13 @@ export function GeneralSettings() {
               document.documentElement.getAttribute("data-theme") || "dark"
             }
           >
+            <option value="system">System</option>
             <option value="light">Light</option>
             <option value="dark">Dark</option>
-            <option value="system">System</option>
+            <option value="ocean">Ocean</option>
+            <option value="sunset">Sunset</option>
+            <option value="midnight">Midnight</option>
+            <option value="high-contrast">High Contrast</option>
           </select>
         </div>
 

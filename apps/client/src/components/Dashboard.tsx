@@ -51,7 +51,6 @@ export function Dashboard() {
         className="dashboard-insights-section"
         style={{ marginTop: "2rem", padding: "1rem" }}
       >
-        <SmartInsights enabled={currentView === "dashboard"} />
       </div>
     </>
   );
