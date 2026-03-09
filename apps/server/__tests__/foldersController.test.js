@@ -51,8 +51,9 @@ describe("Folders Controller", () => {
   it("lists folders", async () => {
     const res = await agent.get("/api/folders").set("X-CSRF-Token", csrfToken);
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    const found = res.body.find((f) => f.id === folderId);
+    expect(res.body.folders).toBeTruthy();
+    expect(Array.isArray(res.body.folders)).toBe(true);
+    const found = res.body.folders.find((f) => f.id === folderId);
     expect(found).toBeTruthy();
   });
 

@@ -3,7 +3,6 @@ import {
   DndContext,
   DragEndEvent,
   DragStartEvent,
-  DragMoveEvent,
   PointerSensor,
   useSensor,
   useSensors,
@@ -74,12 +73,6 @@ export function DashboardGrid({
 }: DashboardGridProps) {
   const CANVAS_PADDING = 40;
   const [activeWidgetId, setActiveWidgetId] = useState<string | null>(null);
-  const [widgetPositions, setWidgetPositions] = useState<
-    Record<string, { x: number; y: number }>
-  >({});
-  const [dragStartPositions, setDragStartPositions] = useState<
-    Record<string, { x: number; y: number }>
-  >({});
 
   const getWidgetWidth = (widget: DashboardWidgetType): number => {
     const legacyWidget = widget as DashboardWidgetType & { width?: number };
@@ -93,9 +86,8 @@ export function DashboardGrid({
 
   const widgetBounds = widgets.reduce(
     (bounds, widget) => {
-      const tempPos = widgetPositions[widget.id];
-      const x = Math.max(0, tempPos?.x ?? widget.x ?? 0);
-      const y = Math.max(0, tempPos?.y ?? widget.y ?? 0);
+      const x = Math.max(0, widget.x ?? 0);
+      const y = Math.max(0, widget.y ?? 0);
       const width = getWidgetWidth(widget);
       const height = getWidgetHeight(widget);
 
@@ -122,32 +114,6 @@ export function DashboardGrid({
     if (!widget) return;
 
     setActiveWidgetId(widgetId);
-    setDragStartPositions((prev) => ({
-      ...prev,
-      [widgetId]: { x: widget.x || 0, y: widget.y || 0 },
-    }));
-  };
-
-  const handleDragMove = (event: DragMoveEvent) => {
-    if (!event.active.id) return;
-
-    const widgetId = String(event.active.id);
-    const widget = widgets.find((w) => w.id === widgetId);
-    if (!widget) return;
-    const startPos = dragStartPositions[widgetId] || {
-      x: widget.x || 0,
-      y: widget.y || 0,
-    };
-
-    setWidgetPositions((prev) => {
-      return {
-        ...prev,
-        [widgetId]: {
-          x: startPos.x + event.delta.x,
-          y: startPos.y + event.delta.y,
-        },
-      };
-    });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -155,28 +121,12 @@ export function DashboardGrid({
     const widget = widgets.find((w) => w.id === widgetId);
     if (!widget) return;
 
-    const finalPos = widgetPositions[widgetId] || {
-      x: widget.x || 0,
-      y: widget.y || 0,
-    };
-
-    // Ensure positions are non-negative
-    const x = Math.max(0, finalPos.x);
-    const y = Math.max(0, finalPos.y);
+    const x = Math.max(0, (widget.x || 0) + event.delta.x);
+    const y = Math.max(0, (widget.y || 0) + event.delta.y);
 
     onMoveWidget?.(widgetId, x, y);
 
     setActiveWidgetId(null);
-    setWidgetPositions((prev) => {
-      const next = { ...prev };
-      delete next[widgetId];
-      return next;
-    });
-    setDragStartPositions((prev) => {
-      const next = { ...prev };
-      delete next[widgetId];
-      return next;
-    });
   };
 
   if (!widgets.length) {
@@ -200,7 +150,6 @@ export function DashboardGrid({
     <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
-      onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
     >
       <section
@@ -216,16 +165,11 @@ export function DashboardGrid({
           }}
         >
           {widgets.map((widget, index) => {
-            const tempPos = widgetPositions[widget.id];
-            const widgetWithPos = tempPos
-              ? { ...widget, x: tempPos.x, y: tempPos.y }
-              : widget;
-
             return (
               <DashboardWidget
                 key={widget.id}
                 widgetIndex={index}
-                widget={widgetWithPos}
+                widget={widget}
                 isEditing={isEditMode}
                 isDragging={activeWidgetId === widget.id}
                 previewBookmarks={previewBookmarksByWidgetId[widget.id] ?? []}

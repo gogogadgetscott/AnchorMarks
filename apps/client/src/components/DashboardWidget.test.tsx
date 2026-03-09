@@ -3,6 +3,29 @@ import { renderWithProviders, screen, fireEvent } from "../test-utils";
 import { DashboardWidget } from "./DashboardWidget.tsx";
 import type { DashboardWidget as DashboardWidgetType } from "../types/index";
 
+const dndMocks = vi.hoisted(() => ({
+  dragPointerDown: vi.fn(),
+  setNodeRef: vi.fn(),
+}));
+
+vi.mock("@dnd-kit/core", async () => {
+  const actual = await vi.importActual<typeof import("@dnd-kit/core")>(
+    "@dnd-kit/core",
+  );
+
+  return {
+    ...actual,
+    useDraggable: vi.fn(() => ({
+      attributes: {},
+      listeners: {
+        onPointerDown: dndMocks.dragPointerDown,
+      },
+      setNodeRef: dndMocks.setNodeRef,
+      transform: null,
+    })),
+  };
+});
+
 const baseWidget: DashboardWidgetType = {
   id: "widget-1",
   type: "stats",
@@ -15,6 +38,26 @@ const baseWidget: DashboardWidgetType = {
 };
 
 describe("DashboardWidget", () => {
+  it("starts drag from header text but not from action buttons", () => {
+    dndMocks.dragPointerDown.mockClear();
+
+    renderWithProviders(
+      <DashboardWidget
+        widget={baseWidget}
+        widgetIndex={0}
+        isEditing={true}
+        linkedWidgetId="widget-1"
+        metrics={{ Bookmarks: 10 }}
+      />,
+    );
+
+    fireEvent.pointerDown(screen.getByText("Overview"));
+    expect(dndMocks.dragPointerDown).toHaveBeenCalledTimes(1);
+
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Remove widget" }));
+    expect(dndMocks.dragPointerDown).toHaveBeenCalledTimes(1);
+  });
+
   it("renders widget metadata and style attributes", () => {
     renderWithProviders(
       <DashboardWidget

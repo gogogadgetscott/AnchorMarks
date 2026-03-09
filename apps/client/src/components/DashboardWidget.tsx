@@ -124,7 +124,7 @@ export function DashboardWidget({
   } | null>(null);
   const optionsContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const { attributes, listeners, setNodeRef } = useDraggable({
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: widget.id,
     disabled: !isEditing,
   });
@@ -157,6 +157,9 @@ export function DashboardWidget({
     position: "absolute",
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 1000 : undefined,
+    transform: transform
+      ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
+      : undefined,
   };
 
   const handleResizeStart = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -216,20 +219,27 @@ export function DashboardWidget({
       data-widget-type={widget.type}
       data-testid="dashboard-widget"
       style={style}
-      {...attributes}
     >
-      <header className="widget-header" style={headerStyle}>
+      <header
+        className="widget-header"
+        style={headerStyle}
+        {...attributes}
+        {...listeners}
+      >
         <span
           className="widget-drag-handle"
           aria-hidden="true"
           style={{ cursor: isEditing ? "grab" : "default" }}
-          {...listeners}
         >
           <Icon name="grip" size={14} />
         </span>
         <h3>{widget.title}</h3>
         <span className="widget-count">{widgetCount}</span>
-        <div className="widget-actions">
+        <div
+          className="widget-actions"
+          onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           <div
             className="widget-options-container"
             ref={optionsContainerRef}

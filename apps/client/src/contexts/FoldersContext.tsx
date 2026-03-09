@@ -102,10 +102,8 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
   const createFolder = useCallback(
     async (
       data: Partial<Folder>,
-      options: { closeModal?: boolean } = {},
+      _options: { closeModal?: boolean } = {},
     ): Promise<Folder | null> => {
-      const { closeModal = true } = options;
-
       try {
         const folder = await api("/folders", {
           method: "POST",

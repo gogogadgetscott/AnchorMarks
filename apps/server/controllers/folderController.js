@@ -7,7 +7,7 @@ function listFolders(req, res) {
   const db = req.app.get("db");
   const folderModel = require("../models/folder");
   try {
-    return res.json(folderModel.listFolders(db, req.user.id));
+    return res.json({ folders: folderModel.listFolders(db, req.user.id) });
   } catch (err) {
     return reportAndSend(res, err, logger, "Error fetching folders");
   }
