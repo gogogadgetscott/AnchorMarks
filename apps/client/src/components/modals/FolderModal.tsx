@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { useModal } from "@contexts/ModalContext";
 import { useFolders } from "@contexts/FoldersContext";
 import { createFocusTrap, removeFocusTrap } from "@utils/focus-trap.ts";
@@ -17,16 +17,34 @@ const FOLDER_COLORS = [
 ];
 
 export default function FolderModal() {
-  const { closeModal, folderFormData, setFolderFormData } = useModal();
+  const { closeModal, folderFormData, setFolderFormData, openBookmarkModal } = useModal();
   const { folders, createFolder, updateFolder, deleteFolder } = useFolders();
   const modalRef = useRef<HTMLDivElement>(null);
+
+  const handleClose = useCallback(() => {
+    // Check if we should return to bookmark modal
+    const returnToBookmark = sessionStorage.getItem('returnToBookmarkModal');
+    if (returnToBookmark) {
+      try {
+        const bookmarkData = JSON.parse(returnToBookmark);
+        sessionStorage.removeItem('returnToBookmarkModal');
+        // Reopen bookmark modal with original data (no folder selected since user cancelled)
+        openBookmarkModal(bookmarkData);
+      } catch (err) {
+        console.error('Failed to parse bookmark modal data:', err);
+        closeModal();
+      }
+    } else {
+      closeModal();
+    }
+  }, [closeModal, openBookmarkModal]);
 
   useEffect(() => {
     if (modalRef.current) {
       try {
         createFocusTrap(modalRef.current, {
           initialFocus: true,
-          onEscape: closeModal,
+          onEscape: handleClose,
         });
       } catch (error) {
         console.warn("Failed to create focus trap for modal", error);
@@ -38,7 +56,7 @@ export default function FolderModal() {
         removeFocusTrap(modalRef.current.id);
       }
     };
-  }, [closeModal]);
+  }, [handleClose]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -51,10 +69,30 @@ export default function FolderModal() {
 
     if (folderFormData.id) {
       await updateFolder(folderFormData.id, data);
+      closeModal();
     } else {
-      await createFolder(data);
+      const newFolder = await createFolder(data);
+      if (newFolder) {
+        // Check if we should return to bookmark modal
+        const returnToBookmark = sessionStorage.getItem('returnToBookmarkModal');
+        if (returnToBookmark) {
+          try {
+            const bookmarkData = JSON.parse(returnToBookmark);
+            sessionStorage.removeItem('returnToBookmarkModal');
+            // Reopen bookmark modal with the newly created folder selected
+            openBookmarkModal({
+              ...bookmarkData,
+              folderId: newFolder.id,
+            });
+          } catch (err) {
+            console.error('Failed to parse bookmark modal data:', err);
+            closeModal();
+          }
+        } else {
+          closeModal();
+        }
+      }
     }
-    // closeModals() is called inside updateFolder/createFolder
   };
 
   const handleDelete = async () => {
@@ -86,14 +124,14 @@ export default function FolderModal() {
       aria-labelledby="folder-modal-title"
       tabIndex={-1}
     >
-      <div className="modal-backdrop" onClick={closeModal}></div>
+      <div className="modal-backdrop" onClick={handleClose}></div>
       <div className="modal-content modal-sm">
         <div className="modal-header">
           <h2 id="folder-modal-title">{title}</h2>
           <button
             type="button"
             className="btn-icon modal-close"
-            onClick={closeModal}
+            onClick={handleClose}
             aria-label="Close modal"
           >
             <svg

@@ -50,4 +50,16 @@ describe("UserProfile (React)", () => {
     expect(screen.getByText("Settings")).toBeTruthy();
     expect(screen.getByText("Logout")).toBeTruthy();
   });
+
+  it("shows dropdown when isOpen is true", () => {
+    render(<UserProfile isOpen={true} />);
+    const dropdown = document.querySelector(".user-dropdown-menu");
+    expect(dropdown?.classList.contains("hidden")).toBe(false);
+  });
+
+  it("hides dropdown when isOpen is false", () => {
+    render(<UserProfile isOpen={false} />);
+    const dropdown = document.querySelector(".user-dropdown-menu");
+    expect(dropdown?.classList.contains("hidden")).toBe(true);
+  });
 });

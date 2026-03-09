@@ -1501,20 +1501,45 @@ export function updateLayoutStats(): void {
  * Auto-position widgets on grid
  */
 export function autoPositionWidgets(): void {
+  const GUTTER = 20;
   let x = 0;
   let y = 0;
+  let rowMaxHeight = 0;
   const containerWidth =
     document.getElementById("main-view-outlet")?.clientWidth || 1200;
 
-  state.dashboardWidgets.forEach((widget: DashboardWidget) => {
+  const sortedWidgets = [...state.dashboardWidgets].sort((a, b) => {
+    const typeCompare = (a.type || "").localeCompare(b.type || "");
+    if (typeCompare !== 0) return typeCompare;
+
+    const titleCompare = (a.title || "").localeCompare(b.title || "", undefined, {
+      sensitivity: "base",
+      numeric: true,
+    });
+    if (titleCompare !== 0) return titleCompare;
+
+    return (a.id || "").localeCompare(b.id || "", undefined, {
+      sensitivity: "base",
+      numeric: true,
+    });
+  });
+
+  sortedWidgets.forEach((widget: DashboardWidget) => {
+    const widgetWidth = getWidgetWidth(widget);
+    const widgetHeight = getWidgetHeight(widget);
+
+    // Wrap to next row when this widget would overflow the current row.
+    if (x > 0 && x + widgetWidth > containerWidth) {
+      x = 0;
+      y += rowMaxHeight + GUTTER;
+      rowMaxHeight = 0;
+    }
+
     widget.x = snapToGrid(x);
     widget.y = snapToGrid(y);
 
-    x += getWidgetWidth(widget) + 20;
-    if (x + getWidgetWidth(widget) > containerWidth) {
-      x = 0;
-      y += getWidgetHeight(widget) + 20;
-    }
+    x += widgetWidth + GUTTER;
+    rowMaxHeight = Math.max(rowMaxHeight, widgetHeight);
   });
 
   markDashboardModified();

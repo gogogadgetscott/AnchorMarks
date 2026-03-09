@@ -72,6 +72,7 @@ export function DashboardGrid({
   onChangeWidgetColor,
   onTagAnalyticsSettingsChange,
 }: DashboardGridProps) {
+  const CANVAS_PADDING = 40;
   const [activeWidgetId, setActiveWidgetId] = useState<string | null>(null);
   const [widgetPositions, setWidgetPositions] = useState<
     Record<string, { x: number; y: number }>
@@ -79,6 +80,32 @@ export function DashboardGrid({
   const [dragStartPositions, setDragStartPositions] = useState<
     Record<string, { x: number; y: number }>
   >({});
+
+  const getWidgetWidth = (widget: DashboardWidgetType): number => {
+    const legacyWidget = widget as DashboardWidgetType & { width?: number };
+    return widget.w ?? legacyWidget.width ?? 320;
+  };
+
+  const getWidgetHeight = (widget: DashboardWidgetType): number => {
+    const legacyWidget = widget as DashboardWidgetType & { height?: number };
+    return widget.h ?? legacyWidget.height ?? 260;
+  };
+
+  const widgetBounds = widgets.reduce(
+    (bounds, widget) => {
+      const tempPos = widgetPositions[widget.id];
+      const x = Math.max(0, tempPos?.x ?? widget.x ?? 0);
+      const y = Math.max(0, tempPos?.y ?? widget.y ?? 0);
+      const width = getWidgetWidth(widget);
+      const height = getWidgetHeight(widget);
+
+      return {
+        maxRight: Math.max(bounds.maxRight, x + width),
+        maxBottom: Math.max(bounds.maxBottom, y + height),
+      };
+    },
+    { maxRight: 0, maxBottom: 0 },
+  );
 
   // Configure drag sensors
   const sensors = useSensors(
@@ -181,7 +208,13 @@ export function DashboardGrid({
         id="dashboard-drop-zone"
         data-testid="dashboard-grid"
       >
-        <div className="dashboard-widgets-container">
+        <div
+          className="dashboard-widgets-container"
+          style={{
+            width: `${widgetBounds.maxRight + CANVAS_PADDING}px`,
+            height: `${widgetBounds.maxBottom + CANVAS_PADDING}px`,
+          }}
+        >
           {widgets.map((widget, index) => {
             const tempPos = widgetPositions[widget.id];
             const widgetWithPos = tempPos

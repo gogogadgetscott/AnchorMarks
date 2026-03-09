@@ -216,10 +216,13 @@ export function openOmnibar(): void {
   if (controller && controller.open) {
     controller.open();
   } else {
+    omnibarState.isOpen = true;
     const input = document.getElementById(
       "search-input",
     ) as HTMLInputElement | null;
     if (input) input.focus();
+    const panel = document.getElementById("omnibar-panel");
+    if (panel) panel.classList.remove("hidden");
   }
 }
 
@@ -227,6 +230,7 @@ export function closeOmnibar(): void {
   if (controller && controller.close) {
     controller.close();
   } else {
+    omnibarState.isOpen = false;
     const input = document.getElementById(
       "search-input",
     ) as HTMLInputElement | null;
@@ -234,6 +238,8 @@ export function closeOmnibar(): void {
       input.value = "";
       input.blur();
     }
+    const panel = document.getElementById("omnibar-panel");
+    if (panel) panel.classList.add("hidden");
   }
 }
 

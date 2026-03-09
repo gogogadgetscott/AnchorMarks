@@ -6,6 +6,7 @@ import {
   restoreView,
   filterDashboardBookmarks,
   updateLayoutStats,
+  autoPositionWidgets,
 } from "@features/bookmarks/dashboard.ts";
 
 const { apiMock, loadSettingsSpy, saveSettingsSpy } = vi.hoisted(() => ({
@@ -382,5 +383,113 @@ describe("Dashboard interactivity helpers", () => {
     ]);
     updateLayoutStats();
     expect(statsEl.textContent).toContain("1 widget");
+  });
+
+  it("autoPositionWidgets reflows widgets from the top using row max height", () => {
+    const outlet = document.getElementById("main-view-outlet");
+    expect(outlet).toBeTruthy();
+
+    Object.defineProperty(outlet as HTMLElement, "clientWidth", {
+      configurable: true,
+      value: 700,
+    });
+
+    state.setDashboardWidgets([
+      {
+        id: "a",
+        type: "folder",
+        linkedId: "a",
+        x: 100,
+        y: 1400,
+        width: 320,
+        height: 400,
+        title: "A",
+      },
+      {
+        id: "b",
+        type: "folder",
+        linkedId: "b",
+        x: 240,
+        y: 1800,
+        width: 320,
+        height: 100,
+        title: "B",
+      },
+      {
+        id: "c",
+        type: "folder",
+        linkedId: "c",
+        x: 300,
+        y: 2200,
+        width: 320,
+        height: 100,
+        title: "C",
+      },
+    ] as any);
+
+    autoPositionWidgets();
+
+    expect(state.dashboardWidgets[0].x).toBe(0);
+    expect(state.dashboardWidgets[0].y).toBe(0);
+    expect(state.dashboardWidgets[1].x).toBe(340);
+    expect(state.dashboardWidgets[1].y).toBe(0);
+    expect(state.dashboardWidgets[2].x).toBe(0);
+    expect(state.dashboardWidgets[2].y).toBe(420);
+  });
+
+  it("autoPositionWidgets places widgets in deterministic sorted order", () => {
+    const outlet = document.getElementById("main-view-outlet");
+    expect(outlet).toBeTruthy();
+
+    Object.defineProperty(outlet as HTMLElement, "clientWidth", {
+      configurable: true,
+      value: 1000,
+    });
+
+    state.setDashboardWidgets([
+      {
+        id: "tag-zeta",
+        type: "tag",
+        linkedId: "zeta",
+        x: 600,
+        y: 600,
+        width: 320,
+        height: 200,
+        title: "Zeta",
+      },
+      {
+        id: "folder-beta",
+        type: "folder",
+        linkedId: "beta",
+        x: 300,
+        y: 300,
+        width: 320,
+        height: 200,
+        title: "Beta",
+      },
+      {
+        id: "folder-alpha",
+        type: "folder",
+        linkedId: "alpha",
+        x: 0,
+        y: 900,
+        width: 320,
+        height: 200,
+        title: "Alpha",
+      },
+    ] as any);
+
+    autoPositionWidgets();
+
+    const alpha = state.dashboardWidgets.find((w: any) => w.id === "folder-alpha") as any;
+    const beta = state.dashboardWidgets.find((w: any) => w.id === "folder-beta") as any;
+    const zeta = state.dashboardWidgets.find((w: any) => w.id === "tag-zeta") as any;
+
+    expect(alpha.x).toBe(0);
+    expect(alpha.y).toBe(0);
+    expect(beta.x).toBe(340);
+    expect(beta.y).toBe(0);
+    expect(zeta.x).toBe(680);
+    expect(zeta.y).toBe(0);
   });
 });

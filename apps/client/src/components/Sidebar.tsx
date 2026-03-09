@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useUI } from "../contexts/UIContext";
 import { useBookmarks } from "../contexts/BookmarksContext";
+import { useFolders } from "../contexts/FoldersContext";
 import { Icon } from "./Icon.tsx";
 import { pluralize } from "@utils/index.ts";
 
@@ -125,7 +126,6 @@ export function Sidebar() {
     useUI();
   const {
     bookmarks,
-    folders,
     totalCount,
     setFilterConfig,
     filterConfig,
@@ -133,6 +133,7 @@ export function Sidebar() {
     dashboardWidgets,
     loadBookmarks,
   } = useBookmarks();
+  const { folders } = useFolders();
 
   const [tagSearch, setTagSearch] = useState("");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(

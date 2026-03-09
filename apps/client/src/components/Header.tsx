@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { DashboardToolbar } from "./DashboardToolbar.tsx";
 import { useAuth } from "../contexts/AuthContext";
 import { useBookmarks } from "../contexts/BookmarksContext";
@@ -12,6 +12,7 @@ import { ViewToggle } from "./ViewToggle.tsx";
 import BookmarkViews from "./BookmarkViews"; // Rendered near DashboardToolbar
 
 export function Header() {
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const {
     currentView,
     viewMode,
@@ -44,11 +45,16 @@ export function Header() {
   const handleOpenSettings = useCallback(async () => {
     const { openModal } = await import("@utils/ui-helpers.ts");
     openModal("settings-modal");
+    setIsUserDropdownOpen(false);
   }, []);
 
   const handleLogout = useCallback(async () => {
     const { logout } = await import("@features/auth/auth.ts");
     logout();
+  }, []);
+
+  const handleToggleUserDropdown = useCallback(() => {
+    setIsUserDropdownOpen((prev) => !prev);
   }, []);
 
   const handleClearSelection = useCallback(async () => {
@@ -106,6 +112,23 @@ export function Header() {
     toggleLayoutSettings?.();
   }, []);
 
+    const handleViewsClick = useCallback(async () => {
+      try {
+        const { api } = await import("@services/api.ts");
+        const views = await api("/bookmark/views");
+        window.dispatchEvent(
+          new CustomEvent("bookmark-views:open", { detail: { views } })
+        );
+      } catch (err) {
+        console.error("Failed to load views:", err);
+      }
+    }, []);
+
+  const handleFilterClick = useCallback(async () => {
+    const { toggleFilterDropdown } = await import("@features/bookmarks/filters.ts");
+    toggleFilterDropdown();
+  }, []);
+
   const avatarChar = currentUser?.username?.[0]?.toUpperCase() ?? "U";
   const userName = currentUser?.username ?? "User";
 
@@ -145,6 +168,7 @@ export function Header() {
                     hasUnsavedChanges={dashboardHasUnsavedChanges}
                     viewName={currentDashboardViewName}
                     onSaveClick={handleSaveDashboard}
+                     onViewsClick={handleViewsClick}
                     onAddWidgetClick={() =>
                       setIsWidgetPickerOpen(!isWidgetPickerOpen)
                     }
@@ -156,6 +180,8 @@ export function Header() {
                 <UserProfile
                   name={userName}
                   avatarChar={avatarChar}
+                  isOpen={isUserDropdownOpen}
+                  onToggleDropdown={handleToggleUserDropdown}
                   onOpenSettings={handleOpenSettings}
                   onLogout={handleLogout}
                 />
@@ -169,6 +195,7 @@ export function Header() {
                     title="Filters"
                     aria-label="Open filters"
                     aria-haspopup="true"
+                    onClick={handleFilterClick}
                   >
                     <Icon name="filter" size={16} />
                     <span className="filter-btn-text">Filters</span>
@@ -183,6 +210,8 @@ export function Header() {
                 <UserProfile
                   name={userName}
                   avatarChar={avatarChar}
+                  isOpen={isUserDropdownOpen}
+                  onToggleDropdown={handleToggleUserDropdown}
                   onOpenSettings={handleOpenSettings}
                   onLogout={handleLogout}
                 />

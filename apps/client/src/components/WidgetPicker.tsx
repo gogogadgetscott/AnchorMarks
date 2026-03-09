@@ -108,13 +108,26 @@ function PickerItem({
 
 export function WidgetPicker() {
   const { isWidgetPickerOpen, setIsWidgetPickerOpen } = useUI();
-  const { folders, dashboardWidgets, setDashboardWidgets, tagMetadata } =
-    useBookmarks();
-  const { setDashboardHasUnsavedChanges } = useDashboard();
-  const { getRecursiveBookmarkCount, setDraggedSidebarItem } = useFolders();
+  const {
+    tagMetadata,
+    bookmarks,
+    setDashboardWidgets: setBookmarkDashboardWidgets,
+  } = useBookmarks();
+  const {
+    dashboardWidgets,
+    setDashboardWidgets,
+    setDashboardHasUnsavedChanges,
+  } = useDashboard();
+  const { folders, getRecursiveBookmarkCount, setDraggedSidebarItem } =
+    useFolders();
   const [isPinned, setIsPinned] = useState(false);
   const [folderSearch, setFolderSearch] = useState("");
   const [tagSearch, setTagSearch] = useState("");
+
+  const getLinkedId = (widget: DashboardWidget): string => {
+    const linked = (widget.config as { linkedId?: unknown })?.linkedId;
+    return typeof linked === "string" ? linked : widget.id;
+  };
 
   useEffect(() => {
     if (!isWidgetPickerOpen || isPinned) return;
@@ -169,7 +182,10 @@ export function WidgetPicker() {
       title,
     };
 
-    setDashboardWidgets([...dashboardWidgets, widget]);
+    const nextWidgets = [...dashboardWidgets, widget];
+    setDashboardWidgets(nextWidgets);
+    // Keep BookmarksContext in sync for sidebar counters that still read this value.
+    setBookmarkDashboardWidgets(nextWidgets);
     setDashboardHasUnsavedChanges(true);
 
     if (!isPinned) {
@@ -198,7 +214,8 @@ export function WidgetPicker() {
             (f: Folder) => f.parent_id === folder.id,
           );
           const isAdded = dashboardWidgets.some(
-            (w: DashboardWidget) => w.type === "folder" && w.id === folder.id,
+            (w: DashboardWidget) =>
+              w.type === "folder" && getLinkedId(w) === folder.id,
           );
 
           return [
@@ -225,26 +242,41 @@ export function WidgetPicker() {
 
   const filteredTags = useMemo(() => {
     const term = tagSearch.toLowerCase().trim();
-    const allTags = Object.keys(tagMetadata)
-      .filter((t) => (tagMetadata[t].count || 0) > 0)
-      .sort(
-        (a, b) => (tagMetadata[b].count || 0) - (tagMetadata[a].count || 0),
-      );
+    const metadataEntries = Object.entries(tagMetadata).filter(
+      ([, meta]) => (meta.count || 0) > 0,
+    );
 
-    const tags = allTags.map((name) => ({
-      name,
-      count: tagMetadata[name].count || 0,
-    }));
+    const tagsFromMetadata = metadataEntries
+      .sort((a, b) => (b[1].count || 0) - (a[1].count || 0))
+      .map(([name, meta]) => ({ name, count: meta.count || 0 }));
+
+    const tags =
+      tagsFromMetadata.length > 0
+        ? tagsFromMetadata
+        : Object.entries(
+            bookmarks.reduce<Record<string, number>>((acc, bookmark) => {
+              const rawTags = bookmark.tags || "";
+              rawTags
+                .split(",")
+                .map((t) => t.trim())
+                .filter(Boolean)
+                .forEach((tag) => {
+                  acc[tag] = (acc[tag] || 0) + 1;
+                });
+              return acc;
+            }, {}),
+          )
+            .sort((a, b) => b[1] - a[1])
+            .map(([name, count]) => ({ name, count }));
 
     if (!term) return tags;
     return tags.filter((t) => t.name.toLowerCase().includes(term));
-  }, [tagMetadata, tagSearch]);
+  }, [tagMetadata, bookmarks, tagSearch]);
 
   if (!isWidgetPickerOpen) return null;
 
   const isAnalyticsAdded = dashboardWidgets.some(
-    (w: DashboardWidget) =>
-      w.type === "tag-analytics" && w.id === "tag-analytics",
+    (w: DashboardWidget) => w.type === "tag-analytics",
   );
 
   return (
@@ -367,7 +399,7 @@ export function WidgetPicker() {
                     count={tag.count}
                     isAdded={dashboardWidgets.some(
                       (w: DashboardWidget) =>
-                        w.type === "tag" && w.id === tag.name,
+                        w.type === "tag" && getLinkedId(w) === tag.name,
                     )}
                     onAdd={handleAddWidget}
                     onDragStart={(item) =>

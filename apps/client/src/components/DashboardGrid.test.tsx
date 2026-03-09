@@ -93,4 +93,31 @@ describe("DashboardGrid", () => {
     expect(onEditWidget).toHaveBeenCalledWith("w-1");
     expect(onRemoveWidget).toHaveBeenCalledWith("w-1");
   });
+
+  it("auto-sizes dashboard canvas from widget positions", () => {
+    renderWithProviders(
+      <DashboardGrid
+        widgets={[
+          {
+            id: "w-low",
+            type: "folder",
+            title: "Low Widget",
+            config: {},
+            x: 100,
+            y: 1200,
+            w: 480,
+            h: 300,
+          },
+        ]}
+      />,
+    );
+
+    const canvas = document.querySelector(
+      ".dashboard-widgets-container",
+    ) as HTMLElement | null;
+
+    expect(canvas).toBeTruthy();
+    expect(canvas?.style.height).toBe("1540px");
+    expect(canvas?.style.width).toBe("620px");
+  });
 });

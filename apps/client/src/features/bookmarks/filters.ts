@@ -229,22 +229,23 @@ export async function showFilterDropdown(): Promise<void> {
         `;
 
     const headersContainer = document.getElementById("headers-container");
-    const bookmarksHeader = document.getElementById("bookmarks-header");
+    // The React Header component uses `${currentView}-header` as the ID
+    const currentHeader = document.querySelector(".header.content-header") as HTMLElement;
 
     if (headersContainer) {
       // Insert into headers container as a sibling
       if (
-        bookmarksHeader &&
-        bookmarksHeader.parentElement === headersContainer
+        currentHeader &&
+        currentHeader.parentElement === headersContainer
       ) {
-        bookmarksHeader.insertAdjacentElement("afterend", dropdown);
+        currentHeader.insertAdjacentElement("afterend", dropdown);
       } else {
         headersContainer.appendChild(dropdown);
       }
-    } else if (bookmarksHeader && bookmarksHeader.style.display !== "none") {
-      // Fallback: insert after bookmarks header
-      bookmarksHeader.style.position = "relative";
-      bookmarksHeader.insertAdjacentElement("afterend", dropdown);
+    } else if (currentHeader && currentHeader.style.display !== "none") {
+      // Fallback: insert after current header
+      currentHeader.style.position = "relative";
+      currentHeader.insertAdjacentElement("afterend", dropdown);
     } else {
       document.body.appendChild(dropdown);
     }
@@ -468,6 +469,16 @@ async function renderFoldersInDropdown(): Promise<void> {
     _originalHTML?: string;
   };
   if (!container) return;
+
+  // Ensure folders are loaded if state.folders is empty
+  if (state.folders.length === 0) {
+    try {
+      const foldersData = await api<{ folders: any[] }>("/folders");
+      state.setFolders(foldersData.folders || []);
+    } catch (err) {
+      console.error("Failed to load folders:", err);
+    }
+  }
 
   // Fetch ALL unfiltered bookmarks to calculate folder counts
   const allBookmarks = await api<any>("/bookmarks?limit=10000&offset=0");

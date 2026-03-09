@@ -1,10 +1,12 @@
 import { Icon } from "./Icon.tsx";
+import { useEffect, useRef } from "react";
 
 interface UserProfileProps {
   name?: string;
   avatarChar?: string;
   plan?: string;
   className?: string;
+  isOpen?: boolean;
   onToggleDropdown?: () => void;
   onOpenSettings?: () => void;
   onLogout?: () => void;
@@ -15,12 +17,31 @@ export function UserProfile({
   avatarChar = "U",
   plan = "Free Plan",
   className = "",
+  isOpen = false,
   onToggleDropdown,
   onOpenSettings,
   onLogout,
 }: UserProfileProps) {
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        onToggleDropdown?.();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen, onToggleDropdown]);
+
   return (
-    <div className={`user-profile-menu ${className}`}>
+    <div className={`user-profile-menu ${className}`} ref={dropdownRef}>
       <button
         className="user-avatar-btn header-user-avatar-btn"
         data-action="toggle-user-dropdown"
@@ -28,7 +49,9 @@ export function UserProfile({
       >
         <div className="user-avatar header-user-avatar">{avatarChar}</div>
       </button>
-      <div className="user-dropdown-menu hidden header-user-dropdown">
+      <div
+        className={`user-dropdown-menu ${isOpen ? "" : "hidden"} header-user-dropdown`}
+      >
         <div className="user-dropdown-header">
           <div className="user-avatar large header-user-avatar-large">
             {avatarChar}

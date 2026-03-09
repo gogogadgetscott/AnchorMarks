@@ -21,7 +21,7 @@ const COLOR_OPTIONS = [
 ];
 
 export default function BookmarkModal() {
-  const { closeModal, bookmarkFormData, setBookmarkFormData } = useModal();
+  const { closeModal, bookmarkFormData, setBookmarkFormData, openFolderModal } = useModal();
   const { folders } = useFolders();
   const { createBookmark, updateBookmark } = useBookmarkActions();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -65,6 +65,16 @@ export default function BookmarkModal() {
       await createBookmark(data);
     }
     // createBookmark/updateBookmark handle state update, closeModal, and toast
+  };
+
+  const handleNewFolderClick = () => {
+    // Save current bookmark data, open folder modal,
+    // and set a flag to return to bookmark modal after folder creation
+    const currentBookmarkData = { ...bookmarkFormData };
+    openFolderModal();
+    
+    // Store context so we can reopen bookmark modal after folder creation
+    sessionStorage.setItem('returnToBookmarkModal', JSON.stringify(currentBookmarkData));
   };
 
   const handleFetchMetadata = async () => {
@@ -257,6 +267,7 @@ export default function BookmarkModal() {
                 type="button"
                 className="btn btn-secondary"
                 id="bookmark-new-folder-btn"
+                onClick={handleNewFolderClick}
                 style={{
                   height: "38px",
                   whiteSpace: "nowrap",
