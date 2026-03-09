@@ -56,7 +56,7 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-const FOLDER_INDENT_PX = 14;
+const FOLDER_INDENT_PX = 10;
 
 function FolderItem({
   folder,
@@ -68,7 +68,7 @@ function FolderItem({
   folder: any;
   allFolders: any[];
   currentFolder: string | null;
-  onSelect: (id: string | null) => void;
+  onSelect: (id: string | null) => void | Promise<void>;
   depth?: number;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -78,15 +78,15 @@ function FolderItem({
 
   return (
     <div
-      className="folder-item-container"
+      className="folder-tree-item"
       style={{ paddingLeft: `${depth * FOLDER_INDENT_PX}px` }}
     >
       <div
         className={`nav-item folder-item ${isActive ? "active" : ""}`}
-        onClick={() => onSelect(isActive ? null : folder.id)}
+        onClick={() => void onSelect(isActive ? null : folder.id)}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === "Enter" && onSelect(isActive ? null : folder.id)}
+        onKeyDown={(e) => e.key === "Enter" && void onSelect(isActive ? null : folder.id)}
       >
         <span
           className={["folder-toggle", !hasChildren && "folder-toggle-hidden"].filter(Boolean).join(" ")}
@@ -220,6 +220,39 @@ export function Sidebar() {
     openModal("bookmark-modal");
   }, []);
 
+  const handleFolderSelect = useCallback(
+    async (folderId: string | null) => {
+      const targetView = folderId ? "folder" : "all";
+      const nextFilterConfig = {
+        ...filterConfig,
+        tags: [],
+        search: undefined,
+        folder: folderId,
+      };
+
+      await setCurrentView(targetView);
+      setCurrentFolder(folderId);
+      setFilterConfig(nextFilterConfig);
+
+      if (window.innerWidth <= 1024) {
+        document.body.classList.remove("mobile-sidebar-open");
+      }
+
+      await loadBookmarks({
+        folderId,
+        view: targetView,
+        filterOverride: nextFilterConfig,
+      });
+    },
+    [
+      setCurrentView,
+      setCurrentFolder,
+      setFilterConfig,
+      filterConfig,
+      loadBookmarks,
+    ],
+  );
+
   const filteredTags = Object.keys(tagMetadata)
     .filter((t) => t.toLowerCase().includes(tagSearch.toLowerCase()))
     .sort((a, b) => (tagMetadata[b].count || 0) - (tagMetadata[a].count || 0));
@@ -296,17 +329,19 @@ export function Sidebar() {
           </div>
           {expandedSections.has("folders") && (
             <div className="sidebar-section-content">
-              {folders
-                .filter((f) => !f.parent_id)
-                .map((folder) => (
-                  <FolderItem
-                    key={folder.id}
-                    folder={folder}
-                    allFolders={folders}
-                    currentFolder={currentFolder}
-                    onSelect={setCurrentFolder}
-                  />
-                ))}
+              <div className="folder-item-container">
+                {folders
+                  .filter((f) => !f.parent_id)
+                  .map((folder) => (
+                    <FolderItem
+                      key={folder.id}
+                      folder={folder}
+                      allFolders={folders}
+                      currentFolder={currentFolder}
+                      onSelect={handleFolderSelect}
+                    />
+                  ))}
+              </div>
               {folders.length === 0 && (
                 <div className="sidebar-empty-state">No folders yet</div>
               )}

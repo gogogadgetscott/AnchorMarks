@@ -77,7 +77,7 @@ export function RichBookmarkCard({
   const shouldUseFavicon =
     !hideFavicons &&
     !!bookmark.favicon &&
-    !bookmark.favicon.includes("t2.gstatic.com/faviconV2");
+    bookmark.favicon.startsWith("/favicons/");
 
   const favicon = shouldUseFavicon ? (
     <FaviconImage src={bookmark.favicon!} size={16} />

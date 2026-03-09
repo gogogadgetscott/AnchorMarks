@@ -29,6 +29,7 @@ function listBookmarks(req, res) {
   const db = req.app.get("db");
   const {
     folder_id,
+    include_children,
     search,
     favorites,
     tags,
@@ -39,8 +40,14 @@ function listBookmarks(req, res) {
     archived,
   } = req.query;
   try {
+    // Prevent browser caching of bookmark list to ensure fresh data on filter changes
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    
     const result = bookmarkModel.listBookmarks(db, req.user.id, {
       folder_id,
+      include_children,
       search,
       favorites,
       tags,

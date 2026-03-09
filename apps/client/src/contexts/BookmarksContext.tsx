@@ -5,6 +5,7 @@ import {
   useCallback,
   type ReactNode,
   useEffect,
+  useRef,
 } from "react";
 import { syncBookmarksBridge, getUIBridge } from "./context-bridge";
 import { api } from "../services/api.ts";
@@ -71,7 +72,11 @@ interface TagManagementMethods {
 }
 
 interface BookmarksActions {
-  loadBookmarks: () => Promise<void>;
+  loadBookmarks: (options?: {
+    folderId?: string | null;
+    view?: string;
+    filterOverride?: FilterConfig;
+  }) => Promise<void>;
   loadMoreBookmarks: () => Promise<void>;
   setBookmarks: (val: Bookmark[]) => void;
   setRenderedBookmarks: (val: Bookmark[]) => void;
@@ -140,6 +145,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     null,
   );
   const [bulkMode, setBulkMode] = useState(false);
+  const loadBookmarksRequestSeq = useRef(0);
 
   // Sync current state into the bridge store so non-React code always reads fresh values
   useEffect(() => {
@@ -180,11 +186,19 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     setTotalCount(0);
   }, []);
 
-  const loadBookmarks = useCallback(async () => {
+  const loadBookmarks = useCallback(
+    async (options?: {
+      folderId?: string | null;
+      view?: string;
+      filterOverride?: FilterConfig;
+    }) => {
+    const requestSeq = ++loadBookmarksRequestSeq.current;
     try {
       const uiBridge = getUIBridge();
-      const currentFolder = uiBridge.getCurrentFolder();
-      const currentView = uiBridge.getCurrentView();
+      const currentFolder = options?.folderId ?? uiBridge.getCurrentFolder();
+      const currentView = options?.view ?? uiBridge.getCurrentView();
+      const includeChildBookmarks = uiBridge.getIncludeChildBookmarks();
+      const activeFilters = options?.filterOverride ?? filterConfig;
 
       // Get current collection from URL or state if we're in collection view
       let currentCollection: string | null = null;
@@ -219,22 +233,56 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         currentView !== "recent"
       ) {
         params.append("folder_id", currentFolder);
+        if (includeChildBookmarks) {
+          params.append("include_children", "true");
+        }
       }
 
-      if (filterConfig.tags?.length) {
-        filterConfig.tags.forEach((t: string) => params.append("tag", t));
+      if (activeFilters.tags?.length) {
+        params.append("tags", activeFilters.tags.join(","));
+        params.append("tagMode", activeFilters.tagMode || "OR");
       }
-      if (filterConfig.search) {
-        params.append("search", filterConfig.search);
+      if (activeFilters.search) {
+        params.append("search", activeFilters.search);
       }
-      if (filterConfig.sort) {
-        params.append("sort", filterConfig.sort);
+      if (activeFilters.sort) {
+        params.append("sort", activeFilters.sort);
       }
 
       const queryString = params.toString();
       const url = queryString ? `${endpoint}?${queryString}` : endpoint;
 
-      const data = await api<BookmarksListResponse>(url);
+      // DIAGNOSTIC: Log the actual request
+      console.log("🔍 DIAGNOSTIC - loadBookmarks request:", {
+        url,
+        currentView,
+        currentFolder,
+        includeChildBookmarks,
+        activeFilters,
+        requestSeq,
+      });
+
+      const data = await api<BookmarksListResponse>(url, {
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      });
+
+      // DIAGNOSTIC: Log the response
+      console.log("🔍 DIAGNOSTIC - loadBookmarks response:", {
+        bookmarkCount: data.bookmarks?.length || 0,
+        total: data.total,
+        requestSeq,
+        currentRequestSeq: loadBookmarksRequestSeq.current,
+        willIgnore: requestSeq !== loadBookmarksRequestSeq.current,
+      });
+
+      // Ignore stale responses when a newer loadBookmarks call has started.
+      if (requestSeq !== loadBookmarksRequestSeq.current) {
+        console.log("⚠️ DIAGNOSTIC - Ignoring stale response");
+        return;
+      }
+
       setBookmarks(data.bookmarks);
       setRenderedBookmarks(data.bookmarks);
       setTotalCount(data.total || data.bookmarks.length);
@@ -265,9 +313,13 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("Failed to load bookmarks:", err);
     } finally {
-      setIsLoading(false);
+      if (requestSeq === loadBookmarksRequestSeq.current) {
+        setIsLoading(false);
+      }
     }
-  }, [resetPagination, filterConfig]);
+    },
+    [resetPagination, filterConfig],
+  );
 
   const loadMoreBookmarks = useCallback(async () => {
     if (isLoadingMore || displayedCount >= totalCount) return;
@@ -275,12 +327,32 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     setIsLoadingMore(true);
 
     try {
+      const uiBridge = getUIBridge();
+      const currentFolder = uiBridge.getCurrentFolder();
+      const currentView = uiBridge.getCurrentView();
+      const includeChildBookmarks = uiBridge.getIncludeChildBookmarks();
+
       const params = new URLSearchParams();
       params.append("offset", String(displayedCount));
       params.append("limit", String(BOOKMARKS_PER_PAGE));
 
+      if (
+        currentFolder &&
+        currentView !== "dashboard" &&
+        currentView !== "collection" &&
+        currentView !== "favorites" &&
+        currentView !== "archived" &&
+        currentView !== "recent"
+      ) {
+        params.append("folder_id", currentFolder);
+        if (includeChildBookmarks) {
+          params.append("include_children", "true");
+        }
+      }
+
       if (filterConfig.tags?.length) {
-        filterConfig.tags.forEach((t: string) => params.append("tag", t));
+        params.append("tags", filterConfig.tags.join(","));
+        params.append("tagMode", filterConfig.tagMode || "OR");
       }
       if (filterConfig.search) {
         params.append("search", filterConfig.search);
@@ -289,7 +361,11 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         params.append("sort", filterConfig.sort);
       }
 
-      const data = await api<BookmarksListResponse>(`/bookmarks?${params}`);
+      const data = await api<BookmarksListResponse>(`/bookmarks?${params}`, {
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      });
       const newBookmarks = [...bookmarks, ...data.bookmarks];
       setBookmarks(newBookmarks);
       setRenderedBookmarks(newBookmarks);

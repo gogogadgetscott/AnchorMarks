@@ -201,6 +201,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
     syncUIBridge({
       currentView,
       currentFolder,
+      includeChildBookmarks,
       hideSidebar,
       setCurrentView,
       setCurrentFolder,
@@ -215,7 +216,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
       setTagCloudMaxTags: (val) => setTagCloudMaxTags(val),
       setTagCloudDefaultShowAll: (val) => setTagCloudDefaultShowAll(val),
     });
-  }, [currentView, currentFolder, hideSidebar]);
+  }, [currentView, currentFolder, includeChildBookmarks, hideSidebar]);
 
   const setViewToolbarConfig = useCallback(
     (view: string, config: Record<string, unknown>) => {

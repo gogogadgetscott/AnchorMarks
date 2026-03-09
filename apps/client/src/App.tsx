@@ -37,13 +37,15 @@ export function App() {
     setIsInitialLoad,
   ]);
 
-  // Reload bookmarks when view changes (except dashboard and analytics)
+  // Reload bookmarks when view changes (except dashboard, analytics, and folder)
+  // Note: folder view is handled by Sidebar folder click which calls loadBookmarks with folderId
   useEffect(() => {
     if (
       isAuthenticated &&
       currentView !== "dashboard" &&
       currentView !== "analytics" &&
-      currentView !== "tag-cloud"
+      currentView !== "tag-cloud" &&
+      currentView !== "folder"
     ) {
       loadBookmarks();
     }

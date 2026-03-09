@@ -67,7 +67,11 @@ interface BookmarksStore {
   setSelectedBookmarks: (val: Set<string>) => void;
   setBulkMode: (val: boolean) => void;
   setFilterConfig: (val: FilterConfig) => void;
-  loadBookmarks: () => Promise<void>;
+  loadBookmarks: (options?: {
+    folderId?: string | null;
+    view?: string;
+    filterOverride?: FilterConfig;
+  }) => Promise<void>;
 }
 
 const _bookmarks: Partial<BookmarksStore> = {};
@@ -96,7 +100,11 @@ export function getBookmarksBridge() {
     setBulkMode: (val: boolean) => s.setBulkMode(val),
     getFilterConfig: () => s.filterConfig,
     setFilterConfig: (val: FilterConfig) => s.setFilterConfig(val),
-    loadBookmarks: () => s.loadBookmarks(),
+    loadBookmarks: (options?: {
+      folderId?: string | null;
+      view?: string;
+      filterOverride?: FilterConfig;
+    }) => s.loadBookmarks(options),
   };
 }
 
@@ -105,6 +113,7 @@ export function getBookmarksBridge() {
 interface UIStore {
   currentView: string;
   currentFolder: string | null;
+  includeChildBookmarks: boolean;
   hideSidebar: boolean;
   setCurrentView: (val: string) => Promise<void>;
   setCurrentFolder: (val: string | null) => void;
@@ -136,6 +145,7 @@ export function getUIBridge() {
     setCurrentView: (val: string) => s.setCurrentView(val),
     getCurrentFolder: () => s.currentFolder,
     setCurrentFolder: (val: string | null) => s.setCurrentFolder(val),
+    getIncludeChildBookmarks: () => s.includeChildBookmarks,
     getHideSidebar: () => s.hideSidebar,
     setHideSidebar: (val: boolean) => s.setHideSidebar(val),
     setViewMode: (val: "grid" | "list" | "compact") => s.setViewMode(val),

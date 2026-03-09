@@ -47,7 +47,7 @@ export function PreviewWidgetContent({ bookmarks }: PreviewWidgetContentProps) {
               title={bookmark.title || bookmark.url}
             >
               <span className="compact-favicon">
-                {bookmark.favicon ? (
+                {bookmark.favicon?.startsWith("/favicons/") ? (
                   <img src={bookmark.favicon} alt="" />
                 ) : (
                   <span className="favicon-placeholder">🔗</span>

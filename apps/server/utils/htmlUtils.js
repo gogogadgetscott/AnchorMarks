@@ -124,13 +124,7 @@ function parseHtmlMetadata(html, url) {
       // ignore invalid favicon URLs
     }
   }
-  if (!metadata.favicon) {
-    try {
-      metadata.favicon = `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=64`;
-    } catch {
-      // ignore
-    }
-  }
+
 
   return metadata;
 }

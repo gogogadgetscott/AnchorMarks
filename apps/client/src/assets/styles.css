@@ -1958,7 +1958,7 @@ body.sidebar-collapsed .nav-section-header {
   flex-shrink: 0;
 }
 
-.nav-item span:not(.badge):not(.folder-color) {
+.nav-item span:not(.badge):not(.folder-color):not(.folder-toggle) {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2169,10 +2169,37 @@ body.sidebar-collapsed .nav-section-header {
   border-radius: 2px;
 }
 
-/* Folder item wrapper for depth indentation */
+/* Scrollable folder list container */
 .folder-item-container {
+  max-height: var(--sidebar-tag-list-max-height);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.25rem;
+  padding-left: 0;
+}
+
+.folder-item-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.folder-item-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.folder-item-container::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+/* Folder tree item wrapper for depth indentation */
+.folder-tree-item {
   display: flex;
   flex-direction: column;
+}
+
+.folder-item-container .folder-item {
+  gap: 0.4rem;
+  padding: 0.45rem 0.6rem 0.45rem 0.35rem;
 }
 
 /* Folder toggle chevron */
@@ -2180,13 +2207,18 @@ body.sidebar-collapsed .nav-section-header {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
   color: var(--text-tertiary);
   cursor: pointer;
   border-radius: var(--radius-sm);
   transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.folder-toggle svg {
+  width: 10px;
+  height: 10px;
 }
 
 .folder-toggle:hover {
@@ -2335,10 +2367,37 @@ body.sidebar-collapsed .nav-section-header {
   border-radius: 2px;
 }
 
-/* Folder item wrapper for depth indentation */
+/* Scrollable folder list container */
 .folder-item-container {
+  max-height: var(--sidebar-tag-list-max-height);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.25rem;
+  padding-left: 0;
+}
+
+.folder-item-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.folder-item-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.folder-item-container::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+/* Folder tree item wrapper for depth indentation */
+.folder-tree-item {
   display: flex;
   flex-direction: column;
+}
+
+.folder-item-container .folder-item {
+  gap: 0.4rem;
+  padding: 0.45rem 0.6rem 0.45rem 0.35rem;
 }
 
 /* Folder toggle chevron */
@@ -2346,13 +2405,18 @@ body.sidebar-collapsed .nav-section-header {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
   color: var(--text-tertiary);
   cursor: pointer;
   border-radius: var(--radius-sm);
   transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.folder-toggle svg {
+  width: 10px;
+  height: 10px;
 }
 
 .folder-toggle:hover {

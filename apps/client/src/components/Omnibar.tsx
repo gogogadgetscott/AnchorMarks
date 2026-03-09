@@ -232,7 +232,7 @@ function ResultItem({
   onHover: () => void;
 }) {
   const iconEl =
-    cmd.category === "bookmark" && cmd.favicon ? (
+    cmd.category === "bookmark" && cmd.favicon?.startsWith("/favicons/") ? (
       <img
         className="command-favicon"
         src={cmd.favicon}
