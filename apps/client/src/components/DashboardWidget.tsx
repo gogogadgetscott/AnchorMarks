@@ -225,7 +225,7 @@ export function DashboardWidget({
           style={{ cursor: isEditing ? "grab" : "default" }}
           {...listeners}
         >
-          <Icon name="dashboard" size={14} />
+          <Icon name="grip" size={14} />
         </span>
         <h3>{widget.title}</h3>
         <span className="widget-count">{widgetCount}</span>

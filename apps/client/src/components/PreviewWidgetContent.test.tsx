@@ -39,31 +39,36 @@ describe("PreviewWidgetContent", () => {
     vi.stubGlobal("open", vi.fn());
   });
 
-  it("renders at most three bookmarks", () => {
+  it("renders all bookmarks", () => {
     renderWithProviders(<PreviewWidgetContent bookmarks={bookmarks} />);
 
     expect(screen.getByText("One")).toBeTruthy();
     expect(screen.getByText("Two")).toBeTruthy();
     expect(screen.getByText("Three")).toBeTruthy();
-    expect(screen.queryByText("Four")).toBeNull();
+    expect(screen.getByText("Four")).toBeTruthy();
   });
 
-  it("opens a bookmark when the Open action is clicked", () => {
+  it("renders bookmark links with compact styling", () => {
     renderWithProviders(<PreviewWidgetContent bookmarks={bookmarks} />);
 
-    const openButtons = screen.getAllByRole("button", { name: "Open" });
-    fireEvent.click(openButtons[0]);
-
-    expect(window.open).toHaveBeenCalledWith(
-      "https://one.example",
-      "_blank",
-      "noopener,noreferrer",
-    );
+    const links = screen.getAllByRole("link");
+    expect(links.length).toBe(4);
+    expect(links[0].getAttribute("href")).toBe("https://one.example");
+    expect(links[0].className).toContain("compact-item-link");
   });
 
   it("shows empty state when no bookmarks are provided", () => {
     renderWithProviders(<PreviewWidgetContent bookmarks={[]} />);
 
-    expect(screen.getByText("No bookmarks in this widget yet.")).toBeTruthy();
+    expect(screen.getByText("No bookmarks")).toBeTruthy();
+  });
+
+  it("renders edit and favorite buttons for each bookmark", () => {
+    renderWithProviders(<PreviewWidgetContent bookmarks={bookmarks.slice(0, 1)} />);
+
+    const buttons = screen.getAllByRole("button");
+    expect(buttons.length).toBe(2); // Edit and favorite buttons
+    expect(buttons[0].getAttribute("title")).toBe("Edit bookmark");
+    expect(buttons[1].getAttribute("title")).toBe("Add to favorites");
   });
 });

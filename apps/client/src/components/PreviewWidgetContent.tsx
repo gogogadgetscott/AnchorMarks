@@ -1,3 +1,4 @@
+import { Icon } from "./Icon.tsx";
 import type { Bookmark } from "../types/index";
 
 interface PreviewWidgetContentProps {
@@ -5,43 +6,91 @@ interface PreviewWidgetContentProps {
 }
 
 export function PreviewWidgetContent({ bookmarks }: PreviewWidgetContentProps) {
-  const previewBookmarks = bookmarks.slice(0, 3);
-
-  if (!previewBookmarks.length) {
+  if (!bookmarks.length) {
     return (
-      <p className="widget-empty-state">No bookmarks in this widget yet.</p>
+      <div
+        style={{
+          padding: "1rem",
+          textAlign: "center",
+          color: "var(--text-secondary)",
+        }}
+      >
+        No bookmarks
+      </div>
     );
   }
 
   return (
-    <div className="widget-preview-list" role="list">
-      {previewBookmarks.map((bookmark) => (
-        <article
-          className="widget-preview-item"
-          key={bookmark.id}
-          role="listitem"
-        >
-          <a
-            className="widget-preview-link"
-            href={bookmark.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={bookmark.title || bookmark.url}
-          >
-            {bookmark.title || bookmark.url}
-          </a>
-          <button
-            type="button"
-            className="btn btn-sm btn-secondary"
-            aria-label="Open"
-            onClick={() =>
-              window.open(bookmark.url, "_blank", "noopener,noreferrer")
+    <div className="compact-list">
+      {bookmarks.map((bookmark) => {
+        const hasColorClass = bookmark.color ? "has-custom-color" : "";
+        const colorStyle = bookmark.color
+          ? {
+              ["--bookmark-color" as string]: bookmark.color,
+              backgroundColor: `color-mix(in srgb, ${bookmark.color} 20%, var(--bg-primary))`,
+              borderLeft: `6px solid ${bookmark.color}`,
             }
+          : {};
+
+        return (
+          <div
+            key={bookmark.id}
+            className={`compact-item ${hasColorClass}`}
+            data-bookmark-id={bookmark.id}
+            style={colorStyle}
           >
-            Open
-          </button>
-        </article>
-      ))}
+            <a
+              className="compact-item-link"
+              href={bookmark.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={bookmark.title || bookmark.url}
+            >
+              <span className="compact-favicon">
+                {bookmark.favicon ? (
+                  <img src={bookmark.favicon} alt="" />
+                ) : (
+                  <span className="favicon-placeholder">🔗</span>
+                )}
+              </span>
+              <span className="compact-text">
+                {bookmark.title || bookmark.url}
+              </span>
+            </a>
+            <div className="compact-actions">
+              <button
+                type="button"
+                className="compact-action-btn"
+                title="Edit bookmark"
+                onClick={(e) => {
+                  e.preventDefault();
+                  // TODO: Implement edit
+                }}
+              >
+                <Icon name="edit" size={12} />
+              </button>
+              <button
+                type="button"
+                className={`compact-action-btn ${bookmark.is_favorite ? "compact-action-favorite" : ""}`}
+                title={
+                  bookmark.is_favorite
+                    ? "Remove from favorites"
+                    : "Add to favorites"
+                }
+                onClick={(e) => {
+                  e.preventDefault();
+                  // TODO: Implement favorite toggle
+                }}
+              >
+                <Icon
+                  name={bookmark.is_favorite ? "star-filled" : "star"}
+                  size={12}
+                />
+              </button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
