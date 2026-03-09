@@ -2281,6 +2281,11 @@ body.sidebar-collapsed .nav-section-header {
 .sidebar-help-link:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
+  justify-content: flex-start !important;
+  gap: 0.625rem !important;
+  color: var(--text-secondary) !important;
+  font-size: 0.8125rem;
+  padding: 0.5rem 0.625rem;
 }
 
 .sidebar-version {

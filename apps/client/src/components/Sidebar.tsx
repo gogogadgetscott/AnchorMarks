@@ -89,7 +89,7 @@ function FolderItem({
         onKeyDown={(e) => e.key === "Enter" && onSelect(isActive ? null : folder.id)}
       >
         <span
-          className={["folder-toggle", !hasChildren && "folder-toggle-hidden"].filter(Boolean).join(" ")}
+          className={`folder-toggle${hasChildren ? "" : " folder-toggle-hidden"}`}
           onClick={(e) => {
             e.stopPropagation();
             setIsOpen(!isOpen);
@@ -426,7 +426,7 @@ export function Sidebar() {
         <a
           href="/help.html"
           target="_blank"
-          className="sidebar-help-link"
+          className="btn btn-ghost btn-full sidebar-help-link"
           title="Help & Documentation"
         >
           <Icon name="help" size={18} />
