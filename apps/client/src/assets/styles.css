@@ -3908,6 +3908,12 @@ body.tag-cloud-active .content-body {
   max-height: 90vh;
 }
 
+/* Keep settings modal width stable across tab switches while scaling by viewport */
+.modal-content.modal-lg.settings-modal-content {
+  width: min(1040px, calc(100vw - 2rem));
+  max-width: min(1040px, calc(100vw - 2rem));
+}
+
 .modal-header {
   display: flex;
   align-items: center;
@@ -5854,6 +5860,11 @@ body.dragging-widget .widget-sidebar-overlay {
 }
 
 @media (max-width: 768px) {
+  .modal-content.modal-lg.settings-modal-content {
+    width: calc(100vw - 1rem);
+    max-width: calc(100vw - 1rem);
+  }
+
   .bookmarks-grid {
     grid-template-columns: 1fr;
     gap: 1rem;

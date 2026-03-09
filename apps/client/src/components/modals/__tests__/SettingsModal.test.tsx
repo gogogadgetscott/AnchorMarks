@@ -9,6 +9,10 @@ vi.mock("@utils/focus-trap.ts", () => ({
   removeFocusTrap: vi.fn(),
 }));
 
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ logout: vi.fn() }),
+}));
+
 vi.mock("../settings/ProfileSettings", () => ({
   ProfileSettings: () => <div id="settings-profile">Profile panel</div>,
 }));
@@ -20,6 +24,9 @@ vi.mock("../settings/TagSettings", () => ({
 }));
 vi.mock("../settings/ApiSettings", () => ({
   ApiSettings: () => <div id="settings-api">API panel</div>,
+}));
+vi.mock("../settings/SyncSettings", () => ({
+  SyncSettings: () => <div id="settings-sync">Sync panel</div>,
 }));
 vi.mock("../settings/ImportExportSettings", () => ({
   ImportExportSettings: () => <div id="settings-import">Import panel</div>,
@@ -57,19 +64,20 @@ describe("SettingsModal (React)", () => {
 
   it("renders settings tabs", () => {
     const { container } = renderSettingsModal();
-    const tabLabels = Array.from(container.querySelectorAll(".tab-label")).map(
-      (el) => el.textContent,
-    );
+    const tabLabels = Array.from(
+      container.querySelectorAll(".settings-tab-label"),
+    ).map((el) => el.textContent);
 
     expect(tabLabels).toEqual(
       expect.arrayContaining([
         "Profile",
         "General",
         "Tags",
-        "API",
+        "API Access",
+        "Browser Helper",
         "Import/Export",
         "Maintenance",
-        "Shortcuts",
+        "Keyboard Shortcuts",
       ]),
     );
   });
@@ -77,11 +85,16 @@ describe("SettingsModal (React)", () => {
   it("renders section headers", () => {
     const { container } = renderSettingsModal();
     const sectionHeaders = Array.from(
-      container.querySelectorAll(".settings-nav-header"),
+      container.querySelectorAll(".settings-section-header"),
     ).map((el) => el.textContent);
 
     expect(sectionHeaders).toEqual(
-      expect.arrayContaining(["Account", "App", "Maintenance"]),
+      expect.arrayContaining([
+        "Account",
+        "Customization",
+        "Integrations",
+        "System Tools",
+      ]),
     );
   });
 
@@ -92,7 +105,7 @@ describe("SettingsModal (React)", () => {
 
   it("switches tabs when clicked", () => {
     renderSettingsModal();
-    const apiTab = screen.getByText("API").closest("button");
+    const apiTab = screen.getByText("API Access").closest("button");
     if (apiTab) {
       fireEvent.click(apiTab);
       expect(apiTab.classList.contains("active")).toBe(true);
