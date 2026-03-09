@@ -200,6 +200,9 @@ const icons: Record<string, React.ReactNode> = {
   ),
   cloud: <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />,
   filter: <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />,
+  "chevron-down": <polyline points="6 9 12 15 18 9" />,
+  "chevron-right": <polyline points="9 6 15 12 9 18" />,
+  "chevron-up": <polyline points="18 15 12 9 6 15" />,
 };
 
 export function Icon({
