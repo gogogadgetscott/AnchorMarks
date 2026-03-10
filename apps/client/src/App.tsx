@@ -48,7 +48,7 @@ export function App() {
       currentView !== "tag-cloud" &&
       currentView !== "folder"
     ) {
-      loadBookmarks();
+      loadBookmarks({ view: currentView });
     }
   }, [currentView, isAuthenticated, loadBookmarks]);
 

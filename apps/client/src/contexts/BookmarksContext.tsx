@@ -40,6 +40,7 @@ interface BookmarksListResponse {
     id?: string;
     count?: number;
   }>;
+  viewFolderIds?: string[];
 }
 
 interface BookmarksState {
@@ -55,6 +56,7 @@ interface BookmarksState {
     string,
     { color?: string; icon?: string; id?: string; count?: number }
   >;
+  viewFolderIds: string[];
   displayedCount: number;
   isLoading: boolean;
   isLoadingMore: boolean;
@@ -93,6 +95,7 @@ interface BookmarksActions {
       { color?: string; icon?: string; id?: string; count?: number }
     >,
   ) => void;
+  setViewFolderIds: (val: string[]) => void;
   setDisplayedCount: (val: number) => void;
   setIsLoading: (val: boolean) => void;
   setIsLoadingMore: (val: boolean) => void;
@@ -135,6 +138,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       { color?: string; icon?: string; id?: string; count?: number }
     >
   >({});
+  const [viewFolderIds, setViewFolderIds] = useState<string[]>([]);
   const [displayedCount, setDisplayedCount] = useState(BOOKMARKS_PER_PAGE);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -225,17 +229,13 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       if (currentView === "archived") params.append("archived", "true");
       if (currentView === "most-used") params.append("most_used", "true");
 
-      if (
-        currentFolder &&
-        currentView !== "dashboard" &&
-        currentView !== "collection" &&
-        currentView !== "favorites" &&
-        currentView !== "archived" &&
-        currentView !== "recent" &&
-        currentView !== "most-used"
-      ) {
-        params.append("folder_id", currentFolder);
-        if (includeChildBookmarks) {
+      // Folder navigation ("folder" view) or sidebar folder filter (all other views)
+      const folderFilter = currentView === "folder"
+        ? currentFolder
+        : (activeFilters.folder ?? null);
+      if (folderFilter && currentView !== "dashboard" && currentView !== "collection") {
+        params.append("folder_id", folderFilter);
+        if (currentView === "folder" && includeChildBookmarks) {
           params.append("include_children", "true");
         }
       }
@@ -314,6 +314,9 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
           },
         );
         setTagMetadata(metadata);
+      }
+      if (data.viewFolderIds) {
+        setViewFolderIds(data.viewFolderIds);
       }
     } catch (err) {
       console.error("Failed to load bookmarks:", err);
@@ -534,6 +537,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     widgetDataCache,
     filterConfig,
     tagMetadata,
+    viewFolderIds,
     displayedCount,
     isLoading,
     isLoadingMore,
@@ -552,6 +556,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     clearWidgetDataCache,
     setFilterConfig: useCallback((val) => setFilterConfig(val), []),
     setTagMetadata: useCallback((val) => setTagMetadata(val), []),
+    setViewFolderIds: useCallback((val) => setViewFolderIds(val), []),
     setDisplayedCount: useCallback((val) => setDisplayedCount(val), []),
     setIsLoading: useCallback((val) => setIsLoading(val), []),
     setIsLoadingMore: useCallback((val) => setIsLoadingMore(val), []),
@@ -603,6 +608,7 @@ export function useBookmarks(): BookmarksContextValue {
     widgetDataCache: state?.widgetDataCache,
     filterConfig: state?.filterConfig,
     tagMetadata: state?.tagMetadata,
+    viewFolderIds: state?.viewFolderIds ?? [],
     displayedCount: state?.displayedCount,
     isLoading: state?.isLoading,
     isLoadingMore: state?.isLoadingMore,
@@ -630,6 +636,8 @@ export function useBookmarks(): BookmarksContextValue {
       state?.setFilterConfig && state.setFilterConfig(val),
     setTagMetadata: (val: any) =>
       state?.setTagMetadata && state.setTagMetadata(val),
+    setViewFolderIds: (val: string[]) =>
+      state?.setViewFolderIds && state.setViewFolderIds(val),
     setDisplayedCount: (val: number) =>
       state?.setDisplayedCount && state.setDisplayedCount(val),
     setIsLoading: (val: boolean) =>

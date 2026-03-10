@@ -144,7 +144,8 @@ export function RichBookmarkCard({
       target.closest('a') ||
       target.closest('input') ||
       target.closest('label.bookmark-select') ||
-      target.closest('.bookmark-actions')
+      target.closest('.bookmark-actions') ||
+      target.closest('.bookmark-tags')
     ) {
       return;
     }

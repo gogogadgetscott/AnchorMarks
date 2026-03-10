@@ -57,71 +57,9 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-const FOLDER_INDENT_PX = 10;
-
-function FolderItem({
-  folder,
-  allFolders,
-  currentFolder,
-  onSelect,
-  depth = 0,
-}: {
-  folder: any;
-  allFolders: any[];
-  currentFolder: string | null;
-  onSelect: (id: string | null) => void | Promise<void>;
-  depth?: number;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const children = allFolders.filter((f) => f.parent_id === folder.id);
-  const hasChildren = children.length > 0;
-  const isActive = currentFolder === folder.id;
-
-  return (
-    <div
-      className="folder-tree-item"
-      style={{ paddingLeft: `${depth * FOLDER_INDENT_PX}px` }}
-    >
-      <div
-        className={`nav-item folder-item ${isActive ? "active" : ""}`}
-        onClick={() => void onSelect(isActive ? null : folder.id)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => e.key === "Enter" && void onSelect(isActive ? null : folder.id)}
-      >
-        <span
-          className={["folder-toggle", !hasChildren && "folder-toggle-hidden"].filter(Boolean).join(" ")}
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsOpen(!isOpen);
-          }}
-          aria-label={isOpen ? "Collapse folder" : "Expand folder"}
-        >
-          <Icon name={isOpen ? "chevron-down" : "chevron-right"} size={12} />
-        </span>
-        <Icon name="folder" size={16} />
-        <span className="folder-name">{folder.name}</span>
-      </div>
-      {isOpen && hasChildren && (
-        <div className="folder-children">
-          {children.map((child) => (
-            <FolderItem
-              key={child.id}
-              folder={child}
-              allFolders={allFolders}
-              currentFolder={currentFolder}
-              onSelect={onSelect}
-              depth={depth + 1}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export function Sidebar() {
-  const { currentView, setCurrentView, currentFolder, setCurrentFolder } =
+  const { currentView, setCurrentView, setCurrentFolder } =
     useUI();
   const {
     bookmarks,
@@ -129,6 +67,7 @@ export function Sidebar() {
     setFilterConfig,
     filterConfig,
     tagMetadata,
+    viewFolderIds,
     dashboardWidgets,
     loadBookmarks,
   } = useBookmarks();
@@ -205,6 +144,10 @@ export function Sidebar() {
       setCurrentView(view);
       setCurrentFolder(null);
 
+      // Clear tag and folder filters when switching views so sidebar reflects the new view cleanly
+      const nextFilterConfig = { ...filterConfig, tags: [], folder: null };
+      setFilterConfig(nextFilterConfig);
+
       if (window.innerWidth <= 1024) {
         document.body.classList.remove("mobile-sidebar-open");
       }
@@ -217,10 +160,10 @@ export function Sidebar() {
         view !== "tag-cloud" &&
         view !== "analytics"
       ) {
-        await loadBookmarks({ view });
+        await loadBookmarks({ view, filterOverride: nextFilterConfig });
       }
     },
-    [setCurrentView, setCurrentFolder, loadBookmarks],
+    [setCurrentView, setCurrentFolder, setFilterConfig, filterConfig, loadBookmarks],
   );
 
   const handleAddBookmark = useCallback(async () => {
@@ -228,37 +171,26 @@ export function Sidebar() {
     openModal("bookmark-modal");
   }, []);
 
-  const handleFolderSelect = useCallback(
-    async (folderId: string | null) => {
-      const targetView = folderId ? "folder" : "all";
-      const nextFilterConfig = {
-        ...filterConfig,
-        tags: [],
-        search: undefined,
-        folder: folderId,
-      };
-
-      await setCurrentView(targetView);
-      setCurrentFolder(folderId);
+  const handleFolderFilter = useCallback(
+    async (folderId: string) => {
+      const nextFolder = filterConfig.folder === folderId ? null : folderId;
+      const nextFilterConfig = { ...filterConfig, folder: nextFolder };
       setFilterConfig(nextFilterConfig);
-
-      if (window.innerWidth <= 1024) {
-        document.body.classList.remove("mobile-sidebar-open");
-      }
-
-      await loadBookmarks({
-        folderId,
-        view: targetView,
-        filterOverride: nextFilterConfig,
-      });
+      await loadBookmarks({ view: currentView, filterOverride: nextFilterConfig });
     },
-    [
-      setCurrentView,
-      setCurrentFolder,
-      setFilterConfig,
-      filterConfig,
-      loadBookmarks,
-    ],
+    [filterConfig, setFilterConfig, loadBookmarks, currentView],
+  );
+
+  const handleTagFilter = useCallback(
+    async (tagName: string) => {
+      const tags = filterConfig.tags.includes(tagName)
+        ? filterConfig.tags.filter((t) => t !== tagName)
+        : [...filterConfig.tags, tagName];
+      const nextFilterConfig = { ...filterConfig, tags, tagMode: "AND" as const };
+      setFilterConfig(nextFilterConfig);
+      await loadBookmarks({ view: currentView, filterOverride: nextFilterConfig });
+    },
+    [filterConfig, setFilterConfig, loadBookmarks, currentView],
   );
 
   const filteredTags = Object.keys(tagMetadata)
@@ -293,7 +225,7 @@ export function Sidebar() {
           {NAV_ITEMS.map(({ view, label, icon, tooltip, countId }) => (
             <div
               key={view}
-              className={`nav-item${currentView === view && !currentFolder ? " active" : ""}`}
+              className={`nav-item${currentView === view && !filterConfig.folder ? " active" : ""}`}
               data-view={view}
               onClick={() => handleNavClick(view)}
               role="button"
@@ -313,6 +245,9 @@ export function Sidebar() {
             </div>
           ))}
         </div>
+
+        {/* Folders & Tags — only shown on bookmark list views */}
+        {["all", "folder", "favorites", "recent", "most-used", "archived"].includes(currentView) && <>
 
         {/* Folders Section */}
         <div
@@ -337,22 +272,29 @@ export function Sidebar() {
           </div>
           {expandedSections.has("folders") && (
             <div className="sidebar-section-content">
-              <div className="folder-item-container">
-                {folders
-                  .filter((f) => !f.parent_id)
-                  .map((folder) => (
-                    <FolderItem
-                      key={folder.id}
-                      folder={folder}
-                      allFolders={folders}
-                      currentFolder={currentFolder}
-                      onSelect={handleFolderSelect}
-                    />
-                  ))}
+              <div className="tag-list">
+                {viewFolderIds.map((folderId) => {
+                  const folder = folders.find((f) => f.id === folderId);
+                  if (!folder) return null;
+                  const isActive = filterConfig.folder === folderId;
+                  return (
+                    <div
+                      key={folderId}
+                      className={`sidebar-tag-item ${isActive ? "active" : ""}`}
+                      onClick={() => void handleFolderFilter(folderId)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === "Enter" && void handleFolderFilter(folderId)}
+                    >
+                      <Icon name="folder" size={14} />
+                      <span className="tag-name">{folder.name}</span>
+                    </div>
+                  );
+                })}
+                {viewFolderIds.length === 0 && (
+                  <div className="sidebar-empty-state">No folders</div>
+                )}
               </div>
-              {folders.length === 0 && (
-                <div className="sidebar-empty-state">No folders yet</div>
-              )}
             </div>
           )}
         </div>
@@ -398,26 +340,10 @@ export function Sidebar() {
                   <div
                     key={tagName}
                     className={`sidebar-tag-item ${filterConfig.tags.includes(tagName) ? "active" : ""}`}
-                    onClick={() => {
-                      const tags = filterConfig.tags.includes(tagName)
-                        ? filterConfig.tags.filter((t) => t !== tagName)
-                        : [...filterConfig.tags, tagName];
-                      setFilterConfig({ ...filterConfig, tags });
-                      setCurrentView("all");
-                      setCurrentFolder(null);
-                    }}
+                    onClick={() => void handleTagFilter(tagName)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        const tags = filterConfig.tags.includes(tagName)
-                          ? filterConfig.tags.filter((t) => t !== tagName)
-                          : [...filterConfig.tags, tagName];
-                        setFilterConfig({ ...filterConfig, tags });
-                        setCurrentView("all");
-                        setCurrentFolder(null);
-                      }
-                    }}
+                    onKeyDown={(e) => e.key === "Enter" && void handleTagFilter(tagName)}
                   >
                     <span className="tag-name">{tagName}</span>
                     <span className="tag-count">
@@ -432,6 +358,8 @@ export function Sidebar() {
             </div>
           )}
         </div>
+
+        </>}
 
         {/* Quick Stats Bar */}
         <div className="stats-bar">

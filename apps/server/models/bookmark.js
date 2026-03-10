@@ -93,7 +93,7 @@ function listBookmarks(db, userId, opts = {}) {
   const params = [userId, userId];
 
   // Handle folder filter
-  if (folder_id && !isFavoritesView && !isArchivedView) {
+  if (folder_id) {
     if (include_children) {
       const folderFilter = ` AND (b.folder_id = ? OR b.folder_id IN (
         WITH RECURSIVE subfolders AS (
@@ -146,7 +146,7 @@ function listBookmarks(db, userId, opts = {}) {
   }
 
   // Handle tag filtering
-  if (tags && !isFavoritesView && !isArchivedView) {
+  if (tags) {
     const tagArr = String(tags)
       .split(",")
       .map((t) => t.trim())
@@ -263,6 +263,114 @@ function listBookmarks(db, userId, opts = {}) {
       return { ...rest, tags: _tags };
     });
   return { bookmarks };
+}
+
+function listViewTags(db, userId, opts = {}) {
+  const { folder_id, favorites, archived, most_used, tags, tagMode } = opts;
+  const isFavoritesView = favorites === true || favorites === "true";
+  const isArchivedView = archived === true || archived === "true";
+  const isMostUsedView = most_used === true || most_used === "true";
+
+  let query = `
+    SELECT t.id, t.name, t.color, COUNT(DISTINCT bt.bookmark_id) as count
+    FROM tags t
+    JOIN bookmark_tags bt ON bt.tag_id = t.id
+    JOIN bookmarks b ON b.id = bt.bookmark_id
+    WHERE t.user_id = ? AND b.user_id = ?
+  `;
+  const params = [userId, userId];
+
+  if (isFavoritesView) {
+    query += " AND COALESCE(b.is_favorite, 0) = 1 AND b.is_archived = 0";
+  } else if (isArchivedView) {
+    query += " AND b.is_archived = 1";
+  } else if (isMostUsedView) {
+    query += " AND b.click_count > 0 AND b.is_archived = 0";
+  } else {
+    query += " AND b.is_archived = 0";
+  }
+
+  if (folder_id) {
+    query += " AND b.folder_id = ?";
+    params.push(folder_id);
+  }
+
+  if (tags) {
+    const tagArr = String(tags).split(",").map((t) => t.trim()).filter(Boolean);
+    const tagArrLower = tagArr.map((t) => t.toLowerCase());
+    if (tagArrLower.length > 0) {
+      const ph = tagArrLower.map(() => "?").join(",");
+      if (tagMode && String(tagMode).toLowerCase() === "and") {
+        query += ` AND b.id IN (
+          SELECT bt2.bookmark_id FROM bookmark_tags bt2
+          JOIN tags t2 ON t2.id = bt2.tag_id
+          WHERE t2.user_id = ? AND LOWER(t2.name) IN (${ph})
+          GROUP BY bt2.bookmark_id HAVING COUNT(DISTINCT LOWER(t2.name)) = ?
+        )`;
+        params.push(userId, ...tagArrLower, tagArrLower.length);
+      } else {
+        query += ` AND b.id IN (
+          SELECT DISTINCT bt2.bookmark_id FROM bookmark_tags bt2
+          JOIN tags t2 ON t2.id = bt2.tag_id
+          WHERE t2.user_id = ? AND LOWER(t2.name) IN (${ph})
+        )`;
+        params.push(userId, ...tagArrLower);
+      }
+    }
+  }
+
+  query += " GROUP BY t.id, t.name, t.color ORDER BY count DESC";
+  return db.prepare(query).all(...params);
+}
+
+function listViewFolderIds(db, userId, opts = {}) {
+  const { favorites, archived, most_used, tags, tagMode } = opts;
+  const isFavoritesView = favorites === true || favorites === "true";
+  const isArchivedView = archived === true || archived === "true";
+  const isMostUsedView = most_used === true || most_used === "true";
+
+  let query = `
+    SELECT DISTINCT b.folder_id
+    FROM bookmarks b
+    WHERE b.user_id = ? AND b.folder_id IS NOT NULL
+  `;
+  const params = [userId];
+
+  if (isFavoritesView) {
+    query += " AND COALESCE(b.is_favorite, 0) = 1 AND b.is_archived = 0";
+  } else if (isArchivedView) {
+    query += " AND b.is_archived = 1";
+  } else if (isMostUsedView) {
+    query += " AND b.click_count > 0 AND b.is_archived = 0";
+  } else {
+    query += " AND b.is_archived = 0";
+  }
+
+  if (tags) {
+    const tagArr = String(tags).split(",").map((t) => t.trim()).filter(Boolean);
+    const tagArrLower = tagArr.map((t) => t.toLowerCase());
+    if (tagArrLower.length > 0) {
+      const ph = tagArrLower.map(() => "?").join(",");
+      if (tagMode && String(tagMode).toLowerCase() === "and") {
+        query += ` AND b.id IN (
+          SELECT bt.bookmark_id FROM bookmark_tags bt
+          JOIN tags t ON t.id = bt.tag_id
+          WHERE t.user_id = ? AND LOWER(t.name) IN (${ph})
+          GROUP BY bt.bookmark_id HAVING COUNT(DISTINCT LOWER(t.name)) = ?
+        )`;
+        params.push(userId, ...tagArrLower, tagArrLower.length);
+      } else {
+        query += ` AND b.id IN (
+          SELECT DISTINCT bt.bookmark_id FROM bookmark_tags bt
+          JOIN tags t ON t.id = bt.tag_id
+          WHERE t.user_id = ? AND LOWER(t.name) IN (${ph})
+        )`;
+        params.push(userId, ...tagArrLower);
+      }
+    }
+  }
+
+  return db.prepare(query).all(...params).map((r) => r.folder_id);
 }
 
 function getBookmarkById(db, userId, id) {
@@ -484,6 +592,8 @@ function incrementClick(db, a, b) {
 
 module.exports = {
   listBookmarks,
+  listViewTags,
+  listViewFolderIds,
   getBookmarkById,
   createBookmark,
   updateBookmark,
