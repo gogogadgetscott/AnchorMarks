@@ -11,7 +11,6 @@
 const { WebSocketServer } = require("ws");
 const jwt = require("jsonwebtoken");
 const config = require("../config");
-const url = require("url");
 
 // userId → Set<WebSocket>
 const clients = new Map();
@@ -48,7 +47,7 @@ function initWebSocket(server) {
 
   // Handle HTTP upgrade requests for the /ws path
   server.on("upgrade", (request, socket, head) => {
-    const { pathname } = url.parse(request.url, true);
+    const pathname = new URL(`http://dummy${request.url}`).pathname;
 
     if (pathname !== "/ws") {
       socket.destroy();
