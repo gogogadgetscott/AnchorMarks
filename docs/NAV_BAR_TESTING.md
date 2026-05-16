@@ -20,15 +20,17 @@ This document describes the expected behavior for each button in the dashboard n
 ## Button Functionality Tests
 
 ### 1. Unsaved Indicator
+
 - **Triggers**: Appears automatically when dashboard layout is modified
 - **Visual**: Orange dot with "Unsaved" text
 - **Expected**: Should be visible when `hasUnsavedChanges` is true
-- **Test**: 
+- **Test**:
   1. Navigate to Dashboard view
   2. Drag a widget to a new position
   3. Verify indicator appears
 
 ### 2. View Name Badge
+
 - **Displays**: Current dashboard view name
 - **Visual**: Blue rounded badge with view name
 - **Expected**: Shows the active dashboard view (e.g., "Default", "Mobile View")
@@ -38,9 +40,10 @@ This document describes the expected behavior for each button in the dashboard n
   3. Switch views and verify name updates
 
 ### 3. Save Button
+
 - **Action**: `handleSaveDashboard()` → `saveDashboardStateSnapshot()`
 - **Location**: [Header.tsx](../apps/client/src/components/Header.tsx#L86-L90)
-- **Expected**: 
+- **Expected**:
   - Saves current dashboard layout
   - Disabled when no unsaved changes
   - Shows icon (save) + "Save" text
@@ -52,6 +55,7 @@ This document describes the expected behavior for each button in the dashboard n
   5. Refresh page and verify layout persists
 
 ### 4. Views Button
+
 - **Action**: `handleViewsClick()` → Opens bookmark views dropdown
 - **Location**: [Header.tsx](../apps/client/src/components/Header.tsx#L104-L113)
 - **Expected**:
@@ -66,6 +70,7 @@ This document describes the expected behavior for each button in the dashboard n
   5. Delete a view using trash icon
 
 ### 5. Add Widget Button
+
 - **Action**: `setIsWidgetPickerOpen(!isWidgetPickerOpen)`
 - **Location**: [Header.tsx](../apps/client/src/components/Header.tsx#L158)
 - **Expected**:
@@ -80,6 +85,7 @@ This document describes the expected behavior for each button in the dashboard n
   5. Click button again to close picker
 
 ### 6. Layout Settings Button
+
 - **Action**: `handleLayoutSettings()` → `toggleLayoutSettings()`
 - **Location**: [Header.tsx](../apps/client/src/components/Header.tsx#L98-L102)
 - **Expected**:
@@ -93,6 +99,7 @@ This document describes the expected behavior for each button in the dashboard n
   4. Verify changes apply to dashboard
 
 ### 7. Fullscreen Button
+
 - **Action**: `handleToggleFullscreen()` → `toggleFullscreen()`
 - **Location**: [Header.tsx](../apps/client/src/components/Header.tsx#L92-L96)
 - **Expected**:
@@ -107,6 +114,7 @@ This document describes the expected behavior for each button in the dashboard n
   5. Verify normal layout restored
 
 ### 8. User Avatar (UserProfile Component)
+
 - **Actions**: Opens user dropdown with:
   - Settings option
   - Logout option
@@ -133,10 +141,12 @@ This document describes the expected behavior for each button in the dashboard n
 6. **Disabled State**: Proper visual treatment for disabled Save button
 
 ### Button Sizes
+
 - Small (`btn-sm`): 0.425rem × 0.75rem padding
 - Regular: 0.5rem × 0.875rem padding
 
 ### Color Scheme
+
 - **Primary Buttons**: Blue (#1967d2) → Darker on hover (#185abc)
 - **Secondary Buttons**: Gray (#f8f9fa) → Darker on hover (#f1f3f4)
 - **Warning Badge**: Orange (#f9ab00) with 10% opacity background
@@ -146,6 +156,7 @@ This document describes the expected behavior for each button in the dashboard n
 ## Accessibility
 
 All buttons include:
+
 - ✅ `aria-label` attributes
 - ✅ `title` tooltips
 - ✅ Keyboard navigation support
@@ -184,6 +195,7 @@ All buttons include:
 ## Development Server
 
 Access the application at:
+
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:3000
 

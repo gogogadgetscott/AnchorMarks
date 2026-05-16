@@ -119,7 +119,8 @@ export function Header() {
   }, []);
 
   const handleFilterClick = useCallback(async () => {
-    const { toggleFilterDropdown } = await import("@features/bookmarks/filters.ts");
+    const { toggleFilterDropdown } =
+      await import("@features/bookmarks/filters.ts");
     toggleFilterDropdown();
   }, []);
 
@@ -162,7 +163,7 @@ export function Header() {
                     hasUnsavedChanges={dashboardHasUnsavedChanges}
                     viewName={currentDashboardViewName}
                     onSaveClick={handleSaveDashboard}
-                     onViewsClick={handleViewsClick}
+                    onViewsClick={handleViewsClick}
                     onAddWidgetClick={() =>
                       setIsWidgetPickerOpen(!isWidgetPickerOpen)
                     }

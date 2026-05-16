@@ -39,8 +39,9 @@ export function FolderBulkPanel({ selected, onClear }: Props) {
     [selectedFolders, getRecursiveBookmarkCount],
   );
 
+  const allEmpty = selectedFolders.every((f) => (f.bookmark_count ?? 0) === 0);
+
   // First selected folder is used as anchor for FolderParentSelector.
-  // The server enforces full cycle-prevention for the remaining selected folders.
   const anchorId = [...selected][0] ?? "";
 
   const wrap = useCallback(
@@ -88,6 +89,10 @@ export function FolderBulkPanel({ selected, onClear }: Props) {
     [wrap, selected, bulkDeleteFolders],
   );
 
+  // Merge target folder name and source count for preview
+  const mergeTargetFolder = selectedFolders.find((f) => f.id === mergeTarget);
+  const mergeSourceCount = mergeTarget ? selected.size - 1 : 0;
+
   return (
     <div className="fbp-root">
       <div className="fbp-summary">
@@ -99,6 +104,14 @@ export function FolderBulkPanel({ selected, onClear }: Props) {
         )}
       </div>
 
+      {/* Empty-selection cleanup hint */}
+      {allEmpty && action === null && (
+        <div className="fbp-cleanup-hint">
+          <Icon name="info" size={13} />
+          All selected folders are empty — safe to archive or delete.
+        </div>
+      )}
+
       <div className="fbp-folder-list">
         {selectedFolders.map((f) => (
           <div key={f.id} className="fbp-folder-item">
@@ -108,9 +121,7 @@ export function FolderBulkPanel({ selected, onClear }: Props) {
             />
             <span className="fbp-folder-name">{f.name}</span>
             <span className="fbp-folder-count">
-              {f.bookmark_count
-                ? f.bookmark_count.toLocaleString()
-                : "empty"}
+              {f.bookmark_count ? f.bookmark_count.toLocaleString() : "empty"}
             </span>
           </div>
         ))}
@@ -194,7 +205,8 @@ export function FolderBulkPanel({ selected, onClear }: Props) {
       {action === "merge" && (
         <div className="fbp-sub">
           <p className="fbp-sub-hint">
-            Keep this folder; move all bookmarks into it and delete the rest:
+            Keep one folder and move all bookmarks into it. The rest will be
+            deleted.
           </p>
           <div className="fbp-merge-list">
             {selectedFolders.map((f) => (
@@ -219,6 +231,19 @@ export function FolderBulkPanel({ selected, onClear }: Props) {
               </label>
             ))}
           </div>
+
+          {/* Merge preview */}
+          {mergeTarget && mergeTargetFolder && (
+            <div className="fbp-merge-preview">
+              <strong>{mergeTargetFolder.name}</strong> will keep all bookmarks.{" "}
+              {mergeSourceCount} folder{mergeSourceCount !== 1 ? "s" : ""} will
+              be deleted.{" "}
+              {totalBookmarks > 0 && (
+                <>{totalBookmarks.toLocaleString()} bookmarks preserved.</>
+              )}
+            </div>
+          )}
+
           <div className="fbp-sub-actions">
             <button
               type="button"
@@ -248,11 +273,13 @@ export function FolderBulkPanel({ selected, onClear }: Props) {
               {selected.size} folder{selected.size !== 1 ? "s" : ""}
             </strong>
             ?{" "}
-            {totalBookmarks > 0 && (
+            {totalBookmarks > 0 ? (
               <>
                 {totalBookmarks.toLocaleString()} bookmarks will move to
                 Uncategorized.{" "}
               </>
+            ) : (
+              <>All selected folders are empty. </>
             )}
             This cannot be undone.
           </p>

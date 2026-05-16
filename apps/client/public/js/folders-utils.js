@@ -1,1 +1,45 @@
-"use strict";var foldersUtils=(()=>{var a=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var m=Object.getOwnPropertyNames;var b=Object.prototype.hasOwnProperty;var L=(e,n)=>{for(var o in n)a(e,o,{get:n[o],enumerable:!0})},g=(e,n,o,t)=>{if(n&&typeof n=="object"||typeof n=="function")for(let i of m(n))!b.call(e,i)&&i!==o&&a(e,i,{get:()=>n[i],enumerable:!(t=u(n,i))||t.enumerable});return e};var h=e=>g(a({},"__esModule",{value:!0}),e);var k={};L(k,{buildFolderOptionsHTML:()=>c});function s(e){let n=document.createElement("div");return n.textContent=e,n.innerHTML}function c(e,n="None"){let o=(d,l)=>d.name.localeCompare(l.name),t=`<option value="">${s(n)}</option>`;function i(d=null,l=0){e.filter(r=>(r.parent_id||null)===d).sort(o).forEach(r=>{let p="&nbsp;&nbsp;&nbsp;".repeat(l);t+=`<option value="${r.id}">${p}${s(r.name)}</option>`,i(r.id,l+1)})}return i(null,0),t}window.anchormarks=window.anchormarks||{};window.anchormarks.buildFolderOptionsHTML=c;return h(k);})();
+"use strict";
+var foldersUtils = (() => {
+  var a = Object.defineProperty;
+  var u = Object.getOwnPropertyDescriptor;
+  var m = Object.getOwnPropertyNames;
+  var b = Object.prototype.hasOwnProperty;
+  var L = (e, n) => {
+      for (var o in n) a(e, o, { get: n[o], enumerable: !0 });
+    },
+    g = (e, n, o, t) => {
+      if ((n && typeof n == "object") || typeof n == "function")
+        for (let i of m(n))
+          !b.call(e, i) &&
+            i !== o &&
+            a(e, i, {
+              get: () => n[i],
+              enumerable: !(t = u(n, i)) || t.enumerable,
+            });
+      return e;
+    };
+  var h = (e) => g(a({}, "__esModule", { value: !0 }), e);
+  var k = {};
+  L(k, { buildFolderOptionsHTML: () => c });
+  function s(e) {
+    let n = document.createElement("div");
+    return ((n.textContent = e), n.innerHTML);
+  }
+  function c(e, n = "None") {
+    let o = (d, l) => d.name.localeCompare(l.name),
+      t = `<option value="">${s(n)}</option>`;
+    function i(d = null, l = 0) {
+      e.filter((r) => (r.parent_id || null) === d)
+        .sort(o)
+        .forEach((r) => {
+          let p = "&nbsp;&nbsp;&nbsp;".repeat(l);
+          ((t += `<option value="${r.id}">${p}${s(r.name)}</option>`),
+            i(r.id, l + 1));
+        });
+    }
+    return (i(null, 0), t);
+  }
+  window.anchormarks = window.anchormarks || {};
+  window.anchormarks.buildFolderOptionsHTML = c;
+  return h(k);
+})();

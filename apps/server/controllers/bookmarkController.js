@@ -45,7 +45,7 @@ function listBookmarks(req, res) {
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
-    
+
     const result = bookmarkModel.listBookmarks(db, req.user.id, {
       folder_id,
       include_children,
@@ -65,9 +65,25 @@ function listBookmarks(req, res) {
       });
       const safeOffset = parseInt(offset) || 0;
       if (safeOffset === 0) {
-        const viewOpts = { folder_id, include_children, favorites, archived, most_used, tags, tagMode };
-        const responseTags = bookmarkModel.listViewTags(db, req.user.id, viewOpts);
-        const viewFolderIds = bookmarkModel.listViewFolderIds(db, req.user.id, viewOpts);
+        const viewOpts = {
+          folder_id,
+          include_children,
+          favorites,
+          archived,
+          most_used,
+          tags,
+          tagMode,
+        };
+        const responseTags = bookmarkModel.listViewTags(
+          db,
+          req.user.id,
+          viewOpts,
+        );
+        const viewFolderIds = bookmarkModel.listViewFolderIds(
+          db,
+          req.user.id,
+          viewOpts,
+        );
         return res.json({
           bookmarks: result.bookmarks,
           total: result.total,

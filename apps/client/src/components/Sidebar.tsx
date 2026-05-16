@@ -63,10 +63,8 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-
 export function Sidebar() {
-  const { currentView, setCurrentView, setCurrentFolder } =
-    useUI();
+  const { currentView, setCurrentView, setCurrentFolder } = useUI();
   const {
     bookmarks,
     totalCount,
@@ -169,7 +167,13 @@ export function Sidebar() {
         await loadBookmarks({ view, filterOverride: nextFilterConfig });
       }
     },
-    [setCurrentView, setCurrentFolder, setFilterConfig, filterConfig, loadBookmarks],
+    [
+      setCurrentView,
+      setCurrentFolder,
+      setFilterConfig,
+      filterConfig,
+      loadBookmarks,
+    ],
   );
 
   const handleAddBookmark = useCallback(async () => {
@@ -182,7 +186,10 @@ export function Sidebar() {
       const nextFolder = filterConfig.folder === folderId ? null : folderId;
       const nextFilterConfig = { ...filterConfig, folder: nextFolder };
       setFilterConfig(nextFilterConfig);
-      await loadBookmarks({ view: currentView, filterOverride: nextFilterConfig });
+      await loadBookmarks({
+        view: currentView,
+        filterOverride: nextFilterConfig,
+      });
     },
     [filterConfig, setFilterConfig, loadBookmarks, currentView],
   );
@@ -192,9 +199,16 @@ export function Sidebar() {
       const tags = filterConfig.tags.includes(tagName)
         ? filterConfig.tags.filter((t) => t !== tagName)
         : [...filterConfig.tags, tagName];
-      const nextFilterConfig = { ...filterConfig, tags, tagMode: "AND" as const };
+      const nextFilterConfig = {
+        ...filterConfig,
+        tags,
+        tagMode: "AND" as const,
+      };
       setFilterConfig(nextFilterConfig);
-      await loadBookmarks({ view: currentView, filterOverride: nextFilterConfig });
+      await loadBookmarks({
+        view: currentView,
+        filterOverride: nextFilterConfig,
+      });
     },
     [filterConfig, setFilterConfig, loadBookmarks, currentView],
   );
@@ -253,120 +267,138 @@ export function Sidebar() {
         </div>
 
         {/* Folders & Tags — only shown on bookmark list views */}
-        {["all", "folder", "favorites", "recent", "most-used", "archived"].includes(currentView) && (
+        {[
+          "all",
+          "folder",
+          "favorites",
+          "recent",
+          "most-used",
+          "archived",
+        ].includes(currentView) && (
           <>
-
-        {/* Folders Section */}
-        <div
-          className={`sidebar-section ${expandedSections.has("folders") ? "expanded" : ""}`}
-        >
-          <div
-            className="sidebar-section-header"
-            onClick={() => toggleSection("folders")}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => e.key === "Enter" && toggleSection("folders")}
-            aria-expanded={expandedSections.has("folders")}
-          >
-            <Icon name="folder" size={15} />
-            <span>Folders</span>
-            <span className="section-chevron">
-              <Icon
-                name={expandedSections.has("folders") ? "chevron-down" : "chevron-right"}
-                size={14}
-              />
-            </span>
-          </div>
-          {expandedSections.has("folders") && (
-            <div className="sidebar-section-content">
-              <div className="tag-list">
-                {viewFolderIds.map((folderId) => {
-                  const folder = folders.find((f) => f.id === folderId);
-                  if (!folder) return null;
-                  const isActive = filterConfig.folder === folderId;
-                  return (
-                    <div
-                      key={folderId}
-                      className={`sidebar-tag-item ${isActive ? "active" : ""}`}
-                      onClick={() => void handleFolderFilter(folderId)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === "Enter" && void handleFolderFilter(folderId)}
-                    >
-                      <Icon name="folder" size={14} />
-                      <span className="tag-name">{folder.name}</span>
-                    </div>
-                  );
-                })}
-                {viewFolderIds.length === 0 && (
-                  <div className="sidebar-empty-state">No folders</div>
-                )}
+            {/* Folders Section */}
+            <div
+              className={`sidebar-section ${expandedSections.has("folders") ? "expanded" : ""}`}
+            >
+              <div
+                className="sidebar-section-header"
+                onClick={() => toggleSection("folders")}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === "Enter" && toggleSection("folders")}
+                aria-expanded={expandedSections.has("folders")}
+              >
+                <Icon name="folder" size={15} />
+                <span>Folders</span>
+                <span className="section-chevron">
+                  <Icon
+                    name={
+                      expandedSections.has("folders")
+                        ? "chevron-down"
+                        : "chevron-right"
+                    }
+                    size={14}
+                  />
+                </span>
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* Tags Section */}
-        <div
-          className={`sidebar-section ${expandedSections.has("tags") ? "expanded" : ""}`}
-        >
-          <div
-            className="sidebar-section-header"
-            onClick={() => toggleSection("tags")}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => e.key === "Enter" && toggleSection("tags")}
-            aria-expanded={expandedSections.has("tags")}
-          >
-            <Icon name="tag" size={15} />
-            <span>Tags</span>
-            <span className="section-chevron">
-              <Icon
-                name={expandedSections.has("tags") ? "chevron-down" : "chevron-right"}
-                size={14}
-              />
-            </span>
-          </div>
-          {expandedSections.has("tags") && (
-            <div className="sidebar-section-content">
-              <div className="sidebar-search">
-                <Icon
-                  name="search"
-                  size={14}
-                  className="sidebar-search-icon"
-                />
-                <input
-                  type="text"
-                  placeholder="Search tags..."
-                  value={tagSearch}
-                  onChange={(e) => setTagSearch(e.target.value)}
-                />
-              </div>
-              <div className="tag-list">
-                {filteredTags.slice(0, 20).map((tagName) => (
-                  <div
-                    key={tagName}
-                    className={`sidebar-tag-item ${filterConfig.tags.includes(tagName) ? "active" : ""}`}
-                    onClick={() => void handleTagFilter(tagName)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === "Enter" && void handleTagFilter(tagName)}
-                  >
-                    <span className="tag-name">{tagName}</span>
-                    <span className="tag-count">
-                      {tagMetadata[tagName].count}
-                    </span>
+              {expandedSections.has("folders") && (
+                <div className="sidebar-section-content">
+                  <div className="tag-list">
+                    {viewFolderIds.map((folderId) => {
+                      const folder = folders.find((f) => f.id === folderId);
+                      if (!folder) return null;
+                      const isActive = filterConfig.folder === folderId;
+                      return (
+                        <div
+                          key={folderId}
+                          className={`sidebar-tag-item ${isActive ? "active" : ""}`}
+                          onClick={() => void handleFolderFilter(folderId)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) =>
+                            e.key === "Enter" &&
+                            void handleFolderFilter(folderId)
+                          }
+                        >
+                          <Icon name="folder" size={14} />
+                          <span className="tag-name">{folder.name}</span>
+                        </div>
+                      );
+                    })}
+                    {viewFolderIds.length === 0 && (
+                      <div className="sidebar-empty-state">No folders</div>
+                    )}
                   </div>
-                ))}
-                {filteredTags.length === 0 && (
-                  <div className="sidebar-empty-state">No tags found</div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        </>
+            {/* Tags Section */}
+            <div
+              className={`sidebar-section ${expandedSections.has("tags") ? "expanded" : ""}`}
+            >
+              <div
+                className="sidebar-section-header"
+                onClick={() => toggleSection("tags")}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === "Enter" && toggleSection("tags")}
+                aria-expanded={expandedSections.has("tags")}
+              >
+                <Icon name="tag" size={15} />
+                <span>Tags</span>
+                <span className="section-chevron">
+                  <Icon
+                    name={
+                      expandedSections.has("tags")
+                        ? "chevron-down"
+                        : "chevron-right"
+                    }
+                    size={14}
+                  />
+                </span>
+              </div>
+              {expandedSections.has("tags") && (
+                <div className="sidebar-section-content">
+                  <div className="sidebar-search">
+                    <Icon
+                      name="search"
+                      size={14}
+                      className="sidebar-search-icon"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Search tags..."
+                      value={tagSearch}
+                      onChange={(e) => setTagSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="tag-list">
+                    {filteredTags.slice(0, 20).map((tagName) => (
+                      <div
+                        key={tagName}
+                        className={`sidebar-tag-item ${filterConfig.tags.includes(tagName) ? "active" : ""}`}
+                        onClick={() => void handleTagFilter(tagName)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" && void handleTagFilter(tagName)
+                        }
+                      >
+                        <span className="tag-name">{tagName}</span>
+                        <span className="tag-count">
+                          {tagMetadata[tagName].count}
+                        </span>
+                      </div>
+                    ))}
+                    {filteredTags.length === 0 && (
+                      <div className="sidebar-empty-state">No tags found</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
         )}
 
         {/* Quick Stats Bar */}

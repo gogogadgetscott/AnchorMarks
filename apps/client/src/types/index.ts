@@ -39,7 +39,12 @@ export interface Bookmark {
   thumbnail_local?: string;
 }
 
-export type FolderMetadataType = "Project" | "Tool" | "System" | "Vendor" | "Personal";
+export type FolderMetadataType =
+  | "Project"
+  | "Tool"
+  | "System"
+  | "Vendor"
+  | "Personal";
 export type FolderMetadataStatus = "Active" | "Archived";
 export type FolderMetadataDomain =
   | "Solar"

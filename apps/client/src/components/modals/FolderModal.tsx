@@ -17,21 +17,22 @@ const FOLDER_COLORS = [
 ];
 
 export default function FolderModal() {
-  const { closeModal, folderFormData, setFolderFormData, openBookmarkModal } = useModal();
+  const { closeModal, folderFormData, setFolderFormData, openBookmarkModal } =
+    useModal();
   const { folders, createFolder, updateFolder, deleteFolder } = useFolders();
   const modalRef = useRef<HTMLDivElement>(null);
 
   const handleClose = useCallback(() => {
     // Check if we should return to bookmark modal
-    const returnToBookmark = sessionStorage.getItem('returnToBookmarkModal');
+    const returnToBookmark = sessionStorage.getItem("returnToBookmarkModal");
     if (returnToBookmark) {
       try {
         const bookmarkData = JSON.parse(returnToBookmark);
-        sessionStorage.removeItem('returnToBookmarkModal');
+        sessionStorage.removeItem("returnToBookmarkModal");
         // Reopen bookmark modal with original data (no folder selected since user cancelled)
         openBookmarkModal(bookmarkData);
       } catch (err) {
-        console.error('Failed to parse bookmark modal data:', err);
+        console.error("Failed to parse bookmark modal data:", err);
         closeModal();
       }
     } else {
@@ -74,18 +75,20 @@ export default function FolderModal() {
       const newFolder = await createFolder(data);
       if (newFolder) {
         // Check if we should return to bookmark modal
-        const returnToBookmark = sessionStorage.getItem('returnToBookmarkModal');
+        const returnToBookmark = sessionStorage.getItem(
+          "returnToBookmarkModal",
+        );
         if (returnToBookmark) {
           try {
             const bookmarkData = JSON.parse(returnToBookmark);
-            sessionStorage.removeItem('returnToBookmarkModal');
+            sessionStorage.removeItem("returnToBookmarkModal");
             // Reopen bookmark modal with the newly created folder selected
             openBookmarkModal({
               ...bookmarkData,
               folderId: newFolder.id,
             });
           } catch (err) {
-            console.error('Failed to parse bookmark modal data:', err);
+            console.error("Failed to parse bookmark modal data:", err);
             closeModal();
           }
         } else {

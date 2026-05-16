@@ -125,7 +125,6 @@ function parseHtmlMetadata(html, url) {
     }
   }
 
-
   return metadata;
 }
 

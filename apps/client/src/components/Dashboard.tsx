@@ -18,9 +18,8 @@ export function Dashboard() {
 
     const syncAndRenderDashboard = async () => {
       if (currentView !== "dashboard") {
-        const { unmountReactDashboard } = await import(
-          "@features/bookmarks/react-dashboard.tsx"
-        );
+        const { unmountReactDashboard } =
+          await import("@features/bookmarks/react-dashboard.tsx");
         if (!isCancelled) unmountReactDashboard();
         return;
       }
@@ -28,9 +27,8 @@ export function Dashboard() {
       // Keep legacy module state in sync until dashboard rendering is fully React-native.
       legacyState.setDashboardWidgets(dashboardWidgets);
 
-      const { renderDashboard } = await import(
-        "@features/bookmarks/dashboard.ts"
-      );
+      const { renderDashboard } =
+        await import("@features/bookmarks/dashboard.ts");
       if (!isCancelled) {
         await renderDashboard();
       }
@@ -50,8 +48,7 @@ export function Dashboard() {
       <div
         className="dashboard-insights-section"
         style={{ marginTop: "2rem", padding: "1rem" }}
-      >
-      </div>
+      ></div>
     </>
   );
 }

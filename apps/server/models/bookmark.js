@@ -40,7 +40,12 @@ function listBookmarks(db, userId, opts = {}) {
   const isFavoritesView = favorites === true || favorites === "true";
   const isArchivedView = archived === true || archived === "true";
   const isMostUsedView = most_used === true || most_used === "true";
-  const hasSearch = !!(search && !isFavoritesView && !isArchivedView && !isMostUsedView);
+  const hasSearch = !!(
+    search &&
+    !isFavoritesView &&
+    !isArchivedView &&
+    !isMostUsedView
+  );
 
   // Define the base FROM and JOINs
   let baseFrom;
@@ -296,7 +301,10 @@ function listViewTags(db, userId, opts = {}) {
   }
 
   if (tags) {
-    const tagArr = String(tags).split(",").map((t) => t.trim()).filter(Boolean);
+    const tagArr = String(tags)
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
     const tagArrLower = tagArr.map((t) => t.toLowerCase());
     if (tagArrLower.length > 0) {
       const ph = tagArrLower.map(() => "?").join(",");
@@ -347,7 +355,10 @@ function listViewFolderIds(db, userId, opts = {}) {
   }
 
   if (tags) {
-    const tagArr = String(tags).split(",").map((t) => t.trim()).filter(Boolean);
+    const tagArr = String(tags)
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
     const tagArrLower = tagArr.map((t) => t.toLowerCase());
     if (tagArrLower.length > 0) {
       const ph = tagArrLower.map(() => "?").join(",");
@@ -370,7 +381,10 @@ function listViewFolderIds(db, userId, opts = {}) {
     }
   }
 
-  return db.prepare(query).all(...params).map((r) => r.folder_id);
+  return db
+    .prepare(query)
+    .all(...params)
+    .map((r) => r.folder_id);
 }
 
 function getBookmarkById(db, userId, id) {

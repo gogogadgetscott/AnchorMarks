@@ -196,135 +196,140 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       view?: string;
       filterOverride?: FilterConfig;
     }) => {
-    const requestSeq = ++loadBookmarksRequestSeq.current;
-    try {
-      const uiBridge = getUIBridge();
-      const currentFolder = options?.folderId ?? uiBridge.getCurrentFolder();
-      const currentView = options?.view ?? uiBridge.getCurrentView();
-      const includeChildBookmarks = uiBridge.getIncludeChildBookmarks();
-      const activeFilters = options?.filterOverride ?? filterConfig;
+      const requestSeq = ++loadBookmarksRequestSeq.current;
+      try {
+        const uiBridge = getUIBridge();
+        const currentFolder = options?.folderId ?? uiBridge.getCurrentFolder();
+        const currentView = options?.view ?? uiBridge.getCurrentView();
+        const includeChildBookmarks = uiBridge.getIncludeChildBookmarks();
+        const activeFilters = options?.filterOverride ?? filterConfig;
 
-      // Get current collection from URL or state if we're in collection view
-      let currentCollection: string | null = null;
-      if (currentView === "collection") {
-        const url = new URL(window.location.href);
-        currentCollection = url.searchParams.get("collection");
-      }
+        // Get current collection from URL or state if we're in collection view
+        let currentCollection: string | null = null;
+        if (currentView === "collection") {
+          const url = new URL(window.location.href);
+          currentCollection = url.searchParams.get("collection");
+        }
 
-      if (currentView === "analytics") return;
+        if (currentView === "analytics") return;
 
-      setIsLoading(true);
-      resetPagination();
+        setIsLoading(true);
+        resetPagination();
 
-      const params = new URLSearchParams();
-      params.append("limit", String(BOOKMARKS_PER_PAGE));
+        const params = new URLSearchParams();
+        params.append("limit", String(BOOKMARKS_PER_PAGE));
 
-      let endpoint = "/bookmarks";
+        let endpoint = "/bookmarks";
 
-      if (currentView === "collection" && currentCollection) {
-        endpoint = `/collections/${currentCollection}/bookmarks`;
-      }
+        if (currentView === "collection" && currentCollection) {
+          endpoint = `/collections/${currentCollection}/bookmarks`;
+        }
 
-      if (currentView === "favorites") params.append("favorites", "true");
-      if (currentView === "archived") params.append("archived", "true");
-      if (currentView === "most-used") params.append("most_used", "true");
+        if (currentView === "favorites") params.append("favorites", "true");
+        if (currentView === "archived") params.append("archived", "true");
+        if (currentView === "most-used") params.append("most_used", "true");
 
-      // Folder navigation ("folder" view) or sidebar folder filter (all other views)
-      const folderFilter = currentView === "folder"
-        ? currentFolder
-        : (activeFilters.folder ?? null);
-      if (folderFilter && currentView !== "dashboard" && currentView !== "collection") {
-        params.append("folder_id", folderFilter);
-        if (currentView === "folder" && includeChildBookmarks) {
-          params.append("include_children", "true");
+        // Folder navigation ("folder" view) or sidebar folder filter (all other views)
+        const folderFilter =
+          currentView === "folder"
+            ? currentFolder
+            : (activeFilters.folder ?? null);
+        if (
+          folderFilter &&
+          currentView !== "dashboard" &&
+          currentView !== "collection"
+        ) {
+          params.append("folder_id", folderFilter);
+          if (currentView === "folder" && includeChildBookmarks) {
+            params.append("include_children", "true");
+          }
+        }
+
+        if (activeFilters.tags?.length) {
+          params.append("tags", activeFilters.tags.join(","));
+          params.append("tagMode", activeFilters.tagMode || "OR");
+        }
+        if (activeFilters.search) {
+          params.append("search", activeFilters.search);
+        }
+        // most-used view always sorts by click count; respect filterConfig for other views
+        if (currentView === "most-used") {
+          params.append("sort", "most_visited");
+        } else if (activeFilters.sort) {
+          params.append("sort", activeFilters.sort);
+        }
+
+        const queryString = params.toString();
+        const url = queryString ? `${endpoint}?${queryString}` : endpoint;
+
+        // DIAGNOSTIC: Log the actual request
+        console.log("🔍 DIAGNOSTIC - loadBookmarks request:", {
+          url,
+          currentView,
+          currentFolder,
+          includeChildBookmarks,
+          activeFilters,
+          requestSeq,
+        });
+
+        const data = await api<BookmarksListResponse>(url, {
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        });
+
+        // DIAGNOSTIC: Log the response
+        console.log("🔍 DIAGNOSTIC - loadBookmarks response:", {
+          bookmarkCount: data.bookmarks?.length || 0,
+          total: data.total,
+          requestSeq,
+          currentRequestSeq: loadBookmarksRequestSeq.current,
+          willIgnore: requestSeq !== loadBookmarksRequestSeq.current,
+        });
+
+        // Ignore stale responses when a newer loadBookmarks call has started.
+        if (requestSeq !== loadBookmarksRequestSeq.current) {
+          console.log("⚠️ DIAGNOSTIC - Ignoring stale response");
+          return;
+        }
+
+        setBookmarks(data.bookmarks);
+        setRenderedBookmarks(data.bookmarks);
+        setTotalCount(data.total || data.bookmarks.length);
+
+        if (data.tags) {
+          const metadata: Record<
+            string,
+            { color?: string; icon?: string; id?: string; count?: number }
+          > = {};
+          data.tags.forEach(
+            (t: {
+              name: string;
+              color?: string;
+              icon?: string;
+              id?: string;
+              count?: number;
+            }) => {
+              metadata[t.name] = {
+                color: t.color,
+                icon: t.icon,
+                id: t.id,
+                count: t.count,
+              };
+            },
+          );
+          setTagMetadata(metadata);
+        }
+        if (data.viewFolderIds) {
+          setViewFolderIds(data.viewFolderIds);
+        }
+      } catch (err) {
+        console.error("Failed to load bookmarks:", err);
+      } finally {
+        if (requestSeq === loadBookmarksRequestSeq.current) {
+          setIsLoading(false);
         }
       }
-
-      if (activeFilters.tags?.length) {
-        params.append("tags", activeFilters.tags.join(","));
-        params.append("tagMode", activeFilters.tagMode || "OR");
-      }
-      if (activeFilters.search) {
-        params.append("search", activeFilters.search);
-      }
-      // most-used view always sorts by click count; respect filterConfig for other views
-      if (currentView === "most-used") {
-        params.append("sort", "most_visited");
-      } else if (activeFilters.sort) {
-        params.append("sort", activeFilters.sort);
-      }
-
-      const queryString = params.toString();
-      const url = queryString ? `${endpoint}?${queryString}` : endpoint;
-
-      // DIAGNOSTIC: Log the actual request
-      console.log("🔍 DIAGNOSTIC - loadBookmarks request:", {
-        url,
-        currentView,
-        currentFolder,
-        includeChildBookmarks,
-        activeFilters,
-        requestSeq,
-      });
-
-      const data = await api<BookmarksListResponse>(url, {
-        headers: {
-          "Cache-Control": "no-cache",
-        },
-      });
-
-      // DIAGNOSTIC: Log the response
-      console.log("🔍 DIAGNOSTIC - loadBookmarks response:", {
-        bookmarkCount: data.bookmarks?.length || 0,
-        total: data.total,
-        requestSeq,
-        currentRequestSeq: loadBookmarksRequestSeq.current,
-        willIgnore: requestSeq !== loadBookmarksRequestSeq.current,
-      });
-
-      // Ignore stale responses when a newer loadBookmarks call has started.
-      if (requestSeq !== loadBookmarksRequestSeq.current) {
-        console.log("⚠️ DIAGNOSTIC - Ignoring stale response");
-        return;
-      }
-
-      setBookmarks(data.bookmarks);
-      setRenderedBookmarks(data.bookmarks);
-      setTotalCount(data.total || data.bookmarks.length);
-
-      if (data.tags) {
-        const metadata: Record<
-          string,
-          { color?: string; icon?: string; id?: string; count?: number }
-        > = {};
-        data.tags.forEach(
-          (t: {
-            name: string;
-            color?: string;
-            icon?: string;
-            id?: string;
-            count?: number;
-          }) => {
-            metadata[t.name] = {
-              color: t.color,
-              icon: t.icon,
-              id: t.id,
-              count: t.count,
-            };
-          },
-        );
-        setTagMetadata(metadata);
-      }
-      if (data.viewFolderIds) {
-        setViewFolderIds(data.viewFolderIds);
-      }
-    } catch (err) {
-      console.error("Failed to load bookmarks:", err);
-    } finally {
-      if (requestSeq === loadBookmarksRequestSeq.current) {
-        setIsLoading(false);
-      }
-    }
     },
     [resetPagination, filterConfig],
   );

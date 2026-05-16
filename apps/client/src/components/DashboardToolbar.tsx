@@ -90,16 +90,16 @@ export function DashboardToolbar({
         )}
 
         {onViewsClick && (
-           <button
-             type="button"
-             className="btn btn-secondary btn-sm"
-             onClick={onViewsClick}
-             aria-label="Dashboard views"
-             id="views-btn"
-           >
-             <Icon name="link" size={14} />
-             Views
-           </button>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={onViewsClick}
+            aria-label="Dashboard views"
+            id="views-btn"
+          >
+            <Icon name="link" size={14} />
+            Views
+          </button>
         )}
 
         {onAddWidgetClick && (

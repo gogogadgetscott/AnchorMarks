@@ -140,12 +140,12 @@ export function RichBookmarkCard({
     // Don't open if clicking on interactive elements
     const target = e.target as HTMLElement;
     if (
-      target.closest('button') ||
-      target.closest('a') ||
-      target.closest('input') ||
-      target.closest('label.bookmark-select') ||
-      target.closest('.bookmark-actions') ||
-      target.closest('.bookmark-tags')
+      target.closest("button") ||
+      target.closest("a") ||
+      target.closest("input") ||
+      target.closest("label.bookmark-select") ||
+      target.closest(".bookmark-actions") ||
+      target.closest(".bookmark-tags")
     ) {
       return;
     }
@@ -248,7 +248,6 @@ export function RichBookmarkCard({
             title="Open bookmark"
             onClick={onOpen}
           />
-          
         </div>
       </div>
     </div>

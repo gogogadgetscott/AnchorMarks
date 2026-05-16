@@ -355,7 +355,10 @@ export async function setCurrentView(val: string) {
   document.body.classList.toggle("dashboard-active", val === "dashboard");
   document.body.classList.toggle("tag-cloud-active", val === "tag-cloud");
   document.body.classList.toggle("analytics-active", val === "analytics");
-  document.body.classList.toggle("folder-organizer-active", val === "folder-organizer");
+  document.body.classList.toggle(
+    "folder-organizer-active",
+    val === "folder-organizer",
+  );
 }
 export function setCurrentFolder(val: string | null) {
   currentFolder = val;

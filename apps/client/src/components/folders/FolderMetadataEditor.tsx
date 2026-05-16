@@ -29,7 +29,11 @@ const DOMAIN_OPTIONS: FolderMetadataDomain[] = [
   "Other",
 ];
 
-export function FolderMetadataEditor({ metadata, onChange, disabled = false }: Props) {
+export function FolderMetadataEditor({
+  metadata,
+  onChange,
+  disabled = false,
+}: Props) {
   const meta: FolderMetadata = metadata ?? {};
 
   function patch(partial: Partial<FolderMetadata>) {

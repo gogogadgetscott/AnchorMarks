@@ -481,9 +481,15 @@ describe("Dashboard interactivity helpers", () => {
 
     autoPositionWidgets();
 
-    const alpha = state.dashboardWidgets.find((w: any) => w.id === "folder-alpha") as any;
-    const beta = state.dashboardWidgets.find((w: any) => w.id === "folder-beta") as any;
-    const zeta = state.dashboardWidgets.find((w: any) => w.id === "tag-zeta") as any;
+    const alpha = state.dashboardWidgets.find(
+      (w: any) => w.id === "folder-alpha",
+    ) as any;
+    const beta = state.dashboardWidgets.find(
+      (w: any) => w.id === "folder-beta",
+    ) as any;
+    const zeta = state.dashboardWidgets.find(
+      (w: any) => w.id === "tag-zeta",
+    ) as any;
 
     expect(alpha.x).toBe(0);
     expect(alpha.y).toBe(0);

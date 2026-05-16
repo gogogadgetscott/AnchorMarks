@@ -230,14 +230,13 @@ export async function showFilterDropdown(): Promise<void> {
 
     const headersContainer = document.getElementById("headers-container");
     // The React Header component uses `${currentView}-header` as the ID
-    const currentHeader = document.querySelector(".header.content-header") as HTMLElement;
+    const currentHeader = document.querySelector(
+      ".header.content-header",
+    ) as HTMLElement;
 
     if (headersContainer) {
       // Insert into headers container as a sibling
-      if (
-        currentHeader &&
-        currentHeader.parentElement === headersContainer
-      ) {
+      if (currentHeader && currentHeader.parentElement === headersContainer) {
         currentHeader.insertAdjacentElement("afterend", dropdown);
       } else {
         headersContainer.appendChild(dropdown);

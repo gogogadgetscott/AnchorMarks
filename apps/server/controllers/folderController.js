@@ -131,7 +131,8 @@ function mergeFoldersCtrl(req, res) {
   const { source_ids, target_id } = req.validated;
   try {
     const target = folderModel.getFolderById(db, target_id, req.user.id);
-    if (!target) return res.status(404).json({ error: "Target folder not found" });
+    if (!target)
+      return res.status(404).json({ error: "Target folder not found" });
     const sources = source_ids.filter((id) => id !== target_id);
     if (sources.length === 0)
       return res.status(422).json({ error: "No valid source folders" });

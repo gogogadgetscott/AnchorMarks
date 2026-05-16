@@ -67,7 +67,9 @@ function updateFolder(db, id, userId, fields) {
   }
   if ("metadata" in fields) {
     sets.push("metadata = ?");
-    params.push(fields.metadata != null ? JSON.stringify(fields.metadata) : null);
+    params.push(
+      fields.metadata != null ? JSON.stringify(fields.metadata) : null,
+    );
   }
 
   if (sets.length === 0) return;
@@ -90,9 +92,7 @@ function wouldCreateCycle(db, folderId, newParentId, userId) {
     if (visited.has(current)) break; // safety: break on unexpected cycle
     visited.add(current);
     const row = db
-      .prepare(
-        "SELECT parent_id FROM folders WHERE id = ? AND user_id = ?",
-      )
+      .prepare("SELECT parent_id FROM folders WHERE id = ? AND user_id = ?")
       .get(current, userId);
     if (!row) break;
     current = row.parent_id;

@@ -1,1 +1,23 @@
-"use strict";(()=>{function d(o){let e=document.createElement("div");return e.textContent=o,e.innerHTML}function c(o,e="None"){let a=(t,i)=>t.name.localeCompare(i.name),r=`<option value="">${d(e)}</option>`;function l(t=null,i=0){o.filter(n=>(n.parent_id||null)===t).sort(a).forEach(n=>{let s="&nbsp;&nbsp;&nbsp;".repeat(i);r+=`<option value="${n.id}">${s}${d(n.name)}</option>`,l(n.id,i+1)})}return l(null,0),r}window.anchormarks=window.anchormarks||{};window.anchormarks.buildFolderOptionsHTML=c;})();
+"use strict";
+(() => {
+  function d(o) {
+    let e = document.createElement("div");
+    return ((e.textContent = o), e.innerHTML);
+  }
+  function c(o, e = "None") {
+    let a = (t, i) => t.name.localeCompare(i.name),
+      r = `<option value="">${d(e)}</option>`;
+    function l(t = null, i = 0) {
+      o.filter((n) => (n.parent_id || null) === t)
+        .sort(a)
+        .forEach((n) => {
+          let s = "&nbsp;&nbsp;&nbsp;".repeat(i);
+          ((r += `<option value="${n.id}">${s}${d(n.name)}</option>`),
+            l(n.id, i + 1));
+        });
+    }
+    return (l(null, 0), r);
+  }
+  window.anchormarks = window.anchormarks || {};
+  window.anchormarks.buildFolderOptionsHTML = c;
+})();

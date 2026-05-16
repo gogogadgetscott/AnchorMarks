@@ -124,7 +124,13 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 export function TagCloud() {
-  const { tagMetadata, setTagMetadata, fetchTagStats, filterConfig, setFilterConfig } = useBookmarks();
+  const {
+    tagMetadata,
+    setTagMetadata,
+    fetchTagStats,
+    filterConfig,
+    setFilterConfig,
+  } = useBookmarks();
   const { setCurrentView } = useUI();
   const [showAll, setShowAll] = useState(() => {
     const stored = safeLocalStorage.getItem("anchormarks_tag_cloud_show_all");
@@ -136,7 +142,10 @@ export function TagCloud() {
   useEffect(() => {
     fetchTagStats().then((tagStats) => {
       if (tagStats.length === 0) return;
-      const metadata: Record<string, { color?: string; icon?: string; id?: string; count?: number }> = {};
+      const metadata: Record<
+        string,
+        { color?: string; icon?: string; id?: string; count?: number }
+      > = {};
       tagStats.forEach((t) => {
         metadata[t.name] = { color: t.color, id: t.id, count: t.count };
       });
@@ -202,7 +211,8 @@ export function TagCloud() {
     vanillaSetFilterConfig(newFilter);
     await setCurrentView("all");
     // Update the filter button count in the header
-    const { updateFilterButtonText } = await import("../features/bookmarks/filters.ts");
+    const { updateFilterButtonText } =
+      await import("../features/bookmarks/filters.ts");
     updateFilterButtonText();
   };
 

@@ -28,6 +28,7 @@ apps/dist/
 dist/
 .vite/
 screenshots/
+# .claude/
 
 # SSL certs/keys (can be generated locally or provided by deploy scripts)
 # Keep these out of the repo for security; the installer may create apps/ssl/

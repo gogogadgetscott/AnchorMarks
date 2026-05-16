@@ -96,10 +96,7 @@ const swVersionPlugin = () => ({
         path.resolve(__dirname, "public", "sw.js"),
         "utf-8",
       );
-      const processed = src.replace(
-        /anchormarks-v[\w.-]+/g,
-        SW_CACHE_VERSION,
-      );
+      const processed = src.replace(/anchormarks-v[\w.-]+/g, SW_CACHE_VERSION);
       res.setHeader("Content-Type", "application/javascript");
       res.end(processed);
     });

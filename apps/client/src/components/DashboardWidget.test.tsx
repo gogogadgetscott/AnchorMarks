@@ -9,9 +9,8 @@ const dndMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@dnd-kit/core", async () => {
-  const actual = await vi.importActual<typeof import("@dnd-kit/core")>(
-    "@dnd-kit/core",
-  );
+  const actual =
+    await vi.importActual<typeof import("@dnd-kit/core")>("@dnd-kit/core");
 
   return {
     ...actual,
@@ -54,7 +53,9 @@ describe("DashboardWidget", () => {
     fireEvent.pointerDown(screen.getByText("Overview"));
     expect(dndMocks.dragPointerDown).toHaveBeenCalledTimes(1);
 
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Remove widget" }));
+    fireEvent.pointerDown(
+      screen.getByRole("button", { name: "Remove widget" }),
+    );
     expect(dndMocks.dragPointerDown).toHaveBeenCalledTimes(1);
   });
 

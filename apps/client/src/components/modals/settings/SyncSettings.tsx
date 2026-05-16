@@ -28,7 +28,12 @@ export function SyncSettings() {
           </p>
           <div
             id="bookmark-buttons-container"
-            style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginTop: "1rem" }}
+            style={{
+              display: "flex",
+              gap: "1rem",
+              flexWrap: "wrap",
+              marginTop: "1rem",
+            }}
           >
             <a
               id="add-bookmark-button"

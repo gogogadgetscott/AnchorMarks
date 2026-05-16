@@ -326,8 +326,7 @@ export function updateUserInfo(): void {
     const apiKeyValue = document.getElementById("api-key-value");
 
     // Use username if available, otherwise fall back to email
-    const displayName =
-      currentUser.username || currentUser.email || "User";
+    const displayName = currentUser.username || currentUser.email || "User";
     const initials = displayName.charAt(0).toUpperCase();
 
     userNames.forEach((el) => (el.textContent = displayName));

@@ -18,54 +18,63 @@ export function FolderSmartSuggestions({
 }: Props) {
   if (emptyCount === 0 && duplicateGroups.length === 0) return null;
 
-  const dupLabels = duplicateGroups
+  const dupNames = duplicateGroups
     .slice(0, 3)
     .map((group) => folders.find((f) => f.id === group[0])?.name ?? "")
     .filter(Boolean);
+  const dupOverflow = duplicateGroups.length - 3;
+
+  const selectEmpty = () => {
+    const ids = new Set(
+      folders
+        .filter(
+          (f) =>
+            !f.bookmark_count && !folders.some((c) => c.parent_id === f.id),
+        )
+        .map((f) => f.id),
+    );
+    setSelected(ids);
+  };
+
+  const selectDuplicates = () => {
+    setSelected(new Set(duplicateGroups.flatMap((g) => g)));
+  };
 
   return (
-    <div className="fo-suggestions" role="status">
+    <div
+      className="fo-suggestions"
+      role="status"
+      aria-label="Cleanup suggestions"
+    >
       <Icon name="sparkles" size={14} className="fo-suggestions-icon" />
       <div className="fo-suggestions-body">
         {duplicateGroups.length > 0 && (
           <span className="fo-suggestion-item">
-            <strong>Similar names:</strong>{" "}
-            {dupLabels.join(", ")}
-            {duplicateGroups.length > 3
-              ? ` +${duplicateGroups.length - 3} more`
-              : ""}
-            .{" "}
+            <strong>Similar names</strong> — {dupNames.join(", ")}
+            {dupOverflow > 0 ? ` +${dupOverflow} more` : ""}.{" "}
             <button
               type="button"
               className="fo-suggestion-link"
-              onClick={() =>
-                setSelected(new Set(duplicateGroups.flatMap((g) => g)))
-              }
+              onClick={selectDuplicates}
             >
-              Select all
+              Select all to review
             </button>
           </span>
         )}
         {emptyCount > 0 && (
           <span className="fo-suggestion-item">
-            <strong>{emptyCount} empty folder{emptyCount !== 1 ? "s" : ""}.</strong>{" "}
+            <strong>
+              {emptyCount === 1
+                ? "1 empty folder"
+                : `${emptyCount} empty folders`}
+            </strong>{" "}
+            with no bookmarks.{" "}
             <button
               type="button"
               className="fo-suggestion-link"
-              onClick={() => {
-                const emptyIds = new Set(
-                  folders
-                    .filter(
-                      (f) =>
-                        !f.bookmark_count &&
-                        !folders.some((c) => c.parent_id === f.id),
-                    )
-                    .map((f) => f.id),
-                );
-                setSelected(emptyIds);
-              }}
+              onClick={selectEmpty}
             >
-              Select all
+              Select all to clean up
             </button>
           </span>
         )}

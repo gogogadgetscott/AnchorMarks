@@ -102,7 +102,9 @@ export function BulkReorganizePanel() {
             checked={allSelected}
             onChange={() =>
               setSelected(
-                allSelected ? new Set() : new Set(orderedFolders.map((f) => f.id)),
+                allSelected
+                  ? new Set()
+                  : new Set(orderedFolders.map((f) => f.id)),
               )
             }
           />
@@ -163,7 +165,9 @@ export function BulkReorganizePanel() {
       {/* Floating action bar */}
       {selectedCount > 0 && (
         <div className="bulk-action-bar">
-          <span className="bulk-action-bar__count">{selectedCount} selected</span>
+          <span className="bulk-action-bar__count">
+            {selectedCount} selected
+          </span>
 
           <button
             type="button"
@@ -207,7 +211,9 @@ export function BulkReorganizePanel() {
           <div className="modal-backdrop" onClick={() => setMoveOpen(false)} />
           <div className="modal-content modal-sm">
             <div className="modal-header">
-              <h2>Move {selectedCount} folder{selectedCount !== 1 ? "s" : ""}</h2>
+              <h2>
+                Move {selectedCount} folder{selectedCount !== 1 ? "s" : ""}
+              </h2>
               <button
                 type="button"
                 className="btn-icon modal-close"

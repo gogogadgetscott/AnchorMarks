@@ -1512,10 +1512,14 @@ export function autoPositionWidgets(): void {
     const typeCompare = (a.type || "").localeCompare(b.type || "");
     if (typeCompare !== 0) return typeCompare;
 
-    const titleCompare = (a.title || "").localeCompare(b.title || "", undefined, {
-      sensitivity: "base",
-      numeric: true,
-    });
+    const titleCompare = (a.title || "").localeCompare(
+      b.title || "",
+      undefined,
+      {
+        sensitivity: "base",
+        numeric: true,
+      },
+    );
     if (titleCompare !== 0) return titleCompare;
 
     return (a.id || "").localeCompare(b.id || "", undefined, {

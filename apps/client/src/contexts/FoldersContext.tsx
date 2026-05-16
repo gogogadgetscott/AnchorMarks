@@ -31,19 +31,13 @@ interface FoldersMethods {
   deleteFolder: (id: string) => Promise<void>;
   getRecursiveBookmarkCount: (folderId: string) => number;
   /** Move multiple folders to a new parent (or top level when parentId is null). */
-  bulkMoveParents: (
-    ids: string[],
-    parentId: string | null,
-  ) => Promise<void>;
+  bulkMoveParents: (ids: string[], parentId: string | null) => Promise<void>;
   /** Merge source folders into target: moves their bookmarks + children, then deletes sources. */
   mergeFolders: (sourceIds: string[], targetId: string) => Promise<void>;
   /** Delete multiple folders; their bookmarks move to uncategorized. */
   bulkDeleteFolders: (ids: string[]) => Promise<void>;
   /** Update only the metadata field for a folder. */
-  updateFolderMetadata: (
-    id: string,
-    metadata: FolderMetadata,
-  ) => Promise<void>;
+  updateFolderMetadata: (id: string, metadata: FolderMetadata) => Promise<void>;
 }
 
 interface FoldersActions {
@@ -142,8 +136,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
         // Use the dedicated parent endpoint when only changing parent_id,
         // to get proper depth validation on the server.
         const keys = Object.keys(data);
-        const isParentOnly =
-          keys.length === 1 && "parent_id" in data;
+        const isParentOnly = keys.length === 1 && "parent_id" in data;
 
         let folder: Folder;
         if (isParentOnly) {
@@ -187,7 +180,10 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
           method: "POST",
           body: JSON.stringify({ source_ids: sourceIds, target_id: targetId }),
         });
-        showToast(`Merged ${sourceIds.length} folder${sourceIds.length !== 1 ? "s" : ""}`, "success");
+        showToast(
+          `Merged ${sourceIds.length} folder${sourceIds.length !== 1 ? "s" : ""}`,
+          "success",
+        );
         await loadFolders();
       } catch (err: unknown) {
         logger.error("Failed to merge folders:", err);
@@ -205,7 +201,10 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
           method: "POST",
           body: JSON.stringify({ ids }),
         });
-        showToast(`Deleted ${ids.length} folder${ids.length !== 1 ? "s" : ""}`, "success");
+        showToast(
+          `Deleted ${ids.length} folder${ids.length !== 1 ? "s" : ""}`,
+          "success",
+        );
         await loadFolders();
       } catch (err: unknown) {
         logger.error("Failed to bulk-delete folders:", err);
@@ -219,13 +218,13 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
   const bulkMoveParents = useCallback(
     async (ids: string[], parentId: string | null): Promise<void> => {
       try {
-        const result = await api<{ moved: string[]; errors: { id: string; error: string }[] }>(
-          "/folders/bulk-move",
-          {
-            method: "POST",
-            body: JSON.stringify({ ids, parent_id: parentId }),
-          },
-        );
+        const result = await api<{
+          moved: string[];
+          errors: { id: string; error: string }[];
+        }>("/folders/bulk-move", {
+          method: "POST",
+          body: JSON.stringify({ ids, parent_id: parentId }),
+        });
 
         if (result.errors.length > 0) {
           const skipped = result.errors.length;

@@ -55,7 +55,11 @@ function TreeItem({
   onClickCheckbox,
   onToggleCollapse,
 }: TreeItemProps) {
-  const { attributes, listeners, setNodeRef: setDragRef } = useDraggable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+  } = useDraggable({
     id: folder.id,
     data: { folder },
   });
@@ -74,12 +78,6 @@ function TreeItem({
   const isEmpty = directCount === 0 && !hasChildren;
   const isLarge = recursiveCount >= 500;
 
-  const countLabel = isEmpty
-    ? "empty"
-    : recursiveCount !== directCount
-      ? `${directCount.toLocaleString()} (${recursiveCount.toLocaleString()})`
-      : directCount.toLocaleString();
-
   return (
     <div
       ref={combinedRef}
@@ -97,6 +95,7 @@ function TreeItem({
       role="treeitem"
       aria-selected={isSelected}
       aria-expanded={hasChildren ? !isCollapsed : undefined}
+      aria-level={depth + 1}
       tabIndex={0}
       onKeyDown={(e) => e.key === "Enter" && onClickRow()}
     >
@@ -154,12 +153,28 @@ function TreeItem({
           .filter(Boolean)
           .join(" ")}
         title={
-          recursiveCount !== directCount
-            ? `${directCount.toLocaleString()} directly · ${recursiveCount.toLocaleString()} including subfolders`
-            : `${directCount.toLocaleString()} bookmarks`
+          isEmpty
+            ? "No bookmarks. Use Archive or Delete to clean up."
+            : recursiveCount !== directCount
+              ? `${directCount.toLocaleString()} directly · ${recursiveCount.toLocaleString()} including subfolders`
+              : `${directCount.toLocaleString()} bookmarks`
         }
       >
-        {countLabel}
+        {isEmpty ? (
+          <span className="ftp-count-empty">empty</span>
+        ) : (
+          <>
+            <span className={directCount === 0 ? "ftp-count-zero" : ""}>
+              {directCount.toLocaleString()}
+            </span>
+            {recursiveCount !== directCount && (
+              <span className="ftp-count-sub">
+                {" "}
+                ({recursiveCount.toLocaleString()})
+              </span>
+            )}
+          </>
+        )}
       </span>
 
       {folder.metadata?.status === "Archived" && (
@@ -286,16 +301,12 @@ export function FolderTreePanel({
     [folders, updateFolder],
   );
 
-  const activeFolder = activeId
-    ? folders.find((f) => f.id === activeId)
-    : null;
+  const activeFolder = activeId ? folders.find((f) => f.id === activeId) : null;
   const isTopDropActive = overId === "drop:__top_level__" && activeId !== null;
 
   // Recursive render — nesting provides indentation; .ftp-children adds tree lines
   function renderBranch(parentId: string | null, depth: number): ReactNode {
-    const children = folders.filter(
-      (f) => (f.parent_id ?? null) === parentId,
-    );
+    const children = folders.filter((f) => (f.parent_id ?? null) === parentId);
     if (children.length === 0) return null;
 
     return children.map((folder) => {
@@ -305,9 +316,7 @@ export function FolderTreePanel({
       const isCollapsed = collapsed.has(folder.id);
       const recursiveCount = getRecursiveBookmarkCount(folder.id);
       const subBranch =
-        hasChildren && !isCollapsed
-          ? renderBranch(folder.id, depth + 1)
-          : null;
+        hasChildren && !isCollapsed ? renderBranch(folder.id, depth + 1) : null;
 
       return (
         <div key={folder.id} className="ftp-node">
@@ -332,9 +341,7 @@ export function FolderTreePanel({
               onToggleCollapse(folder.id);
             }}
           />
-          {subBranch && (
-            <div className="ftp-children">{subBranch}</div>
-          )}
+          {subBranch && <div className="ftp-children">{subBranch}</div>}
         </div>
       );
     });
@@ -348,7 +355,25 @@ export function FolderTreePanel({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="ftp-tree" role="tree" aria-label="Folder tree">
+      <div
+        className="ftp-tree"
+        role="tree"
+        aria-label="Folder tree"
+        aria-multiselectable="true"
+        onKeyDown={(e) => {
+          const items = (
+            e.currentTarget as HTMLElement
+          ).querySelectorAll<HTMLElement>('[role="treeitem"]');
+          const idx = [...items].indexOf(document.activeElement as HTMLElement);
+          if (e.key === "ArrowDown" && idx < items.length - 1) {
+            e.preventDefault();
+            items[idx + 1].focus();
+          } else if (e.key === "ArrowUp" && idx > 0) {
+            e.preventDefault();
+            items[idx - 1].focus();
+          }
+        }}
+      >
         <TopLevelDropZone isOver={isTopDropActive} />
 
         {treeSearch && visibleIds?.size === 0 && (

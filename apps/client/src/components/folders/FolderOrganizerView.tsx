@@ -48,8 +48,7 @@ export function FolderOrganizerView() {
   const emptyCount = useMemo(
     () =>
       folders.filter(
-        (f) =>
-          !f.bookmark_count && !folders.some((c) => c.parent_id === f.id),
+        (f) => !f.bookmark_count && !folders.some((c) => c.parent_id === f.id),
       ).length,
     [folders],
   );
@@ -71,7 +70,7 @@ export function FolderOrganizerView() {
   // The single selected folder (for the detail panel)
   const singleFolder =
     selected.size === 1
-      ? folders.find((f) => f.id === [...selected][0]) ?? null
+      ? (folders.find((f) => f.id === [...selected][0]) ?? null)
       : null;
 
   if (isLoading) {
@@ -141,17 +140,27 @@ export function FolderOrganizerView() {
         {/* Left: stats + quick filters */}
         <aside className="fo-sidebar">
           <div className="fo-stats">
-            <div className="fo-stat">
+            <div className="fo-stat" title={`${folders.length} folders total`}>
               <span className="fo-stat-value">{folders.length}</span>
               <span className="fo-stat-label">total</span>
             </div>
-            <div className="fo-stat">
+            <div
+              className="fo-stat"
+              title={`${folders.filter((f) => !f.parent_id).length} folders at the root level`}
+            >
               <span className="fo-stat-value">
                 {folders.filter((f) => !f.parent_id).length}
               </span>
               <span className="fo-stat-label">top-level</span>
             </div>
-            <div className={`fo-stat ${emptyCount > 0 ? "fo-stat--warn" : ""}`}>
+            <div
+              className={`fo-stat ${emptyCount > 0 ? "fo-stat--warn" : ""}`}
+              title={
+                emptyCount > 0
+                  ? `${emptyCount} folders with no bookmarks and no subfolders`
+                  : "No empty folders"
+              }
+            >
               <span className="fo-stat-value">{emptyCount}</span>
               <span className="fo-stat-label">empty</span>
             </div>
@@ -161,21 +170,25 @@ export function FolderOrganizerView() {
             <span className="fo-sidebar-label">Quick filters</span>
             <button
               type="button"
+              title="Show only folders with no bookmarks and no subfolders. Click again to clear."
               className={`fo-filter-chip ${treeSearch === "__empty__" ? "fo-filter-chip--active" : ""}`}
               onClick={() =>
                 setTreeSearch((p) => (p === "__empty__" ? "" : "__empty__"))
               }
             >
-              Empty folders
+              Empty
               {emptyCount > 0 && (
                 <span className="fo-filter-chip-count">{emptyCount}</span>
               )}
             </button>
             <button
               type="button"
+              title="Show only folders marked as Archived. Click again to clear."
               className={`fo-filter-chip ${treeSearch === "__archived__" ? "fo-filter-chip--active" : ""}`}
               onClick={() =>
-                setTreeSearch((p) => (p === "__archived__" ? "" : "__archived__"))
+                setTreeSearch((p) =>
+                  p === "__archived__" ? "" : "__archived__",
+                )
               }
             >
               Archived
@@ -183,6 +196,7 @@ export function FolderOrganizerView() {
             {duplicateGroups.length > 0 && (
               <button
                 type="button"
+                title="Select all folders with similar names so you can review and merge them."
                 className="fo-filter-chip fo-filter-chip--warn"
                 onClick={() => {
                   const ids = new Set(duplicateGroups.flatMap((g) => g));
@@ -198,6 +212,21 @@ export function FolderOrganizerView() {
             )}
           </div>
 
+          {/* Active filter indicator */}
+          {treeSearch.startsWith("__") && (
+            <div className="fo-filter-active">
+              <span>Filter active</span>
+              <button
+                type="button"
+                className="fo-filter-active-clear"
+                onClick={() => setTreeSearch("")}
+              >
+                <Icon name="x" size={10} />
+                Clear
+              </button>
+            </div>
+          )}
+
           {selected.size > 0 && (
             <button
               type="button"
@@ -210,14 +239,22 @@ export function FolderOrganizerView() {
           )}
         </aside>
 
-        {/* Center: folder tree */}
-        <FolderTreePanel
-          selected={selected}
-          onSelect={handleSelect}
-          collapsed={collapsed}
-          onToggleCollapse={handleToggleCollapse}
-          treeSearch={treeSearch}
-        />
+        {/* Center: folder tree + optional bulk mode badge */}
+        <div className="fo-tree-col">
+          {selected.size >= 2 && (
+            <div className="fo-mode-badge">
+              <Icon name="check-square" size={12} />
+              Bulk select — {selected.size} folders
+            </div>
+          )}
+          <FolderTreePanel
+            selected={selected}
+            onSelect={handleSelect}
+            collapsed={collapsed}
+            onToggleCollapse={handleToggleCollapse}
+            treeSearch={treeSearch}
+          />
+        </div>
 
         {/* Right: detail (1 selected) | bulk (2+) | empty state */}
         <div className="fo-right-col">
@@ -226,16 +263,13 @@ export function FolderOrganizerView() {
               <Icon name="folder" size={36} />
               <p>Select a folder to edit it</p>
               <p className="fo-right-empty-hint">
-                Or check multiple folders to bulk-organize them.
+                Check multiple folders to bulk-organize them.
               </p>
             </div>
           )}
 
           {selected.size === 1 && singleFolder && (
-            <FolderDetailPanel
-              key={singleFolder.id}
-              folder={singleFolder}
-            />
+            <FolderDetailPanel key={singleFolder.id} folder={singleFolder} />
           )}
 
           {selected.size >= 2 && (

@@ -31,11 +31,15 @@ async function resetStaleServiceWorkerCachesOnce(): Promise<void> {
 
   try {
     const registrations = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(registrations.map((registration) => registration.unregister()));
+    await Promise.all(
+      registrations.map((registration) => registration.unregister()),
+    );
 
     if ("caches" in window) {
       const keys = await caches.keys();
-      const anchormarksKeys = keys.filter((key) => key.startsWith("anchormarks-"));
+      const anchormarksKeys = keys.filter((key) =>
+        key.startsWith("anchormarks-"),
+      );
       await Promise.all(anchormarksKeys.map((key) => caches.delete(key)));
     }
   } catch (error) {

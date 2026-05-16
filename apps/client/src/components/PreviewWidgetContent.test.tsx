@@ -64,7 +64,9 @@ describe("PreviewWidgetContent", () => {
   });
 
   it("renders edit and favorite buttons for each bookmark", () => {
-    renderWithProviders(<PreviewWidgetContent bookmarks={bookmarks.slice(0, 1)} />);
+    renderWithProviders(
+      <PreviewWidgetContent bookmarks={bookmarks.slice(0, 1)} />,
+    );
 
     const buttons = screen.getAllByRole("button");
     expect(buttons.length).toBe(2); // Edit and favorite buttons

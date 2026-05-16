@@ -37,10 +37,9 @@ function buildFlatTree(
   depth: number,
 ): Array<{ folder: Folder; depth: number; eligible: boolean }> {
   const term = search.toLowerCase();
-  const children = folders.filter(
-    (f) => (f.parent_id ?? null) === parentId,
-  );
-  const result: Array<{ folder: Folder; depth: number; eligible: boolean }> = [];
+  const children = folders.filter((f) => (f.parent_id ?? null) === parentId);
+  const result: Array<{ folder: Folder; depth: number; eligible: boolean }> =
+    [];
   for (const child of children) {
     const eligible = !invalidIds.has(child.id);
     const nameMatch = !term || child.name.toLowerCase().includes(term);
@@ -49,7 +48,9 @@ function buildFlatTree(
     if (!term || nameMatch) {
       result.push({ folder: child, depth, eligible });
     }
-    result.push(...buildFlatTree(folders, invalidIds, search, child.id, depth + 1));
+    result.push(
+      ...buildFlatTree(folders, invalidIds, search, child.id, depth + 1),
+    );
   }
   return result;
 }

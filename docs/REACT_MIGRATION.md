@@ -5,6 +5,7 @@
 **✅ Migration is ~80% complete!** Most of the app now runs on React.
 
 ### What's Working
+
 - ✅ React setup complete (Vite + React 19)
 - ✅ All Context providers (Auth, Bookmarks, UI, Folders, Dashboard, etc.)
 - ✅ App shell and layout (App.tsx, AppShell.tsx, main.tsx)
@@ -21,6 +22,7 @@
 - ✅ Context bridge for legacy code integration
 
 ### What's Left
+
 - ⚠️ Some legacy `*.ts` files still exist alongside `*.tsx` versions
 - ⚠️ The old `features/state.ts` module still exists (being phased out)
 - ⚠️ A few tests may reference old file paths
@@ -79,8 +81,9 @@ The old global state module is no longer needed. All state is now in React conte
 grep -r "from.*features/state" apps/client/src --include="*.ts" --include="*.tsx" | grep -v "state.ts:"
 ```
 
-**Action:**  
-- If only a few files import it, migrate those to use context bridge  
+**Action:**
+
+- If only a few files import it, migrate those to use context bridge
 - If nothing imports it, delete or move to `__legacy__/` folder
 
 ### 4. Clean Up Unused Variables (5 min)
@@ -109,16 +112,16 @@ All UI is now React components in `apps/client/src/components/`:
 
 State is managed using React Context + useReducer in `apps/client/src/contexts/`:
 
-| Context              | Manages                                                           |
-| -------------------- | ----------------------------------------------------------------- |
-| `AuthContext`        | `currentUser`, `csrfToken`, `isAuthenticated`, login/logout       |
-| `BookmarksContext`   | `bookmarks[]`, `filterConfig`, `selectedBookmarks`, bulk actions  |
-| `UIContext`          | `currentView`, `viewMode`, `hideFavicons`, `hideSidebar`, sidebar |
-| `FoldersContext`     | `folders[]`, `currentFolder`, folder CRUD                         |
-| `DashboardContext`   | `widgets[]`, `widgetOrder`, dashboard config, drag-and-drop       |
-| `ModalContext`       | Modal open/close state, current modal                             |
-| `ToastContext`       | Toast notifications                                               |
-| `ConfirmContext`     | Confirmation dialogs                                              |
+| Context            | Manages                                                           |
+| ------------------ | ----------------------------------------------------------------- |
+| `AuthContext`      | `currentUser`, `csrfToken`, `isAuthenticated`, login/logout       |
+| `BookmarksContext` | `bookmarks[]`, `filterConfig`, `selectedBookmarks`, bulk actions  |
+| `UIContext`        | `currentView`, `viewMode`, `hideFavicons`, `hideSidebar`, sidebar |
+| `FoldersContext`   | `folders[]`, `currentFolder`, folder CRUD                         |
+| `DashboardContext` | `widgets[]`, `widgetOrder`, dashboard config, drag-and-drop       |
+| `ModalContext`     | Modal open/close state, current modal                             |
+| `ToastContext`     | Toast notifications                                               |
+| `ConfirmContext`   | Confirmation dialogs                                              |
 
 ### Context Bridge
 
@@ -230,9 +233,12 @@ useEffect(() => {
 Use `useCallback` for functions passed to child components to prevent unnecessary re-renders:
 
 ```tsx
-const handleDelete = useCallback((id: string) => {
-  deleteBookmark(id);
-}, [deleteBookmark]);
+const handleDelete = useCallback(
+  (id: string) => {
+    deleteBookmark(id);
+  },
+  [deleteBookmark],
+);
 ```
 
 ### 3. Context Consumers
@@ -322,15 +328,15 @@ The migration is ~80% complete. The remaining work is primarily cleanup and remo
 // Manual re-rendering everywhere
 function addBookmark(bookmark) {
   state.bookmarks.push(bookmark);
-  renderBookmarks();  // Full re-render
-  updateStats();      // Full re-render
-  renderFolders();    // Full re-render
+  renderBookmarks(); // Full re-render
+  updateStats(); // Full re-render
+  renderFolders(); // Full re-render
 }
 
 // Event delegation with data-attributes
 container.innerHTML = `<button data-action="delete" data-id="${id}">Delete</button>`;
-document.addEventListener('click', (e) => {
-  if (e.target.dataset.action === 'delete') {
+document.addEventListener("click", (e) => {
+  if (e.target.dataset.action === "delete") {
     // handle delete
   }
 });
@@ -342,20 +348,24 @@ document.addEventListener('click', (e) => {
 // Declarative state updates
 function useBookmarkActions() {
   const { bookmarks, setBookmarks } = useBookmarks();
-  
-  const addBookmark = useCallback((bookmark: Bookmark) => {
-    setBookmarks([...bookmarks, bookmark]);
-    // Stats and folders auto-update via their own contexts
-  }, [bookmarks, setBookmarks]);
-  
+
+  const addBookmark = useCallback(
+    (bookmark: Bookmark) => {
+      setBookmarks([...bookmarks, bookmark]);
+      // Stats and folders auto-update via their own contexts
+    },
+    [bookmarks, setBookmarks],
+  );
+
   return { addBookmark };
 }
 
 // Explicit event handlers
-<button onClick={() => deleteBookmark(id)}>Delete</button>
+<button onClick={() => deleteBookmark(id)}>Delete</button>;
 ```
 
 React handles:
+
 - **Re-rendering**: Only affected components update
 - **Event handling**: Direct callbacks, no delegation needed
 - **State sync**: Single source of truth in context
@@ -367,7 +377,7 @@ React handles:
 Once cleanup is done, you can:
 
 1. **Remove legacy state.ts entirely** - all state should be in contexts now
-2. **Delete legacy `.ts` component files** - keep only `.tsx` versions  
+2. **Delete legacy `.ts` component files** - keep only `.tsx` versions
 3. **Update CHANGELOG.md** - document the React migration completion
 4. **Get back to feature development!** 🎉
 
