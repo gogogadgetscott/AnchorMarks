@@ -39,13 +39,31 @@ export interface Bookmark {
   thumbnail_local?: string;
 }
 
+export type FolderMetadataType = "Project" | "Tool" | "System" | "Vendor" | "Personal";
+export type FolderMetadataStatus = "Active" | "Archived";
+export type FolderMetadataDomain =
+  | "Solar"
+  | "Homelab"
+  | "Finance"
+  | "Research"
+  | "Other";
+
+export interface FolderMetadata {
+  type?: FolderMetadataType;
+  status?: FolderMetadataStatus;
+  domain?: FolderMetadataDomain;
+}
+
 export interface Folder {
   id: string;
   name: string;
-  parent_id?: string;
+  parent_id?: string | null;
   color?: string;
+  icon?: string;
+  position?: number;
   bookmark_count?: number;
-  type?: "folder"; // Optional discriminator for drag/drop operations
+  metadata?: FolderMetadata | null;
+  type?: "folder"; // discriminator for drag/drop operations
   created_at?: string;
   updated_at?: string;
 }

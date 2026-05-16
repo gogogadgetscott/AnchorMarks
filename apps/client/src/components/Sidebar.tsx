@@ -55,6 +55,12 @@ const NAV_ITEMS: NavItem[] = [
     icon: "bar-chart",
     tooltip: "Analytics",
   },
+  {
+    view: "folder-organizer",
+    label: "Organize Folders",
+    icon: "layout",
+    tooltip: "Organize Folders",
+  },
 ];
 
 
@@ -247,7 +253,8 @@ export function Sidebar() {
         </div>
 
         {/* Folders & Tags — only shown on bookmark list views */}
-        {["all", "folder", "favorites", "recent", "most-used", "archived"].includes(currentView) && <>
+        {["all", "folder", "favorites", "recent", "most-used", "archived"].includes(currentView) && (
+          <>
 
         {/* Folders Section */}
         <div
@@ -359,7 +366,8 @@ export function Sidebar() {
           )}
         </div>
 
-        </>}
+        </>
+        )}
 
         {/* Quick Stats Bar */}
         <div className="stats-bar">

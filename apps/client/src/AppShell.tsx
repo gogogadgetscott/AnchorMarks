@@ -10,6 +10,7 @@ import { EmptyState } from "@components/EmptyState.tsx";
 import { TagCloud } from "@components/TagCloud.tsx";
 import { AnalyticsView } from "@components/AnalyticsView.tsx";
 import { Dashboard } from "@components/Dashboard.tsx";
+import { FolderOrganizerView } from "@components/folders/FolderOrganizerView.tsx";
 import { useAuth } from "./contexts/AuthContext";
 import { useBookmarks } from "./contexts/BookmarksContext";
 import { useUI } from "./contexts/UIContext";
@@ -30,6 +31,8 @@ export function AppShell() {
         return <TagCloud />;
       case "analytics":
         return <AnalyticsView />;
+      case "folder-organizer":
+        return <FolderOrganizerView />;
       default:
         return (
           <>

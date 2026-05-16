@@ -9,7 +9,7 @@ import {
 import { api } from "../services/api.ts";
 import * as state from "../features/state.ts";
 import { syncFoldersBridge } from "./context-bridge";
-import type { Folder, Tag } from "../types/index";
+import type { Folder, FolderMetadata, Tag } from "../types/index";
 import { showToast } from "./ToastContext";
 import { showConfirm } from "./ConfirmContext";
 import { logger } from "@utils/logger";
@@ -30,6 +30,16 @@ interface FoldersMethods {
   updateFolder: (id: string, data: Partial<Folder>) => Promise<void>;
   deleteFolder: (id: string) => Promise<void>;
   getRecursiveBookmarkCount: (folderId: string) => number;
+  /** Move multiple folders to a new parent (or top level when parentId is null). */
+  bulkMoveParents: (
+    ids: string[],
+    parentId: string | null,
+  ) => Promise<void>;
+  /** Update only the metadata field for a folder. */
+  updateFolderMetadata: (
+    id: string,
+    metadata: FolderMetadata,
+  ) => Promise<void>;
 }
 
 interface FoldersActions {
@@ -73,7 +83,6 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
       const data = await api<{ folders: Folder[] }>("/folders");
       const foldersData = data.folders || [];
       setFolders(foldersData);
-      // Sync with vanilla state for backward compatibility
       state.setFolders(foldersData);
     } catch (err) {
       logger.error("Failed to load folders:", err);
@@ -98,7 +107,6 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     [folders],
   );
 
-  // Create folder
   const createFolder = useCallback(
     async (
       data: Partial<Folder>,
@@ -124,14 +132,28 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     [folders],
   );
 
-  // Update folder
   const updateFolder = useCallback(
     async (id: string, data: Partial<Folder>): Promise<void> => {
       try {
-        const folder = await api(`/folders/${id}`, {
-          method: "PUT",
-          body: JSON.stringify(data),
-        });
+        // Use the dedicated parent endpoint when only changing parent_id,
+        // to get proper depth validation on the server.
+        const keys = Object.keys(data);
+        const isParentOnly =
+          keys.length === 1 && "parent_id" in data;
+
+        let folder: Folder;
+        if (isParentOnly) {
+          folder = await api(`/folders/${id}/parent`, {
+            method: "PATCH",
+            body: JSON.stringify({ parent_id: data.parent_id ?? null }),
+          });
+        } else {
+          folder = await api(`/folders/${id}`, {
+            method: "PUT",
+            body: JSON.stringify(data),
+          });
+        }
+
         const updatedFolders = folders.map((f) =>
           f.id === id ? (folder as Folder) : f,
         );
@@ -141,12 +163,50 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
       } catch (err: unknown) {
         logger.error("Failed to update folder:", err);
         showToast((err as Error).message, "error");
+        throw err;
       }
     },
     [folders],
   );
 
-  // Delete folder
+  const updateFolderMetadata = useCallback(
+    async (id: string, metadata: FolderMetadata): Promise<void> => {
+      await updateFolder(id, { metadata });
+    },
+    [updateFolder],
+  );
+
+  const bulkMoveParents = useCallback(
+    async (ids: string[], parentId: string | null): Promise<void> => {
+      try {
+        const result = await api<{ moved: string[]; errors: { id: string; error: string }[] }>(
+          "/folders/bulk-move",
+          {
+            method: "POST",
+            body: JSON.stringify({ ids, parent_id: parentId }),
+          },
+        );
+
+        if (result.errors.length > 0) {
+          const skipped = result.errors.length;
+          showToast(
+            `Moved ${result.moved.length} folders. ${skipped} could not be moved.`,
+            "error",
+          );
+        } else {
+          showToast(`Moved ${result.moved.length} folders`, "success");
+        }
+
+        await loadFolders();
+      } catch (err: unknown) {
+        logger.error("Failed to bulk-move folders:", err);
+        showToast((err as Error).message, "error");
+        throw err;
+      }
+    },
+    [loadFolders],
+  );
+
   const deleteFolder = useCallback(
     async (id: string): Promise<void> => {
       const confirmed = await showConfirm(
@@ -172,7 +232,6 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
 
         showToast("Folder deleted", "success");
 
-        // Reload bookmarks if we're currently viewing this folder
         if (currentFolder === id) {
           const { loadBookmarks } =
             await import("@features/bookmarks/bookmarks.ts");
@@ -202,6 +261,8 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     setDraggedSidebarItem: useCallback((val) => setDraggedSidebarItem(val), []),
     createFolder,
     updateFolder,
+    updateFolderMetadata,
+    bulkMoveParents,
     deleteFolder,
     getRecursiveBookmarkCount,
   };

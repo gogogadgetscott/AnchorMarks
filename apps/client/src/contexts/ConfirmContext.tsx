@@ -1,8 +1,9 @@
-import React, {
+import {
   createContext,
   useContext,
   useState,
   useCallback,
+  useEffect,
   type ReactNode,
 } from "react";
 
@@ -114,7 +115,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   );
 
   // Register global dispatcher
-  React.useEffect(() => {
+  useEffect(() => {
     registerConfirmDispatcher(async (type, message, options) => {
       return openDialog(type, message, options);
     });

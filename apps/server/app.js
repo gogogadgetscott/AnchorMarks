@@ -320,11 +320,9 @@ mountRoutes(app, db);
 // Serve frontend assets
 // In development: Vite dev server runs on port 5173, Express serves API on port 3000
 // In production: Express serves built Vite assets from dist/
-const staticDir =
-  config.NODE_ENV === "production" &&
-  fs.existsSync(path.join(__dirname, "..", "client", "dist"))
-    ? path.join(__dirname, "..", "client", "dist")
-    : path.join(__dirname, "..", "client");
+const distDir = path.join(__dirname, "..", "client", "dist");
+const clientDir = path.join(__dirname, "..", "client");
+const staticDir = fs.existsSync(distDir) ? distDir : clientDir;
 
 logger.info(`Serving frontend from: ${staticDir} (${config.NODE_ENV} mode)`);
 
@@ -360,6 +358,7 @@ app.get("/favicon.ico", (req, res) => {
 // Serve remaining public assets (if any)
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.static(staticDir));
+app.use(express.static(path.join(__dirname, "..", "client", "public")));
 
 // Serve frontend for all other routes (static catch-all)
 const setupStaticRoutes = require("./routes/static");

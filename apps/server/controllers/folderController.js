@@ -16,7 +16,7 @@ function listFolders(req, res) {
 function createFolder(req, res) {
   const db = req.app.get("db");
   const folderModel = require("../models/folder");
-  const { name, parent_id, color, icon } = req.validated;
+  const { name, parent_id, color, icon, metadata } = req.validated;
   try {
     const id = uuidv4();
     const maxPos = db
@@ -34,6 +34,7 @@ function createFolder(req, res) {
       icon || "folder",
       position,
       parent_id || null,
+      metadata || null,
     );
     const folder = folderModel.getFolderById(db, id, req.user.id);
     broadcast(req.user.id, { type: "folders:changed" });
@@ -46,21 +47,68 @@ function createFolder(req, res) {
 function updateFolder(req, res) {
   const db = req.app.get("db");
   const folderModel = require("../models/folder");
-  const { name, parent_id, color, icon, position } = req.validated;
+  const { name, parent_id, color, icon, position, metadata } = req.validated;
   try {
-    folderModel.updateFolder(db, req.params.id, req.user.id, {
-      name,
-      parent_id,
-      color,
-      icon,
-      position,
-    });
+    // Build fields object — only include keys that were actually provided
+    const fields = {};
+    if (name !== undefined) fields.name = name;
+    if (parent_id !== undefined) fields.parent_id = parent_id || null;
+    if (color !== undefined) fields.color = color;
+    if (icon !== undefined) fields.icon = icon;
+    if (position !== undefined) fields.position = position;
+    if (metadata !== undefined) fields.metadata = metadata;
+
+    folderModel.updateFolder(db, req.params.id, req.user.id, fields);
     const folder = folderModel.getFolderById(db, req.params.id, req.user.id);
     if (!folder) return res.status(404).json({ error: "Folder not found" });
     broadcast(req.user.id, { type: "folders:changed" });
     res.json(folder);
   } catch (err) {
     return reportAndSend(res, err, logger, "Error updating folder");
+  }
+}
+
+// PATCH /api/folders/:id/parent — explicitly set (or clear) a folder's parent.
+// Enforces max-depth and cycle constraints.
+function updateFolderParent(req, res) {
+  const db = req.app.get("db");
+  const folderModel = require("../models/folder");
+  // parent_id may be null (move to top level) or a UUID string
+  const { parent_id } = req.validated;
+  try {
+    const err = folderModel.setFolderParent(
+      db,
+      req.params.id,
+      req.user.id,
+      parent_id ?? null,
+    );
+    if (err) return res.status(422).json({ error: err });
+
+    const folder = folderModel.getFolderById(db, req.params.id, req.user.id);
+    if (!folder) return res.status(404).json({ error: "Folder not found" });
+    broadcast(req.user.id, { type: "folders:changed" });
+    res.json(folder);
+  } catch (innerErr) {
+    return reportAndSend(res, innerErr, logger, "Error updating folder parent");
+  }
+}
+
+// POST /api/folders/bulk-move — move an array of folders to a new parent.
+function bulkMoveParents(req, res) {
+  const db = req.app.get("db");
+  const folderModel = require("../models/folder");
+  const { ids, parent_id } = req.validated;
+  try {
+    const result = folderModel.bulkUpdateParents(
+      db,
+      ids,
+      req.user.id,
+      parent_id ?? null,
+    );
+    broadcast(req.user.id, { type: "folders:changed" });
+    res.json(result);
+  } catch (err) {
+    return reportAndSend(res, err, logger, "Error bulk-moving folders");
   }
 }
 
@@ -76,4 +124,11 @@ function deleteFolder(req, res) {
   }
 }
 
-module.exports = { listFolders, createFolder, updateFolder, deleteFolder };
+module.exports = {
+  listFolders,
+  createFolder,
+  updateFolder,
+  updateFolderParent,
+  bulkMoveParents,
+  deleteFolder,
+};

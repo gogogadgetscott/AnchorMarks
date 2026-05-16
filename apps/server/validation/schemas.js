@@ -121,12 +121,26 @@ const bulkIds = z
   .strict();
 
 // ---- Folders ----
+
+const folderMetadataSchema = z
+  .object({
+    type: z
+      .enum(["Project", "Tool", "System", "Vendor", "Personal"])
+      .optional(),
+    status: z.enum(["Active", "Archived"]).optional(),
+    domain: z
+      .enum(["Solar", "Homelab", "Finance", "Research", "Other"])
+      .optional(),
+  })
+  .optional();
+
 const folderCreate = z
   .object({
     name: nonEmptyString("Folder name is required"),
     parent_id: uuidLike,
     color: optionalString,
     icon: optionalString,
+    metadata: folderMetadataSchema,
   })
   .strict();
 
@@ -137,6 +151,24 @@ const folderUpdate = z
     color: optionalString,
     icon: optionalString,
     position: z.coerce.number().int().optional(),
+    metadata: folderMetadataSchema,
+  })
+  .strict();
+
+// PATCH /:id/parent — set parent explicitly; parent_id null means top level
+const folderParentUpdate = z
+  .object({
+    parent_id: z.string().uuid().nullable().optional(),
+  })
+  .strict();
+
+// POST /bulk-move — move multiple folders to the same parent
+const folderBulkMove = z
+  .object({
+    ids: z
+      .array(z.string().uuid())
+      .min(1, "At least one folder ID is required"),
+    parent_id: z.string().uuid().nullable().optional(),
   })
   .strict();
 
@@ -431,6 +463,8 @@ module.exports = {
   bulkIds,
   folderCreate,
   folderUpdate,
+  folderParentUpdate,
+  folderBulkMove,
   tagCreate,
   tagUpdate,
   tagsBulkAddRemove,

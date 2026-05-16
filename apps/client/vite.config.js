@@ -21,6 +21,7 @@ const { version: APP_VERSION } = JSON.parse(
   fs.readFileSync(path.resolve(projectRoot, "package.json"), "utf-8"),
 );
 process.env.VITE_APP_VERSION = APP_VERSION;
+const SW_CACHE_VERSION = `anchormarks-v${APP_VERSION}-${Date.now().toString(36)}`;
 
 // Detect if SSL is enabled by checking if SSL_KEY and SSL_CERT are set AND files exist
 // This matches the Express server fallback behavior in apps/server/index.js
@@ -84,7 +85,7 @@ const httpRedirectPlugin = () => ({
   },
 });
 
-// Vite plugin to inject APP_VERSION into public/sw.js
+// Vite plugin to inject a build-unique cache version into public/sw.js
 const swVersionPlugin = () => ({
   name: "sw-version",
   // Dev: intercept /sw.js requests and replace the version placeholder
@@ -96,8 +97,8 @@ const swVersionPlugin = () => ({
         "utf-8",
       );
       const processed = src.replace(
-        /anchormarks-v[\d.]+/g,
-        `anchormarks-v${APP_VERSION}`,
+        /anchormarks-v[\w.-]+/g,
+        SW_CACHE_VERSION,
       );
       res.setHeader("Content-Type", "application/javascript");
       res.end(processed);
@@ -110,7 +111,7 @@ const swVersionPlugin = () => ({
     const src = fs.readFileSync(swDist, "utf-8");
     fs.writeFileSync(
       swDist,
-      src.replace(/anchormarks-v[\d.]+/g, `anchormarks-v${APP_VERSION}`),
+      src.replace(/anchormarks-v[\w.-]+/g, SW_CACHE_VERSION),
     );
   },
 });
@@ -127,42 +128,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, "index.html"),
-      },
-      output: {
-        manualChunks: {
-            auth: ["src/features/auth/auth.ts"],
-            bookmarks: [
-              "src/features/bookmarks/bookmarks.ts",
-              "src/features/bookmarks/folders-utils.ts",
-              "src/features/bookmarks/search.ts",
-              "src/features/bookmarks/filters.ts",
-              "src/features/bookmarks/tag-input.ts",
-              "src/features/bookmarks/omnibar-controller.ts",
-            ],
-            dashboard: ["src/features/bookmarks/dashboard.ts"],
-            commands: ["src/features/bookmarks/commands.ts"],
-            features: [
-              "src/features/keyboard/handler.ts",
-              "src/features/ui/forms.ts",
-              "src/features/ui/omnibar.ts",
-              "src/features/ui/confirm-dialog.ts",
-            ],
-            utils: [
-              "src/utils/index.ts",
-              "src/utils/logger.ts",
-              "src/utils/error-handler.ts",
-              "src/utils/event-cleanup.ts",
-              "src/utils/keyboard-shortcuts.ts",
-            ],
-            plugins: [
-              "src/features/bookmarks/import-export.ts",
-              "src/features/bookmarks/tour.ts",
-            ],
-            ui: [
-              "src/utils/ui-helpers.ts",
-              "src/components/index.ts",
-            ],
-          },
       },
     },
     // Generate source maps for easier debugging
