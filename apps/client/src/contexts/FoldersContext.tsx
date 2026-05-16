@@ -35,6 +35,10 @@ interface FoldersMethods {
     ids: string[],
     parentId: string | null,
   ) => Promise<void>;
+  /** Merge source folders into target: moves their bookmarks + children, then deletes sources. */
+  mergeFolders: (sourceIds: string[], targetId: string) => Promise<void>;
+  /** Delete multiple folders; their bookmarks move to uncategorized. */
+  bulkDeleteFolders: (ids: string[]) => Promise<void>;
   /** Update only the metadata field for a folder. */
   updateFolderMetadata: (
     id: string,
@@ -176,6 +180,42 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     [updateFolder],
   );
 
+  const mergeFolders = useCallback(
+    async (sourceIds: string[], targetId: string): Promise<void> => {
+      try {
+        await api("/folders/merge", {
+          method: "POST",
+          body: JSON.stringify({ source_ids: sourceIds, target_id: targetId }),
+        });
+        showToast(`Merged ${sourceIds.length} folder${sourceIds.length !== 1 ? "s" : ""}`, "success");
+        await loadFolders();
+      } catch (err: unknown) {
+        logger.error("Failed to merge folders:", err);
+        showToast((err as Error).message, "error");
+        throw err;
+      }
+    },
+    [loadFolders],
+  );
+
+  const bulkDeleteFolders = useCallback(
+    async (ids: string[]): Promise<void> => {
+      try {
+        await api("/folders/bulk-delete", {
+          method: "POST",
+          body: JSON.stringify({ ids }),
+        });
+        showToast(`Deleted ${ids.length} folder${ids.length !== 1 ? "s" : ""}`, "success");
+        await loadFolders();
+      } catch (err: unknown) {
+        logger.error("Failed to bulk-delete folders:", err);
+        showToast((err as Error).message, "error");
+        throw err;
+      }
+    },
+    [loadFolders],
+  );
+
   const bulkMoveParents = useCallback(
     async (ids: string[], parentId: string | null): Promise<void> => {
       try {
@@ -263,6 +303,8 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     updateFolder,
     updateFolderMetadata,
     bulkMoveParents,
+    mergeFolders,
+    bulkDeleteFolders,
     deleteFolder,
     getRecursiveBookmarkCount,
   };

@@ -1,4 +1,4 @@
-import { useState, useCallback, type ReactNode } from "react";
+import { useState, useMemo, useCallback, type ReactNode } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -14,19 +14,32 @@ import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { useFolders } from "@contexts/FoldersContext";
 import { Icon } from "@components/Icon.tsx";
 import { showToast } from "@contexts/ToastContext";
-import { FolderParentSelector } from "./FolderParentSelector";
-import { FolderMetadataEditor } from "./FolderMetadataEditor";
-import type { Folder, FolderMetadata } from "../../types/index";
+import type { Folder } from "../../types/index";
 
-// ── Draggable tree item ──────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+export interface FolderTreePanelProps {
+  selected: Set<string>;
+  onSelect: (id: string, exclusive: boolean) => void;
+  collapsed: Set<string>;
+  onToggleCollapse: (id: string) => void;
+  treeSearch: string;
+}
+
+// ── Tree item ────────────────────────────────────────────────────────────────
 
 interface TreeItemProps {
   folder: Folder;
-  depth: number; // 0 = top-level, 1 = child
+  depth: number;
   isSelected: boolean;
   isDropTarget: boolean;
   isBeingDragged: boolean;
-  onClick: () => void;
+  hasChildren: boolean;
+  isCollapsed: boolean;
+  recursiveCount: number;
+  onClickRow: () => void;
+  onClickCheckbox: (e: React.MouseEvent) => void;
+  onToggleCollapse: (e: React.MouseEvent) => void;
 }
 
 function TreeItem({
@@ -35,7 +48,12 @@ function TreeItem({
   isSelected,
   isDropTarget,
   isBeingDragged,
-  onClick,
+  hasChildren,
+  isCollapsed,
+  recursiveCount,
+  onClickRow,
+  onClickCheckbox,
+  onToggleCollapse,
 }: TreeItemProps) {
   const { attributes, listeners, setNodeRef: setDragRef } = useDraggable({
     id: folder.id,
@@ -52,6 +70,16 @@ function TreeItem({
     setDropRef(el);
   };
 
+  const directCount = folder.bookmark_count ?? 0;
+  const isEmpty = directCount === 0 && !hasChildren;
+  const isLarge = recursiveCount >= 500;
+
+  const countLabel = isEmpty
+    ? "empty"
+    : recursiveCount !== directCount
+      ? `${directCount.toLocaleString()} (${recursiveCount.toLocaleString()})`
+      : directCount.toLocaleString();
+
   return (
     <div
       ref={combinedRef}
@@ -61,27 +89,54 @@ function TreeItem({
         isSelected ? "ftp-item--selected" : "",
         isDropTarget || isOver ? "ftp-item--drop-target" : "",
         isBeingDragged ? "ftp-item--dragging" : "",
+        isEmpty ? "ftp-item--empty" : "",
       ]
         .filter(Boolean)
         .join(" ")}
-      style={depth > 1 ? { paddingLeft: `${10 + depth * 16}px` } : undefined}
-      onClick={onClick}
+      onClick={onClickRow}
       role="treeitem"
       aria-selected={isSelected}
+      aria-expanded={hasChildren ? !isCollapsed : undefined}
       tabIndex={0}
-      onKeyDown={(e) => e.key === "Enter" && onClick()}
+      onKeyDown={(e) => e.key === "Enter" && onClickRow()}
     >
+      {/* Collapse toggle */}
+      <button
+        type="button"
+        className={`ftp-collapse ${hasChildren ? "" : "ftp-collapse--leaf"}`}
+        onClick={onToggleCollapse}
+        aria-label={isCollapsed ? "Expand" : "Collapse"}
+        tabIndex={-1}
+      >
+        {hasChildren && (
+          <Icon
+            name={isCollapsed ? "chevron-right" : "chevron-down"}
+            size={12}
+          />
+        )}
+      </button>
+
+      {/* Checkbox */}
+      <span
+        className="ftp-checkbox"
+        onClick={onClickCheckbox}
+        role="checkbox"
+        aria-checked={isSelected}
+        tabIndex={-1}
+      >
+        {isSelected && <Icon name="check" size={10} />}
+      </span>
+
       {/* Drag handle */}
       <span
         className="ftp-drag-handle"
         {...attributes}
         {...listeners}
-        title="Drag to change parent"
+        title="Drag to move or nest"
         aria-label="Drag handle"
       >
         <Icon name="grip-vertical" size={14} />
       </span>
-
 
       <span
         className="ftp-dot"
@@ -90,9 +145,22 @@ function TreeItem({
 
       <span className="ftp-name">{folder.name}</span>
 
-      {folder.bookmark_count != null && (
-        <span className="ftp-count">{folder.bookmark_count}</span>
-      )}
+      <span
+        className={[
+          "ftp-count",
+          isEmpty ? "ftp-count--empty" : "",
+          isLarge ? "ftp-count--large" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        title={
+          recursiveCount !== directCount
+            ? `${directCount.toLocaleString()} directly · ${recursiveCount.toLocaleString()} including subfolders`
+            : `${directCount.toLocaleString()} bookmarks`
+        }
+      >
+        {countLabel}
+      </span>
 
       {folder.metadata?.status === "Archived" && (
         <span className="ftp-badge ftp-badge--archived">Archived</span>
@@ -101,113 +169,32 @@ function TreeItem({
   );
 }
 
-// Drop zone at the top — "move to top level"
+// ── Top-level drop zone ───────────────────────────────────────────────────────
+
 function TopLevelDropZone({ isOver }: { isOver: boolean }) {
   const { setNodeRef } = useDroppable({ id: "drop:__top_level__" });
   return (
     <div
       ref={setNodeRef}
       className={`ftp-top-drop ${isOver ? "ftp-top-drop--active" : ""}`}
+      title="Drag a folder here to make it top-level"
     >
       <Icon name="layers" size={13} />
-      Drop here to make top-level
-    </div>
-  );
-}
-
-// ── Detail panel ─────────────────────────────────────────────────────────────
-
-interface DetailPanelProps {
-  folder: Folder;
-}
-
-function DetailPanel({ folder }: DetailPanelProps) {
-  const { updateFolder } = useFolders();
-  // key={folder.id} on <DetailPanel> in the parent ensures this component is
-  // fully remounted whenever the selection changes, so useState initial values
-  // are always fresh — no extra effect needed.
-  const [name, setName] = useState(folder.name);
-  const [meta, setMeta] = useState<FolderMetadata>(folder.metadata ?? {});
-  const [saving, setSaving] = useState(false);
-
-  const handleSave = useCallback(async () => {
-    setSaving(true);
-    try {
-      await updateFolder(folder.id, {
-        name: name.trim() || folder.name,
-        metadata: meta,
-      });
-    } finally {
-      setSaving(false);
-    }
-  }, [folder.id, folder.name, name, meta, updateFolder]);
-
-  return (
-    <div className="ftp-detail">
-      <div className="ftp-detail-header">
-        <span
-          className="ftp-detail-dot"
-          style={{ background: folder.color || "var(--primary-500)" }}
-        />
-        <span className="ftp-detail-title">Folder Settings</span>
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="ftp-name">Name</label>
-        <input
-          id="ftp-name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={handleSave}
-          onKeyDown={(e) => e.key === "Enter" && handleSave()}
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Parent Folder</label>
-        <FolderParentSelector
-          folderId={folder.id}
-          currentParentId={folder.parent_id ?? null}
-          onChange={async (newParentId) => {
-            setSaving(true);
-            try {
-              await updateFolder(folder.id, { parent_id: newParentId });
-            } finally {
-              setSaving(false);
-            }
-          }}
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Metadata</label>
-        <FolderMetadataEditor
-          metadata={meta}
-          onChange={setMeta}
-          disabled={saving}
-        />
-      </div>
-
-      <div className="ftp-detail-actions">
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={handleSave}
-          disabled={saving}
-        >
-          {saving ? "Saving…" : "Save"}
-        </button>
-      </div>
+      Drop here → Top Level
     </div>
   );
 }
 
 // ── Main panel ────────────────────────────────────────────────────────────────
 
-export function FolderTreePanel() {
-  const { folders, updateFolder } = useFolders();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+export function FolderTreePanel({
+  selected,
+  onSelect,
+  collapsed,
+  onToggleCollapse,
+  treeSearch,
+}: FolderTreePanelProps) {
+  const { folders, updateFolder, getRecursiveBookmarkCount } = useFolders();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
@@ -215,7 +202,45 @@ export function FolderTreePanel() {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
 
-  const selectedFolder = selectedId ? folders.find((f) => f.id === selectedId) ?? null : null;
+  // Determine which folder ids are visible given the current search/filter
+  const visibleIds = useMemo(() => {
+    if (!treeSearch) return null; // null = show everything
+
+    if (treeSearch === "__empty__") {
+      return new Set(
+        folders
+          .filter(
+            (f) =>
+              !f.bookmark_count && !folders.some((c) => c.parent_id === f.id),
+          )
+          .map((f) => f.id),
+      );
+    }
+
+    if (treeSearch === "__archived__") {
+      return new Set(
+        folders
+          .filter((f) => f.metadata?.status === "Archived")
+          .map((f) => f.id),
+      );
+    }
+
+    // Text search: include matching folders + all their ancestors
+    const term = treeSearch.toLowerCase();
+    const matching = new Set(
+      folders
+        .filter((f) => f.name.toLowerCase().includes(term))
+        .map((f) => f.id),
+    );
+    for (const id of [...matching]) {
+      let f = folders.find((x) => x.id === id);
+      while (f?.parent_id) {
+        matching.add(f.parent_id);
+        f = folders.find((x) => x.id === f!.parent_id);
+      }
+    }
+    return matching;
+  }, [treeSearch, folders]);
 
   const handleDragStart = useCallback((e: DragStartEvent) => {
     setActiveId(String(e.active.id));
@@ -235,7 +260,6 @@ export function FolderTreePanel() {
 
       const dropId = String(e.over.id);
 
-      // Dropped on the top-level zone → clear parent
       if (dropId === "drop:__top_level__") {
         if (dragged.parent_id == null) return;
         try {
@@ -246,14 +270,11 @@ export function FolderTreePanel() {
         return;
       }
 
-      // Dropped onto another folder → make dragged a child of that folder
       const targetFolderId = dropId.replace(/^drop:/, "");
       if (!targetFolderId || targetFolderId === dragged.id) return;
 
       const target = folders.find((f) => f.id === targetFolderId);
       if (!target) return;
-
-      // Don't drop onto own current parent (no-op)
       if (target.id === (dragged.parent_id ?? null)) return;
 
       try {
@@ -265,31 +286,58 @@ export function FolderTreePanel() {
     [folders, updateFolder],
   );
 
-  const activeFolder = activeId ? folders.find((f) => f.id === activeId) : null;
-  const isTopDropActive =
-    overId === "drop:__top_level__" && activeId !== null;
+  const activeFolder = activeId
+    ? folders.find((f) => f.id === activeId)
+    : null;
+  const isTopDropActive = overId === "drop:__top_level__" && activeId !== null;
 
-  // Recursively render folders at any depth
+  // Recursive render — nesting provides indentation; .ftp-children adds tree lines
   function renderBranch(parentId: string | null, depth: number): ReactNode {
     const children = folders.filter(
       (f) => (f.parent_id ?? null) === parentId,
     );
     if (children.length === 0) return null;
-    return children.map((folder) => (
-      <div key={folder.id} className="ftp-group">
-        <TreeItem
-          folder={folder}
-          depth={depth}
-          isSelected={selectedId === folder.id}
-          isDropTarget={overId === `drop:${folder.id}` && activeId !== folder.id}
-          isBeingDragged={activeId === folder.id}
-          onClick={() =>
-            setSelectedId(selectedId === folder.id ? null : folder.id)
-          }
-        />
-        {renderBranch(folder.id, depth + 1)}
-      </div>
-    ));
+
+    return children.map((folder) => {
+      if (visibleIds && !visibleIds.has(folder.id)) return null;
+
+      const hasChildren = folders.some((f) => f.parent_id === folder.id);
+      const isCollapsed = collapsed.has(folder.id);
+      const recursiveCount = getRecursiveBookmarkCount(folder.id);
+      const subBranch =
+        hasChildren && !isCollapsed
+          ? renderBranch(folder.id, depth + 1)
+          : null;
+
+      return (
+        <div key={folder.id} className="ftp-node">
+          <TreeItem
+            folder={folder}
+            depth={depth}
+            isSelected={selected.has(folder.id)}
+            isDropTarget={
+              overId === `drop:${folder.id}` && activeId !== folder.id
+            }
+            isBeingDragged={activeId === folder.id}
+            hasChildren={hasChildren}
+            isCollapsed={isCollapsed}
+            recursiveCount={recursiveCount}
+            onClickRow={() => onSelect(folder.id, true)}
+            onClickCheckbox={(e) => {
+              e.stopPropagation();
+              onSelect(folder.id, false);
+            }}
+            onToggleCollapse={(e) => {
+              e.stopPropagation();
+              onToggleCollapse(folder.id);
+            }}
+          />
+          {subBranch && (
+            <div className="ftp-children">{subBranch}</div>
+          )}
+        </div>
+      );
+    });
   }
 
   return (
@@ -300,35 +348,26 @@ export function FolderTreePanel() {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="ftp-root">
-        {/* Tree column */}
-        <div className="ftp-tree" role="tree" aria-label="Folder tree">
-          <TopLevelDropZone isOver={isTopDropActive} />
+      <div className="ftp-tree" role="tree" aria-label="Folder tree">
+        <TopLevelDropZone isOver={isTopDropActive} />
 
-          {renderBranch(null, 0)}
+        {treeSearch && visibleIds?.size === 0 && (
+          <div className="ftp-empty">
+            <Icon name="search" size={28} />
+            <p>No folders match "{treeSearch}"</p>
+          </div>
+        )}
 
-          {folders.length === 0 && (
-            <div className="ftp-empty">
-              <Icon name="folder" size={32} />
-              <p>No folders yet</p>
-            </div>
-          )}
-        </div>
+        {renderBranch(null, 0)}
 
-        {/* Detail column */}
-        <div className="ftp-detail-col">
-          {selectedFolder ? (
-            <DetailPanel key={selectedFolder.id} folder={selectedFolder} />
-          ) : (
-            <div className="ftp-detail ftp-detail--empty">
-              <Icon name="folder" size={40} />
-              <p>Select a folder to edit its settings</p>
-            </div>
-          )}
-        </div>
+        {folders.length === 0 && (
+          <div className="ftp-empty">
+            <Icon name="folder" size={32} />
+            <p>No folders yet</p>
+          </div>
+        )}
       </div>
 
-      {/* Ghost while dragging */}
       <DragOverlay>
         {activeFolder ? (
           <div className="ftp-item ftp-item--ghost">

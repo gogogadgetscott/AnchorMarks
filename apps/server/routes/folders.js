@@ -18,13 +18,29 @@ module.exports = function createFoldersRouter(db) {
     ctrl.createFolder,
   );
 
-  // Bulk-move must come before /:id to avoid route shadowing
+  // Static sub-routes must come before /:id to avoid route shadowing
   router.post(
     "/bulk-move",
     auth,
     csrf,
     validateBody(schemas.folderBulkMove),
     ctrl.bulkMoveParents,
+  );
+
+  router.post(
+    "/merge",
+    auth,
+    csrf,
+    validateBody(schemas.folderMerge),
+    ctrl.mergeFolders,
+  );
+
+  router.post(
+    "/bulk-delete",
+    auth,
+    csrf,
+    validateBody(schemas.folderBulkDelete),
+    ctrl.bulkDeleteFolders,
   );
 
   router.put(

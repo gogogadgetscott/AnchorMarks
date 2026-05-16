@@ -158,6 +158,39 @@ function deleteAllForUser(db, userId) {
   return db.prepare("DELETE FROM folders WHERE user_id = ?").run(userId);
 }
 
+// Move all bookmarks from sourceIds into targetId, reparent their children to
+// the target, then delete the source folders — all in one transaction.
+function mergeFolders(db, sourceIds, targetId, userId) {
+  const placeholders = sourceIds.map(() => "?").join(", ");
+  db.transaction(() => {
+    db.prepare(
+      `UPDATE bookmarks SET folder_id = ? WHERE folder_id IN (${placeholders}) AND user_id = ?`,
+    ).run(targetId, ...sourceIds, userId);
+    db.prepare(
+      `UPDATE folders SET parent_id = ? WHERE parent_id IN (${placeholders}) AND user_id = ?`,
+    ).run(targetId, ...sourceIds, userId);
+    db.prepare(
+      `DELETE FROM folders WHERE id IN (${placeholders}) AND user_id = ?`,
+    ).run(...sourceIds, userId);
+  })();
+}
+
+// Delete multiple folders: bookmarks → uncategorized, children → top level.
+function bulkDeleteFolders(db, ids, userId) {
+  const placeholders = ids.map(() => "?").join(", ");
+  db.transaction(() => {
+    db.prepare(
+      `UPDATE bookmarks SET folder_id = NULL WHERE folder_id IN (${placeholders}) AND user_id = ?`,
+    ).run(...ids, userId);
+    db.prepare(
+      `UPDATE folders SET parent_id = NULL WHERE parent_id IN (${placeholders}) AND user_id = ?`,
+    ).run(...ids, userId);
+    db.prepare(
+      `DELETE FROM folders WHERE id IN (${placeholders}) AND user_id = ?`,
+    ).run(...ids, userId);
+  })();
+}
+
 function createFolder(
   db,
   id,
@@ -219,6 +252,8 @@ module.exports = {
   bulkUpdateParents,
   deleteFolder,
   deleteAllForUser,
+  mergeFolders,
+  bulkDeleteFolders,
   createFolder,
   ensureFolder,
 };

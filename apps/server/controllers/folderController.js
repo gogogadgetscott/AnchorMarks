@@ -124,6 +124,40 @@ function deleteFolder(req, res) {
   }
 }
 
+// POST /api/folders/merge — merge source folders into a single target.
+function mergeFoldersCtrl(req, res) {
+  const db = req.app.get("db");
+  const folderModel = require("../models/folder");
+  const { source_ids, target_id } = req.validated;
+  try {
+    const target = folderModel.getFolderById(db, target_id, req.user.id);
+    if (!target) return res.status(404).json({ error: "Target folder not found" });
+    const sources = source_ids.filter((id) => id !== target_id);
+    if (sources.length === 0)
+      return res.status(422).json({ error: "No valid source folders" });
+    folderModel.mergeFolders(db, sources, target_id, req.user.id);
+    broadcast(req.user.id, { type: "folders:changed" });
+    broadcast(req.user.id, { type: "bookmarks:changed" });
+    res.json({ merged: sources.length, target_id });
+  } catch (err) {
+    return reportAndSend(res, err, logger, "Error merging folders");
+  }
+}
+
+// POST /api/folders/bulk-delete — delete multiple folders.
+function bulkDeleteFoldersCtrl(req, res) {
+  const db = req.app.get("db");
+  const folderModel = require("../models/folder");
+  const { ids } = req.validated;
+  try {
+    folderModel.bulkDeleteFolders(db, ids, req.user.id);
+    broadcast(req.user.id, { type: "folders:changed" });
+    res.json({ deleted: ids.length });
+  } catch (err) {
+    return reportAndSend(res, err, logger, "Error bulk-deleting folders");
+  }
+}
+
 module.exports = {
   listFolders,
   createFolder,
@@ -131,4 +165,6 @@ module.exports = {
   updateFolderParent,
   bulkMoveParents,
   deleteFolder,
+  mergeFolders: mergeFoldersCtrl,
+  bulkDeleteFolders: bulkDeleteFoldersCtrl,
 };

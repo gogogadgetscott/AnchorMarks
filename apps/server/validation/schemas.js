@@ -172,6 +172,25 @@ const folderBulkMove = z
   })
   .strict();
 
+// POST /merge — merge source folders into a target folder
+const folderMerge = z
+  .object({
+    source_ids: z
+      .array(z.string().uuid())
+      .min(1, "At least one source folder ID is required"),
+    target_id: z.string().uuid(),
+  })
+  .strict();
+
+// POST /bulk-delete — delete multiple folders (bookmarks → uncategorized)
+const folderBulkDelete = z
+  .object({
+    ids: z
+      .array(z.string().uuid())
+      .min(1, "At least one folder ID is required"),
+  })
+  .strict();
+
 // ---- Tags ----
 const tagCreate = z
   .object({
@@ -465,6 +484,8 @@ module.exports = {
   folderUpdate,
   folderParentUpdate,
   folderBulkMove,
+  folderMerge,
+  folderBulkDelete,
   tagCreate,
   tagUpdate,
   tagsBulkAddRemove,

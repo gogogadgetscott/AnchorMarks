@@ -52,6 +52,7 @@ export interface FolderMetadata {
   type?: FolderMetadataType;
   status?: FolderMetadataStatus;
   domain?: FolderMetadataDomain;
+  description?: string;
 }
 
 export interface Folder {
