@@ -28,6 +28,8 @@ export default function BookmarkModal() {
   const modalRef = useRef<HTMLDivElement>(null);
   const [isFetching, setIsFetching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isAILoading, setIsAILoading] = useState(false);
+  const [hasAIResults, setHasAIResults] = useState(false);
 
   useEffect(() => {
     if (modalRef.current) {
@@ -92,7 +94,8 @@ export default function BookmarkModal() {
         description: metadata.description || bookmarkFormData.description,
       });
 
-      // Show smart suggestions using React component
+      setHasAIResults(false);
+      setIsAILoading(false);
       setShowSuggestions(true);
     } catch (error) {
       // Error handling is done in fetchMetadata (logger)
@@ -192,7 +195,7 @@ export default function BookmarkModal() {
                 className="btn btn-secondary"
                 onClick={handleFetchMetadata}
                 disabled={isFetching || !bookmarkFormData.url}
-                title="Auto-fetch title and description"
+                title="Auto-fetch title and description, and AI tag suggestions"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -204,7 +207,13 @@ export default function BookmarkModal() {
                   <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   <path d="M9 12l2 2 4-4" />
                 </svg>
-                {isFetching ? "Loading..." : "Fetch Info"}
+                {isFetching
+                  ? "Loading..."
+                  : isAILoading
+                    ? "Fetch Info · AI…"
+                    : hasAIResults
+                      ? "Fetch Info · AI"
+                      : "Fetch Info"}
               </button>
             </div>
           </div>
@@ -317,6 +326,10 @@ export default function BookmarkModal() {
                 url={bookmarkFormData.url}
                 onTagClick={handleTagClick}
                 enabled={true}
+                onAIStatusChange={(loading, hasResults) => {
+                  setIsAILoading(loading);
+                  if (hasResults) setHasAIResults(true);
+                }}
               />
             )}
           </div>

@@ -27,6 +27,7 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN}
     container_name: anchormarks
     restart: unless-stopped
+    network_mode: host
     ports:
       - "${PORT:-3000}:${PORT:-3000}"
     volumes:

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useSmartTags } from "@hooks/useSmartTags";
 import type { SmartTagSuggestion } from "@hooks/useSmartTags";
 
@@ -5,6 +6,7 @@ interface SmartTagSuggestionsProps {
   url: string;
   onTagClick: (tag: string) => void;
   enabled?: boolean;
+  onAIStatusChange?: (isLoading: boolean, hasResults: boolean) => void;
 }
 
 /**
@@ -14,6 +16,7 @@ export function SmartTagSuggestions({
   url,
   onTagClick,
   enabled = true,
+  onAIStatusChange,
 }: SmartTagSuggestionsProps) {
   const {
     smartSuggestions,
@@ -23,6 +26,10 @@ export function SmartTagSuggestions({
     isLoadingAI,
     error,
   } = useSmartTags(url, enabled);
+
+  useEffect(() => {
+    onAIStatusChange?.(isLoadingAI, aiSuggestions.length > 0);
+  }, [isLoadingAI, aiSuggestions.length, onAIStatusChange]);
 
   const handleAddAllAI = () => {
     aiSuggestions.forEach((tag: string) => onTagClick(tag));

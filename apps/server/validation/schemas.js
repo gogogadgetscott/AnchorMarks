@@ -12,6 +12,12 @@ const optionalString = z
   .string()
   .optional()
   .transform((s) => (s === "" ? undefined : s));
+const hexColor = optionalString.pipe(
+  z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{3,8}$/, "Color must be a valid hex color code")
+    .optional(),
+);
 const uuidLike = z.string().uuid().optional().or(z.string().min(1));
 const MAX_URL_LENGTH = 2048;
 const MAX_STRING_LENGTH = 10000;
@@ -138,7 +144,7 @@ const folderCreate = z
   .object({
     name: nonEmptyString("Folder name is required"),
     parent_id: uuidLike,
-    color: optionalString,
+    color: hexColor,
     icon: optionalString,
     metadata: folderMetadataSchema,
   })
@@ -148,7 +154,7 @@ const folderUpdate = z
   .object({
     name: optionalString,
     parent_id: uuidLike,
-    color: optionalString,
+    color: hexColor,
     icon: optionalString,
     position: z.coerce.number().int().optional(),
     metadata: folderMetadataSchema,
@@ -254,11 +260,20 @@ const importedBookmark = z
   })
   .strict();
 
+const importedFolder = z.object({
+  id: z.string().optional(),
+  name: z.string().max(255).optional(),
+  color: hexColor,
+  icon: optionalString.pipe(z.string().max(50).optional()),
+  parent_id: z.string().uuid().nullable().optional(),
+  position: z.coerce.number().int().optional(),
+});
+
 // ---- Sync ----
 const syncPush = z
   .object({
     bookmarks: z.array(importedBookmark).optional().default([]),
-    folders: z.array(z.any()).optional().default([]),
+    folders: z.array(importedFolder).optional().default([]),
   })
   .strict();
 
@@ -270,7 +285,7 @@ const importHtml = z
 const importJson = z
   .object({
     bookmarks: z.array(importedBookmark).optional().default([]),
-    folders: z.array(z.any()).optional().default([]),
+    folders: z.array(importedFolder).optional().default([]),
   })
   .strict();
 

@@ -329,7 +329,7 @@ function filterFoldersInDropdown(searchTerm: string): void {
       html += `
       <div class="filter-item ${isActive ? "active" : ""}" data-folder-id="${folder.id}">
           <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
-              <span class="folder-color" style="background:${color}"></span>
+              <span class="folder-color" style="background:${escapeHtml(color)}"></span>
               <span class="filter-item-name">${escapeHtml(folder.name)}</span>
           </div>
           <span class="filter-item-count">${folder.count}</span>
@@ -574,7 +574,7 @@ async function renderFoldersInDropdown(): Promise<void> {
       html += `
             <div class="filter-item ${isActive ? "active" : ""}" data-folder-id="${folder.id}" style="padding-left: ${0.5 + paddingLeft}rem">
                 <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
-                    <span class="folder-color" style="background:${color}"></span>
+                    <span class="folder-color" style="background:${escapeHtml(color)}"></span>
                     <span class="filter-item-name">${escapeHtml(folder.name)}</span>
                 </div>
                 <span class="filter-item-count">${count}</span>
@@ -625,7 +625,7 @@ async function renderCollectionsInDropdown(): Promise<void> {
       return `
         <div class="filter-item ${isActive ? "active" : ""}" data-collection-id="${escapeHtml(c.id)}">
           <div style="display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
-            <span class="folder-color" style="background:${color}"></span>
+            <span class="folder-color" style="background:${escapeHtml(color)}"></span>
             <span class="filter-item-name">${escapeHtml(c.name)}</span>
           </div>
         </div>

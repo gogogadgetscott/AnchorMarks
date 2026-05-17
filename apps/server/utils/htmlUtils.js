@@ -1,4 +1,13 @@
 // Lightweight HTML metadata parsing utilities
+function escapeHtml(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function decodeHtmlEntities(text) {
   const entities = {
     "&amp;": "&",
@@ -189,7 +198,7 @@ function generateBookmarkHtml(bookmarks, folders) {
 
     // Helper to render a bookmark
     const renderBookmark = (bm) => {
-      const tagsAttr = bm.tags ? ` TAGS="${bm.tags}"` : "";
+      const tagsAttr = bm.tags ? ` TAGS="${escapeHtml(bm.tags)}"` : "";
       const dateAttr = bm.created_at
         ? ` ADD_DATE="${Math.floor(new Date(bm.created_at).getTime() / 1000)}"`
         : "";
@@ -203,10 +212,10 @@ function generateBookmarkHtml(bookmarks, folders) {
       }
 
       if (bm.color) {
-        extraAttrs += ` COLOR="${bm.color}"`;
+        extraAttrs += ` COLOR="${escapeHtml(bm.color)}"`;
       }
 
-      return `${indent}<DT><A HREF="${bm.url}"${tagsAttr}${dateAttr}${extraAttrs}>${bm.title}</A>\n`;
+      return `${indent}<DT><A HREF="${escapeHtml(bm.url)}"${tagsAttr}${dateAttr}${extraAttrs}>${escapeHtml(bm.title)}</A>\n`;
     };
 
     // Helper to render a folder
@@ -219,10 +228,10 @@ function generateBookmarkHtml(bookmarks, folders) {
         headerAttrs += ` LAST_MODIFIED="${Math.floor(new Date(folder.updated_at).getTime() / 1000)}"`;
       }
       if (folder.color) {
-        headerAttrs += ` COLOR="${folder.color}"`;
+        headerAttrs += ` COLOR="${escapeHtml(folder.color)}"`;
       }
 
-      let chunk = `${indent}<DT><H3${headerAttrs}>${folder.name}</H3>\n`;
+      let chunk = `${indent}<DT><H3${headerAttrs}>${escapeHtml(folder.name)}</H3>\n`;
       chunk += `${indent}<DL><p>\n`;
 
       // Recursively render children
@@ -270,5 +279,6 @@ function generateBookmarkHtml(bookmarks, folders) {
 module.exports = {
   parseHtmlMetadata,
   decodeHtmlEntities,
+  escapeHtml,
   generateBookmarkHtml,
 };

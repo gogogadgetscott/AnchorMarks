@@ -27,11 +27,11 @@ async function suggestTagsAI(
 }
 
 function buildPrompt({ url, title, userTags, limit }) {
-  const preferred = Array.isArray(userTags) ? userTags.slice(0, 100) : [];
+  const preferred = Array.isArray(userTags) ? userTags.slice(0, 30) : [];
   const data = {
     task: "suggest-tags",
-    url,
-    title: title || null,
+    url: url ? url.slice(0, 500) : url,
+    title: title ? title.slice(0, 200) : null,
     preferredTags: preferred,
     constraints: {
       maxTags: limit,
@@ -61,6 +61,7 @@ async function callOpenAI(prompt, aiConfig, limit) {
   const body = {
     model,
     temperature: 0.2,
+    max_tokens: 256,
     messages: [
       {
         role: "system",
