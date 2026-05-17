@@ -145,12 +145,11 @@ function upsertUserSettings(db, userId, body = {}) {
       body.view_mode || "grid",
       body.hide_favicons ? 1 : 0,
       body.hide_sidebar ? 1 : 0,
-      body.ai_suggestions_enabled !== undefined &&
-        body.ai_suggestions_enabled !== null
-        ? body.ai_suggestions_enabled
+      body.ai_suggestions_enabled == null
+        ? 1
+        : body.ai_suggestions_enabled
           ? 1
-          : 0
-        : 1,
+          : 0,
       body.theme || "light",
       body.rich_link_previews_enabled ? 1 : 0,
       body.dashboard_mode || "folder",
@@ -161,7 +160,7 @@ function upsertUserSettings(db, userId, body = {}) {
       body.collapsed_sections ? JSON.stringify(body.collapsed_sections) : null,
       body.include_child_bookmarks ? 1 : 0,
       body.current_view || "all",
-      body.snap_to_grid !== undefined ? (body.snap_to_grid ? 1 : 0) : 1,
+      body.snap_to_grid == null ? 1 : body.snap_to_grid ? 1 : 0,
       body.tour_completed ? 1 : 0,
       (() => {
         const known = [

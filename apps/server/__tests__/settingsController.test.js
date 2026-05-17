@@ -75,7 +75,7 @@ describe("Settings API", () => {
       widget_order: { stats: 0, tags: 1 },
       dashboard_widgets: [{ id: "stats", enabled: true }],
       collapsed_sections: ["tags"],
-      include_child_bookmarks: 1,
+      include_child_bookmarks: true,
       snap_to_grid: false,
       current_view: "dashboard",
       tour_completed: true,
@@ -101,6 +101,7 @@ describe("Settings API", () => {
       dashboard_sort: "recently_added",
       widget_order: { stats: 0, tags: 1 },
       collapsed_sections: ["tags"],
+      // API currently returns this as a numeric DB-backed flag.
       include_child_bookmarks: 1,
       snap_to_grid: false,
       current_view: "dashboard",
