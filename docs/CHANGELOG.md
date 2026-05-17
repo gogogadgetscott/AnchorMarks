@@ -6,6 +6,15 @@ All notable changes to AnchorMarks are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- Added integration coverage for settings APIs, including default settings retrieval, update flows, flexible `settings_json` merge behavior, and bookmark reset behavior.
+
+### Fixed
+
+- Fixed `user_settings` insert coercion so boolean-style settings values are stored safely as SQLite-compatible integers.
+- Fixed `user_settings` insert path to persist `current_view` and `snap_to_grid` on first-time settings creation.
+
 ---
 
 ## [1.0.10] - 2026-05-16

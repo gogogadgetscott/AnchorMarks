@@ -134,22 +134,22 @@ function upsertUserSettings(db, userId, body = {}) {
       `
     INSERT INTO user_settings (
       user_id, view_mode, hide_favicons, hide_sidebar, ai_suggestions_enabled, theme, rich_link_previews_enabled, dashboard_mode,
-      dashboard_tags, dashboard_sort, widget_order, dashboard_widgets, collapsed_sections, include_child_bookmarks, tour_completed,
+      dashboard_tags, dashboard_sort, widget_order, dashboard_widgets, collapsed_sections, include_child_bookmarks, current_view,
+      snap_to_grid, tour_completed,
       settings_json
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     )
     .run(
       userId,
       body.view_mode || "grid",
-      body.hide_favicons || 0,
-      body.hide_sidebar || 0,
-      body.ai_suggestions_enabled !== undefined &&
-        body.ai_suggestions_enabled !== null
-        ? body.ai_suggestions_enabled
+      body.hide_favicons ? 1 : 0,
+      body.hide_sidebar ? 1 : 0,
+      body.ai_suggestions_enabled == null
+        ? 1
+        : body.ai_suggestions_enabled
           ? 1
-          : 0
-        : 1,
+          : 0,
       body.theme || "light",
       body.rich_link_previews_enabled ? 1 : 0,
       body.dashboard_mode || "folder",
@@ -158,7 +158,9 @@ function upsertUserSettings(db, userId, body = {}) {
       body.widget_order ? JSON.stringify(body.widget_order) : null,
       body.dashboard_widgets ? JSON.stringify(body.dashboard_widgets) : null,
       body.collapsed_sections ? JSON.stringify(body.collapsed_sections) : null,
-      body.include_child_bookmarks || 0,
+      body.include_child_bookmarks ? 1 : 0,
+      body.current_view || "all",
+      body.snap_to_grid == null ? 1 : body.snap_to_grid ? 1 : 0,
       body.tour_completed ? 1 : 0,
       (() => {
         const known = [
