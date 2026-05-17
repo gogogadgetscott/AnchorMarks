@@ -231,15 +231,15 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
 
         // Folder navigation ("folder" view) or sidebar folder filter (all other views)
         // Always include folder_id if currentFolder is set, regardless of view
-        const folderFilter = currentFolder ?? (activeFilters.folder ?? null);
+        const folderFilter = currentFolder ?? activeFilters.folder ?? null;
         if (
           folderFilter &&
           currentView !== "dashboard" &&
           currentView !== "collection"
         ) {
           params.append("folder_id", folderFilter);
-          // Only include include_children for "folder" view
-          if (currentView === "folder" && includeChildBookmarks) {
+          // Include include_children if it's enabled and there's a folder filter
+          if (includeChildBookmarks) {
             params.append("include_children", "true");
           }
         }

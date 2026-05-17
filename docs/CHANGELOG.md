@@ -8,6 +8,16 @@ All notable changes to AnchorMarks are documented here.
 
 ---
 
+## [1.0.10] - 2026-05-16
+
+### Fixed
+
+- **Favicon refresh is now non-blocking** — the `/maintenance/refresh-favicons` endpoint responds immediately and runs favicon fetching in the background, preventing request timeouts on large bookmark collections
+- **Folder filter applies across all views** — folder filtering now consistently uses `currentFolder` regardless of active view, so bookmarks are correctly scoped when navigating outside the dedicated "folder" view
+- **Child bookmark inclusion no longer restricted to folder view** — `include_children` is now sent whenever the option is enabled, not only when the current view is "folder"
+
+---
+
 ## [1.0.9] - 2026-05-16
 
 ### Security

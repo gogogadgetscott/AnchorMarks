@@ -61,7 +61,8 @@ function findDuplicates(req, res) {
     const count = duplicates.length;
     res.json({
       duplicates,
-      message: count === 0 ? "No duplicates found" : `Found ${count} duplicate URL(s)`,
+      message:
+        count === 0 ? "No duplicates found" : `Found ${count} duplicate URL(s)`,
     });
   } catch (err) {
     logger.error("Error listing duplicates", err);
@@ -99,8 +100,7 @@ async function checkLinks(req, res) {
           continue;
         }
         const isOk = await new Promise((resolve) => {
-          const protocol =
-            parsedUrl.protocol === "https:" ? https : http;
+          const protocol = parsedUrl.protocol === "https:" ? https : http;
           const req = protocol.request(
             bookmark.url,
             { method: "HEAD", timeout: 5000 },
@@ -136,14 +136,21 @@ async function refreshFavicons(req, res) {
   const fetchFaviconWrapper = req.app.get("fetchFaviconWrapper");
   try {
     const { bookmarks } = bookmarkModel.listBookmarks(db, req.user.id);
-    let updated = 0;
+    const total = bookmarks.length;
+    const userId = req.user.id;
+
+    // Respond immediately — favicon fetching runs in the background
+    res.json({
+      success: true,
+      message: `Refreshing ${total} favicon(s) in background`,
+    });
+
     for (const bookmark of bookmarks) {
       try {
-        bookmarkModel.updateBookmark(db, req.user.id, bookmark.id, {
+        bookmarkModel.updateBookmark(db, userId, bookmark.id, {
           favicon: null,
         });
-        await fetchFaviconWrapper(bookmark.url, bookmark.id, req.user.id);
-        updated++;
+        await fetchFaviconWrapper(bookmark.url, bookmark.id, userId);
       } catch (e) {
         logger.warn("Favicon refresh failed for bookmark", {
           id: bookmark.id,
@@ -151,11 +158,18 @@ async function refreshFavicons(req, res) {
         });
       }
     }
-    res.json({ success: true, message: `Updated ${updated} favicon(s)` });
   } catch (err) {
     logger.error("Error refreshing favicons", err);
-    res.status(500).json({ error: "Failed to refresh favicons" });
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Failed to refresh favicons" });
+    }
   }
 }
 
-module.exports = { checkLink, checkLinks, findDuplicates, optimizeDatabase, refreshFavicons };
+module.exports = {
+  checkLink,
+  checkLinks,
+  findDuplicates,
+  optimizeDatabase,
+  refreshFavicons,
+};

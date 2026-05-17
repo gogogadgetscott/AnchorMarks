@@ -1,6 +1,6 @@
 {
   "name": "anchormarks-server",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "AnchorMarks server-side application",
   "private": true,
   "main": "index.js",
