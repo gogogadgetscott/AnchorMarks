@@ -6,23 +6,24 @@ All notable changes to AnchorMarks are documented here.
 
 ## [Unreleased]
 
-### Added
+---
 
-- **Dashboard drag-and-drop with @dnd-kit** — Dashboard widgets now use `@dnd-kit/core` for smooth, React-native drag-and-drop functionality with visual feedback and position snapping
+## [1.0.9] - 2026-05-16
+
+### Security
+
+- Escaped folder and collection color values in filter dropdown HTML to prevent XSS via crafted color strings
+- Added `escapeHtml` utility to `htmlUtils.js` and applied it to bookmark URLs, titles, tags, and colors in Netscape HTML export output
+- Replaced `z.any()` with a typed `importedFolder` schema in sync-push and JSON import endpoints, enforcing field-level validation on folder data
+- Added `hexColor` validator to constrain folder `color` fields to valid hex codes (`#RGB` / `#RGBA` / `#RRGGBB` / `#RRGGBBAA`) on create and update routes
 
 ### Changed
 
-- React Dashboard components now handle widget dragging natively without relying on legacy DOM manipulation
-- Dashboard widget drag handles show grab cursor in edit mode for better UX
-- Dashboard widget resizing now flows through React callbacks with persisted dimensions and snap-to-grid behavior
-- Removed unused legacy dashboard drag/resize state fields from `state.ts` and `DashboardContext` after React interaction migration
-- Removed the temporary `features/bookmarks/tag-cloud.ts` compatibility bridge; tag cloud now routes through React AppShell view rendering
-- **TypeScript compilation cleanup** — Fixed 40+ critical compile blockers: removed legacy `updateHeaderContent` calls from imperative views (replaced with React Context-based header updates), added missing bulk action function exports to bookmarks.ts, corrected bookmark property references (`click_count` vs `visit_count`), fixed dom property access for React-owned empty states
-- Removed legacy imperative header update code from keyboard shortcuts and command handlers
-- Bookmarks module now properly exports bulk action stubs (`bulkArchive`, `bulkDelete`, etc.) for type compatibility with Header component
-- Finalized client TypeScript strictness pass by fixing nullable dataset IDs in folder/filter/dashboard handlers, narrowing API refresh/error payload types, and removing unused test imports
-- Updated API settings behavior to read regenerated API key from shared state after regeneration
-- Stabilized Omnibar test typing by aligning mocked command factory signature with `Command[]` expectations
+- **AI tag suggestion status in Bookmark modal** — the "Fetch Info" button now shows `Fetch Info · AI…` while AI tags are loading and `Fetch Info · AI` once results arrive, giving live feedback without blocking the form
+- Added `onAIStatusChange` callback prop to `SmartTagSuggestions` so parent components can observe AI loading and result state
+- Capped AI tag prompt inputs: URL truncated to 500 characters, title to 200 characters, and preferred tags list to 30 entries; added `max_tokens: 256` ceiling on OpenAI calls to bound response cost
+- Fixed TypeScript path aliases in `tsconfig.json` to use relative `./src/*` prefixes; removed redundant `baseUrl: "."` that caused resolution inconsistencies
+- Added `network_mode: host` to Docker Compose service configuration
 
 ---
 
@@ -30,6 +31,7 @@ All notable changes to AnchorMarks are documented here.
 
 ### Added
 
+- **Dashboard drag-and-drop with @dnd-kit** — Dashboard widgets now use `@dnd-kit/core` for smooth, React-native drag-and-drop functionality with visual feedback and position snapping
 - **Theme switching via omnibar** — quick commands using `>` now support all 7 themes: System, Light, Dark, Ocean, Sunset, Midnight, and High Contrast
 - **App-specific cookie prefixes** — `COOKIE_PREFIX` support added to prevent auth cookie collisions when multiple apps share a domain
 - Public auth config endpoint at `/api/auth/config/public` to expose deployment-specific client auth settings
@@ -49,6 +51,17 @@ All notable changes to AnchorMarks are documented here.
 
 ### Changed
 
+- React Dashboard components now handle widget dragging natively without relying on legacy DOM manipulation
+- Dashboard widget drag handles show grab cursor in edit mode for better UX
+- Dashboard widget resizing now flows through React callbacks with persisted dimensions and snap-to-grid behavior
+- Removed unused legacy dashboard drag/resize state fields from `state.ts` and `DashboardContext` after React interaction migration
+- Removed the temporary `features/bookmarks/tag-cloud.ts` compatibility bridge; tag cloud now routes through React AppShell view rendering
+- **TypeScript compilation cleanup** — Fixed 40+ critical compile blockers: removed legacy `updateHeaderContent` calls from imperative views (replaced with React Context-based header updates), added missing bulk action function exports to bookmarks.ts, corrected bookmark property references (`click_count` vs `visit_count`), fixed dom property access for React-owned empty states
+- Removed legacy imperative header update code from keyboard shortcuts and command handlers
+- Bookmarks module now properly exports bulk action stubs (`bulkArchive`, `bulkDelete`, etc.) for type compatibility with Header component
+- Finalized client TypeScript strictness pass by fixing nullable dataset IDs in folder/filter/dashboard handlers, narrowing API refresh/error payload types, and removing unused test imports
+- Updated API settings behavior to read regenerated API key from shared state after regeneration
+- Stabilized Omnibar test typing by aligning mocked command factory signature with `Command[]` expectations
 - Documentation updates for cookie prefix behavior across install, security, and in-app help docs
 - Dashboard unit/integration tests expanded to cover new helper behavior and menu wiring
 
