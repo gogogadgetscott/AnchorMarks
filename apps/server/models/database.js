@@ -29,6 +29,7 @@ function initializeDatabase(DB_PATH) {
         color TEXT DEFAULT '#6366f1',
         icon TEXT DEFAULT 'folder',
         position INTEGER DEFAULT 0,
+        metadata TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -278,6 +279,7 @@ function initializeDatabase(DB_PATH) {
       column: "rich_link_previews_enabled",
       def: "INTEGER DEFAULT 0",
     },
+    { table: "folders", column: "metadata", def: "TEXT" },
   ];
 
   let migrationsRun = 0;

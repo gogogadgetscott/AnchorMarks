@@ -98,7 +98,8 @@ function listBookmarks(db, userId, opts = {}) {
   const params = [userId, userId];
 
   // Handle folder filter
-  if (folder_id) {
+  // Folder filters should be ignored in favorites view, archived view, and most-used view
+  if (folder_id && !isFavoritesView && !isArchivedView && !isMostUsedView) {
     if (include_children) {
       const folderFilter = ` AND (b.folder_id = ? OR b.folder_id IN (
         WITH RECURSIVE subfolders AS (
@@ -151,7 +152,8 @@ function listBookmarks(db, userId, opts = {}) {
   }
 
   // Handle tag filtering
-  if (tags) {
+  // Tag filters should be ignored in favorites view, archived view, and most-used view
+  if (tags && !isFavoritesView && !isArchivedView && !isMostUsedView) {
     const tagArr = String(tags)
       .split(",")
       .map((t) => t.trim())

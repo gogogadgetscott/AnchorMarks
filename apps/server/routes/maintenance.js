@@ -16,7 +16,10 @@ module.exports = function createMaintenanceRouter(db) {
     ctrl.checkLink,
   );
   router.get("/duplicates", auth, ctrl.findDuplicates);
+  router.post("/duplicates", auth, csrf, ctrl.findDuplicates);
   router.post("/optimize", auth, csrf, ctrl.optimizeDatabase);
+  router.post("/refresh-favicons", auth, csrf, ctrl.refreshFavicons);
+  router.post("/check-links", auth, csrf, ctrl.checkLinks);
 
   return router;
 };
