@@ -71,14 +71,21 @@ async function callOpenAI(prompt, aiConfig, limit) {
     ],
   };
 
-  const res = await fetch(apiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
-  });
+  let res;
+  try {
+    res = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (fetchErr) {
+    const err = new Error(`OpenAI unreachable: ${fetchErr.message}`);
+    err.code = "AI_UNAVAILABLE";
+    throw err;
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -102,11 +109,18 @@ async function callOllama(prompt, aiConfig, limit) {
   const apiUrl = aiConfig?.apiUrl || "http://localhost:11434/api/generate";
   const model = aiConfig?.model || "llama3.1";
 
-  const res = await fetch(apiUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model, prompt, stream: false }),
-  });
+  let res;
+  try {
+    res = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model, prompt, stream: false }),
+    });
+  } catch (fetchErr) {
+    const err = new Error(`Ollama unreachable: ${fetchErr.message}`);
+    err.code = "AI_UNAVAILABLE";
+    throw err;
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");

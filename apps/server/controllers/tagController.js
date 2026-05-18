@@ -273,7 +273,8 @@ async function suggestTagsAI(req, res) {
       err &&
       (err.code === "AI_NOT_CONFIGURED" ||
         err.code === "AI_KEY_MISSING" ||
-        err.code === "AI_UNSUPPORTED")
+        err.code === "AI_UNSUPPORTED" ||
+        err.code === "AI_UNAVAILABLE")
     ) {
       return res.status(501).json({ error: "AI service not configured" });
     }
