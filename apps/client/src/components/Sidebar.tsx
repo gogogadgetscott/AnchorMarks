@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../services/api.ts";
 import { useUI } from "../contexts/UIContext";
 import { useBookmarks } from "../contexts/BookmarksContext";
@@ -82,12 +83,42 @@ export function Sidebar() {
     new Set(["folders", "tags"]),
   );
   const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
+  const [isCollapsed, setIsCollapsed] = useState(
+    () => document.body.classList.contains("sidebar-collapsed"),
+  );
+  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const folderSectionRef = useRef<HTMLDivElement>(null);
+  const tagSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     api<Record<string, number>>("/bookmarks/counts")
       .then((data) => setViewCounts(data))
       .catch(() => {});
   }, [bookmarks]);
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsCollapsed(document.body.classList.contains("sidebar-collapsed"));
+    });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  const enterSection = useCallback((section: string) => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    setHoveredSection(section);
+  }, []);
+
+  const leaveSection = useCallback(() => {
+    hoverTimerRef.current = setTimeout(() => setHoveredSection(null), 150);
+  }, []);
+
+  const getFlyoutTop = (ref: React.RefObject<HTMLDivElement | null>) =>
+    ref.current?.getBoundingClientRect().top ?? 0;
 
   const toggleSection = (id: string) => {
     const next = new Set(expandedSections);
@@ -218,6 +249,7 @@ export function Sidebar() {
     .sort((a, b) => (tagMetadata[b].count || 0) - (tagMetadata[a].count || 0));
 
   return (
+    <>
     <aside className="sidebar">
       <div className="sidebar-header">
         <div className="logo">
@@ -278,14 +310,19 @@ export function Sidebar() {
           <>
             {/* Folders Section */}
             <div
+              ref={folderSectionRef}
               className={`sidebar-section ${expandedSections.has("folders") ? "expanded" : ""}`}
+              onMouseEnter={() => isCollapsed && enterSection("folders")}
+              onMouseLeave={() => isCollapsed && leaveSection()}
             >
               <div
                 className="sidebar-section-header"
-                onClick={() => toggleSection("folders")}
+                onClick={() => !isCollapsed && toggleSection("folders")}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => e.key === "Enter" && toggleSection("folders")}
+                onKeyDown={(e) =>
+                  !isCollapsed && e.key === "Enter" && toggleSection("folders")
+                }
                 aria-expanded={expandedSections.has("folders")}
               >
                 <Icon name="folder" size={15} />
@@ -335,14 +372,19 @@ export function Sidebar() {
 
             {/* Tags Section */}
             <div
+              ref={tagSectionRef}
               className={`sidebar-section ${expandedSections.has("tags") ? "expanded" : ""}`}
+              onMouseEnter={() => isCollapsed && enterSection("tags")}
+              onMouseLeave={() => isCollapsed && leaveSection()}
             >
               <div
                 className="sidebar-section-header"
-                onClick={() => toggleSection("tags")}
+                onClick={() => !isCollapsed && toggleSection("tags")}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => e.key === "Enter" && toggleSection("tags")}
+                onKeyDown={(e) =>
+                  !isCollapsed && e.key === "Enter" && toggleSection("tags")
+                }
                 aria-expanded={expandedSections.has("tags")}
               >
                 <Icon name="tag" size={15} />
@@ -448,5 +490,100 @@ export function Sidebar() {
         </div>
       </div>
     </aside>
+
+    {/* Folders flyout for collapsed sidebar */}
+    {isCollapsed &&
+      hoveredSection === "folders" &&
+      createPortal(
+        <div
+          className="sidebar-section-flyout"
+          style={{ top: getFlyoutTop(folderSectionRef) }}
+          onMouseEnter={() => enterSection("folders")}
+          onMouseLeave={leaveSection}
+        >
+          <div className="sidebar-section-flyout-header">
+            <Icon name="folder" size={15} />
+            <span>Folders</span>
+          </div>
+          <div className="sidebar-section-flyout-content">
+            <div className="tag-list">
+              {viewFolderIds.map((folderId) => {
+                const folder = folders.find((f) => f.id === folderId);
+                if (!folder) return null;
+                const isActive = filterConfig.folder === folderId;
+                return (
+                  <div
+                    key={folderId}
+                    className={`sidebar-tag-item ${isActive ? "active" : ""}`}
+                    onClick={() => void handleFolderFilter(folderId)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && void handleFolderFilter(folderId)
+                    }
+                  >
+                    <Icon name="folder" size={14} />
+                    <span className="tag-name">{folder.name}</span>
+                  </div>
+                );
+              })}
+              {viewFolderIds.length === 0 && (
+                <div className="sidebar-empty-state">No folders</div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+
+    {/* Tags flyout for collapsed sidebar */}
+    {isCollapsed &&
+      hoveredSection === "tags" &&
+      createPortal(
+        <div
+          className="sidebar-section-flyout"
+          style={{ top: getFlyoutTop(tagSectionRef) }}
+          onMouseEnter={() => enterSection("tags")}
+          onMouseLeave={leaveSection}
+        >
+          <div className="sidebar-section-flyout-header">
+            <Icon name="tag" size={15} />
+            <span>Tags</span>
+          </div>
+          <div className="sidebar-section-flyout-content">
+            <div className="sidebar-search">
+              <Icon name="search" size={14} className="sidebar-search-icon" />
+              <input
+                type="text"
+                placeholder="Search tags..."
+                value={tagSearch}
+                onChange={(e) => setTagSearch(e.target.value)}
+              />
+            </div>
+            <div className="tag-list">
+              {filteredTags.slice(0, 20).map((tagName) => (
+                <div
+                  key={tagName}
+                  className={`sidebar-tag-item ${filterConfig.tags.includes(tagName) ? "active" : ""}`}
+                  onClick={() => void handleTagFilter(tagName)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && void handleTagFilter(tagName)
+                  }
+                >
+                  <span className="tag-name">{tagName}</span>
+                  <span className="tag-count">{tagMetadata[tagName].count}</span>
+                </div>
+              ))}
+              {filteredTags.length === 0 && (
+                <div className="sidebar-empty-state">No tags found</div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }

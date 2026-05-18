@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { useModal } from "@contexts/ModalContext";
 import { useFolders } from "@contexts/FoldersContext";
 import { createFocusTrap, removeFocusTrap } from "@utils/focus-trap.ts";
@@ -23,13 +23,31 @@ const COLOR_OPTIONS = [
 export default function BookmarkModal() {
   const { closeModal, bookmarkFormData, setBookmarkFormData, openFolderModal } =
     useModal();
-  const { folders } = useFolders();
+  const { folders, currentFolder } = useFolders();
   const { createBookmark, updateBookmark } = useBookmarkActions();
   const modalRef = useRef<HTMLDivElement>(null);
   const [isFetching, setIsFetching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isAILoading, setIsAILoading] = useState(false);
   const [hasAIResults, setHasAIResults] = useState(false);
+  const [folderSearch, setFolderSearch] = useState("");
+  const [folderDropdownOpen, setFolderDropdownOpen] = useState(false);
+  const folderInputRef = useRef<HTMLInputElement>(null);
+  const folderDropdownRef = useRef<HTMLDivElement>(null);
+  const defaultFolderApplied = useRef(false);
+
+  // Default to the currently active folder when creating a new bookmark
+  useEffect(() => {
+    if (
+      !defaultFolderApplied.current &&
+      !bookmarkFormData.id &&
+      bookmarkFormData.folderId === null &&
+      currentFolder
+    ) {
+      defaultFolderApplied.current = true;
+      setBookmarkFormData({ folderId: currentFolder });
+    }
+  }, [bookmarkFormData.id, bookmarkFormData.folderId, currentFolder, setBookmarkFormData]);
 
   useEffect(() => {
     if (modalRef.current) {
@@ -49,6 +67,43 @@ export default function BookmarkModal() {
       }
     };
   }, [closeModal]);
+
+  // Close folder dropdown on outside click
+  useEffect(() => {
+    if (!folderDropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        folderDropdownRef.current &&
+        !folderDropdownRef.current.contains(e.target as Node)
+      ) {
+        setFolderDropdownOpen(false);
+        setFolderSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [folderDropdownOpen]);
+
+  const selectedFolderName =
+    folders.find((f: any) => f.id === bookmarkFormData.folderId)?.name ?? null;
+
+  const filteredFolders = folders.filter((f: any) =>
+    f.name.toLowerCase().includes(folderSearch.toLowerCase()),
+  );
+
+  const handleFolderSelect = useCallback(
+    (id: string | null) => {
+      setBookmarkFormData({ ...bookmarkFormData, folderId: id });
+      setFolderDropdownOpen(false);
+      setFolderSearch("");
+    },
+    [bookmarkFormData, setBookmarkFormData],
+  );
+
+  const handleFolderInputFocus = useCallback(() => {
+    setFolderDropdownOpen(true);
+    setFolderSearch("");
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -254,28 +309,88 @@ export default function BookmarkModal() {
 
           {/* Folder field */}
           <div className="form-group">
-            <label htmlFor="bookmark-folder">Folder</label>
+            <label htmlFor="bookmark-folder-input">Folder</label>
             <div
-              style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}
+              style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}
             >
-              <select
-                id="bookmark-folder"
-                value={bookmarkFormData.folderId || ""}
-                onChange={(e) =>
-                  setBookmarkFormData({
-                    ...bookmarkFormData,
-                    folderId: e.target.value || null,
-                  })
-                }
-                style={{ flex: 1, minWidth: 0 }}
+              <div
+                ref={folderDropdownRef}
+                style={{ flex: 1, minWidth: 0, position: "relative" }}
               >
-                <option value="">None</option>
-                {folders.map((folder: any) => (
-                  <option key={folder.id} value={folder.id}>
-                    {folder.name}
-                  </option>
-                ))}
-              </select>
+                <input
+                  ref={folderInputRef}
+                  id="bookmark-folder-input"
+                  type="text"
+                  autoComplete="off"
+                  placeholder="Search folders…"
+                  value={
+                    folderDropdownOpen
+                      ? folderSearch
+                      : (selectedFolderName ?? "")
+                  }
+                  onFocus={handleFolderInputFocus}
+                  onChange={(e) => setFolderSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setFolderDropdownOpen(false);
+                      setFolderSearch("");
+                    }
+                  }}
+                  style={{ width: "100%", boxSizing: "border-box" }}
+                />
+                {folderDropdownOpen && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 4px)",
+                      left: 0,
+                      right: 0,
+                      background: "var(--bg-primary)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "var(--radius-md)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                      zIndex: 100,
+                      maxHeight: "180px",
+                      overflowY: "auto",
+                    }}
+                  >
+                    <div
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleFolderSelect(null)}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        cursor: "pointer",
+                        color: bookmarkFormData.folderId === null ? "var(--primary-500)" : "var(--text-tertiary)",
+                        fontStyle: "italic",
+                      }}
+                      className="folder-dropdown-option"
+                    >
+                      None
+                    </div>
+                    {filteredFolders.length === 0 && (
+                      <div style={{ padding: "0.5rem 1rem", color: "var(--text-tertiary)", fontStyle: "italic" }}>
+                        No folders found
+                      </div>
+                    )}
+                    {filteredFolders.map((folder: any) => (
+                      <div
+                        key={folder.id}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => handleFolderSelect(folder.id)}
+                        style={{
+                          padding: "0.5rem 1rem",
+                          cursor: "pointer",
+                          fontWeight: bookmarkFormData.folderId === folder.id ? 600 : undefined,
+                          color: bookmarkFormData.folderId === folder.id ? "var(--primary-500)" : "var(--text-primary)",
+                        }}
+                        className="folder-dropdown-option"
+                      >
+                        {folder.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 type="button"
                 className="btn btn-secondary"

@@ -7,7 +7,7 @@ import * as state from "@features/state.ts";
 import { api } from "@services/api.ts";
 import { escapeHtml } from "@utils/index.ts";
 import { showToast } from "@utils/ui-helpers.ts";
-import type { Bookmark, ActiveFilterItem } from "../../types/index";
+import type { ActiveFilterItem } from "../../types/index";
 
 let filterDropdownPinned = false;
 
@@ -479,24 +479,16 @@ async function renderFoldersInDropdown(): Promise<void> {
     }
   }
 
-  // Fetch ALL unfiltered bookmarks to calculate folder counts
-  const allBookmarks = await api<any>("/bookmarks?limit=10000&offset=0");
-  const bookmarksToProcess = Array.isArray(allBookmarks)
-    ? allBookmarks
-    : allBookmarks?.bookmarks || [];
-
-  // Helper to calculate unfiltered recursive bookmark count for a folder
-  const getUnfilteredRecursiveCount = (folderId: string): number => {
-    // Count bookmarks that belong to this folder
-    let total = bookmarksToProcess.filter(
-      (b: Bookmark) => b.folder_id === folderId,
-    ).length;
-
-    // Add counts from child folders
-    const children = state.folders.filter((f) => f.parent_id === folderId);
-    children.forEach((child) => {
-      total += getUnfilteredRecursiveCount(child.id);
-    });
+  // Use bookmark_count already returned by /folders — no need to fetch all bookmarks.
+  // Recursive count = folder's own direct count + all descendant direct counts.
+  const getRecursiveCount = (folderId: string): number => {
+    const folder = state.folders.find((f) => f.id === folderId);
+    let total = folder?.bookmark_count ?? 0;
+    state.folders
+      .filter((f) => f.parent_id === folderId)
+      .forEach((child) => {
+        total += getRecursiveCount(child.id);
+      });
     return total;
   };
 
@@ -508,13 +500,19 @@ async function renderFoldersInDropdown(): Promise<void> {
     color?: string;
   }> = [];
 
-  const allCount = bookmarksToProcess.length;
+  // Lightweight total count from dedicated endpoint
+  let allCount = 0;
+  try {
+    const counts = await api<{ all: number }>("/bookmarks/counts");
+    allCount = counts.all ?? 0;
+  } catch {
+    allCount = state.folders.reduce((s, f) => s + (f.bookmark_count ?? 0), 0);
+  }
 
-  // Calculate sum of recursive counts of all root folders
-  const rootFolders = state.folders.filter((f) => !f.parent_id);
-  const totalInFolders = rootFolders.reduce((sum, folder) => {
-    return sum + getUnfilteredRecursiveCount(folder.id);
-  }, 0);
+  const totalInFolders = state.folders.reduce(
+    (sum, f) => sum + (f.bookmark_count ?? 0),
+    0,
+  );
 
   const noFolderCount = Math.max(0, allCount - totalInFolders);
 
@@ -554,7 +552,7 @@ async function renderFoldersInDropdown(): Promise<void> {
     // TODO: Implement folder.position sort if/when available in interface
 
     folderList.forEach((folder) => {
-      const count = getUnfilteredRecursiveCount(folder.id);
+      const count = getRecursiveCount(folder.id);
 
       // Add to search data
       folderDataForSearch.push({
@@ -667,26 +665,16 @@ async function renderTagsInDropdown(): Promise<void> {
   };
   if (!container) return;
 
-  // Fetch ALL unfiltered bookmarks to calculate tag counts based on the complete library
-  const allBookmarks = await api<any>("/bookmarks?limit=10000&offset=0");
-  const bookmarksToProcess = Array.isArray(allBookmarks)
-    ? allBookmarks
-    : allBookmarks?.bookmarks || [];
+  // Use the /tags endpoint which already returns name + count per tag — no full bookmark fetch needed
+  let rawTags: Array<{ name: string; count: number }> = [];
+  try {
+    rawTags = await api<Array<{ name: string; count: number }>>("/tags");
+  } catch (err) {
+    console.error("Failed to load tags:", err);
+  }
 
-  const tagMap = new Map<string, number>();
-  bookmarksToProcess.forEach((b: Bookmark) => {
-    if (b.tags) {
-      b.tags.split(",").forEach((t: string) => {
-        const tag = t.trim();
-        if (tag) {
-          tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
-        }
-      });
-    }
-  });
-
-  const tags = Array.from(tagMap.entries())
-    .map(([name, count]) => ({ name, count }))
+  const tags = rawTags
+    .filter((t) => t.name && t.count > 0)
     .sort((a, b) => {
       if (state.filterConfig.tagSort === "name_asc") {
         return a.name.localeCompare(b.name);
@@ -869,17 +857,36 @@ export function watchViewChanges(): void {
 export async function applyFilters(): Promise<void> {
   // Don't apply filters to favorites or recent views - they show all items
   if (state.currentView === "favorites" || state.currentView === "recent") {
-    // Clear any filters that might have been set
     state.setFilterConfig({
       ...state.filterConfig,
       tags: [],
       search: undefined,
     });
-    // Still load bookmarks, but filters will be bypassed in loadBookmarks
   }
 
-  const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
-  await loadBookmarks();
+  // Use React bridge so the React-rendered BookmarksList updates.
+  // Pass vanilla state values explicitly so the bridge doesn't rely on
+  // UIBridge being synced (React state updates are async).
+  try {
+    const { getBookmarksBridge } = await import(
+      "../../contexts/context-bridge.ts"
+    );
+    const bridge = getBookmarksBridge();
+    // Sync vanilla filter state back to React so the sidebar reflects active filters
+    bridge.setFilterConfig({
+      ...state.filterConfig,
+      folder: state.currentFolder,
+    });
+    await bridge.loadBookmarks({
+      view: state.currentView,
+      folderId: state.currentFolder ?? null,
+      filterOverride: state.filterConfig,
+    });
+  } catch {
+    // Fallback for non-React contexts (tests, etc.)
+    const { loadBookmarks } = await import("@features/bookmarks/bookmarks.ts");
+    await loadBookmarks();
+  }
 }
 
 async function clearAllFilters(): Promise<void> {

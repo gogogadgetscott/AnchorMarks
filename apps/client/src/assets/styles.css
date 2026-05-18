@@ -2074,6 +2074,63 @@ body.sidebar-collapsed .nav-section-header {
   border-color: rgba(99, 102, 241, 0.3);
 }
 
+/* Collapsed sidebar: icon-only section handles */
+body.sidebar-collapsed .sidebar-section {
+  margin: 2px 0.5rem;
+  cursor: pointer;
+  overflow: visible;
+}
+
+body.sidebar-collapsed .sidebar-section-header {
+  justify-content: center;
+  padding: 0.625rem;
+}
+
+body.sidebar-collapsed .sidebar-section-header > span,
+body.sidebar-collapsed .sidebar-section-header .section-chevron {
+  display: none;
+}
+
+body.sidebar-collapsed .sidebar-section-content {
+  display: none;
+}
+
+/* Flyout panel for collapsed sidebar folder/tag sections */
+.sidebar-section-flyout {
+  position: fixed;
+  left: 72px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  min-width: 200px;
+  max-width: 280px;
+  z-index: 1100;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .sidebar-section-flyout {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.sidebar-section-flyout-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-section-flyout-content {
+  padding: 0.5rem 0.25rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
 .sidebar-section-header {
   display: flex;
   align-items: center;
@@ -3265,6 +3322,10 @@ body.tag-cloud-active .content-body {
 #tag-suggestions .smart-tag-suggestion:hover {
   border-color: var(--primary-300);
   background: var(--primary-50);
+}
+
+.folder-dropdown-option:hover {
+  background: var(--bg-secondary);
 }
 
 #tag-suggestions .tag-suggestion-btn {

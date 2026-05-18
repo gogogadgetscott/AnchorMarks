@@ -27,6 +27,7 @@ interface FilterConfig {
   tags: string[];
   tagMode: "AND" | "OR";
   search?: string;
+  folder?: string | null;
 }
 
 // Client-side filtering and sorting — mirrors renderBookmarks() from bookmarks.ts
@@ -136,6 +137,7 @@ export function BookmarksList() {
   } = useBookmarkActions();
 
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const backoffUntilRef = useRef<number>(0);
 
   // Compute filtered list; this replaces renderBookmarks() filtering logic
   const filtered = useMemo(
@@ -157,6 +159,7 @@ export function BookmarksList() {
   // Load more: client-side pagination first, then server fetch when exhausted
   const loadMore = useCallback(async () => {
     if (isLoadingMore || isLoading) return;
+    if (Date.now() < backoffUntilRef.current) return;
 
     if (displayedCount < bookmarks.length) {
       setDisplayedCount(displayedCount + BOOKMARKS_PER_PAGE);
@@ -171,6 +174,32 @@ export function BookmarksList() {
         limit: String(BOOKMARKS_PER_PAGE),
         offset: String(bookmarks.length),
       });
+      // Mirror the same filters used by the initial load
+      if (currentView === "favorites") params.append("favorites", "true");
+      if (currentView === "archived") params.append("archived", "true");
+      if (currentView === "most-used") params.append("most_used", "true");
+      const folderFilter = filterConfig.folder ?? null;
+      if (
+        folderFilter &&
+        currentView !== "dashboard" &&
+        currentView !== "collection" &&
+        currentView !== "favorites" &&
+        currentView !== "archived" &&
+        currentView !== "recent" &&
+        currentView !== "most-used"
+      ) {
+        params.append("folder_id", folderFilter);
+      }
+      if (filterConfig.tags?.length) {
+        params.append("tags", filterConfig.tags.join(","));
+        params.append("tagMode", filterConfig.tagMode || "OR");
+      }
+      if (filterConfig.search) params.append("search", filterConfig.search);
+      if (currentView === "most-used") {
+        params.append("sort", "most_visited");
+      } else if (filterConfig.sort) {
+        params.append("sort", filterConfig.sort);
+      }
       const response = await api<{
         bookmarks?: Bookmark[];
         total?: number;
@@ -183,6 +212,10 @@ export function BookmarksList() {
         if (response?.total != null) setTotalCount(response.total);
         setDisplayedCount(displayedCount + BOOKMARKS_PER_PAGE);
       }
+    } catch (err) {
+      if (err instanceof Error && err.message.toLowerCase().includes("rate limit")) {
+        backoffUntilRef.current = Date.now() + 60_000;
+      }
     } finally {
       setIsLoadingMore(false);
     }
@@ -192,6 +225,8 @@ export function BookmarksList() {
     totalCount,
     isLoading,
     isLoadingMore,
+    filterConfig,
+    currentView,
     setDisplayedCount,
     setIsLoadingMore,
     setBookmarks,

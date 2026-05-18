@@ -12,6 +12,7 @@ import { api } from "../services/api.ts";
 import { showToast } from "./ToastContext";
 import { showConfirm } from "./ConfirmContext";
 import { logger } from "@utils/logger";
+import * as vanillaState from "@features/state.ts";
 import type {
   Bookmark,
   Collection,
@@ -150,6 +151,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
   );
   const [bulkMode, setBulkMode] = useState(false);
   const loadBookmarksRequestSeq = useRef(0);
+  const loadMoreBackoffUntilRef = useRef(0);
 
   // Sync current state into the bridge store so non-React code always reads fresh values
   useEffect(() => {
@@ -176,6 +178,16 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     bulkMode,
     filterConfig,
   ]);
+
+  // Keep vanilla state in sync so the filter dropdown menu reflects sidebar filter changes.
+  // Separate effect keyed to filterConfig only — avoids spurious emits on every bookmark load.
+  useEffect(() => {
+    vanillaState.setFilterConfig(filterConfig);
+    const nextFolder = filterConfig.folder ?? null;
+    if (nextFolder !== vanillaState.currentFolder) {
+      vanillaState.setCurrentFolder(nextFolder);
+    }
+  }, [filterConfig]);
 
   const setWidgetDataCache = useCallback((id: string, val: Bookmark[]) => {
     setWidgetDataCacheState((prev) => ({ ...prev, [id]: val }));
@@ -261,34 +273,14 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         const queryString = params.toString();
         const url = queryString ? `${endpoint}?${queryString}` : endpoint;
 
-        // DIAGNOSTIC: Log the actual request
-        console.log("🔍 DIAGNOSTIC - loadBookmarks request:", {
-          url,
-          currentView,
-          currentFolder,
-          includeChildBookmarks,
-          activeFilters,
-          requestSeq,
-        });
-
         const data = await api<BookmarksListResponse>(url, {
           headers: {
             "Cache-Control": "no-cache",
           },
         });
 
-        // DIAGNOSTIC: Log the response
-        console.log("🔍 DIAGNOSTIC - loadBookmarks response:", {
-          bookmarkCount: data.bookmarks?.length || 0,
-          total: data.total,
-          requestSeq,
-          currentRequestSeq: loadBookmarksRequestSeq.current,
-          willIgnore: requestSeq !== loadBookmarksRequestSeq.current,
-        });
-
         // Ignore stale responses when a newer loadBookmarks call has started.
         if (requestSeq !== loadBookmarksRequestSeq.current) {
-          console.log("⚠️ DIAGNOSTIC - Ignoring stale response");
           return;
         }
 
@@ -335,6 +327,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
 
   const loadMoreBookmarks = useCallback(async () => {
     if (isLoadingMore || displayedCount >= totalCount) return;
+    if (Date.now() < loadMoreBackoffUntilRef.current) return;
 
     setIsLoadingMore(true);
 
@@ -352,8 +345,10 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       if (currentView === "archived") params.append("archived", "true");
       if (currentView === "most-used") params.append("most_used", "true");
 
+      // UIBridge currentFolder (filter-dropdown path) or filterConfig.folder (sidebar path)
+      const folderForMore = currentFolder ?? filterConfig.folder ?? null;
       if (
-        currentFolder &&
+        folderForMore &&
         currentView !== "dashboard" &&
         currentView !== "collection" &&
         currentView !== "favorites" &&
@@ -361,7 +356,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         currentView !== "recent" &&
         currentView !== "most-used"
       ) {
-        params.append("folder_id", currentFolder);
+        params.append("folder_id", folderForMore);
         if (includeChildBookmarks) {
           params.append("include_children", "true");
         }
@@ -390,6 +385,9 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       setRenderedBookmarks(newBookmarks);
       setDisplayedCount((prev) => prev + data.bookmarks.length);
     } catch (err) {
+      if (err instanceof Error && err.message.toLowerCase().includes("rate limit")) {
+        loadMoreBackoffUntilRef.current = Date.now() + 60_000;
+      }
       console.error("Failed to load more bookmarks:", err);
     } finally {
       setIsLoadingMore(false);

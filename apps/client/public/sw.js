@@ -46,6 +46,12 @@ self.addEventListener("activate", (event) => {
 // Fetch event - serve from cache, fallback to network
 self.addEventListener("fetch", (event) => {
   const { request } = event;
+
+  // Skip non-http(s) schemes (e.g. chrome-extension://) — Cache API rejects them
+  if (!request.url.startsWith("http://") && !request.url.startsWith("https://")) {
+    return;
+  }
+
   const url = new URL(request.url);
 
   // Skip non-GET requests
