@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Icon } from "./Icon.tsx";
 import { Tag } from "./Tag.tsx";
 import { Button } from "./Button.tsx";
 import { getHostname } from "@utils/index.ts";
 import { useUI } from "@/contexts/index.ts";
 import { useBookmarks } from "@/contexts/index.ts";
+import { fetchMetadata } from "@features/bookmarks/bookmarks.ts";
+import { api } from "@services/api.ts";
 import type { Bookmark } from "../types/index";
+
+const fetchingIds = new Set<string>();
 
 interface RichBookmarkCardProps {
   bookmark: Bookmark;
@@ -34,6 +38,7 @@ function FaviconImage({ src, size }: { src: string; size: number }) {
         alt=""
         className="bookmark-favicon-img img-loading"
         loading="lazy"
+        onLoad={(e) => e.currentTarget.classList.add("img-loaded")}
         onError={() => setErrored(true)}
       />
     </span>
@@ -53,7 +58,11 @@ export function RichBookmarkCard({
   onSelect,
 }: RichBookmarkCardProps) {
   const { hideFavicons } = useUI();
-  const { tagMetadata, selectedBookmarks } = useBookmarks();
+  const { tagMetadata, selectedBookmarks, bookmarks, setBookmarks } = useBookmarks();
+
+  const [autoImage, setAutoImage] = useState<string | undefined>(undefined);
+  const bookmarksRef = useRef(bookmarks);
+  useEffect(() => { bookmarksRef.current = bookmarks; }, [bookmarks]);
 
   const isSelected = selectedBookmarks.has(bookmark.id);
 
@@ -112,10 +121,38 @@ export function RichBookmarkCard({
     </div>
   ) : null;
 
-  const imageSrc = bookmark.og_image ?? bookmark.thumbnail_local;
+  const imageSrc = autoImage ?? bookmark.og_image ?? bookmark.thumbnail_local;
+
+  useEffect(() => {
+    if (imageSrc || fetchingIds.has(bookmark.id)) return;
+    fetchingIds.add(bookmark.id);
+    fetchMetadata(bookmark.url)
+      .then(async (meta) => {
+        if (!meta.og_image) return;
+        setAutoImage(meta.og_image);
+        await api(`/bookmarks/${bookmark.id}`, {
+          method: "PUT",
+          body: JSON.stringify({ og_image: meta.og_image }),
+        });
+        setBookmarks(
+          bookmarksRef.current.map((b) =>
+            b.id === bookmark.id ? { ...b, og_image: meta.og_image } : b,
+          ),
+        );
+      })
+      .catch(() => {})
+      .finally(() => fetchingIds.delete(bookmark.id));
+  }, [bookmark.id, bookmark.url, imageSrc, setBookmarks]);
+
   const imageEl = imageSrc ? (
     <div className="rich-card-image">
-      <img src={imageSrc} alt="" className="img-loading" loading="lazy" />
+      <img
+        src={imageSrc}
+        alt=""
+        className="img-loading"
+        loading="lazy"
+        onLoad={(e) => e.currentTarget.classList.add("img-loaded")}
+      />
     </div>
   ) : (
     <div

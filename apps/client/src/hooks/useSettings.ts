@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useUI } from "@/contexts/UIContext";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { useBookmarks } from "@/contexts/BookmarksContext";
@@ -38,6 +38,9 @@ export function useSettings() {
     setDashboardWidgets: setBookmarksWidgets,
   } = useBookmarks();
 
+  const filterConfigRef = useRef(filterConfig);
+  filterConfigRef.current = filterConfig;
+
   const loadSettings = useCallback(async (): Promise<void> => {
     try {
       const settings = await api<any>("/settings");
@@ -61,7 +64,7 @@ export function useSettings() {
 
       if (settings.tag_sort) {
         setFilterConfig({
-          ...filterConfig,
+          ...filterConfigRef.current,
           tagSort: settings.tag_sort,
         } as FilterConfig);
       }

@@ -97,6 +97,7 @@ export function useBookmarkActions() {
         note: (bookmark as any).note || "",
         folderId: bookmark.folder_id || null,
         color: bookmark.color || "",
+        og_image: bookmark.og_image || undefined,
       });
     },
     [bookmarks, openBookmarkModal],

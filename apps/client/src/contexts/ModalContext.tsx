@@ -17,6 +17,7 @@ export interface BookmarkFormData {
   note: string;
   folderId: string | null;
   color?: string;
+  og_image?: string;
 }
 
 export interface TagFormData {
@@ -74,6 +75,7 @@ const initialBookmarkFormData: BookmarkFormData = {
   note: "",
   folderId: null,
   color: "",
+  og_image: undefined,
 };
 
 const initialTagFormData: TagFormData = {

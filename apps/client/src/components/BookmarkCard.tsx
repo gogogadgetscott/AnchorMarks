@@ -34,6 +34,7 @@ function FaviconImage({ src, size }: { src: string; size: number }) {
         alt=""
         className="bookmark-favicon-img img-loading"
         loading="lazy"
+        onLoad={(e) => e.currentTarget.classList.add("img-loaded")}
         onError={() => setErrored(true)}
       />
     </span>

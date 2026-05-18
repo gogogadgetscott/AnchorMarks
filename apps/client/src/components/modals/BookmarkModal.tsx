@@ -115,6 +115,7 @@ export default function BookmarkModal() {
       folder_id: bookmarkFormData.folderId || undefined,
       color: bookmarkFormData.color,
       tags: bookmarkFormData.tags,
+      og_image: bookmarkFormData.og_image || undefined,
     };
 
     if (bookmarkFormData.id) {
@@ -147,6 +148,7 @@ export default function BookmarkModal() {
       setBookmarkFormData({
         title: metadata.title || bookmarkFormData.title,
         description: metadata.description || bookmarkFormData.description,
+        og_image: metadata.og_image || bookmarkFormData.og_image,
       });
 
       setHasAIResults(false);
