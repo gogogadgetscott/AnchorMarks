@@ -391,6 +391,26 @@ function initializeDatabase(DB_PATH) {
     logger.error("Failed to create FTS triggers:", err.message);
   }
 
+  // Backfill the standalone FTS index with any bookmarks missing from it.
+  // This covers databases that predate the FTS table, upgrades where the
+  // table was recreated on startup, or any other path that left the index
+  // out of sync — without re-indexing rows that already exist.
+  try {
+    db.exec(`
+      INSERT OR IGNORE INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
+      SELECT b.rowid, b.id, b.user_id, b.title, b.url, b.description,
+             COALESCE((SELECT GROUP_CONCAT(t.name, ', ')
+                       FROM bookmark_tags bt
+                       JOIN tags t ON t.id = bt.tag_id
+                       WHERE bt.bookmark_id = b.id), '')
+      FROM bookmarks b
+      LEFT JOIN bookmarks_fts f ON f.rowid = b.rowid
+      WHERE f.rowid IS NULL
+    `);
+  } catch (err) {
+    logger.error("Failed to backfill FTS index:", err.message);
+  }
+
   return db;
 }
 

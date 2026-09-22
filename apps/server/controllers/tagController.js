@@ -22,11 +22,20 @@ function createTag(req, res) {
   const { name, color, icon } = req.validated;
   const id = uuidv4();
   const tagModel = require("../models/tag");
-  const maxPos = db
-    .prepare("SELECT MAX(position) as max FROM tags WHERE user_id = ?")
-    .get(req.user.id);
-  const position = (maxPos.max || 0) + 1;
   try {
+    // Case-insensitive duplicate detection so "React" cannot be created
+    // alongside an existing "react" tag.
+    const existing = db
+      .prepare(
+        "SELECT id FROM tags WHERE user_id = ? AND name = ? COLLATE NOCASE",
+      )
+      .get(req.user.id, name.trim());
+    if (existing) return res.status(409).json({ error: "Tag already exists" });
+
+    const maxPos = db
+      .prepare("SELECT MAX(position) as max FROM tags WHERE user_id = ?")
+      .get(req.user.id);
+    const position = (maxPos.max || 0) + 1;
     tagModel.createTag(db, {
       id,
       user_id: req.user.id,
@@ -52,6 +61,18 @@ function updateTag(req, res) {
   const tagModel = require("../models/tag");
   const { name, color, icon, position } = req.validated;
   try {
+    if (name !== undefined) {
+      // Prevent renaming a tag into a name that already exists
+      // (case-insensitively) for this user.
+      const existing = db
+        .prepare(
+          "SELECT id FROM tags WHERE user_id = ? AND name = ? COLLATE NOCASE",
+        )
+        .get(req.user.id, name);
+      if (existing && existing.id !== req.params.id) {
+        return res.status(409).json({ error: "Tag already exists" });
+      }
+    }
     tagModel.updateTag(db, req.params.id, req.user.id, {
       name,
       color,

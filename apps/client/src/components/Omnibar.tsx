@@ -303,6 +303,10 @@ export function Omnibar({
   const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterConfigRef = useRef(filterConfig);
   filterConfigRef.current = filterConfig;
+  const loadBookmarksRef = useRef(loadBookmarks);
+  useEffect(() => {
+    loadBookmarksRef.current = loadBookmarks;
+  }, [loadBookmarks]);
   const searchFilterTimeout = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -351,10 +355,27 @@ export function Omnibar({
       return;
     }
 
+    const nextSearch = trimmed || undefined;
     setFilterConfig({
       ...filterConfigRef.current,
-      search: trimmed || undefined,
+      search: nextSearch,
     });
+
+    // Reload bookmarks so the server-side FTS search actually runs and the
+    // grid updates. Only views that support search filtering should reload.
+    const searchableViews = ["all", "folder", "collection"];
+    if (searchableViews.includes(currentView)) {
+      const override = {
+        ...filterConfigRef.current,
+        search: nextSearch,
+      };
+      searchFilterTimeout.current = setTimeout(() => {
+        loadBookmarksRef.current({
+          view: currentView,
+          filterOverride: override,
+        });
+      }, 250);
+    }
 
     return () => {
       if (searchFilterTimeout.current)

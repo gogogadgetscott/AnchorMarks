@@ -55,61 +55,24 @@ function listBookmarks(db, userId, opts = {}) {
     !isMostUsedView
   );
 
-  // Define the base FROM and JOINs
-  let baseFrom;
-  if (hasSearch) {
-    baseFrom = `
-      FROM bookmarks b
-      INNER JOIN bookmarks_fts ON bookmarks_fts.id = b.id
-      LEFT JOIN (
-        SELECT bt.bookmark_id,
-               GROUP_CONCAT(t.name, ', ') as tags_joined,
-               json_group_array(
-                 json_object(
-                   'name', t.name,
-                   'tag_id', t.id,
-                   'color', t.color,
-                   'color_override', bt.color_override
-                 )
-               ) as tags_detailed
-        FROM bookmark_tags bt
-        JOIN tags t ON t.id = bt.tag_id
-        WHERE t.user_id = ?
-        GROUP BY bt.bookmark_id
-      ) tg ON tg.bookmark_id = b.id`;
-  } else {
-    baseFrom = `
-      FROM bookmarks b
-      LEFT JOIN (
-        SELECT bt.bookmark_id,
-               GROUP_CONCAT(t.name, ', ') as tags_joined,
-               json_group_array(
-                 json_object(
-                   'name', t.name,
-                   'tag_id', t.id,
-                   'color', t.color,
-                   'color_override', bt.color_override
-                 )
-               ) as tags_detailed
-        FROM bookmark_tags bt
-        JOIN tags t ON t.id = bt.tag_id
-        WHERE t.user_id = ?
-        GROUP BY bt.bookmark_id
-      ) tg ON tg.bookmark_id = b.id`;
-  }
+  // Core FROM without the tags aggregation. Tags are attached only for the
+  // rows that are actually returned (see tagsSubquery below), which keeps the
+  // per-page query fast on large libraries instead of aggregating tags for
+  // every bookmark the user owns.
+  const coreFrom = hasSearch
+    ? `FROM bookmarks b
+       INNER JOIN bookmarks_fts ON bookmarks_fts.id = b.id`
+    : `FROM bookmarks b`;
 
-  const tagsSelect = hasSearch
-    ? "COALESCE(tg.tags_joined, '') as _tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed"
-    : "COALESCE(tg.tags_joined, '') as tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed";
-  let query = `SELECT b.*, ${tagsSelect} ${baseFrom} WHERE b.user_id = ?`;
-  let countQuery = `SELECT COUNT(*) as total ${baseFrom} WHERE b.user_id = ?`;
-  const params = [userId, userId];
+  // ---- WHERE clauses ----
+  const whereClauses = ["b.user_id = ?"];
+  const filterParams = [userId];
 
   // Handle folder filter
   // Folder filters should be ignored in favorites view, archived view, and most-used view
   if (folder_id && !isFavoritesView && !isArchivedView && !isMostUsedView) {
     if (include_children) {
-      const folderFilter = ` AND (b.folder_id = ? OR b.folder_id IN (
+      whereClauses.push(`(b.folder_id = ? OR b.folder_id IN (
         WITH RECURSIVE subfolders AS (
           SELECT id FROM folders WHERE parent_id = ?
           UNION ALL
@@ -117,27 +80,22 @@ function listBookmarks(db, userId, opts = {}) {
           JOIN subfolders s ON f.parent_id = s.id
         )
         SELECT id FROM subfolders
-      ))`;
-      query += folderFilter;
-      countQuery += folderFilter;
-      params.push(folder_id, folder_id);
+      ))`);
+      filterParams.push(folder_id, folder_id);
     } else {
-      query += " AND b.folder_id = ?";
-      countQuery += " AND b.folder_id = ?";
-      params.push(folder_id);
+      whereClauses.push("b.folder_id = ?");
+      filterParams.push(folder_id);
     }
   }
 
   // Handle favorite filter
   if (isFavoritesView) {
-    query += " AND COALESCE(b.is_favorite, 0) = 1";
-    countQuery += " AND COALESCE(b.is_favorite, 0) = 1";
+    whereClauses.push("COALESCE(b.is_favorite, 0) = 1");
   }
 
   // Handle most-used filter
   if (isMostUsedView) {
-    query += " AND b.click_count > 0";
-    countQuery += " AND b.click_count > 0";
+    whereClauses.push("b.click_count > 0");
   }
 
   // Handle search matching
@@ -153,9 +111,8 @@ function listBookmarks(db, userId, opts = {}) {
         .map((w) => `"${w.replace(/"/g, '""')}"*`)
         .join(useFuzzy ? " OR " : " AND ");
 
-      query += " AND bookmarks_fts MATCH ?";
-      countQuery += " AND bookmarks_fts MATCH ?";
-      params.push(ftsQuery);
+      whereClauses.push("bookmarks_fts MATCH ?");
+      filterParams.push(ftsQuery);
     }
   }
 
@@ -171,52 +128,43 @@ function listBookmarks(db, userId, opts = {}) {
     if (tagArrLower.length > 0) {
       const tagPlaceholders = tagArrLower.map(() => "?").join(",");
       if (tagMode && String(tagMode).toLowerCase() === "and") {
-        const tagFilter = `
-          AND b.id IN (
-            SELECT bt.bookmark_id
-            FROM bookmark_tags bt
-            JOIN tags t ON t.id = bt.tag_id
-            WHERE t.user_id = ? AND LOWER(t.name) IN (${tagPlaceholders})
-            GROUP BY bt.bookmark_id
-            HAVING COUNT(DISTINCT LOWER(t.name)) = ?
-          )
-        `;
-        query += tagFilter;
-        countQuery += tagFilter;
-        params.push(userId, ...tagArrLower, tagArrLower.length);
+        whereClauses.push(`b.id IN (
+          SELECT bt.bookmark_id
+          FROM bookmark_tags bt
+          JOIN tags t ON t.id = bt.tag_id
+          WHERE t.user_id = ? AND LOWER(t.name) IN (${tagPlaceholders})
+          GROUP BY bt.bookmark_id
+          HAVING COUNT(DISTINCT LOWER(t.name)) = ?
+        )`);
+        filterParams.push(userId, ...tagArrLower, tagArrLower.length);
       } else {
-        const tagFilter = `
-          AND b.id IN (
-            SELECT DISTINCT bt.bookmark_id
-            FROM bookmark_tags bt
-            JOIN tags t ON t.id = bt.tag_id
-            WHERE t.user_id = ? AND LOWER(t.name) IN (${tagPlaceholders})
-          )
-        `;
-        query += tagFilter;
-        countQuery += tagFilter;
-        params.push(userId, ...tagArrLower);
+        whereClauses.push(`b.id IN (
+          SELECT DISTINCT bt.bookmark_id
+          FROM bookmark_tags bt
+          JOIN tags t ON t.id = bt.tag_id
+          WHERE t.user_id = ? AND LOWER(t.name) IN (${tagPlaceholders})
+        )`);
+        filterParams.push(userId, ...tagArrLower);
       }
     }
   }
 
   // Handle archiving filter
   if (isFavoritesView) {
-    query += " AND b.is_archived = 0";
-    countQuery += " AND b.is_archived = 0";
+    whereClauses.push("b.is_archived = 0");
   } else {
-    if (archived === true || archived === "true") {
-      query += " AND b.is_archived = 1";
-      countQuery += " AND b.is_archived = 1";
+    if (isArchivedView) {
+      whereClauses.push("b.is_archived = 1");
     } else if (archived === "all") {
       // Show all
     } else {
-      query += " AND b.is_archived = 0";
-      countQuery += " AND b.is_archived = 0";
+      whereClauses.push("b.is_archived = 0");
     }
   }
 
-  // Sorting and Pagination
+  const whereSql = whereClauses.join(" AND ");
+
+  // ---- Sorting and Pagination ----
   let orderClause = " ORDER BY position, created_at DESC";
   if (sort) {
     switch (String(sort).toLowerCase()) {
@@ -246,10 +194,42 @@ function listBookmarks(db, userId, opts = {}) {
     orderClause = " ORDER BY bookmarks_fts.rank";
   }
 
-  query += orderClause;
+  // Tags aggregation — scoped to a bookmark set via `scope` (inserted before
+  // GROUP BY) so it only aggregates the bookmarks being returned.
+  const tagsSubquery = (scope = "") => `
+    SELECT bt.bookmark_id,
+           GROUP_CONCAT(t.name, ', ') as tags_joined,
+           json_group_array(
+             json_object(
+               'name', t.name,
+               'tag_id', t.id,
+               'color', t.color,
+               'color_override', bt.color_override
+             )
+           ) as tags_detailed
+    FROM bookmark_tags bt
+    JOIN tags t ON t.id = bt.tag_id
+    WHERE t.user_id = ?${scope ? ` AND ${scope}` : ""}
+    GROUP BY bt.bookmark_id`;
+
+  const tagsSelect = hasSearch
+    ? "COALESCE(tg.tags_joined, '') as _tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed"
+    : "COALESCE(tg.tags_joined, '') as tags, COALESCE(tg.tags_detailed, '[]') as tags_detailed";
+
+  const mapTags = (bookmarks) =>
+    hasSearch
+      ? bookmarks.map((b) => {
+          const { _tags, ...rest } = b;
+          return { ...rest, tags: _tags };
+        })
+      : bookmarks;
+
+  // COUNT does not depend on the tags aggregation (the tag join is 1:1 on the
+  // bookmark), so compute it from the lightweight core FROM.
+  const countQuery = `SELECT COUNT(*) as total ${coreFrom} WHERE ${whereSql}`;
 
   if (limit) {
-    const total = db.prepare(countQuery).get(...params).total;
+    const total = db.prepare(countQuery).get(...filterParams).total;
     let safeLimit = Math.max(
       1,
       Math.min(10000, parseInt(String(limit), 10) || 50),
@@ -260,23 +240,37 @@ function listBookmarks(db, userId, opts = {}) {
       effectiveTotal = safeLimit;
     }
     const safeOffset = Math.max(0, parseInt(String(offset), 10) || 0);
-    query += " LIMIT ? OFFSET ?";
-    params.push(safeLimit, safeOffset);
-    let bookmarks = db.prepare(query).all(...params);
-    if (hasSearch)
-      bookmarks = bookmarks.map((b) => {
-        const { _tags, ...rest } = b;
-        return { ...rest, tags: _tags };
-      });
+
+    // Paginate first with a lightweight query, then attach tags only for the
+    // page's bookmarks. SQLite preserves the CTE's ORDER BY through the
+    // 1:1 join back to bookmarks.
+    const dataQuery = `
+      WITH page AS (
+        SELECT b.id ${coreFrom}
+        WHERE ${whereSql}
+        ${orderClause}
+        LIMIT ? OFFSET ?
+      )
+      SELECT b.*, ${tagsSelect}
+      FROM page p
+      JOIN bookmarks b ON b.id = p.id
+      LEFT JOIN (
+        ${tagsSubquery("bt.bookmark_id IN (SELECT id FROM page)")}
+      ) tg ON tg.bookmark_id = b.id`;
+
+    const bookmarks = mapTags(
+      db.prepare(dataQuery).all(...filterParams, safeLimit, safeOffset, userId),
+    );
     return { bookmarks, total: effectiveTotal };
   }
 
-  let bookmarks = db.prepare(query).all(...params);
-  if (hasSearch)
-    bookmarks = bookmarks.map((b) => {
-      const { _tags, ...rest } = b;
-      return { ...rest, tags: _tags };
-    });
+  const fullQuery = `
+    SELECT b.*, ${tagsSelect}
+    ${coreFrom}
+    LEFT JOIN (${tagsSubquery()}) tg ON tg.bookmark_id = b.id
+    WHERE ${whereSql}
+    ${orderClause}`;
+  const bookmarks = mapTags(db.prepare(fullQuery).all(userId, ...filterParams));
   return { bookmarks };
 }
 
@@ -286,27 +280,26 @@ function listViewTags(db, userId, opts = {}) {
   const isArchivedView = archived === true || archived === "true";
   const isMostUsedView = most_used === true || most_used === "true";
 
-  let query = `
-    SELECT t.id, t.name, t.color, COUNT(DISTINCT bt.bookmark_id) as count
-    FROM tags t
-    JOIN bookmark_tags bt ON bt.tag_id = t.id
-    JOIN bookmarks b ON b.id = bt.bookmark_id
-    WHERE t.user_id = ? AND b.user_id = ?
-  `;
-  const params = [userId, userId];
+  // Count matching bookmarks per tag first (restricted to the active view),
+  // then join back to tags. This avoids aggregating the full tag x bookmark
+  // cross product and is significantly faster on large libraries.
+  const bookmarkClauses = ["b.user_id = ?"];
+  const params = [userId];
 
   if (isFavoritesView) {
-    query += " AND COALESCE(b.is_favorite, 0) = 1 AND b.is_archived = 0";
+    bookmarkClauses.push(
+      "COALESCE(b.is_favorite, 0) = 1 AND b.is_archived = 0",
+    );
   } else if (isArchivedView) {
-    query += " AND b.is_archived = 1";
+    bookmarkClauses.push("b.is_archived = 1");
   } else if (isMostUsedView) {
-    query += " AND b.click_count > 0 AND b.is_archived = 0";
+    bookmarkClauses.push("b.click_count > 0 AND b.is_archived = 0");
   } else {
-    query += " AND b.is_archived = 0";
+    bookmarkClauses.push("b.is_archived = 0");
   }
 
   if (folder_id) {
-    query += " AND b.folder_id = ?";
+    bookmarkClauses.push("b.folder_id = ?");
     params.push(folder_id);
   }
 
@@ -319,26 +312,43 @@ function listViewTags(db, userId, opts = {}) {
     if (tagArrLower.length > 0) {
       const ph = tagArrLower.map(() => "?").join(",");
       if (tagMode && String(tagMode).toLowerCase() === "and") {
-        query += ` AND b.id IN (
+        bookmarkClauses.push(`b.id IN (
           SELECT bt2.bookmark_id FROM bookmark_tags bt2
           JOIN tags t2 ON t2.id = bt2.tag_id
           WHERE t2.user_id = ? AND LOWER(t2.name) IN (${ph})
           GROUP BY bt2.bookmark_id HAVING COUNT(DISTINCT LOWER(t2.name)) = ?
-        )`;
+        )`);
         params.push(userId, ...tagArrLower, tagArrLower.length);
       } else {
-        query += ` AND b.id IN (
+        bookmarkClauses.push(`b.id IN (
           SELECT DISTINCT bt2.bookmark_id FROM bookmark_tags bt2
           JOIN tags t2 ON t2.id = bt2.tag_id
           WHERE t2.user_id = ? AND LOWER(t2.name) IN (${ph})
-        )`;
+        )`);
         params.push(userId, ...tagArrLower);
       }
     }
   }
 
-  query += " GROUP BY t.id, t.name, t.color ORDER BY count DESC";
-  return db.prepare(query).all(...params);
+  const bookmarkWhere = bookmarkClauses.join(" AND ");
+
+  return db
+    .prepare(
+      `
+      SELECT t.id, t.name, t.color, c.cnt as count
+      FROM tags t
+      JOIN (
+        SELECT bt.tag_id, COUNT(bt.bookmark_id) as cnt
+        FROM bookmark_tags bt
+        JOIN bookmarks b ON b.id = bt.bookmark_id
+        WHERE ${bookmarkWhere}
+        GROUP BY bt.tag_id
+      ) c ON c.tag_id = t.id
+      WHERE t.user_id = ?
+      ORDER BY count DESC
+    `,
+    )
+    .all(...params, userId);
 }
 
 function listViewFolderIds(db, userId, opts = {}) {

@@ -83,6 +83,30 @@ export function Sidebar() {
     new Set(["folders", "tags"]),
   );
   const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
+  const countsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Refresh the nav badges whenever the bookmark set changes, debounced so
+  // pagination/reloads (which change the `bookmarks` array without changing
+  // any counts) don't hammer the /bookmarks/counts endpoint on every frame.
+  useEffect(() => {
+    if (countsTimeoutRef.current) clearTimeout(countsTimeoutRef.current);
+    countsTimeoutRef.current = setTimeout(() => {
+      api<Record<string, number>>("/bookmarks/counts")
+        .then((data) =>
+          setViewCounts((prev) => {
+            // Avoid pointless re-renders when the counts did not change.
+            for (const key of Object.keys(data)) {
+              if (prev[key] !== data[key]) return data;
+            }
+            return prev;
+          }),
+        )
+        .catch(() => {});
+    }, 400);
+    return () => {
+      if (countsTimeoutRef.current) clearTimeout(countsTimeoutRef.current);
+    };
+  }, [bookmarks]);
   const [isCollapsed, setIsCollapsed] = useState(() =>
     document.body.classList.contains("sidebar-collapsed"),
   );
@@ -90,12 +114,6 @@ export function Sidebar() {
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const folderSectionRef = useRef<HTMLDivElement>(null);
   const tagSectionRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    api<Record<string, number>>("/bookmarks/counts")
-      .then((data) => setViewCounts(data))
-      .catch(() => {});
-  }, [bookmarks]);
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -235,7 +253,9 @@ export function Sidebar() {
       const nextFilterConfig = {
         ...filterConfig,
         tags,
-        tagMode: "AND" as const,
+        // Preserve the user's tag mode (defaults to OR) so sidebar filtering
+        // behaves consistently with the filter dropdown and card tag clicks.
+        tagMode: filterConfig.tagMode ?? "OR",
       };
       setFilterConfig(nextFilterConfig);
       await loadBookmarks({

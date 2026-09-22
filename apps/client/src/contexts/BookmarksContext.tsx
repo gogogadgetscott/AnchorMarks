@@ -153,6 +153,10 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
   const [bulkMode, setBulkMode] = useState(false);
   const loadBookmarksRequestSeq = useRef(0);
   const loadMoreBackoffUntilRef = useRef(0);
+  // Tracks cacheKeys of requests currently in flight so redundant calls with
+  // identical parameters (e.g. a view change triggered by both the sidebar and
+  // the App-level currentView effect) do not hit the server twice.
+  const inFlightKeysRef = useRef<Set<string>>(new Set());
   const viewCacheRef = useRef<
     Map<string, { bookmarks: Bookmark[]; total: number }>
   >(new Map());
@@ -216,42 +220,48 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       view?: string;
       filterOverride?: FilterConfig;
     }) => {
+      const uiBridge = getUIBridge();
+      const currentFolder = options?.folderId ?? uiBridge.getCurrentFolder();
+      const currentView = options?.view ?? uiBridge.getCurrentView();
+      const includeChildBookmarks = uiBridge.getIncludeChildBookmarks();
+      const activeFilters = options?.filterOverride ?? filterConfig;
+
+      // Get current collection from URL or state if we're in collection view
+      let currentCollection: string | null = null;
+      if (currentView === "collection") {
+        const url = new URL(window.location.href);
+        currentCollection = url.searchParams.get("collection");
+      }
+
+      if (currentView === "analytics") return;
+
+      // Stale-while-revalidate: serve cached data instantly, then refresh silently.
+      // Views with URL-dependent or non-bookmark content are excluded from caching.
+      const cacheable = ![
+        "dashboard",
+        "analytics",
+        "tag-cloud",
+        "collection",
+      ].includes(currentView);
+      const cacheKey = cacheable
+        ? [
+            currentView,
+            currentFolder ?? "",
+            (activeFilters.tags ?? []).join(","),
+            activeFilters.tagMode ?? "OR",
+            activeFilters.search ?? "",
+            activeFilters.sort ?? "",
+          ].join("|")
+        : null;
+
+      // Skip an identical in-flight request instead of fetching the same data
+      // twice. The request sequence is only bumped for requests we actually
+      // send, so the first (in-flight) call still renders its result.
+      if (cacheKey && inFlightKeysRef.current.has(cacheKey)) return;
+      if (cacheKey) inFlightKeysRef.current.add(cacheKey);
+
       const requestSeq = ++loadBookmarksRequestSeq.current;
       try {
-        const uiBridge = getUIBridge();
-        const currentFolder = options?.folderId ?? uiBridge.getCurrentFolder();
-        const currentView = options?.view ?? uiBridge.getCurrentView();
-        const includeChildBookmarks = uiBridge.getIncludeChildBookmarks();
-        const activeFilters = options?.filterOverride ?? filterConfig;
-
-        // Get current collection from URL or state if we're in collection view
-        let currentCollection: string | null = null;
-        if (currentView === "collection") {
-          const url = new URL(window.location.href);
-          currentCollection = url.searchParams.get("collection");
-        }
-
-        if (currentView === "analytics") return;
-
-        // Stale-while-revalidate: serve cached data instantly, then refresh silently.
-        // Views with URL-dependent or non-bookmark content are excluded from caching.
-        const cacheable = ![
-          "dashboard",
-          "analytics",
-          "tag-cloud",
-          "collection",
-        ].includes(currentView);
-        const cacheKey = cacheable
-          ? [
-              currentView,
-              currentFolder ?? "",
-              (activeFilters.tags ?? []).join(","),
-              activeFilters.tagMode ?? "OR",
-              activeFilters.search ?? "",
-              activeFilters.sort ?? "",
-            ].join("|")
-          : null;
-
         const cached = cacheKey ? viewCacheRef.current.get(cacheKey) : null;
         if (cached) {
           setBookmarks(cached.bookmarks);
@@ -360,6 +370,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error("Failed to load bookmarks:", err);
       } finally {
+        if (cacheKey) inFlightKeysRef.current.delete(cacheKey);
         if (requestSeq === loadBookmarksRequestSeq.current) {
           setIsLoading(false);
         }

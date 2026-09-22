@@ -82,4 +82,41 @@ describe("BookmarksContext folder filtering", () => {
     expect(calledEndpoint).toContain("folder_id=parent-folder");
     expect(calledEndpoint).not.toContain("include_children=true");
   });
+
+  it("deduplicates identical concurrent loadBookmarks requests", async () => {
+    const apiModule = await import("@services/api.ts");
+    const api = apiModule.api as ReturnType<typeof vi.fn>;
+    api.mockClear();
+
+    // Gate the first request so the second call is made while it is in flight.
+    let resolveFirst!: (value: unknown) => void;
+    const gate = new Promise((resolve) => {
+      resolveFirst = resolve;
+    });
+    api.mockImplementation(() => gate);
+
+    const { result } = renderHook(
+      () => ({ ui: useUI(), bookmarks: useBookmarks() }),
+      { wrapper },
+    );
+
+    await act(async () => {
+      await result.current.ui.setCurrentView("all");
+    });
+
+    let p1: Promise<void>;
+    let p2: Promise<void>;
+    await act(async () => {
+      p1 = result.current.bookmarks.loadBookmarks();
+      p2 = result.current.bookmarks.loadBookmarks();
+    });
+
+    // Both calls share the same cache key, so only one request reaches the API.
+    expect(api).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveFirst({ bookmarks: [], total: 0, tags: [] });
+      await Promise.all([p1, p2]);
+    });
+  });
 });

@@ -3,15 +3,22 @@ function listTags(db, userId) {
   const tags = db
     .prepare(
       `
-    SELECT t.*, COUNT(bt.bookmark_id) as count
+    SELECT t.*, COALESCE(c.cnt, 0) as count
     FROM tags t
-    LEFT JOIN bookmark_tags bt ON t.id = bt.tag_id
+    LEFT JOIN (
+      SELECT bt.tag_id, COUNT(bt.bookmark_id) as cnt
+      FROM bookmark_tags bt
+      JOIN bookmarks b
+        ON b.id = bt.bookmark_id
+       AND b.user_id = ?
+       AND COALESCE(b.is_archived, 0) = 0
+      GROUP BY bt.tag_id
+    ) c ON c.tag_id = t.id
     WHERE t.user_id = ?
-    GROUP BY t.id
     ORDER BY t.position
   `,
     )
-    .all(userId);
+    .all(userId, userId);
   return tags;
 }
 
