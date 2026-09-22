@@ -34,9 +34,12 @@ function ensureTagsExist(db, userId, tagsInput, options = {}) {
   const tagMap = {};
 
   for (const tagName of tagNames) {
-    // Check if tag exists
+    // Check if tag exists (case-insensitive so "React" and "react" resolve to
+    // the same tag instead of silently creating duplicates).
     let tag = db
-      .prepare("SELECT id FROM tags WHERE user_id = ? AND name = ?")
+      .prepare(
+        "SELECT id FROM tags WHERE user_id = ? AND name = ? COLLATE NOCASE",
+      )
       .get(userId, tagName);
 
     if (!tag) {
@@ -134,7 +137,7 @@ function getUserTags(db, userId) {
       `
     SELECT 
       t.*,
-      COUNT(bt.bookmark_id) as count,
+      COUNT(b.id) as count,
       CASE 
         WHEN INSTR(t.name, '/') > 0 
         THEN SUBSTR(t.name, 1, INSTR(t.name, '/') - 1)
@@ -142,6 +145,10 @@ function getUserTags(db, userId) {
       END as parent
     FROM tags t
     LEFT JOIN bookmark_tags bt ON t.id = bt.tag_id
+    LEFT JOIN bookmarks b
+      ON b.id = bt.bookmark_id
+     AND b.user_id = t.user_id
+     AND COALESCE(b.is_archived, 0) = 0
     WHERE t.user_id = ?
     GROUP BY t.id
     ORDER BY t.position, t.name
@@ -156,12 +163,15 @@ function getTagUsageCounts(db, userId) {
       `
       SELECT
         t.name,
-        COUNT(bt.tag_id) AS count,
+        COUNT(b.id) AS count,
         COALESCE(SUM(b.click_count), 0) AS click_count_sum,
         COALESCE(SUM(b.is_favorite), 0) AS favorite_count_sum
       FROM tags t
       LEFT JOIN bookmark_tags bt ON bt.tag_id = t.id
-      LEFT JOIN bookmarks b ON b.id = bt.bookmark_id AND b.user_id = ?
+      LEFT JOIN bookmarks b
+        ON b.id = bt.bookmark_id
+       AND b.user_id = ?
+       AND COALESCE(b.is_archived, 0) = 0
       WHERE t.user_id = ?
       GROUP BY t.id
       ORDER BY count DESC
@@ -207,13 +217,22 @@ function getTagsForDomain(db, userId, domain) {
 
 function renameOrMergeTag(db, userId, from, to) {
   const sourceTag = db
-    .prepare("SELECT * FROM tags WHERE user_id = ? AND name = ?")
+    .prepare("SELECT * FROM tags WHERE user_id = ? AND name = ? COLLATE NOCASE")
     .get(userId, from);
   if (!sourceTag) return { error: "not_found" };
 
   const destinationTag = db
-    .prepare("SELECT * FROM tags WHERE user_id = ? AND name = ?")
+    .prepare("SELECT * FROM tags WHERE user_id = ? AND name = ? COLLATE NOCASE")
     .get(userId, to);
+
+  // Case-only rename (e.g. "react" -> "React"): update the name in place.
+  if (destinationTag && destinationTag.id === sourceTag.id) {
+    db.prepare(
+      "UPDATE tags SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
+    ).run(to, sourceTag.id, userId);
+    return { updated: sourceRelationsCount(db, sourceTag.id) };
+  }
+
   const sourceRelations = db
     .prepare(
       "SELECT bookmark_id, color_override FROM bookmark_tags WHERE tag_id = ?",
@@ -251,6 +270,12 @@ function renameOrMergeTag(db, userId, from, to) {
 
   runMerge();
   return { updated };
+}
+
+function sourceRelationsCount(db, tagId) {
+  return db
+    .prepare("SELECT COUNT(*) as count FROM bookmark_tags WHERE tag_id = ?")
+    .get(tagId).count;
 }
 
 module.exports = {

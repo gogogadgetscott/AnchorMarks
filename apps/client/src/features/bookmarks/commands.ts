@@ -399,12 +399,14 @@ export function getOmnibarCommands(filterText: string = ""): Command[] {
       const url = cmd.url ? String(cmd.url).toLowerCase() : "";
       const bookmark = allBookmarks.find((b) => b.url === cmd.url);
       const tags = bookmark?.tags?.toLowerCase() || "";
+      const bookmarkDescription = bookmark?.description?.toLowerCase() || "";
 
       return (
         label.includes(searchTerm) ||
         description.includes(searchTerm) ||
         url.includes(searchTerm) ||
-        tags.includes(searchTerm)
+        tags.includes(searchTerm) ||
+        bookmarkDescription.includes(searchTerm)
       );
     });
     const matchingCommands = baseCommands.filter((cmd) =>
