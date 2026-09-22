@@ -23,7 +23,14 @@ function search(db, userId, q, limit = 10) {
     FROM bookmarks b
     LEFT JOIN bookmark_tags bt ON bt.bookmark_id = b.id
     LEFT JOIN tags t ON t.id = bt.tag_id
-    WHERE b.user_id = ? AND (b.title LIKE ? ESCAPE '\\' OR b.url LIKE ? ESCAPE '\\' OR t.name LIKE ? ESCAPE '\\')
+    LEFT JOIN folders f ON f.id = b.folder_id
+    WHERE b.user_id = ? AND (
+      b.title LIKE ? ESCAPE '\\' OR
+      b.url LIKE ? ESCAPE '\\' OR
+      b.description LIKE ? ESCAPE '\\' OR
+      t.name LIKE ? ESCAPE '\\' OR
+      f.name LIKE ? ESCAPE '\\'
+    )
     ORDER BY 
       CASE WHEN b.title LIKE ? ESCAPE '\\' THEN 0 ELSE 1 END,
       b.click_count DESC
@@ -32,6 +39,8 @@ function search(db, userId, q, limit = 10) {
     )
     .all(
       userId,
+      searchTerm,
+      searchTerm,
       searchTerm,
       searchTerm,
       searchTerm,

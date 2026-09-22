@@ -62,6 +62,7 @@ function applyFilters(
       (b) =>
         b.title.toLowerCase().includes(searchTerm) ||
         b.url.toLowerCase().includes(searchTerm) ||
+        (b.description || "").toLowerCase().includes(searchTerm) ||
         (b.tags && b.tags.toLowerCase().includes(searchTerm)),
     );
   }

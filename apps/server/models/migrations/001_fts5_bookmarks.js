@@ -15,6 +15,7 @@ exports.up = function (db) {
       DROP TRIGGER IF EXISTS bookmark_tags_sync_insert;
       DROP TRIGGER IF EXISTS bookmark_tags_sync_delete;
       DROP TRIGGER IF EXISTS tags_sync_update;
+      DROP TRIGGER IF EXISTS folders_sync_update;
     `);
   } catch (_e) {}
 
@@ -37,18 +38,20 @@ exports.up = function (db) {
       title,
       url,
       description,
-      tags
+      tags,
+      folder
     );
   `);
 
   // 4. Populate FTS index from bookmarks (tags computed from normalized tables)
   db.exec(`
-    INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags)
+    INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags, folder)
     SELECT b.rowid, b.id, b.user_id, b.title, b.url, b.description,
            COALESCE((SELECT GROUP_CONCAT(t.name, ', ')
-                    FROM bookmark_tags bt
-                    JOIN tags t ON t.id = bt.tag_id
-                    WHERE bt.bookmark_id = b.id), '')
+                     FROM bookmark_tags bt
+                     JOIN tags t ON t.id = bt.tag_id
+                     WHERE bt.bookmark_id = b.id), ''),
+           (SELECT f.name FROM folders f WHERE f.id = b.folder_id)
     FROM bookmarks b
   `);
 
