@@ -13,7 +13,7 @@ function validateBody(schema) {
       req.validated = result.data;
       return next();
     }
-    const first = result.error.errors[0];
+    const first = result.error.issues[0];
     const message = first?.message || "Validation failed";
     return res.status(400).json({ error: message });
   };
@@ -32,7 +32,7 @@ function validateQuery(schema) {
       req.validatedQuery = result.data;
       return next();
     }
-    const first = result.error.errors[0];
+    const first = result.error.issues[0];
     const message = first?.message || "Invalid query parameters";
     return res.status(400).json({ error: message });
   };

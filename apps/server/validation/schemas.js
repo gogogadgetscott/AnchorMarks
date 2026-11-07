@@ -5,7 +5,7 @@ const { z } = require("zod");
 // ---- Helpers ----
 const nonEmptyString = (msg = "Required") =>
   z
-    .string()
+    .string({ error: msg })
     .min(1, msg)
     .transform((s) => s.trim());
 const optionalString = z
@@ -24,7 +24,7 @@ const MAX_URL_LENGTH = 2048;
 const MAX_STRING_LENGTH = 10000;
 
 const httpUrl = z
-  .string()
+  .string({ error: "URL is required" })
   .min(1, "URL is required")
   .max(MAX_URL_LENGTH, `URL must be less than ${MAX_URL_LENGTH} characters`)
   .refine(
@@ -40,7 +40,7 @@ const httpUrl = z
   );
 
 const bookmarkUrl = z
-  .string()
+  .string({ error: "URL is required" })
   .min(1, "URL is required")
   .max(MAX_URL_LENGTH, `URL must be less than ${MAX_URL_LENGTH} characters`)
   .refine(
@@ -95,7 +95,7 @@ const authLogin = z
       .string()
       .min(1, "Email is required")
       .transform((s) => s.trim().toLowerCase()),
-    password: z.string().min(1, "Password is required"),
+    password: z.string({ error: "Password is required" }).min(1, "Password is required"),
   })
   .strict();
 
@@ -110,7 +110,7 @@ const authProfile = z
 
 const authPassword = z
   .object({
-    currentPassword: z.string().min(1, "Current password is required"),
+    currentPassword: z.string({ error: "Current password is required" }).min(1, "Current password is required"),
     newPassword: z
       .string()
       .min(8, "New password must be at least 8 characters"),
@@ -260,14 +260,14 @@ const tagsBulkAddRemove = z
     bookmark_ids: z
       .array(z.string())
       .min(1, "At least one bookmark ID required"),
-    tags: z.string().min(1, "Tags are required"),
+    tags: z.string({ error: "Tags are required" }).min(1, "Tags are required"),
   })
   .strict();
 
 const tagsRename = z
   .object({
-    from: z.string().min(1, "from is required"),
-    to: z.string().min(1, "to is required"),
+    from: z.string({ error: "from is required" }).min(1, "from is required"),
+    to: z.string({ error: "to is required" }).min(1, "to is required"),
   })
   .strict();
 
@@ -319,7 +319,7 @@ const syncPush = z
 
 // ---- Import / Export ----
 const importHtml = z
-  .object({ html: z.string().min(1, "HTML content is required") })
+  .object({ html: z.string({ error: "HTML content is required" }).min(1, "HTML content is required") })
   .strict();
 
 const importJson = z
@@ -336,7 +336,7 @@ const exportQuery = z
   .strict();
 
 // ---- Settings (flexible key-value) ----
-// z.record() has no .strict() in Zod 3 (only z.object() does). Use plain record for flexible key-value.
+// Flexible key-value settings payload.
 const settingsUpdate = z.record(z.string(), z.unknown());
 
 // ---- Collections ----
@@ -345,7 +345,7 @@ const collectionCreate = z
     name: nonEmptyString("Name is required"),
     icon: optionalString,
     color: optionalString,
-    filters: z.union([z.record(z.any()), z.array(z.any())]),
+    filters: z.union([z.record(z.string(), z.any()), z.array(z.any())]),
   })
   .strict();
 
@@ -354,7 +354,7 @@ const collectionUpdate = z
     name: optionalString,
     icon: optionalString,
     color: optionalString,
-    filters: z.union([z.record(z.any()), z.array(z.any())]).optional(),
+    filters: z.union([z.record(z.string(), z.any()), z.array(z.any())]).optional(),
     position: z.coerce.number().int().optional(),
   })
   .strict();
@@ -363,14 +363,14 @@ const collectionUpdate = z
 const dashboardViewCreate = z
   .object({
     name: nonEmptyString("Name is required"),
-    config: z.record(z.any()).or(z.array(z.any())),
+    config: z.record(z.string(), z.any()).or(z.array(z.any())),
   })
   .strict();
 
 const dashboardViewUpdate = z
   .object({
     name: optionalString,
-    config: z.record(z.any()).or(z.array(z.any())).optional(),
+    config: z.record(z.string(), z.any()).or(z.array(z.any())).optional(),
     position: z.coerce.number().int().optional(),
   })
   .strict();
@@ -379,14 +379,14 @@ const dashboardViewUpdate = z
 const bookmarkViewCreate = z
   .object({
     name: nonEmptyString("Name is required"),
-    config: z.record(z.any()).or(z.array(z.any())),
+    config: z.record(z.string(), z.any()).or(z.array(z.any())),
   })
   .strict();
 
 const bookmarkViewUpdate = z
   .object({
     name: optionalString,
-    config: z.record(z.any()).or(z.array(z.any())).optional(),
+    config: z.record(z.string(), z.any()).or(z.array(z.any())).optional(),
   })
   .strict();
 
@@ -397,20 +397,16 @@ const checkLink = z.object({ url: httpUrl }).strict();
 const smartCollectionCreate = z
   .object({
     name: z
-      .string({
-        required_error: "Name is required",
-        invalid_type_error: "Name is required",
-      })
+      .string({ error: "Name is required" })
       .min(1, "Name is required")
       .transform((s) => (s && s.trim()) || undefined),
-    type: z.string().min(1, "Type is required").default("tag_cluster"),
+    type: z.string({ error: "Type is required" }).min(1, "Type is required").default("tag_cluster"),
     icon: optionalString,
     color: optionalString,
     tags: z.array(z.any()).optional(),
     domain: optionalString,
-    filters: z.record(z.any()).or(z.array(z.any())).optional(),
+    filters: z.record(z.string(), z.any()).or(z.array(z.any())).optional(),
   })
-  .strip()
   .refine(
     (data) =>
       data.type !== "tag_cluster" ||
@@ -449,7 +445,7 @@ const quickSearchQuery = z
 
 const smartOrgSuggestQuery = z
   .object({
-    url: z.string().min(1, "URL parameter required"),
+    url: z.string({ error: "URL parameter required" }).min(1, "URL parameter required"),
     limit: z.coerce.number().int().min(1).max(50).optional(),
     include_domain: z.enum(["true", "false"]).optional(),
     include_activity: z.enum(["true", "false"]).optional(),
@@ -462,12 +458,7 @@ const smartOrgSuggestQuery = z
 
 const domainQuery = z
   .object({
-    domain: z
-      .string({
-        required_error: "Domain parameter required",
-        invalid_type_error: "Domain parameter required",
-      })
-      .min(1, "Domain parameter required"),
+    domain: z.string({ error: "Domain parameter required" }).min(1, "Domain parameter required"),
   })
   .strict();
 
