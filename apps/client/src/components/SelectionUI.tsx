@@ -1,12 +1,7 @@
 import { Icon } from "./Icon.tsx";
 
 export type BulkAction =
-  | "archive"
-  | "unarchive"
-  | "move"
-  | "tag"
-  | "auto-tag"
-  | "delete";
+  "archive" | "unarchive" | "move" | "tag" | "auto-tag" | "delete";
 
 interface SelectionUIProps {
   actions?: BulkAction[];

@@ -34,13 +34,7 @@ export interface FolderFormData {
 }
 
 export type ModalType =
-  | "bookmark"
-  | "tag"
-  | "folder"
-  | "settings"
-  | "filter"
-  | "tour"
-  | null;
+  "bookmark" | "tag" | "folder" | "settings" | "filter" | "tour" | null;
 
 interface ModalState {
   openModal: ModalType;

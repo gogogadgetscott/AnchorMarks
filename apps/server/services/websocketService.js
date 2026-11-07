@@ -116,7 +116,7 @@ function initWebSocket(server, db) {
         rejectUpgrade(socket, 429, "Too Many Requests");
         return;
       }
-    } catch (err) {
+    } catch {
       try {
         rejectUpgrade(socket, 400, "Bad Request");
       } catch {

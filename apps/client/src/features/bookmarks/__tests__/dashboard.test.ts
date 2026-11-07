@@ -428,8 +428,7 @@ describe("Dashboard interactivity helpers", () => {
     const showInBookmarksBtn = Array.from(
       document.querySelectorAll(".widget-option"),
     ).find((el) => el.textContent?.trim() === "Show in Bookmarks") as
-      | HTMLButtonElement
-      | undefined;
+      HTMLButtonElement | undefined;
 
     expect(showInBookmarksBtn).toBeTruthy();
     showInBookmarksBtn!.click();

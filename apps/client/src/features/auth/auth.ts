@@ -15,8 +15,8 @@ import type { User } from "../../types/index";
 import { confirmDialog } from "@features/ui/confirm-dialog.ts";
 
 let authContextSetter:
-  | ((user: User | null, csrf: string | null, isAuth: boolean) => void)
-  | null = null;
+  ((user: User | null, csrf: string | null, isAuth: boolean) => void) | null =
+  null;
 
 export function setAuthContextSetter(
   setter: (user: User | null, csrf: string | null, isAuth: boolean) => void,

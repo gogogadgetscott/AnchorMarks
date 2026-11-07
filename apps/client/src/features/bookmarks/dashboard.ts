@@ -635,8 +635,7 @@ export async function renderDashboard(): Promise<void> {
 
   // Fetch tag analytics data if any tag-analytics widgets exist
   let tagAnalyticsData:
-    | { tags: TagAnalyticsItem[]; cooccurrence: CooccurrenceItem[] }
-    | undefined;
+    { tags: TagAnalyticsItem[]; cooccurrence: CooccurrenceItem[] } | undefined;
   if (widgets.some((w) => w.type === "tag-analytics")) {
     try {
       const res = await api<{

@@ -44,8 +44,8 @@ interface ConfirmContextValue {
 const ConfirmContext = createContext<ConfirmContextValue | null>(null);
 
 let globalDispatcher:
-  | ((type: DialogType, message: string, options: any) => Promise<any>)
-  | null = null;
+  ((type: DialogType, message: string, options: any) => Promise<any>) | null =
+  null;
 
 export function registerConfirmDispatcher(
   dispatcher: (type: DialogType, message: string, options: any) => Promise<any>,

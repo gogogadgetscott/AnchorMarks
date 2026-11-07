@@ -40,18 +40,10 @@ export interface Bookmark {
 }
 
 export type FolderMetadataType =
-  | "Project"
-  | "Tool"
-  | "System"
-  | "Vendor"
-  | "Personal";
+  "Project" | "Tool" | "System" | "Vendor" | "Personal";
 export type FolderMetadataStatus = "Active" | "Archived";
 export type FolderMetadataDomain =
-  | "Solar"
-  | "Homelab"
-  | "Finance"
-  | "Research"
-  | "Other";
+  "Solar" | "Homelab" | "Finance" | "Research" | "Other";
 
 export interface FolderMetadata {
   type?: FolderMetadataType;
@@ -175,12 +167,7 @@ export interface HeaderConfig {
   showViewToggle?: boolean;
   showAddButton?: boolean;
   bulkActions?: (
-    | "archive"
-    | "unarchive"
-    | "move"
-    | "tag"
-    | "auto-tag"
-    | "delete"
+    "archive" | "unarchive" | "move" | "tag" | "auto-tag" | "delete"
   )[];
 }
 
