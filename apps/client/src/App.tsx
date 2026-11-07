@@ -40,6 +40,10 @@ export function App() {
 
   // Reload bookmarks when view changes (except dashboard, analytics, and folder)
   // Note: folder view is handled by Sidebar folder click which calls loadBookmarks with folderId
+  // Use the ref (not the callback) in the deps: loadBookmarks is recreated
+  // whenever filterConfig changes, and listing it here re-fired this effect on
+  // every search keystroke — one server request per keystroke, which is what
+  // exhausted the rate limiter.
   useEffect(() => {
     if (
       isAuthenticated &&
@@ -48,9 +52,9 @@ export function App() {
       currentView !== "tag-cloud" &&
       currentView !== "folder"
     ) {
-      loadBookmarks({ view: currentView });
+      loadBookmarksRef.current({ view: currentView });
     }
-  }, [currentView, isAuthenticated, loadBookmarks]);
+  }, [currentView, isAuthenticated]);
 
   return <AppShell />;
 }

@@ -1,32 +1,45 @@
 # =============================================================================
 # Dockerfile for Test Environment
 # =============================================================================
+# Build context is the repository root (see docker-compose.yml). A root
+# .dockerignore keeps host node_modules out of the context — otherwise the
+# host's native better-sqlite3 build (glibc) shadowed the container's own
+# (musl) build and every test failed to load the binding.
+#
+# Layout: the npm workspace root must be the PARENT of apps/server and
+# apps/client (the workspaces globs in package.json are relative to it), and
+# it must be a normal directory. Two traps are avoided here:
+#   1. Installing at the filesystem root ("/") makes npm silently skip the
+#      workspace dependencies — only the root devDependencies get installed
+#      and the lockfile is pruned, leaving vitest/better-sqlite3 missing.
+#   2. Copying the nested apps/server/package-lock.json alongside a root
+#      package.json that declares workspaces makes npm's resolver crash
+#      ("Cannot read properties of null (reading 'edgesOut')").
 FROM node:22-alpine
-WORKDIR /
+WORKDIR /anchormarks
 
-# Install system dependencies
+# Install system dependencies (needed to compile better-sqlite3 from source)
 RUN apk add --no-cache python3 g++ make
 
-# Copy root package.json
-COPY package.json /package.json
+# Copy the workspace manifests. The root package.json + package-lock.json are
+# used together so npm resolves one consistent dependency tree for both
+# workspaces from the committed lockfile.
+COPY package.json /anchormarks/package.json
+COPY package-lock.json /anchormarks/package-lock.json
+COPY apps/server/package.json /anchormarks/apps/server/package.json
+COPY apps/client/package.json /anchormarks/apps/client/package.json
 
-# Create workspace structure
-RUN mkdir -p /apps/server /apps/client
-COPY apps/server/package*.json /apps/server/
-COPY apps/client/package*.json /apps/client/
+# Install all workspace dependencies (including dev) from the workspace root,
+# once. The root lockfile resolves every workspace, so the per-package installs
+# the previous version ran afterwards are unnecessary.
+RUN npm install --include=dev --no-audit --no-fund && npm rebuild
 
-# Install all dependencies (including dev)
-RUN npm install --include=dev --no-audit --no-fund && \
-    cd /apps/server && npm install --include=dev --no-audit --no-fund && \
-    cd /apps/client && npm install --include=dev --no-audit --no-fund && \
-    npm rebuild
-
-# Copy application code
-COPY apps/server /apps/server
-COPY apps/client /apps/client
+# Copy application code (node_modules excluded via the root .dockerignore)
+COPY apps/server /anchormarks/apps/server
+COPY apps/client /anchormarks/apps/client
 
 # Set test environment
 ENV NODE_ENV=test
 
-# Run tests by default
-CMD ["npm", "test"]
+# Run both suites by default (the workspace root package.json has no scripts)
+CMD ["sh", "-c", "cd /anchormarks/apps/server && npm test && cd /anchormarks/apps/client && npm test"]

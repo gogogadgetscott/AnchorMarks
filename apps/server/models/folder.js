@@ -1,5 +1,7 @@
 // Folder model helpers
 
+const { AppError } = require("../lib/errors");
+
 function parseMeta(row) {
   if (!row) return row;
   if (row.metadata && typeof row.metadata === "string") {
@@ -45,6 +47,13 @@ function getFolderById(db, id, userId) {
 }
 
 function updateFolder(db, id, userId, fields) {
+  // Validate parent changes before touching the row: parent must belong to
+  // this user and the change must not create a cycle (the generic PUT and
+  // sync paths previously bypassed these checks entirely).
+  if ("parent_id" in fields) {
+    assertValidParent(db, id, userId, fields.parent_id ?? null);
+  }
+
   // Build the SET clause dynamically to support clearing fields to NULL.
   // COALESCE(?, col) cannot set a column to NULL, so we use explicit logic.
   const sets = [];
@@ -104,6 +113,35 @@ function wouldCreateCycle(db, folderId, newParentId, userId) {
     current = row.parent_id;
   }
   return false;
+}
+
+// Validate that `parentId` may be assigned as parent of `folderId` (null = top
+// level): the parent must belong to the same user, must not be the folder
+// itself, and must not create a cycle. Throws AppError(422) on violation.
+// Exported for reuse and tests.
+function assertValidParent(db, folderId, userId, parentId) {
+  if (parentId == null) return;
+  if (folderId != null && parentId === folderId) {
+    throw new AppError("A folder cannot be its own parent", {
+      statusCode: 422,
+      clientMessage: "A folder cannot be its own parent",
+    });
+  }
+  const parent = db
+    .prepare("SELECT id FROM folders WHERE id = ? AND user_id = ?")
+    .get(parentId, userId);
+  if (!parent) {
+    throw new AppError("Parent folder not found", {
+      statusCode: 422,
+      clientMessage: "Parent folder not found",
+    });
+  }
+  if (folderId != null && wouldCreateCycle(db, folderId, parentId, userId)) {
+    throw new AppError("Cannot move a folder into one of its own subfolders", {
+      statusCode: 422,
+      clientMessage: "Cannot move a folder into one of its own subfolders",
+    });
+  }
 }
 
 // Explicitly set (or clear) the parent of a folder.
@@ -208,6 +246,7 @@ function createFolder(
   parentId = null,
   metadata = null,
 ) {
+  assertValidParent(db, null, userId, parentId);
   return db
     .prepare(
       "INSERT INTO folders (id, user_id, parent_id, name, color, icon, position, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -246,7 +285,7 @@ function ensureFolder(db, userId, name, parentId = null) {
   if (existing) return existing.id;
   const id = require("uuid").v4();
   const position = getMaxPositionForParent(db, userId, parentId) + 1;
-  createFolder(db, id, userId, name, "#6366f1", "folder", position);
+  createFolder(db, id, userId, name, "#6366f1", "folder", position, parentId);
   return id;
 }
 
@@ -262,4 +301,6 @@ module.exports = {
   bulkDeleteFolders,
   createFolder,
   ensureFolder,
+  wouldCreateCycle,
+  assertValidParent,
 };

@@ -12,5 +12,5 @@ echo "Using production dependencies from image"
 
 # Start the server
 echo "Starting server..."
-cd /apps/server
+cd /anchormarks/apps/server
 exec node index.js

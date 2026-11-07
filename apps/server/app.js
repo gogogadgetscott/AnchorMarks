@@ -284,6 +284,13 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Rate limiting is registered before any application route (including the
+// CSP report endpoint below) so that every route is covered. The limiter
+// keys authenticated traffic per-user (see middleware/rateLimiter.js), so
+// this placement no longer penalizes shared-IP deployments.
+app.use(performanceMiddleware); // Track performance before rate limiting
+app.use(rateLimiter);
+
 // CSP violation report endpoint (for CSP_DIAGNOSTIC mode).
 // Browsers POST with Content-Type: application/csp-report; body: { "csp-report": { ... } }.
 app.post("/api/csp-report", (req, res) => {
@@ -303,8 +310,6 @@ app.post("/api/csp-report", (req, res) => {
   }
   res.status(204).end();
 });
-app.use(performanceMiddleware); // Track performance before rate limiting
-app.use(rateLimiter);
 
 // Models are imported in individual route modules as needed
 // Keeping these commented out for reference:

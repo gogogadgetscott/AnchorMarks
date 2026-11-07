@@ -89,6 +89,14 @@ async function fetchUrlMetadata(url, redirectCount = 0) {
         }
       });
 
+      // A connection drop mid-body emits 'error' on the response stream —
+      // without a listener Node throws it as an uncaught exception and the
+      // process dies. Promise double-reject/resolve is a no-op, so this is
+      // always safe to attach.
+      response.on("error", (err) => {
+        reject(err);
+      });
+
       response.on("end", async () => {
         try {
           const metadata = parseHtmlMetadata(html, url);

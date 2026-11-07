@@ -435,6 +435,7 @@ describe("utils.js - Unit Tests", () => {
       // Resolve the fetch
       savedCallback({
         statusCode: 200,
+        on: () => {},
         pipe: (fileStream) => process.nextTick(() => fileStream.emit("finish")),
       });
 
@@ -478,10 +479,11 @@ describe("utils.js - Unit Tests", () => {
 
         // First two sources fail, third succeeds
         if (callCount <= 2) {
-          cb({ statusCode: 404 });
+          cb({ statusCode: 404, resume: () => {} });
         } else {
           cb({
             statusCode: 200,
+            on: () => {},
             pipe: (fileStream) =>
               process.nextTick(() => fileStream.emit("finish")),
           });
@@ -530,7 +532,7 @@ describe("utils.js - Unit Tests", () => {
       const getMock = (source, opts, cb) => {
         const req = new EventEmitter();
         req.destroy = vi.fn();
-        cb({ statusCode: 404 }); // All sources fail
+        cb({ statusCode: 404, resume: () => {} }); // All sources fail
         return req;
       };
 
@@ -588,6 +590,7 @@ describe("utils.js - Unit Tests", () => {
         } else {
           cb({
             statusCode: 200,
+            on: () => {},
             pipe: (fileStream) =>
               process.nextTick(() => fileStream.emit("finish")),
           });
@@ -648,6 +651,7 @@ describe("utils.js - Unit Tests", () => {
 
         cb({
           statusCode: 200,
+          on: () => {},
           pipe: (fileStream) => {
             if (callCount === 1) {
               // First write fails

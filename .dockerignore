@@ -1,0 +1,26 @@
+# Build context exclusions (the docker build context is the repository root).
+# Primary purpose: keep host node_modules out of the images. Host modules are
+# built for the host platform/ABI and, when copied in, shadow the container's
+# own native modules — e.g. a glibc better-sqlite3 breaking inside the Alpine
+# (musl) test container, which is why `make test-docker` failed.
+
+# Dependencies — always installed inside the image
+**/node_modules
+
+# VCS and local state
+.git
+.gitignore
+
+# Logs
+*.log
+
+# Local databases and generated favicon/thumbnail caches
+apps/database
+apps/public
+
+# Local env files
+.env
+.env.*
+
+# Built client assets (rebuilt inside the image; not needed by tests)
+apps/client/dist

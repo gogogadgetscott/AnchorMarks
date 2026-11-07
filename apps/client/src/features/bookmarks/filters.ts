@@ -11,6 +11,10 @@ import type { ActiveFilterItem } from "../../types/index";
 
 let filterDropdownPinned = false;
 
+// Debounce timer for the filter panel's search input. Without it, every
+// keystroke called applyFilters(), which fires a server request per keystroke.
+let filterSearchDebounce: ReturnType<typeof setTimeout> | null = null;
+
 // Count active filters
 function getActiveFilterCount(): number {
   let count = 0;
@@ -806,13 +810,21 @@ function attachFilterDropdownListeners(): void {
         return;
       }
 
-      state.setFilterConfig({
-        ...state.filterConfig,
-        search: (e.target as HTMLInputElement).value.trim() || undefined,
-      });
-      await applyFilters();
-      renderDropdownActiveFilters();
-      updateFilterButtonText();
+      const value = (e.target as HTMLInputElement).value.trim() || undefined;
+
+      // Debounce: applyFilters() hits the server; firing it on every keystroke
+      // was a large part of the request storm that exhausted the rate limiter.
+      if (filterSearchDebounce) clearTimeout(filterSearchDebounce);
+      filterSearchDebounce = setTimeout(async () => {
+        filterSearchDebounce = null;
+        state.setFilterConfig({
+          ...state.filterConfig,
+          search: value,
+        });
+        await applyFilters();
+        renderDropdownActiveFilters();
+        updateFilterButtonText();
+      }, 300);
     });
   }
 

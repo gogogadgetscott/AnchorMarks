@@ -5,6 +5,9 @@
 // API key writes (POST/PUT via API key): RATE_LIMIT_API_KEY_WRITE_MAX (default 30), same window.
 // Maintenance: RATE_LIMIT_MAINTENANCE_MAX (default 20), RATE_LIMIT_MAINTENANCE_WINDOW_MS (default 60000).
 // RATE_LIMIT_DISABLED=1 to turn off (e.g. when all traffic is one IP behind Docker/proxy).
+const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
+const config = require("../config");
 const { logger } = require("../lib/logger");
 const requestCounts = new Map();
 const apiKeyWriteCounts = new Map();
@@ -113,28 +116,61 @@ function cleanupExpiredEntries(db) {
   }
 }
 
-// Start periodic cleanup — called from createRateLimiter once db is available
+// Start periodic cleanup — called from createRateLimiter once db is available.
+// Runs in every environment except tests so the in-memory maps cannot grow
+// without bound in dev/staging deployments; the timer is unref()ed so it never
+// keeps the process alive.
 let cleanupInterval = null;
 function startCleanup(db) {
   if (cleanupInterval) return; // already started
-  if (process.env.NODE_ENV === "production") {
-    cleanupInterval = setInterval(
-      () => cleanupExpiredEntries(db),
-      CLEANUP_INTERVAL,
-    );
-    process.on("SIGTERM", () => {
-      if (cleanupInterval) clearInterval(cleanupInterval);
-    });
-    process.on("SIGINT", () => {
-      if (cleanupInterval) clearInterval(cleanupInterval);
-    });
-  }
+  if (process.env.NODE_ENV === "test") return;
+  cleanupInterval = setInterval(
+    () => cleanupExpiredEntries(db),
+    CLEANUP_INTERVAL,
+  );
+  if (cleanupInterval.unref) cleanupInterval.unref();
+  const stop = () => {
+    if (cleanupInterval) clearInterval(cleanupInterval);
+    cleanupInterval = null;
+  };
+  process.on("SIGTERM", stop);
+  process.on("SIGINT", stop);
 }
 
+// Build the rate-limit bucket key for a request.
+// Prefer a stable per-user key so that traffic behind a reverse proxy / Docker
+// NAT (where every client shares one source IP) does not exhaust a single
+// bucket. Unauthenticated traffic falls back to the client IP so the
+// login/register brute-force limits stay per-source.
 function getClientKey(req) {
+  // 1) Authenticated session: verify the JWT cookie (cheap HMAC check) and
+  //    key the bucket by user id.
+  try {
+    const token = req.cookies && req.cookies[`${config.COOKIE_PREFIX}token`];
+    if (token) {
+      const decoded = jwt.verify(token, config.JWT_SECRET);
+      const userId = decoded.userId || decoded.id;
+      if (userId) return `u:${userId}`;
+    }
+  } catch {
+    // Invalid/expired token — fall through to IP keying.
+  }
+
+  // 2) API key: hash it so the raw key never sits in an in-memory map.
+  const apiKey = req.headers && req.headers["x-api-key"];
+  if (apiKey) {
+    const digest = crypto
+      .createHash("sha256")
+      .update(String(apiKey))
+      .digest("hex")
+      .slice(0, 24);
+    return `k:${digest}`;
+  }
+
+  // 3) Everything else: source IP.
   return (
     req.ip ||
-    req.headers["x-forwarded-for"] ||
+    (req.headers && req.headers["x-forwarded-for"]) ||
     (req.connection && req.connection.remoteAddress) ||
     "anon"
   );
@@ -265,3 +301,17 @@ function rateLimiterImpl(db, req, res, next) {
 }
 
 module.exports = createRateLimiter;
+// Test hooks: exercise the limiter with fake req/res without going through
+// a full Express app, and reset the in-memory buckets between tests.
+module.exports.rateLimiterImpl = rateLimiterImpl;
+module.exports.getClientKey = getClientKey;
+module.exports._maps = {
+  requestCounts,
+  apiKeyWriteCounts,
+  maintenanceRequestCounts,
+};
+// Effective limits resolved from env at module load — tests need them so a
+// 429 test can hit the exact threshold without hardcoding 60/30.
+module.exports._effectiveMax = effectiveMax;
+module.exports._effectiveApiKeyWriteMax = effectiveApiKeyWriteMax;
+module.exports._effectiveAuthMax = effectiveAuthMax;

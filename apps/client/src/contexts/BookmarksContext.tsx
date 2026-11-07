@@ -8,7 +8,7 @@ import {
   useRef,
 } from "react";
 import { syncBookmarksBridge, getUIBridge } from "./context-bridge";
-import { api } from "../services/api.ts";
+import { api, ApiError } from "../services/api.ts";
 import { showToast } from "./ToastContext";
 import { showConfirm } from "./ConfirmContext";
 import { logger } from "@utils/logger";
@@ -369,6 +369,11 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         }
       } catch (err) {
         console.error("Failed to load bookmarks:", err);
+        if (err instanceof ApiError && err.status === 429) {
+          // Surface rate limiting instead of silently showing stale or empty
+          // results; any previously cached list stays visible.
+          showToast("Rate limited — retrying in a moment", "error");
+        }
       } finally {
         if (cacheKey) inFlightKeysRef.current.delete(cacheKey);
         if (requestSeq === loadBookmarksRequestSeq.current) {
@@ -439,7 +444,13 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       setRenderedBookmarks(newBookmarks);
       setDisplayedCount((prev) => prev + data.bookmarks.length);
     } catch (err) {
-      if (
+      if (err instanceof ApiError && err.status === 429) {
+        // Honor the server's Retry-After hint (clamped 10s–5min) and tell the
+        // user why infinite-scroll loading paused.
+        const seconds = Math.min(Math.max(err.retryAfter ?? 60, 10), 300);
+        loadMoreBackoffUntilRef.current = Date.now() + seconds * 1000;
+        showToast("Rate limited — scroll paused briefly", "error");
+      } else if (
         err instanceof Error &&
         err.message.toLowerCase().includes("rate limit")
       ) {

@@ -51,36 +51,48 @@ function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
 
   // Insert folders in dependency-safe order
   const pending = [...folders];
-  let guard = 0;
   logger.info(
     `Import: starting folder insertion for ${pending.length} folders`,
   );
-  while (pending.length && guard < 1000) {
-    const next = pending.shift();
-    const parentMapped = next.parent_id
-      ? folderIdMap.get(next.parent_id)
-      : null;
+  // Each pass only counts real progress: the old attempt counter included
+  // re-queued "waiting for parent" folders, so an export with many children
+  // listed before their parents exhausted the 1000-attempt budget and
+  // silently dropped every child folder.
+  let passes = 0;
+  while (pending.length && passes < 1000) {
+    passes++;
+    let progressThisPass = false;
+    const size = pending.length;
+    for (let i = 0; i < size && pending.length; i++) {
+      const next = pending.shift();
+      const parentMapped = next.parent_id
+        ? folderIdMap.get(next.parent_id)
+        : null;
 
-    if (
-      next.parent_id &&
-      next.parent_id !== null &&
-      parentMapped === undefined
-    ) {
-      logger.debug(
-        `Import: re-queueing folder "${next.name}" (waiting for parent ${next.parent_id})`,
-      );
-      pending.push(next);
-    } else {
-      const newId = ensureFolder(next);
-      logger.info(
-        `Import: inserted folder "${next.name}" (Original ID: ${next.id}, New ID: ${newId}, Parent: ${parentMapped})`,
-      );
+      if (
+        next.parent_id &&
+        next.parent_id !== null &&
+        parentMapped === undefined
+      ) {
+        logger.debug(
+          `Import: re-queueing folder "${next.name}" (waiting for parent ${next.parent_id})`,
+        );
+        pending.push(next);
+      } else {
+        const newId = ensureFolder(next);
+        progressThisPass = true;
+        logger.info(
+          `Import: inserted folder "${next.name}" (Original ID: ${next.id}, New ID: ${newId}, Parent: ${parentMapped})`,
+        );
+      }
     }
-    guard++;
+    // If nothing could be inserted this pass, every remaining folder waits
+    // on a parent that is not part of the import — stop instead of looping.
+    if (!progressThisPass) break;
   }
   if (pending.length > 0) {
     logger.warn(
-      `Import: failed to insert ${pending.length} folders due to missing parents after 1000 attempts`,
+      `Import: failed to insert ${pending.length} folders due to missing parents after ${passes} passes`,
     );
   }
 

@@ -388,7 +388,12 @@ function getTagClusters(db, userId) {
         });
       }
     });
-    return clusters.sort((a, b) => b.bookmarkCount - a.bookmarkCount);
+    // bookmark_count is the field the model builds above; sorting on a
+    // non-existent bookmarkCount produced NaN comparisons and left the
+    // clusters in arbitrary (insertion) order.
+    return clusters.sort(
+      (a, b) => (b.bookmark_count || 0) - (a.bookmark_count || 0),
+    );
   } catch {
     return [];
   }

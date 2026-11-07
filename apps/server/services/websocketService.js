@@ -34,7 +34,15 @@ function parseCookies(cookieHeader) {
   cookieHeader.split(";").forEach((cookie) => {
     const [name, ...rest] = cookie.trim().split("=");
     if (name) {
-      cookies[name.trim()] = decodeURIComponent(rest.join("=").trim());
+      const raw = rest.join("=").trim();
+      try {
+        cookies[name.trim()] = decodeURIComponent(raw);
+      } catch {
+        // Malformed %-sequence (e.g. "%zz") — keep the raw value instead of
+        // throwing a URIError out of the upgrade handler (which would crash
+        // the process before authentication even runs).
+        cookies[name.trim()] = raw;
+      }
     }
   });
   return cookies;
@@ -62,46 +70,58 @@ function rejectUpgrade(socket, status, message) {
 function initWebSocket(server, db) {
   wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
 
-  // Handle HTTP upgrade requests for the /ws path
+  // Handle HTTP upgrade requests for the /ws path.
+  // Everything up to handleUpgrade runs in a try/catch: request.url parsing
+  // and cookie/header handling must never throw out of this listener — an
+  // uncaught exception here kills the whole process, unauthenticated.
   server.on("upgrade", (request, socket, head) => {
-    const pathname = new URL(`http://dummy${request.url}`).pathname;
-
-    if (pathname !== "/ws") {
-      socket.destroy();
-      return;
-    }
-
-    if (!isAllowedOrigin(request.headers.origin)) {
-      rejectUpgrade(socket, 403, "Forbidden");
-      return;
-    }
-
-    if (wss.clients.size >= MAX_CONNECTIONS) {
-      rejectUpgrade(socket, 503, "Service Unavailable");
-      return;
-    }
-
-    // Authenticate via the httpOnly JWT cookie
-    const cookies = parseCookies(request.headers.cookie);
-    const token = cookies[`${config.COOKIE_PREFIX}token`];
-
-    if (!token) {
-      rejectUpgrade(socket, 401, "Unauthorized");
-      return;
-    }
-
     try {
-      const decoded = jwt.verify(token, config.JWT_SECRET);
-      request._wsUserId = decoded.userId || decoded.id;
-      request._wsToken = token;
-    } catch {
-      rejectUpgrade(socket, 401, "Unauthorized");
-      return;
-    }
+      const pathname = new URL(`http://dummy${request.url}`).pathname;
 
-    const userClients = clients.get(request._wsUserId);
-    if (userClients && userClients.size >= MAX_CONNECTIONS_PER_USER) {
-      rejectUpgrade(socket, 429, "Too Many Requests");
+      if (pathname !== "/ws") {
+        socket.destroy();
+        return;
+      }
+
+      if (!isAllowedOrigin(request.headers.origin)) {
+        rejectUpgrade(socket, 403, "Forbidden");
+        return;
+      }
+
+      if (wss.clients.size >= MAX_CONNECTIONS) {
+        rejectUpgrade(socket, 503, "Service Unavailable");
+        return;
+      }
+
+      // Authenticate via the httpOnly JWT cookie
+      const cookies = parseCookies(request.headers.cookie);
+      const token = cookies[`${config.COOKIE_PREFIX}token`];
+
+      if (!token) {
+        rejectUpgrade(socket, 401, "Unauthorized");
+        return;
+      }
+
+      try {
+        const decoded = jwt.verify(token, config.JWT_SECRET);
+        request._wsUserId = decoded.userId || decoded.id;
+        request._wsToken = token;
+      } catch {
+        rejectUpgrade(socket, 401, "Unauthorized");
+        return;
+      }
+
+      const userClients = clients.get(request._wsUserId);
+      if (userClients && userClients.size >= MAX_CONNECTIONS_PER_USER) {
+        rejectUpgrade(socket, 429, "Too Many Requests");
+        return;
+      }
+    } catch (err) {
+      try {
+        rejectUpgrade(socket, 400, "Bad Request");
+      } catch {
+        socket.destroy();
+      }
       return;
     }
 

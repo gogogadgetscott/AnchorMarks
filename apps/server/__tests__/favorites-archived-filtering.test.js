@@ -113,7 +113,7 @@ describe("Favorites Filtering - Server-Side Only", () => {
     });
   });
 
-  it("should ignore search filter when favorites=true", async () => {
+  it("should apply search filter when favorites=true", async () => {
     const res = await agent
       .get("/api/bookmarks")
       .query({ favorites: "true", search: "Another" })
@@ -122,12 +122,10 @@ describe("Favorites Filtering - Server-Side Only", () => {
     const bookmarks = res.body.bookmarks || res.body;
     const titles = bookmarks.map((b) => b.title);
 
-    // Should return ALL favorites, not just those matching search
-    expect(titles).toContain("Favorite Not Archived");
+    // Search narrows the favorites list server-side
     expect(titles).toContain("Another Favorite");
-
-    // Search filter should be ignored
-    expect(bookmarks.length).toBeGreaterThanOrEqual(2);
+    expect(titles).not.toContain("Favorite Not Archived");
+    expect(bookmarks.length).toBeGreaterThanOrEqual(1);
   });
 
   it("should ignore tag filter when favorites=true", async () => {
@@ -202,7 +200,7 @@ describe("Archived Filtering - Server-Side Only", () => {
     });
   });
 
-  it("should ignore search filter when archived=true", async () => {
+  it("should apply search filter when archived=true", async () => {
     const res = await agent
       .get("/api/bookmarks")
       .query({ archived: "true", search: "Favorite" })
@@ -211,13 +209,15 @@ describe("Archived Filtering - Server-Side Only", () => {
     const bookmarks = res.body.bookmarks || res.body;
     const titles = bookmarks.map((b) => b.title);
 
-    // Should return ALL archived, not just those matching search
+    // Search narrows the archived list server-side
     expect(titles).toContain("Favorite Archived");
     expect(titles).toContain("Not Favorite Archived");
-    expect(titles).toContain("Another Archived");
+    expect(titles).not.toContain("Another Archived");
 
-    // Search filter should be ignored
-    expect(bookmarks.length).toBeGreaterThanOrEqual(3);
+    // All results are still archived
+    bookmarks.forEach((bookmark) => {
+      expect(bookmark.is_archived).toBe(1);
+    });
   });
 
   it("should ignore tag filter when archived=true", async () => {
@@ -327,9 +327,9 @@ describe("Server-Side Filtering Integration", () => {
     }
   });
 
-  it("should display all favorites even when search filter is set", async () => {
-    // This test verifies that search filters are ignored for favorites view
-    // Even if client sends a search parameter, server should ignore it
+  it("should return no favorites when search matches nothing", async () => {
+    // Search is honored in the favorites view: a term matching no favorite
+    // returns an empty list instead of silently ignoring the filter.
     const res = await agent
       .get("/api/bookmarks")
       .query({ favorites: "true", search: "NonExistentSearchTerm12345" })
@@ -337,17 +337,9 @@ describe("Server-Side Filtering Integration", () => {
     expect(res.status).toBe(200);
 
     const bookmarks = res.body.bookmarks || res.body;
-    const titles = bookmarks.map((b) => b.title);
 
-    // Should return ALL favorites, not filtered by search
-    expect(titles).toContain("Favorite Not Archived");
-    expect(titles).toContain("Another Favorite");
-
-    // Verify all returned are favorites
-    bookmarks.forEach((bookmark) => {
-      expect(bookmark.is_favorite).toBe(1);
-      expect(bookmark.is_archived).toBe(0);
-    });
+    // Nothing matches — an empty result tells the user the truth
+    expect(bookmarks.length).toBe(0);
   });
 
   it("should display all favorites even when tag filter is set", async () => {
@@ -380,8 +372,9 @@ describe("Server-Side Filtering Integration", () => {
     });
   });
 
-  it("should display all favorites even when both search and tag filters are set", async () => {
-    // This test verifies that multiple filters are all ignored for favorites view
+  it("should return no favorites when both search and tag filters are set", async () => {
+    // Search is honored in the favorites view; a non-matching search term
+    // yields an empty list regardless of the (ignored) tag filter.
     const res = await agent
       .get("/api/bookmarks")
       .query({
@@ -393,17 +386,9 @@ describe("Server-Side Filtering Integration", () => {
     expect(res.status).toBe(200);
 
     const bookmarks = res.body.bookmarks || res.body;
-    const titles = bookmarks.map((b) => b.title);
 
-    // Should return ALL favorites, ignoring both search and tag filters
-    expect(titles).toContain("Favorite Not Archived");
-    expect(titles).toContain("Another Favorite");
-
-    // Verify all returned are favorites
-    bookmarks.forEach((bookmark) => {
-      expect(bookmark.is_favorite).toBe(1);
-      expect(bookmark.is_archived).toBe(0);
-    });
+    // Search narrows server-side — nothing matches
+    expect(bookmarks.length).toBe(0);
   });
 
   it("should ensure server handles all filtering for archived view", async () => {

@@ -1,11 +1,12 @@
 import { useMemo, useEffect, useRef, useCallback } from "react";
-import { api } from "@services/api.ts";
+import { api, ApiError } from "@services/api.ts";
 import { BOOKMARKS_PER_PAGE, useBookmarks } from "@/contexts/index.ts";
 import { useUI } from "@/contexts/index.ts";
 import { BookmarkCard } from "./BookmarkCard.tsx";
 import { RichBookmarkCard } from "./RichBookmarkCard.tsx";
 import { SkeletonCard } from "./SkeletonCard.tsx";
 import type { Bookmark } from "../types/index";
+import { showToast } from "@/contexts/ToastContext";
 import { useBookmarkActions } from "@/contexts/useBookmarkActions";
 
 const SKELETON_COUNT = 6;
@@ -214,7 +215,13 @@ export function BookmarksList() {
         setDisplayedCount(displayedCount + BOOKMARKS_PER_PAGE);
       }
     } catch (err) {
-      if (
+      if (err instanceof ApiError && err.status === 429) {
+        // Honor Retry-After (clamped 10s–5min) and tell the user why loading
+        // paused instead of failing silently.
+        const seconds = Math.min(Math.max(err.retryAfter ?? 60, 10), 300);
+        backoffUntilRef.current = Date.now() + seconds * 1000;
+        showToast("Rate limited — scroll paused briefly", "error");
+      } else if (
         err instanceof Error &&
         err.message.toLowerCase().includes("rate limit")
       ) {

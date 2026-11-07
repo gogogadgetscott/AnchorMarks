@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require("uuid");
 const { logger } = require("../lib/logger");
+const { wouldCreateCycle } = require("./folder");
 
 /**
  * Parse a timestamp (ISO or SQLite datetime) to ms. Returns NaN if invalid.
@@ -53,6 +54,16 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
   /** Map client-provided folder id -> server-generated id for folders created in this push */
   const clientFolderIdToServerId = {};
 
+  // Parent ids must belong to this user (cross-tenant isolation) — mirrors
+  // ownedFolderId() for bookmarks: an unowned parent degrades to top level.
+  const ownedFolderParentId = (folderId) => {
+    if (folderId == null) return null;
+    const row = db
+      .prepare("SELECT id FROM folders WHERE id = ? AND user_id = ?")
+      .get(folderId, userId);
+    return row ? folderId : null;
+  };
+
   if (folders && folders.length) {
     for (const folder of folders) {
       try {
@@ -72,9 +83,21 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
             clientFolderIdToServerId[folder.parent_id] !== undefined
               ? clientFolderIdToServerId[folder.parent_id]
               : folder.parent_id;
+          const safeParentId = ownedFolderParentId(resolvedParentId);
+          if (
+            safeParentId != null &&
+            wouldCreateCycle(db, folder.id, safeParentId, userId)
+          ) {
+            results.folders_skipped++;
+            results.errors.push({
+              folder: folder.name,
+              error: "Rejected parent change that would create a cycle",
+            });
+            continue;
+          }
           db.prepare(
             "UPDATE folders SET name = ?, color = ?, parent_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
-          ).run(folder.name, folder.color, resolvedParentId, folder.id, userId);
+          ).run(folder.name, folder.color, safeParentId, folder.id, userId);
           results.updated++;
         } else {
           const serverFolderId = uuidv4();
@@ -90,7 +113,7 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
             userId,
             folder.name,
             folder.color || "#6366f1",
-            resolvedParentId,
+            ownedFolderParentId(resolvedParentId),
           );
           clientFolderIdToServerId[folder.id] = serverFolderId;
           results.folder_id_map[folder.id] = serverFolderId;

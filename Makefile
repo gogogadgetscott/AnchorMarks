@@ -9,7 +9,7 @@
 #
 # Run `make help` to list available targets and their descriptions.
 
-.PHONY: help \
+.PHONY: help check validate \
 	build-frontend build-docker build-test-docker \
 	start start-local start-backend start-frontend start-local start-docker start-prod stop stop-all restart-local \
 	test-backend test-backend-local test-frontend test-frontend-local test-local test-coverage \
@@ -73,24 +73,39 @@ help: ## Display this help screen
 	@echo ""
 
 # ============================================================================
+# PREREQUISITES
+# ============================================================================
+check: ## Verify docker, the compose plugin and the daemon
+	@command -v docker >/dev/null 2>&1 || { echo "ERROR: docker not found in PATH" >&2; exit 1; }
+	@$(DOCKER_CMD) version >/dev/null 2>&1 || { echo "ERROR: compose plugin unavailable" >&2; exit 1; }
+	@docker info >/dev/null 2>&1 || { echo "ERROR: cannot reach the docker daemon" >&2; exit 1; }
+
+validate: ## Validate the compose file only
+	@$(DOCKER_CMD) config --quiet && echo "compose config OK"
+
+# ============================================================================
 # BUILD/REBUILD TARGETS
 # ============================================================================
 build-frontend: ## Build frontend for production
+	@set -e
 	@echo "$(BLUE)Building frontend for production...$(NC)"
 	@cd $(FRONTEND_DIR) && npx vite build && npx esbuild src/shared/folders-utils-browser.ts --bundle --platform=browser --format=iife --outfile=../server/public/js/folders-utils.js --minify
 	@echo "$(GREEN)✓ Frontend built successfully$(NC)"
 
 build-docker: ## Build Docker containers (anchormarks image; entrypoint ensures /apps/database is writable)
+	@set -e
 	@echo "$(BLUE)Building Docker containers...$(NC)"
 	@$(DOCKER_CMD) build anchormarks
 	@echo "$(GREEN)✓ Docker containers built$(NC)"
 
 build-test-docker: ## Build test Docker container (used by test-docker-* targets)
+	@set -e
 	@echo "$(BLUE)Building test Docker container...$(NC)"
 	@$(DOCKER_CMD) --profile test build test
 	@echo "$(GREEN)✓ Test Docker container built$(NC)"
 
 rebuild-docker: ## Rebuild Docker containers from scratch (ensures database dir exists for volume mount)
+	@set -e
 	@echo "$(BLUE)Rebuilding Docker containers...$(NC)"
 	@mkdir -p $(DOCKER_DB_DIR)
 	@$(DOCKER_CMD) down && $(DOCKER_CMD) build --no-cache anchormarks && $(DOCKER_CMD) up -d
@@ -111,9 +126,10 @@ start-frontend: ## Start frontend dev server with Vite
 
 start-local: ## Start both backend and frontend concurrently
 	@echo "$(BLUE)Starting development environment...$(NC)"
-	@npx concurrently "make start-backend" "make start-frontend"
+	@npx concurrently "$(MAKE) start-backend" "$(MAKE) start-frontend"
 
 start-docker: ## Start Docker containers in background (no log follow); ensures apps/database exists
+	@set -e
 	@echo "$(BLUE)Starting Docker containers in background...$(NC)"
 	@mkdir -p $(DOCKER_DB_DIR)
 	@$(DOCKER_CMD) up -d --build
@@ -145,8 +161,8 @@ stop-all: ## Stop all running development processes
 		echo "$(YELLOW)⚠ Neither lsof nor fuser available. Install one to stop processes by port.$(NC)"; \
 	fi; \
 	\
-	[ -n "$$_BACKEND_PID" ] && kill -9 $$_BACKEND_PID 2>/dev/null && echo "$(GREEN)✓ Stopped backend process $$_BACKEND_PID on port $$_PORT$(NC)" || echo "$(YELLOW)⚠ No backend process found on port $$_PORT$(NC)"; \
-	[ -n "$$_VITE_PID" ] && kill -9 $$_VITE_PID 2>/dev/null && echo "$(GREEN)✓ Stopped Vite process $$_VITE_PID on port $$_VITE_PORT$(NC)" || echo "$(YELLOW)⚠ No Vite process found on port $$_VITE_PORT$(NC)"
+	[ -n "$$_BACKEND_PID" ] && kill $$_BACKEND_PID 2>/dev/null && echo "$(GREEN)✓ Stopped backend process $$_BACKEND_PID on port $$_PORT$(NC)" || echo "$(YELLOW)⚠ No backend process found on port $$_PORT$(NC)"; \
+	[ -n "$$_VITE_PID" ] && kill $$_VITE_PID 2>/dev/null && echo "$(GREEN)✓ Stopped Vite process $$_VITE_PID on port $$_VITE_PORT$(NC)" || echo "$(YELLOW)⚠ No Vite process found on port $$_VITE_PORT$(NC)"
 
 stop-docker: ## Stop Docker containers
 	@echo "$(BLUE)Stopping Docker containers...$(NC)"
@@ -165,6 +181,7 @@ test: test-local ## Run all tests (alias for test-local)
 test-local: test-backend-local test-frontend-local ## Run all tests on host (requires compatible better-sqlite3 build)	
 
 test-backend-local: ## Run backend tests on host (requires compatible better-sqlite3 build)
+	@set -e
 	@echo "$(BLUE)Running backend tests on host...$(NC)"
 	@cd $(BACKEND_DIR) && npm run test
 	@echo "$(GREEN)✓ Backend tests completed$(NC)"
@@ -176,6 +193,7 @@ test-backend-watch: ## Run backend tests in watch mode
 test-frontend: test-docker-frontend ## Run frontend tests (in Docker)
 
 test-frontend-local: ## Run frontend tests on host
+	@set -e
 	@echo "$(BLUE)Running frontend tests on host...$(NC)"
 	@cd $(FRONTEND_DIR) && npm run test
 	@echo "$(GREEN)✓ Frontend tests completed$(NC)"
@@ -185,23 +203,27 @@ test-frontend-watch: ## Run frontend tests in watch mode
 	@cd $(FRONTEND_DIR) && npm run test:watch
 
 test-coverage: ## Generate test coverage reports
+	@set -e
 	@echo "$(BLUE)Generating test coverage...$(NC)"
 	@cd $(FRONTEND_DIR) && npm run test:coverage
 	@echo "$(GREEN)✓ Coverage report generated$(NC)"
 
 test-docker: build-test-docker ## Run all tests in Docker container
+	@set -e
 	@echo "$(BLUE)Running tests in Docker container...$(NC)"
-	@docker run --rm docker-test:latest sh -c "cd /apps/server && npm run test && cd /apps/client && npm run test"
+	@docker run --rm docker-test:latest sh -c "cd /anchormarks/apps/server && npm run test && cd /anchormarks/apps/client && npm run test"
 	@echo "$(GREEN)✓ Docker tests completed$(NC)"
 
 test-docker-backend: build-test-docker ## Run backend tests in Docker container
+	@set -e
 	@echo "$(BLUE)Running backend tests in Docker container...$(NC)"
-	@docker run --rm docker-test:latest sh -c "cd /apps/server && npm run test"
+	@docker run --rm docker-test:latest sh -c "cd /anchormarks/apps/server && npm run test"
 	@echo "$(GREEN)✓ Backend tests completed$(NC)"
 
 test-docker-frontend: build-test-docker ## Run frontend tests in Docker container
+	@set -e
 	@echo "$(BLUE)Running frontend tests in Docker container...$(NC)"
-	@docker run --rm docker-test:latest sh -c "cd /apps/client && npm run test"
+	@docker run --rm docker-test:latest sh -c "cd /anchormarks/apps/client && npm run test"
 	@echo "$(GREEN)✓ Frontend tests completed$(NC)"
 
 test-e2e: ## Run E2E tests with Playwright
@@ -338,7 +360,7 @@ logs: logs-docker ## Alias for logs-docker (follow Docker logs)
 
 logs-docker: ## Follow Docker container logs
 	@echo "$(BLUE)Following Docker logs...$(NC)"
-	@$(DOCKER_CMD) logs -f
+	@$(DOCKER_CMD) logs -f --tail=100
 
 shell: shell-docker ## Alias for shell-docker (shell in Docker container)
 

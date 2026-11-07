@@ -18,6 +18,9 @@ function errorHandler(err, req, res, _next) {
     method: req.method,
   });
 
+  // Never try to write a second response if the handler already started one —
+  // that raises ERR_HTTP_HEADERS_SENT and can crash the request pipeline.
+  if (res.headersSent) return;
   res.status(statusCode).json({ error: clientMessage });
 }
 

@@ -78,6 +78,9 @@ function sendError(res, normalized, log, context = "Request") {
   if (log && log.error) {
     log.error(`${context}: ${clientMessage}`, err, { statusCode });
   }
+  // If a response already went out, log only — writing again would throw
+  // ERR_HTTP_HEADERS_SENT inside the catch block of the calling controller.
+  if (res.headersSent) return true;
   res.status(statusCode).json({ error: clientMessage });
   return true;
 }

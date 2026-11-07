@@ -147,12 +147,13 @@ describe("server/utils.js", () => {
         const req = makeReq();
 
         if (callCount === 1) {
-          cb({ statusCode: 404 });
+          cb({ statusCode: 404, resume: () => {} });
           return req;
         }
 
         cb({
           statusCode: 200,
+          on: () => {},
           pipe: (fileStream) =>
             process.nextTick(() => fileStream.emit("finish")),
         });
@@ -220,6 +221,7 @@ describe("server/utils.js", () => {
 
         cb({
           statusCode: 200,
+          on: () => {},
           pipe: (fileStream) =>
             process.nextTick(() => fileStream.emit("finish")),
         });
@@ -266,6 +268,7 @@ describe("server/utils.js", () => {
       // Resolve the pending request by letting the first source succeed.
       pendingCallback({
         statusCode: 200,
+        on: () => {},
         pipe: (fileStream) => process.nextTick(() => fileStream.emit("finish")),
       });
 
@@ -314,6 +317,7 @@ describe("server/utils.js", () => {
 
         cb({
           statusCode: 200,
+          on: () => {},
           pipe: (fileStream) =>
             process.nextTick(() => fileStream.emit("finish")),
         });

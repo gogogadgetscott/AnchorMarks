@@ -7,6 +7,31 @@ import { getAuthBridge, API_BASE } from "@contexts/context-bridge";
 import * as state from "@features/state.ts";
 import type { User } from "../types/index";
 
+/**
+ * Error thrown for non-2xx API responses. Carries the HTTP status and, for
+ * 429 responses, the server's Retry-After hint (seconds). Callers should
+ * prefer `err.status === 429` over string-matching the message ("rate limit"),
+ * which silently missed differently-worded responses.
+ */
+export class ApiError extends Error {
+  readonly status: number;
+  readonly retryAfter?: number;
+
+  constructor(
+    message: string,
+    status: number,
+    retryAfterHeader?: string | null,
+  ) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    if (status === 429 && retryAfterHeader) {
+      const seconds = Number.parseInt(retryAfterHeader, 10);
+      if (Number.isFinite(seconds) && seconds > 0) this.retryAfter = seconds;
+    }
+  }
+}
+
 // Request deduplication: cache pending requests to prevent duplicate API calls
 const pendingRequests = new Map<string, Promise<unknown>>();
 
@@ -280,7 +305,11 @@ export async function api<T = unknown>(
               retryData,
               `API Error: ${retryRes.status} ${retryRes.statusText}`,
             );
-            throw new Error(errMsg);
+            throw new ApiError(
+              errMsg,
+              retryRes.status,
+              retryRes.headers.get("Retry-After"),
+            );
           }
         }
 
@@ -335,7 +364,11 @@ export async function api<T = unknown>(
             // Optionally trigger re-auth or reload UI
           }
         }
-        throw new Error(errorMessage);
+        throw new ApiError(
+          errorMessage,
+          response.status,
+          response.headers.get("Retry-After"),
+        );
       }
 
       return data;

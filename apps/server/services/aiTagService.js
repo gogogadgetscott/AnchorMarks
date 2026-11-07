@@ -80,6 +80,9 @@ async function callOpenAI(prompt, aiConfig, limit) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(body),
+      // Hard timeout: without this a hung upstream socket stalls the request
+      // (or background job) indefinitely and leaks the connection.
+      signal: AbortSignal.timeout(30000),
     });
   } catch (fetchErr) {
     const err = new Error(`OpenAI unreachable: ${fetchErr.message}`);
@@ -115,6 +118,9 @@ async function callOllama(prompt, aiConfig, limit) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ model, prompt, stream: false }),
+      // Local models can be slow, but still bound the wait so a hung
+      // Ollama instance cannot stall requests forever.
+      signal: AbortSignal.timeout(120000),
     });
   } catch (fetchErr) {
     const err = new Error(`Ollama unreachable: ${fetchErr.message}`);

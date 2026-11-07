@@ -48,12 +48,10 @@ function listBookmarks(db, userId, opts = {}) {
   const isFavoritesView = favorites === true || favorites === "true";
   const isArchivedView = archived === true || archived === "true";
   const isMostUsedView = most_used === true || most_used === "true";
-  const hasSearch = !!(
-    search &&
-    !isFavoritesView &&
-    !isArchivedView &&
-    !isMostUsedView
-  );
+  // Search is honored in every list view (favorites/archived/most-used
+  // previously ignored it server-side, so the UI filtered only the loaded
+  // page and search appeared to "miss" matches).
+  const hasSearch = !!search;
 
   // Core FROM without the tags aggregation. Tags are attached only for the
   // rows that are actually returned (see tagsSubquery below), which keeps the
@@ -72,16 +70,22 @@ function listBookmarks(db, userId, opts = {}) {
   // Folder filters should be ignored in favorites view, archived view, and most-used view
   if (folder_id && !isFavoritesView && !isArchivedView && !isMostUsedView) {
     if (include_children) {
+      // Scoped to the requesting user's folders and depth-capped: a cycle in
+      // the folder tree (possible in databases written before cycle checks
+      // existed) must not spin this recursive CTE forever — better-sqlite3 is
+      // synchronous, so an unbounded recursion would block the event loop.
       whereClauses.push(`(b.folder_id = ? OR b.folder_id IN (
-        WITH RECURSIVE subfolders AS (
-          SELECT id FROM folders WHERE parent_id = ?
+        WITH RECURSIVE subfolders(id, depth) AS (
+          SELECT id, 0 FROM folders WHERE parent_id = ? AND user_id = ?
           UNION ALL
-          SELECT f.id FROM folders f
+          SELECT f.id, s.depth + 1
+          FROM folders f
           JOIN subfolders s ON f.parent_id = s.id
+          WHERE s.depth < 100
         )
         SELECT id FROM subfolders
       ))`);
-      filterParams.push(folder_id, folder_id);
+      filterParams.push(folder_id, folder_id, userId);
     } else {
       whereClauses.push("b.folder_id = ?");
       filterParams.push(folder_id);

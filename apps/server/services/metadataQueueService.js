@@ -24,6 +24,13 @@ let captureScreenshotFn = null;
 const BATCH_SIZE = 5; // Process 5 bookmarks at a time
 const PROCESS_INTERVAL_MS = 2000; // Check queue every 2 seconds
 const FETCH_DELAY_MS = 500; // Delay between fetches to avoid rate limiting
+// Hard cap so bulk imports cannot grow the queue without bound (memory) or
+// trigger O(n^2) duplicate scans.
+const MAX_QUEUE_SIZE = 5000;
+
+// Keys currently queued — Set for O(1) duplicate checks (was an O(n) rebuild
+// of the whole queue on every enqueue call).
+const queuedKeys = new Set();
 
 /**
  * Initialize the metadata queue with dependencies
@@ -53,20 +60,26 @@ function queueMetadataFetch(bookmarkIds, userId) {
     bookmarkIds = [bookmarkIds];
   }
 
-  // Add to queue (avoid duplicates by bookmarkId+userId)
-  const existing = new Set(
-    metadataQueue.map((e) => `${e.bookmarkId}:${e.userId}`),
-  );
+  // Add to queue (avoid duplicates by bookmarkId+userId via the key Set)
+  let queued = 0;
+  let dropped = 0;
   for (const bookmarkId of bookmarkIds) {
     const key = `${bookmarkId}:${userId}`;
-    if (!existing.has(key)) {
-      existing.add(key);
-      metadataQueue.push({ bookmarkId, userId });
+    if (queuedKeys.has(key)) continue;
+    if (metadataQueue.length >= MAX_QUEUE_SIZE) {
+      dropped++;
+      continue;
     }
+    queuedKeys.add(key);
+    metadataQueue.push({ bookmarkId, userId });
+    queued++;
   }
 
   logger.info(
-    `MetadataQueue: queued ${bookmarkIds.length} bookmarks, queue size: ${metadataQueue.length}`,
+    `MetadataQueue: queued ${queued} bookmarks, queue size: ${metadataQueue.length}` +
+      (dropped > 0
+        ? `, dropped ${dropped} (queue full at ${MAX_QUEUE_SIZE})`
+        : ""),
   );
 }
 
@@ -91,55 +104,69 @@ async function processBatch() {
     `MetadataQueue: processing batch of ${batch.length}, remaining: ${metadataQueue.length}`,
   );
 
-  const getBookmark = db.prepare(
-    "SELECT id, url FROM bookmarks WHERE id = ? AND user_id = ?",
-  );
+  try {
+    const getBookmark = db.prepare(
+      "SELECT id, url FROM bookmarks WHERE id = ? AND user_id = ?",
+    );
 
-  for (const { bookmarkId, userId } of batch) {
-    try {
-      // Tenant-scoped lookup (SEC-005): only process if bookmark belongs to this user
-      const bookmark = getBookmark.get(bookmarkId, userId);
+    for (const { bookmarkId, userId } of batch) {
+      try {
+        // Tenant-scoped lookup (SEC-005): only process if bookmark belongs to this user
+        const bookmark = getBookmark.get(bookmarkId, userId);
 
-      if (bookmark && bookmark.url) {
-        // Fetch favicon (pass userId for tenant-scoped UPDATE)
-        await fetchFaviconFn(bookmark.url, bookmark.id, userId);
+        if (bookmark && bookmark.url) {
+          // Fetch favicon (pass userId for tenant-scoped UPDATE)
+          await fetchFaviconFn(bookmark.url, bookmark.id, userId);
 
-        // Capture thumbnail if enabled
-        if (captureScreenshotFn) {
-          try {
-            const result = await captureScreenshotFn(bookmark.url, bookmark.id);
-            if (result.success) {
-              logger.debug(
-                `MetadataQueue: thumbnail captured for ${bookmarkId}`,
+          // Capture thumbnail if enabled
+          if (captureScreenshotFn) {
+            try {
+              const result = await captureScreenshotFn(
+                bookmark.url,
+                bookmark.id,
               );
-            } else if (
-              result.error &&
-              result.error !== "Thumbnail generation is disabled"
-            ) {
-              logger.warn(
-                `MetadataQueue: thumbnail failed for ${bookmarkId}: ${result.error}`,
+              if (result.success) {
+                logger.debug(
+                  `MetadataQueue: thumbnail captured for ${bookmarkId}`,
+                );
+              } else if (
+                result.error &&
+                result.error !== "Thumbnail generation is disabled"
+              ) {
+                logger.warn(
+                  `MetadataQueue: thumbnail failed for ${bookmarkId}: ${result.error}`,
+                );
+              }
+            } catch (thumbnailErr) {
+              logger.error(
+                `MetadataQueue: thumbnail error for ${bookmarkId}`,
+                thumbnailErr,
               );
             }
-          } catch (thumbnailErr) {
-            logger.error(
-              `MetadataQueue: thumbnail error for ${bookmarkId}`,
-              thumbnailErr,
-            );
           }
+
+          // Small delay between fetches to be nice to external services
+          await sleep(FETCH_DELAY_MS);
         }
-
-        // Small delay between fetches to be nice to external services
-        await sleep(FETCH_DELAY_MS);
+      } catch (err) {
+        logger.error(
+          `MetadataQueue: error fetching metadata for ${bookmarkId}`,
+          err,
+        );
       }
-    } catch (err) {
-      logger.error(
-        `MetadataQueue: error fetching metadata for ${bookmarkId}`,
-        err,
-      );
     }
+  } catch (err) {
+    // A failure outside the per-item guards (e.g. db.prepare when the
+    // database is closing) must not escape: previously it rejected inside
+    // setInterval (unhandled rejection) and left isProcessing=true forever,
+    // permanently stalling metadata processing until restart.
+    logger.error("MetadataQueue: batch failed", err);
+  } finally {
+    for (const { bookmarkId, userId } of batch) {
+      queuedKeys.delete(`${bookmarkId}:${userId}`);
+    }
+    isProcessing = false;
   }
-
-  isProcessing = false;
 }
 
 /**
@@ -150,7 +177,11 @@ function startProcessor() {
     return; // Already running
   }
 
-  intervalId = setInterval(processBatch, PROCESS_INTERVAL_MS);
+  intervalId = setInterval(() => {
+    processBatch().catch((err) => {
+      logger.error("MetadataQueue: unhandled batch error", err);
+    });
+  }, PROCESS_INTERVAL_MS);
   logger.info("MetadataQueue: background processor started");
 }
 
@@ -183,6 +214,7 @@ function getStatus() {
  */
 function clearQueue() {
   metadataQueue = [];
+  queuedKeys.clear();
 }
 
 // Helper function

@@ -340,11 +340,6 @@ export function Omnibar({
 
     const trimmed = query.trim();
 
-    if (currentView === "favorites" || currentView === "recent") {
-      // View is handled by React context/components directly
-      return;
-    }
-
     if (isCommandMode) {
       if (filterConfigRef.current.search !== undefined) {
         setFilterConfig({
@@ -362,8 +357,18 @@ export function Omnibar({
     });
 
     // Reload bookmarks so the server-side FTS search actually runs and the
-    // grid updates. Only views that support search filtering should reload.
-    const searchableViews = ["all", "folder", "collection"];
+    // grid updates. The server honors `search` in every list view, so typing
+    // in favorites/archived/most-used/recent filters server-side too (these
+    // previously ignored the search server-side and only appeared broken).
+    const searchableViews = [
+      "all",
+      "folder",
+      "collection",
+      "favorites",
+      "archived",
+      "most-used",
+      "recent",
+    ];
     if (searchableViews.includes(currentView)) {
       const override = {
         ...filterConfigRef.current,

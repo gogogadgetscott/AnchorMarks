@@ -53,9 +53,12 @@ services:
       context: ../..
       dockerfile: ./tooling/docker/Dockerfile.test
     volumes:
-      - ../../apps/server:/apps/server
-      - ../../apps/client:/apps/client
-      - ../../.env:/apps/.env
+      # Note: these mounts overlay host source (and its node_modules, built for
+      # the host platform) over the image's. For a hermetic run use
+      # `make test-docker-*`, which runs the image without mounts.
+      - ../../apps/server:/anchormarks/apps/server
+      - ../../apps/client:/anchormarks/apps/client
+      - ../../.env:/anchormarks/.env
     environment:
       NODE_ENV: test
       DB_PATH: ":memory:"

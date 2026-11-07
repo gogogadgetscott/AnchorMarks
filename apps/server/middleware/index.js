@@ -104,7 +104,7 @@ function setupMiddleware(app, { config, validateCsrfTokenMiddleware }) {
       } else {
         record.count++;
         if (record.count > RATE_LIMIT_MAX) {
-          return res.status(429).json({ error: "Too many requests" });
+          return res.status(429).json({ error: "Rate limit exceeded" });
         }
       }
     }

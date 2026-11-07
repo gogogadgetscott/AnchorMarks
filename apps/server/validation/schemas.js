@@ -140,7 +140,7 @@ const bookmarkCreate = z
 const bookmarkUpdate = z
   .object({
     title: optionalString,
-    url: optionalString,
+    url: optionalString.pipe(bookmarkUrl.optional()),
     description: optionalString,
     folder_id: uuidLikeNullable,
     tags: optionalString,

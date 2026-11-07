@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { fireEvent } from "@testing-library/react";
 import * as state from "@features/state.ts";
 import {
   initFilterDropdown,
@@ -18,6 +19,9 @@ vi.mock("@services/api.ts", () => ({
   api: vi.fn(async (endpoint: string) => {
     if (endpoint === "/bookmarks/counts") return { all: 0 };
     if (endpoint === "/collections") return [];
+    // Must be an array: renderTagsInDropdown calls .filter() on it, and a
+    // thrown error there aborts showFilterDropdown before listeners attach.
+    if (endpoint === "/tags") return [];
     return {};
   }),
   cancelRequest: vi.fn(),
@@ -387,6 +391,84 @@ describe("Filter Dropdown Module", () => {
       updateFilterButtonVisibility();
       btn = document.getElementById("filter-dropdown-btn");
       expect(btn?.style.display).not.toBe("none");
+    });
+  });
+
+  describe("filter panel search debounce", () => {
+    let loadBookmarksMock: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+      await state.setCurrentView("all");
+      state.setFilterConfig({ ...state.filterConfig, search: undefined });
+      loadBookmarksMock = vi.fn(async () => {});
+      // applyFilters() dynamically imports the bookmarks loader; mock it so the
+      // test can count how many reloads a burst of keystrokes produces.
+      vi.doMock("@features/bookmarks/bookmarks.ts", () => ({
+        loadBookmarks: loadBookmarksMock,
+      }));
+      await showFilterDropdown();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.doUnmock("@features/bookmarks/bookmarks.ts");
+    });
+
+    it("does not apply the search term until the debounce elapses", async () => {
+      vi.useFakeTimers();
+      const input = document.getElementById(
+        "filter-search-input",
+      ) as HTMLInputElement;
+      expect(input).not.toBeNull();
+
+      fireEvent.input(input, { target: { value: "re" } });
+      fireEvent.input(input, { target: { value: "rea" } });
+
+      // Not yet applied — typing must not touch state (or hit the server)
+      expect(state.filterConfig.search).toBeUndefined();
+      expect(loadBookmarksMock).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(299);
+      expect(state.filterConfig.search).toBeUndefined();
+
+      await vi.advanceTimersByTimeAsync(2);
+      expect(state.filterConfig.search).toBe("rea");
+      expect(loadBookmarksMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("coalesces a rapid burst of keystrokes into a single reload", async () => {
+      vi.useFakeTimers();
+      const input = document.getElementById(
+        "filter-search-input",
+      ) as HTMLInputElement;
+
+      "react".split("").forEach((_, i) => {
+        fireEvent.input(input, {
+          target: { value: "react".slice(0, i + 1) },
+        });
+      });
+
+      await vi.advanceTimersByTimeAsync(350);
+
+      // One reload for five keystrokes, with the final value
+      expect(loadBookmarksMock).toHaveBeenCalledTimes(1);
+      expect(state.filterConfig.search).toBe("react");
+    });
+
+    it("schedules one reload per burst, with a gap between bursts", async () => {
+      vi.useFakeTimers();
+      const input = document.getElementById(
+        "filter-search-input",
+      ) as HTMLInputElement;
+
+      fireEvent.input(input, { target: { value: "a" } });
+      await vi.advanceTimersByTimeAsync(350);
+      expect(loadBookmarksMock).toHaveBeenCalledTimes(1);
+
+      fireEvent.input(input, { target: { value: "ab" } });
+      await vi.advanceTimersByTimeAsync(350);
+      expect(loadBookmarksMock).toHaveBeenCalledTimes(2);
+      expect(state.filterConfig.search).toBe("ab");
     });
   });
 });
