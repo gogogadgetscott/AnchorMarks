@@ -10,7 +10,10 @@ import { safeLocalStorage } from "@utils/index.ts";
 import {
   getOmnibarCommands,
   getAllBookmarks,
+  bookmarkToCommand,
 } from "@features/bookmarks/commands.ts";
+import { api } from "@services/api.ts";
+import type { Bookmark } from "../types/index";
 import { useUI } from "@contexts/UIContext";
 import { useBookmarks } from "@contexts/BookmarksContext";
 import type { Command } from "../types/index";
@@ -326,8 +329,69 @@ export function Omnibar({
     if (!isOpen) return;
 
     if (hasQuery) {
-      setResults(getOmnibarCommands(query.trim()));
+      const trimmed = query.trim();
+      setResults(getOmnibarCommands(trimmed));
       setActiveIndex(0);
+
+      // For plain text search, also fetch server FTS matches so the dropdown
+      // reliably finds bookmarks (local cache may be stale/incomplete).
+      const isPrefix =
+        trimmed.startsWith(">") ||
+        trimmed.startsWith("@") ||
+        trimmed.startsWith("#");
+      if (!isPrefix && trimmed.length >= 1) {
+        let cancelled = false;
+        const timer = setTimeout(async () => {
+          try {
+            const data = await api<
+              | { bookmarks?: Bookmark[] }
+              | Bookmark[]
+            >(`/bookmarks?search=${encodeURIComponent(trimmed)}&limit=12`);
+            if (cancelled) return;
+            const serverBookmarks = Array.isArray(data)
+              ? data
+              : data?.bookmarks || [];
+            if (!serverBookmarks.length) return;
+            setResults((prev) => {
+              const seen = new Set(
+                prev
+                  .filter(
+                    (c) =>
+                      (c.category === "bookmark" || c.category === "view") &&
+                      c.url,
+                  )
+                  .map((c) => c.url as string),
+              );
+              const serverCmds = serverBookmarks
+                .filter((b) => b?.url && !seen.has(b.url))
+                .map(bookmarkToCommand);
+              if (!serverCmds.length) return prev;
+              // Insert server matches after tag-filter/apply commands, before
+              // local bookmark results, by replacing local bookmark/view cmds
+              // with the authoritative server set (deduped).
+              const head: Command[] = [];
+              const tail: Command[] = [];
+              for (const c of prev) {
+                if (c.category === "bookmark" || c.category === "view") {
+                  // keep non-duplicate local ones after server ones
+                  if (c.url && !serverBookmarks.some((b) => b.url === c.url)) {
+                    tail.push(c);
+                  }
+                } else {
+                  head.push(c);
+                }
+              }
+              return [...head, ...serverCmds, ...tail].slice(0, 25);
+            });
+          } catch {
+            // ignore; local/grid search still works
+          }
+        }, 150);
+        return () => {
+          cancelled = true;
+          clearTimeout(timer);
+        };
+      }
     } else {
       setRecentSearches(getRecentSearches());
       setSuggestedTags(getSuggestedTags());

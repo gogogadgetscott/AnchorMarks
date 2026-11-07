@@ -8,6 +8,40 @@ import { openModal, updateActiveNav } from "@utils/ui-helpers.ts";
 import type { Command } from "../../types/index";
 import type { Bookmark } from "../../types/index";
 
+export function bookmarkToCommand(b: Bookmark): Command {
+  const isView =
+    !!b.url &&
+    (b.url.startsWith("view:") || b.url.startsWith("bookmark-view:"));
+  const category = isView ? ("view" as const) : ("bookmark" as const);
+
+  return {
+    label: b.title || b.url,
+    action: () => {
+      if (b.url.startsWith("view:")) {
+        const viewId = b.url.substring(5);
+        import("@features/bookmarks/dashboard.ts").then(({ restoreView }) =>
+          restoreView(viewId, b.title),
+        );
+      } else if (b.url.startsWith("bookmark-view:")) {
+        const viewId = b.url.substring(14);
+        import("@features/bookmarks/bookmarks.ts").then(
+          ({ restoreBookmarkView }) => restoreBookmarkView(viewId),
+        );
+      } else {
+        window.open(b.url, "_blank");
+        import("@services/api.ts").then(({ api }) => {
+          api(`/bookmarks/${b.id}/click`, { method: "POST" }).catch(() => {});
+        });
+      }
+    },
+    icon: "",
+    category,
+    description: b.url,
+    url: b.url,
+    favicon: b.favicon || "",
+  };
+}
+
 // Cache for all bookmarks (unfiltered)
 let allBookmarksCache: Bookmark[] = [];
 let lastBookmarksFetch: number = 0;
@@ -327,88 +361,44 @@ export function getOmnibarCommands(filterText: string = ""): Command[] {
       description: `Go to folder`,
     }));
 
-  // Create bookmark commands (for launcher functionality)
   // Use getAllBookmarks() to search all bookmarks, not just filtered ones
   const allBookmarks = getAllBookmarks();
-  const bookmarkCommands: Command[] = allBookmarks
-    .slice(0, 100) // Limit to first 100 for performance
-    .map((b) => {
-      // Determine category: view bookmarks use 'view' category
-      const isView =
-        b.url &&
-        (b.url.startsWith("view:") || b.url.startsWith("bookmark-view:"));
-      const category = isView ? ("view" as const) : ("bookmark" as const);
-
-      return {
-        label: b.title || b.url,
-        action: () => {
-          if (b.url.startsWith("view:")) {
-            const viewId = b.url.substring(5);
-            import("@features/bookmarks/dashboard.ts").then(({ restoreView }) =>
-              restoreView(viewId, b.title),
-            );
-          } else if (b.url.startsWith("bookmark-view:")) {
-            const viewId = b.url.substring(14);
-            import("@features/bookmarks/bookmarks.ts").then(
-              ({ restoreBookmarkView }) => restoreBookmarkView(viewId),
-            );
-          } else {
-            // Open the bookmark URL
-            window.open(b.url, "_blank");
-            // Increment click count
-            import("@services/api.ts").then(({ api }) => {
-              api(`/bookmarks/${b.id}/click`, { method: "POST" }).catch(
-                () => {},
-              );
-            });
-          }
-        },
-        icon: "",
-        category,
-        description: b.url,
-        url: b.url,
-        favicon: b.favicon || "",
-      };
-    });
 
   // Filter based on search mode
   let results: Command[] = [];
 
   if (isCommandSearch) {
-    // Only show commands when using > prefix
     results = baseCommands.filter((cmd) =>
       cmd.label.toLowerCase().includes(searchTerm),
     );
   } else if (isFolderSearch) {
-    // Only show folders when using @ prefix
     results = folderCommands.filter((cmd) =>
       cmd.label.toLowerCase().includes(searchTerm),
     );
   } else if (isTagSearch) {
-    // Filter by tag - show bookmarks with matching tags
-    results = bookmarkCommands.filter((cmd) => {
-      const bookmark = allBookmarks.find((b) => b.url === cmd.url);
-      return bookmark?.tags?.toLowerCase().includes(searchTerm);
-    });
+    // Filter across all cached bookmarks (not a pre-sliced subset)
+    results = allBookmarks
+      .filter((b) => b.tags?.toLowerCase().includes(searchTerm))
+      .slice(0, 15)
+      .map(bookmarkToCommand);
   } else if (isBookmarkOnly && searchTerm.length >= 1) {
-    // When searching, prioritize bookmarks but show everything that matches
-    // including tag names so e.g. searching "react" finds bookmarks tagged "react"
-    const matchingBookmarks = bookmarkCommands.filter((cmd) => {
-      const label = cmd.label?.toLowerCase() || "";
-      const description = cmd.description?.toLowerCase() || "";
-      const url = cmd.url ? String(cmd.url).toLowerCase() : "";
-      const bookmark = allBookmarks.find((b) => b.url === cmd.url);
-      const tags = bookmark?.tags?.toLowerCase() || "";
-      const bookmarkDescription = bookmark?.description?.toLowerCase() || "";
-
-      return (
-        label.includes(searchTerm) ||
-        description.includes(searchTerm) ||
-        url.includes(searchTerm) ||
-        tags.includes(searchTerm) ||
-        bookmarkDescription.includes(searchTerm)
-      );
-    });
+    // Search across all cached bookmarks by title/URL/description/tags so
+    // matches are not limited to the first N items.
+    const matchingBookmarks = allBookmarks
+      .filter((b) => {
+        const label = (b.title || "").toLowerCase();
+        const url = (b.url || "").toLowerCase();
+        const description = (b.description || "").toLowerCase();
+        const tags = (b.tags || "").toLowerCase();
+        return (
+          label.includes(searchTerm) ||
+          url.includes(searchTerm) ||
+          description.includes(searchTerm) ||
+          tags.includes(searchTerm)
+        );
+      })
+      .slice(0, 15)
+      .map(bookmarkToCommand);
     const matchingCommands = baseCommands.filter((cmd) =>
       cmd.label.toLowerCase().includes(searchTerm),
     );
@@ -502,7 +492,7 @@ export function getOmnibarCommands(filterText: string = ""): Command[] {
     results = resultsArray;
   } else {
     // No search term - show commands and folders first, then some recent bookmarks
-    const recentBookmarks = bookmarkCommands.slice(0, 5);
+    const recentBookmarks = allBookmarks.slice(0, 5).map(bookmarkToCommand);
     results = [...baseCommands, ...folderCommands, ...recentBookmarks];
   }
 
