@@ -1,4 +1,4 @@
-import { vi, describe, it, beforeEach, expect } from "vitest";
+import { vi, describe, it, beforeEach, afterEach, expect } from "vitest";
 import * as state from "@features/state.ts";
 import {
   renderDashboard,
@@ -9,6 +9,7 @@ import {
   updateLayoutStats,
   autoPositionWidgets,
 } from "@features/bookmarks/dashboard.ts";
+import { unmountReactDashboard } from "@features/bookmarks/react-dashboard.tsx";
 
 const { apiMock, loadSettingsSpy, saveSettingsSpy, promptDialogSpy } =
   vi.hoisted(() => ({
@@ -97,6 +98,13 @@ function setupDom() {
     <div id="main-view-outlet"></div>
   `;
 }
+
+afterEach(async () => {
+  unmountReactDashboard();
+  document.body.innerHTML = "";
+  vi.clearAllTimers();
+  await Promise.resolve();
+});
 
 describe("Dashboard rendering and views initialization", () => {
   beforeEach(async () => {
