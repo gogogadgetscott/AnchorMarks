@@ -1,5 +1,35 @@
 const { v4: uuidv4 } = require("uuid");
 
+/**
+ * Build an FTS5 MATCH query from a user search string.
+ * Returns null when the input has no indexable tokens.
+ *
+ * Tokenizes on Unicode letter/number runs (close to unicode61) so punctuation
+ * like `. : / + * ( ) "` in URLs/titles cannot break FTS5 query syntax.
+ * Each token becomes a prefix term (`token*`). Input words are ANDed by
+ * default, or ORed when `fuzzy` is true.
+ */
+function buildFtsMatchQuery(search, fuzzy = false) {
+  if (!search) return null;
+  const words = String(search)
+    .trim()
+    .split(/\s+/)
+    .filter((w) => w.length > 0);
+  if (words.length === 0) return null;
+
+  const groups = [];
+  for (const word of words) {
+    const tokens = word.match(/[\p{L}\p{N}]+/gu);
+    if (!tokens || tokens.length === 0) continue;
+    // Escape embedded double quotes (defensive; tokens shouldn't contain them)
+    // and use bare prefix terms - valid FTS5 syntax.
+    groups.push(tokens.map((t) => `${t.replace(/"/g, "")}*`).join(" "));
+  }
+
+  if (groups.length === 0) return null;
+  return groups.join(fuzzy ? " OR " : " AND ");
+}
+
 function _baseSelect() {
   return `
     FROM bookmarks b
@@ -51,7 +81,9 @@ function listBookmarks(db, userId, opts = {}) {
   // Search is honored in every list view (favorites/archived/most-used
   // previously ignored it server-side, so the UI filtered only the loaded
   // page and search appeared to "miss" matches).
-  const hasSearch = !!search;
+  const useFuzzy = opts.fuzzy === true;
+  const ftsQuery = buildFtsMatchQuery(search, useFuzzy);
+  const hasSearch = !!ftsQuery;
 
   // Core FROM without the tags aggregation. Tags are attached only for the
   // rows that are actually returned (see tagsSubquery below), which keeps the
@@ -59,7 +91,7 @@ function listBookmarks(db, userId, opts = {}) {
   // every bookmark the user owns.
   const coreFrom = hasSearch
     ? `FROM bookmarks b
-       INNER JOIN bookmarks_fts ON bookmarks_fts.id = b.id`
+       INNER JOIN bookmarks_fts ON bookmarks_fts.rowid = b.rowid`
     : `FROM bookmarks b`;
 
   // ---- WHERE clauses ----
@@ -104,20 +136,8 @@ function listBookmarks(db, userId, opts = {}) {
 
   // Handle search matching
   if (hasSearch) {
-    const useFuzzy = opts.fuzzy === true;
-    const searchWords = search
-      .trim()
-      .split(/\s+/)
-      .filter((w) => w.length > 0);
-
-    if (searchWords.length > 0) {
-      const ftsQuery = searchWords
-        .map((w) => `"${w.replace(/"/g, '""')}"*`)
-        .join(useFuzzy ? " OR " : " AND ");
-
-      whereClauses.push("bookmarks_fts MATCH ?");
-      filterParams.push(ftsQuery);
-    }
+    whereClauses.push("bookmarks_fts MATCH ?");
+    filterParams.push(ftsQuery);
   }
 
   // Handle tag filtering
