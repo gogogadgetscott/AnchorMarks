@@ -95,7 +95,9 @@ const authLogin = z
       .string()
       .min(1, "Email is required")
       .transform((s) => s.trim().toLowerCase()),
-    password: z.string({ error: "Password is required" }).min(1, "Password is required"),
+    password: z
+      .string({ error: "Password is required" })
+      .min(1, "Password is required"),
   })
   .strict();
 
@@ -110,7 +112,9 @@ const authProfile = z
 
 const authPassword = z
   .object({
-    currentPassword: z.string({ error: "Current password is required" }).min(1, "Current password is required"),
+    currentPassword: z
+      .string({ error: "Current password is required" })
+      .min(1, "Current password is required"),
     newPassword: z
       .string()
       .min(8, "New password must be at least 8 characters"),
@@ -319,7 +323,11 @@ const syncPush = z
 
 // ---- Import / Export ----
 const importHtml = z
-  .object({ html: z.string({ error: "HTML content is required" }).min(1, "HTML content is required") })
+  .object({
+    html: z
+      .string({ error: "HTML content is required" })
+      .min(1, "HTML content is required"),
+  })
   .strict();
 
 const importJson = z
@@ -354,7 +362,9 @@ const collectionUpdate = z
     name: optionalString,
     icon: optionalString,
     color: optionalString,
-    filters: z.union([z.record(z.string(), z.any()), z.array(z.any())]).optional(),
+    filters: z
+      .union([z.record(z.string(), z.any()), z.array(z.any())])
+      .optional(),
     position: z.coerce.number().int().optional(),
   })
   .strict();
@@ -400,7 +410,10 @@ const smartCollectionCreate = z
       .string({ error: "Name is required" })
       .min(1, "Name is required")
       .transform((s) => (s && s.trim()) || undefined),
-    type: z.string({ error: "Type is required" }).min(1, "Type is required").default("tag_cluster"),
+    type: z
+      .string({ error: "Type is required" })
+      .min(1, "Type is required")
+      .default("tag_cluster"),
     icon: optionalString,
     color: optionalString,
     tags: z.array(z.any()).optional(),
@@ -445,7 +458,9 @@ const quickSearchQuery = z
 
 const smartOrgSuggestQuery = z
   .object({
-    url: z.string({ error: "URL parameter required" }).min(1, "URL parameter required"),
+    url: z
+      .string({ error: "URL parameter required" })
+      .min(1, "URL parameter required"),
     limit: z.coerce.number().int().min(1).max(50).optional(),
     include_domain: z.enum(["true", "false"]).optional(),
     include_activity: z.enum(["true", "false"]).optional(),
@@ -458,7 +473,9 @@ const smartOrgSuggestQuery = z
 
 const domainQuery = z
   .object({
-    domain: z.string({ error: "Domain parameter required" }).min(1, "Domain parameter required"),
+    domain: z
+      .string({ error: "Domain parameter required" })
+      .min(1, "Domain parameter required"),
   })
   .strict();
 
