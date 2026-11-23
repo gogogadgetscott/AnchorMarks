@@ -343,10 +343,9 @@ export function Omnibar({
         let cancelled = false;
         const timer = setTimeout(async () => {
           try {
-            const data = await api<
-              | { bookmarks?: Bookmark[] }
-              | Bookmark[]
-            >(`/bookmarks?search=${encodeURIComponent(trimmed)}&limit=12`);
+            const data = await api<{ bookmarks?: Bookmark[] } | Bookmark[]>(
+              `/bookmarks?search=${encodeURIComponent(trimmed)}&limit=12`,
+            );
             if (cancelled) return;
             const serverBookmarks = Array.isArray(data)
               ? data

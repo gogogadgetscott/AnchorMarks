@@ -8,7 +8,7 @@ import {
 } from "react";
 import { api } from "../services/api.ts";
 import * as state from "../features/state.ts";
-import { syncFoldersBridge } from "./context-bridge";
+import { getBookmarksBridge, syncFoldersBridge } from "./context-bridge";
 import type { Folder, FolderMetadata, Tag } from "../types/index";
 import { showToast } from "./ToastContext";
 import { showConfirm } from "./ConfirmContext";
@@ -28,7 +28,7 @@ interface FoldersMethods {
     options?: { closeModal?: boolean },
   ) => Promise<Folder | null>;
   updateFolder: (id: string, data: Partial<Folder>) => Promise<void>;
-  deleteFolder: (id: string) => Promise<void>;
+  deleteFolder: (id: string) => Promise<boolean>;
   getRecursiveBookmarkCount: (folderId: string) => number;
   /** Move multiple folders to a new parent (or top level when parentId is null). */
   bulkMoveParents: (ids: string[], parentId: string | null) => Promise<void>;
@@ -116,9 +116,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify(data),
         });
         const newFolder = folder as Folder;
-        const updatedFolders = [...folders, newFolder];
-        setFolders(updatedFolders);
-        state.setFolders(updatedFolders);
+        await loadFolders();
         showToast("Folder created!", "success");
         return newFolder;
       } catch (err: unknown) {
@@ -127,7 +125,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
         return null;
       }
     },
-    [folders],
+    [loadFolders],
   );
 
   const updateFolder = useCallback(
@@ -151,11 +149,8 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
           });
         }
 
-        const updatedFolders = folders.map((f) =>
-          f.id === id ? (folder as Folder) : f,
-        );
-        setFolders(updatedFolders);
-        state.setFolders(updatedFolders);
+        void folder;
+        await loadFolders();
         showToast("Folder updated!", "success");
       } catch (err: unknown) {
         logger.error("Failed to update folder:", err);
@@ -163,7 +158,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
         throw err;
       }
     },
-    [folders],
+    [loadFolders],
   );
 
   const updateFolderMetadata = useCallback(
@@ -185,6 +180,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
           "success",
         );
         await loadFolders();
+        await getBookmarksBridge().loadBookmarks();
       } catch (err: unknown) {
         logger.error("Failed to merge folders:", err);
         showToast((err as Error).message, "error");
@@ -206,6 +202,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
           "success",
         );
         await loadFolders();
+        await getBookmarksBridge().loadBookmarks();
       } catch (err: unknown) {
         logger.error("Failed to bulk-delete folders:", err);
         showToast((err as Error).message, "error");
@@ -247,22 +244,32 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
   );
 
   const deleteFolder = useCallback(
-    async (id: string): Promise<void> => {
+    async (id: string): Promise<boolean> => {
+      const descendants = folders.filter((folder) => {
+        let parentId = folder.parent_id;
+        const visited = new Set<string>();
+        while (parentId && !visited.has(parentId)) {
+          if (parentId === id) return true;
+          visited.add(parentId);
+          parentId = folders.find((item) => item.id === parentId)?.parent_id;
+        }
+        return false;
+      });
+      const folder = folders.find((item) => item.id === id);
+      const affectedBookmarks = folder?.bookmark_count ?? 0;
       const confirmed = await showConfirm(
-        "Delete this folder? Bookmarks will be moved to uncategorized.",
+        `Delete "${folder?.name ?? "this folder"}"? ${affectedBookmarks} directly assigned bookmark${affectedBookmarks === 1 ? "" : "s"} will move to Uncategorized. ${descendants.length > 0 ? `${descendants.length} child folder${descendants.length === 1 ? "" : "s"} will be preserved and moved to the deleted folder's parent. ` : ""}This cannot be undone.`,
         {
           title: "Delete Folder",
           destructive: true,
         },
       );
 
-      if (!confirmed) return;
+      if (!confirmed) return false;
 
       try {
         await api(`/folders/${id}`, { method: "DELETE" });
-        const updatedFolders = folders.filter((f) => f.id !== id);
-        setFolders(updatedFolders);
-        state.setFolders(updatedFolders);
+        await loadFolders();
 
         if (currentFolder === id) {
           setCurrentFolder(null);
@@ -270,18 +277,15 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
         }
 
         showToast("Folder deleted", "success");
-
-        if (currentFolder === id) {
-          const { loadBookmarks } =
-            await import("@features/bookmarks/bookmarks.ts");
-          loadBookmarks();
-        }
+        await getBookmarksBridge().loadBookmarks();
+        return true;
       } catch (err: unknown) {
         logger.error("Failed to delete folder:", err);
         showToast((err as Error).message, "error");
+        throw err;
       }
     },
-    [folders, currentFolder],
+    [currentFolder, folders, loadFolders],
   );
 
   const value: FoldersContextValue = {

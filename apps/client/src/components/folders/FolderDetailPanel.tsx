@@ -1,6 +1,5 @@
 import { useState, useCallback } from "react";
 import { useFolders } from "@contexts/FoldersContext";
-import { useConfirm } from "@contexts/ConfirmContext";
 import { Icon } from "@components/Icon.tsx";
 import { FolderParentSelector } from "./FolderParentSelector";
 import { FolderMetadataEditor } from "./FolderMetadataEditor";
@@ -13,7 +12,6 @@ interface Props {
 export function FolderDetailPanel({ folder }: Props) {
   const { updateFolder, deleteFolder, getRecursiveBookmarkCount } =
     useFolders();
-  const { confirm } = useConfirm();
 
   // key={folder.id} on the parent ensures fresh state on every selection change
   const [name, setName] = useState(folder.name);
@@ -41,16 +39,8 @@ export function FolderDetailPanel({ folder }: Props) {
   }, [folder.id, folder.name, name, color, meta, updateFolder]);
 
   const handleDelete = useCallback(async () => {
-    const bookmarkWarning =
-      recursiveCount > 0
-        ? ` ${recursiveCount.toLocaleString()} bookmark${recursiveCount !== 1 ? "s" : ""} will move to Uncategorized.`
-        : "";
-    const ok = await confirm(
-      `Delete "${folder.name}"?${bookmarkWarning} This cannot be undone.`,
-      { confirmText: "Delete Folder", destructive: true },
-    );
-    if (ok) deleteFolder(folder.id);
-  }, [folder.id, folder.name, recursiveCount, confirm, deleteFolder]);
+    await deleteFolder(folder.id);
+  }, [folder.id, deleteFolder]);
 
   return (
     <div className="fdp-root">

@@ -3,9 +3,15 @@ import type { Bookmark } from "../types/index";
 
 interface PreviewWidgetContentProps {
   bookmarks: Bookmark[];
+  onEdit?: (bookmark: Bookmark) => void;
+  onToggleFavorite?: (bookmark: Bookmark) => void;
 }
 
-export function PreviewWidgetContent({ bookmarks }: PreviewWidgetContentProps) {
+export function PreviewWidgetContent({
+  bookmarks,
+  onEdit,
+  onToggleFavorite,
+}: PreviewWidgetContentProps) {
   if (!bookmarks.length) {
     return (
       <div
@@ -64,7 +70,8 @@ export function PreviewWidgetContent({ bookmarks }: PreviewWidgetContentProps) {
                 title="Edit bookmark"
                 onClick={(e) => {
                   e.preventDefault();
-                  // TODO: Implement edit
+                  e.stopPropagation();
+                  onEdit?.(bookmark);
                 }}
               >
                 <Icon name="edit" size={12} />
@@ -79,7 +86,8 @@ export function PreviewWidgetContent({ bookmarks }: PreviewWidgetContentProps) {
                 }
                 onClick={(e) => {
                   e.preventDefault();
-                  // TODO: Implement favorite toggle
+                  e.stopPropagation();
+                  onToggleFavorite?.(bookmark);
                 }}
               >
                 <Icon

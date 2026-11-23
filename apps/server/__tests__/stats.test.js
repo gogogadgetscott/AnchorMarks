@@ -47,6 +47,12 @@ describe("Stats API", () => {
       expect(res.body).toHaveProperty("total_bookmarks");
       expect(res.body).toHaveProperty("total_folders");
       expect(res.body).toHaveProperty("total_tags");
+      expect(Array.isArray(res.body.monthly_growth)).toBe(true);
+      expect(res.body.monthly_growth).toHaveLength(6);
+      for (const entry of res.body.monthly_growth) {
+        expect(entry).toHaveProperty("month");
+        expect(entry).toHaveProperty("count");
+      }
     });
 
     it("rejects unauthenticated requests", async () => {

@@ -17,7 +17,6 @@ export function FolderBulkPanel({ selected, onClear }: Props) {
     bulkMoveParents,
     mergeFolders,
     bulkDeleteFolders,
-    getRecursiveBookmarkCount,
   } = useFolders();
 
   const [action, setAction] = useState<PanelAction>(null);
@@ -31,12 +30,8 @@ export function FolderBulkPanel({ selected, onClear }: Props) {
   );
 
   const totalBookmarks = useMemo(
-    () =>
-      selectedFolders.reduce(
-        (acc, f) => acc + getRecursiveBookmarkCount(f.id),
-        0,
-      ),
-    [selectedFolders, getRecursiveBookmarkCount],
+    () => selectedFolders.reduce((acc, f) => acc + (f.bookmark_count ?? 0), 0),
+    [selectedFolders],
   );
 
   const allEmpty = selectedFolders.every((f) => (f.bookmark_count ?? 0) === 0);

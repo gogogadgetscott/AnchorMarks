@@ -155,6 +155,12 @@ const defaultViewToolbarConfig: Record<string, Record<string, unknown>> = {
     showSearch: false,
     customActions: [],
   },
+  "tag-organizer": {
+    title: "Tags",
+    showViewToggle: false,
+    showSearch: false,
+    customActions: [],
+  },
 };
 
 export function UIProvider({ children }: { children: ReactNode }) {

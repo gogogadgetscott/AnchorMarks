@@ -11583,3 +11583,240 @@ body.folder-organizer-active .content-body {
     padding: 16px;
   }
 }
+
+/* Tag organizer and contextual management actions */
+
+.sidebar-item-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text-tertiary);
+  background: transparent;
+  opacity: 0;
+}
+
+.sidebar-section-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-left: auto;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  color: var(--text-secondary);
+  background: var(--bg-primary);
+  opacity: 1;
+}
+
+.sidebar-section-add:hover {
+  border-color: var(--primary-500);
+  color: var(--primary-600);
+  background: color-mix(in srgb, var(--primary-500) 10%, var(--bg-primary));
+}
+
+.sidebar-section-add:focus-visible {
+  outline: 2px solid var(--primary-500);
+  outline-offset: 2px;
+}
+
+.sidebar-tag-item:hover .sidebar-item-action,
+.sidebar-item-action:focus-visible {
+  opacity: 1;
+}
+
+.sidebar-item-action:hover {
+  color: var(--text-primary);
+  background: var(--hover-bg);
+}
+
+.tag-organizer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  min-height: 0;
+  padding: 24px;
+}
+
+.organization-header,
+.organization-toolbar,
+.organization-bulk-bar,
+.tag-organizer-row {
+  display: flex;
+  align-items: center;
+}
+
+.organization-header,
+.organization-toolbar {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.organization-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.organization-title h1,
+.organization-title p {
+  margin: 0;
+}
+
+.organization-title h1 {
+  font-size: 1.125rem;
+}
+
+.organization-title p {
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.organization-toolbar {
+  flex-wrap: wrap;
+}
+
+.organization-search {
+  display: flex;
+  align-items: center;
+  flex: 1 1 260px;
+  gap: 8px;
+  min-width: 220px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+}
+
+.organization-search input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  color: var(--text-primary);
+  background: transparent;
+}
+
+.organization-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.organization-filters button {
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  cursor: pointer;
+}
+
+.organization-filters button.active {
+  border-color: var(--primary-500);
+  color: var(--primary-600);
+  background: color-mix(in srgb, var(--primary-500) 10%, transparent);
+}
+
+.organization-bulk-bar {
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+}
+
+.organization-bulk-bar label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.organization-bulk-bar select {
+  min-width: 180px;
+}
+
+.tag-organizer-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+}
+
+.tag-organizer-row {
+  min-height: 48px;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tag-organizer-row:last-child {
+  border-bottom: 0;
+}
+
+.tag-organizer-row.selected {
+  background: color-mix(in srgb, var(--primary-500) 9%, transparent);
+}
+
+.tag-organizer-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 50%;
+}
+
+.tag-organizer-name {
+  flex: 1;
+  padding: 0;
+  border: 0;
+  color: var(--text-primary);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tag-organizer-name:hover {
+  color: var(--primary-600);
+}
+
+.organization-empty {
+  display: flex;
+  min-height: 220px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 700px) {
+  .tag-organizer {
+    padding: 16px;
+  }
+
+  .organization-header {
+    align-items: flex-start;
+  }
+
+  .organization-bulk-bar label {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .organization-bulk-bar select {
+    flex: 1;
+    min-width: 0;
+  }
+}

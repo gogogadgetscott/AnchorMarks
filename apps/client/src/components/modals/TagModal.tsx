@@ -17,7 +17,8 @@ const TAG_COLORS = [
 
 export default function TagModal() {
   const { closeModal, tagFormData, setTagFormData } = useModal();
-  const { updateTag, deleteTag } = useBookmarks();
+  const { createTag, renameTag, updateTag, deleteTag, tagMetadata } =
+    useBookmarks();
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,16 +42,32 @@ export default function TagModal() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (tagFormData.id && tagFormData.name) {
-      await updateTag(tagFormData.id, tagFormData.name, tagFormData.color);
-      closeModal();
+    if (!tagFormData.name.trim()) return;
+    if (tagFormData.id) {
+      let persistedTagId = tagFormData.id;
+      if (
+        tagFormData.originalName &&
+        tagFormData.originalName !== tagFormData.name
+      ) {
+        await renameTag(tagFormData.originalName, tagFormData.name);
+        const destination = Object.entries(tagMetadata).find(
+          ([name]) =>
+            name.toLowerCase() === tagFormData.name.toLowerCase() &&
+            name !== tagFormData.originalName,
+        )?.[1];
+        if (destination?.id) persistedTagId = destination.id;
+      }
+      await updateTag(persistedTagId, tagFormData.name, tagFormData.color);
+    } else {
+      const created = await createTag(tagFormData.name, tagFormData.color);
+      if (!created) return;
     }
+    closeModal();
   };
 
   const handleDelete = async () => {
     if (tagFormData.id && tagFormData.name) {
-      await deleteTag(tagFormData.id, tagFormData.name);
-      closeModal();
+      if (await deleteTag(tagFormData.id, tagFormData.name)) closeModal();
     }
   };
 
@@ -71,7 +88,9 @@ export default function TagModal() {
       <div className="modal-backdrop" onClick={closeModal}></div>
       <div className="modal-content modal-sm">
         <div className="modal-header">
-          <h2 id="tag-modal-title">Edit Tag</h2>
+          <h2 id="tag-modal-title">
+            {tagFormData.id ? "Edit Tag" : "New Tag"}
+          </h2>
           <button
             type="button"
             className="btn-icon modal-close"
@@ -128,16 +147,18 @@ export default function TagModal() {
           </div>
 
           <div className="modal-footer">
-            <button
-              type="button"
-              className="btn btn-outline-danger"
-              id="delete-tag-btn"
-              style={{ marginRight: "auto" }}
-              onClick={handleDelete}
-              disabled={!tagFormData.id || !tagFormData.name}
-            >
-              Delete Tag
-            </button>
+            {tagFormData.id && (
+              <button
+                type="button"
+                className="btn btn-outline-danger"
+                id="delete-tag-btn"
+                style={{ marginRight: "auto" }}
+                onClick={handleDelete}
+                disabled={!tagFormData.name}
+              >
+                Delete Tag
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-secondary modal-cancel"
@@ -146,7 +167,7 @@ export default function TagModal() {
               Cancel
             </button>
             <button type="submit" className="btn btn-primary">
-              Save Tag
+              {tagFormData.id ? "Save Tag" : "Create Tag"}
             </button>
           </div>
         </form>

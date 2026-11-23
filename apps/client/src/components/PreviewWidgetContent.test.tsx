@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderWithProviders, screen } from "../test-utils";
+import { renderWithProviders, screen, fireEvent } from "../test-utils";
 import { PreviewWidgetContent } from "./PreviewWidgetContent.tsx";
 import type { Bookmark } from "../types/index";
 
@@ -72,5 +72,33 @@ describe("PreviewWidgetContent", () => {
     expect(buttons.length).toBe(2); // Edit and favorite buttons
     expect(buttons[0].getAttribute("title")).toBe("Edit bookmark");
     expect(buttons[1].getAttribute("title")).toBe("Add to favorites");
+  });
+
+  it("calls onEdit when the edit button is clicked", () => {
+    const onEdit = vi.fn();
+    renderWithProviders(
+      <PreviewWidgetContent
+        bookmarks={bookmarks.slice(0, 1)}
+        onEdit={onEdit}
+      />,
+    );
+
+    fireEvent.click(screen.getByTitle("Edit bookmark"));
+
+    expect(onEdit).toHaveBeenCalledWith(bookmarks[0]);
+  });
+
+  it("calls onToggleFavorite when the favorite button is clicked", () => {
+    const onToggleFavorite = vi.fn();
+    renderWithProviders(
+      <PreviewWidgetContent
+        bookmarks={bookmarks.slice(0, 1)}
+        onToggleFavorite={onToggleFavorite}
+      />,
+    );
+
+    fireEvent.click(screen.getByTitle("Add to favorites"));
+
+    expect(onToggleFavorite).toHaveBeenCalledWith(bookmarks[0]);
   });
 });

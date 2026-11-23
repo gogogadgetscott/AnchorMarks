@@ -13,7 +13,7 @@ interface TagStatItem {
 }
 
 export function TagSettings() {
-  const { fetchTagStats, renameTag, deleteTag } = useBookmarks();
+  const { fetchTagStats, renameTag, deleteTag, tagMetadata } = useBookmarks();
   const [tags, setTags] = useState<TagStatItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [renameFrom, setRenameFrom] = useState("");
@@ -22,7 +22,7 @@ export function TagSettings() {
 
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [tagMetadata]);
 
   const loadStats = async () => {
     setIsLoading(true);
@@ -124,7 +124,16 @@ export function TagSettings() {
             marginBottom: "1rem",
           }}
         >
-          <h4 style={{ margin: 0 }}>All Tags</h4>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <h4 style={{ margin: 0 }}>All Tags</h4>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => openTagModal("")}
+            >
+              New Tag
+            </button>
+          </div>
           <input
             type="text"
             className="form-input"

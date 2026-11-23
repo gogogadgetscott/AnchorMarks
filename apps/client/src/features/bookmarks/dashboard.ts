@@ -707,6 +707,16 @@ export async function renderDashboard(): Promise<void> {
       onChangeWidgetColor: (widgetIndex, color) => {
         updateWidgetColor(widgetIndex, color);
       },
+      onEditBookmark: (bookmark) => {
+        void import("@features/bookmarks/bookmarks.ts").then(
+          ({ editBookmark }) => editBookmark(bookmark.id),
+        );
+      },
+      onToggleFavoriteBookmark: (bookmark) => {
+        void import("@features/bookmarks/bookmarks.ts").then(
+          ({ toggleFavorite }) => toggleFavorite(bookmark.id),
+        );
+      },
       onTagAnalyticsSettingsChange: handleTagAnalyticsSettingsChange,
     });
 

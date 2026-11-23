@@ -191,3 +191,50 @@ describe("include_children CTE terminates on a cycled database", () => {
     expect((result.bookmarks || []).map((b) => b.id)).toContain(bmId);
   });
 });
+
+describe("folder deletion hierarchy", () => {
+  it("uncategorizes bookmarks and promotes child folders", () => {
+    const grandparent = mkFolder(userA, "delete-grandparent");
+    const parent = mkFolder(userA, "delete-parent");
+    const child = mkFolder(userA, "delete-child");
+    folderModel.updateFolder(db, parent, userA, { parent_id: grandparent });
+    folderModel.updateFolder(db, child, userA, { parent_id: parent });
+
+    const bookmarkId = uuidv4();
+    db.prepare(
+      "INSERT INTO bookmarks (id, user_id, folder_id, title, url) VALUES (?, ?, ?, ?, ?)",
+    ).run(
+      bookmarkId,
+      userA,
+      parent,
+      "Promoted bookmark",
+      "https://example.com/promoted",
+    );
+
+    const result = folderModel.deleteFolder(db, parent, userA);
+    expect(result).toBe(1);
+    expect(
+      db.prepare("SELECT parent_id FROM folders WHERE id = ?").get(child)
+        .parent_id,
+    ).toBe(grandparent);
+    expect(
+      db.prepare("SELECT folder_id FROM bookmarks WHERE id = ?").get(bookmarkId)
+        .folder_id,
+    ).toBeNull();
+  });
+
+  it("promotes surviving children past multiple selected ancestors", () => {
+    const parent = mkFolder(userA, "bulk-delete-parent");
+    const child = mkFolder(userA, "bulk-delete-child");
+    const grandchild = mkFolder(userA, "bulk-delete-grandchild");
+    folderModel.updateFolder(db, child, userA, { parent_id: parent });
+    folderModel.updateFolder(db, grandchild, userA, { parent_id: child });
+
+    const result = folderModel.bulkDeleteFolders(db, [parent, child], userA);
+    expect(result.deleted).toBe(2);
+    expect(
+      db.prepare("SELECT parent_id FROM folders WHERE id = ?").get(grandchild)
+        .parent_id,
+    ).toBeNull();
+  });
+});

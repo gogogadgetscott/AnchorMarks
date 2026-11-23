@@ -5,12 +5,13 @@ import { FolderTreePanel } from "./FolderTreePanel";
 import { FolderDetailPanel } from "./FolderDetailPanel";
 import { FolderBulkPanel } from "./FolderBulkPanel";
 import { FolderSmartSuggestions } from "./FolderSmartSuggestions";
+import { openFolderModal } from "@utils/modal-controller.ts";
 
 // ── Quick-filter values that bypass the text search ───────────────────────────
 type QuickFilter = "" | "__empty__" | "__archived__";
 
 export function FolderOrganizerView() {
-  const { folders, isLoading, createFolder } = useFolders();
+  const { folders, isLoading } = useFolders();
 
   // Shared selection — drives both tree checkboxes and the right panel
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -116,7 +117,7 @@ export function FolderOrganizerView() {
           <button
             type="button"
             className="btn btn-primary btn-sm"
-            onClick={() => createFolder({ name: "New Folder" })}
+            onClick={() => openFolderModal()}
           >
             <Icon name="plus" size={14} />
             New Folder

@@ -223,6 +223,8 @@ function bulkAddTags(req, res) {
     tagHelpers.updateBookmarkTags(db, id, tagIds, { userId });
     updated.push(id);
   });
+  broadcast(userId, { type: "tags:changed" });
+  broadcast(userId, { type: "bookmarks:changed" });
   res.json({ updated });
 }
 
@@ -252,6 +254,8 @@ function bulkRemoveTags(req, res) {
     } else tagHelpers.updateBookmarkTags(db, id, [], { userId });
     updated.push(id);
   });
+  broadcast(userId, { type: "tags:changed" });
+  broadcast(userId, { type: "bookmarks:changed" });
   res.json({ updated });
 }
 
@@ -262,6 +266,8 @@ function renameTag(req, res) {
     const result = tagHelpers.renameOrMergeTag(db, req.user.id, from, to);
     if (result.error === "not_found")
       return res.status(404).json({ error: "Tag not found" });
+    broadcast(req.user.id, { type: "tags:changed" });
+    broadcast(req.user.id, { type: "bookmarks:changed" });
     res.json({ updated: result.updated });
   } catch (err) {
     return reportAndSend(res, err, logger, "Tag rename error");

@@ -4,6 +4,7 @@ import { useModal } from "./ModalContext";
 import { showConfirm } from "./ConfirmContext";
 import { showToast } from "./ToastContext";
 import { api } from "@services/api.ts";
+import * as legacyState from "@features/state.ts";
 import type { Bookmark } from "../types/index";
 
 export function useBookmarkActions() {
@@ -134,6 +135,14 @@ export function useBookmarkActions() {
         });
         setBookmarks(bookmarks.map((b) => (b.id === id ? bookmark : b)));
         clearViewCache();
+        // Dashboard widget previews read from the legacy widget cache, so drop
+        // it and re-render when editing from the dashboard.
+        legacyState.clearWidgetDataCache();
+        if (legacyState.currentView === "dashboard") {
+          const { renderDashboard } =
+            await import("@features/bookmarks/dashboard.ts");
+          await renderDashboard();
+        }
         closeModal();
         showToast("Bookmark updated", "success");
       } catch (err: unknown) {

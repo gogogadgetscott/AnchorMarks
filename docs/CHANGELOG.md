@@ -6,8 +6,15 @@ All notable changes to AnchorMarks are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **One-stop folder and tag organization** — a searchable Tags view now supports creation, inline editing, similar/unused filters, multi-select merge, and bulk deletion; Tags and Folders can also be created or edited from navigation, sidebar controls, the Tag Cloud, Settings, and bookmark workflows
+- Bulk bookmark moves can now target Uncategorized, and folder deletion consistently preserves child folders by promoting them to the deleted folder's parent while unassigning affected bookmarks
+
 ### Fixed
 
+- **Standalone tag creation now works** — the Tag modal now distinguishes new and existing tags, supports merge-on-rename through the shared tag rename path, and reloads authoritative bookmark/tag state after mutations
+- Folder creation, rename, merge, deletion, and bulk bookmark tag/folder changes now refresh server-backed state so counts and visible assignments do not remain stale
 - **Plain-HTTP deployments no longer forced to HTTPS** — the CSP header no longer includes `upgrade-insecure-requests` when `SSL_ENABLED` is false, so browsers stop rewriting every `http://` subresource request to `https://` (breaking API calls and assets on non-TLS installs)
 - **Add-bookmark page now saves top-level bookmarks** — bookmark create/update validation and the update model now accept `folder_id: null`, so the `/addbookmark` flow can save bookmarks with no folder selected instead of returning "Expected string, received null"
 - **Add-bookmark folder dropdown is populated again** — the page read `GET /api/folders` as a bare array, but that endpoint returns `{ folders: [...] }`; the resulting error left the folder `<select>` empty. The response is now unwrapped, and a failing shared option builder correctly falls back to the local builder instead of clearing the dropdown
@@ -42,6 +49,8 @@ All notable changes to AnchorMarks are documented here.
 
 ### Performance
 
+- **Startup bookmark loading no longer double-fetches on login** — app initialization now waits for settings/folders hydration and performs a single view-targeted bookmark load, while view-change reloads only run after initialization completes
+- **Monthly growth stats query reduced from 6 round trips to 1** — `/api/stats` now computes six-month growth with one grouped SQL query instead of one query per month
 - **Bookmark list queries are dramatically faster on large libraries** — the tags aggregation previously computed `GROUP_CONCAT`/`json_group_array` for every bookmark the user owned on every page load. It is now scoped to only the returned page via a CTE, and the `COUNT` query no longer materializes tags at all. With a 5,000-bookmark library the plain list query dropped from ~24 ms to ~0.7 ms, tag-filtered lists from ~26 ms to ~4 ms, and FTS search from ~31 ms to ~7 ms
 - **View tag counts are ~12× faster** — `listViewTags` (the filtered tag sidebar returned with every list load) was rewritten to count bookmarks per tag first and then join back to tags instead of aggregating the full tag × bookmark cross product (~39 ms → ~3 ms at 5,000 bookmarks)
 - **`/api/tags` counts are ~2× faster** — `listTags` uses the same grouped-count pattern as the view tag list

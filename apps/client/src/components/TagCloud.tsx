@@ -277,6 +277,14 @@ export function TagCloud() {
                 View Analytics
               </button>
             </div>
+            <div className="tag-cloud-stat">
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => setCurrentView("tag-organizer")}
+              >
+                Manage Tags
+              </button>
+            </div>
           </div>
         </div>
 

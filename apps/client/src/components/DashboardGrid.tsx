@@ -37,6 +37,8 @@ interface DashboardGridProps {
   onOpenAllWidgetBookmarks?: (widgetIndex: number) => void;
   onShowWidgetInBookmarksView?: (widgetType: string, widgetId: string) => void;
   onChangeWidgetColor?: (widgetIndex: number, color: string) => void;
+  onEditBookmark?: (bookmark: Bookmark) => void;
+  onToggleFavoriteBookmark?: (bookmark: Bookmark) => void;
   onTagAnalyticsSettingsChange?: (
     widgetIndex: number,
     settings: {
@@ -79,6 +81,8 @@ export function DashboardGrid({
   onShowWidgetInBookmarksView,
   onChangeWidgetColor,
   onTagAnalyticsSettingsChange,
+  onEditBookmark,
+  onToggleFavoriteBookmark,
 }: DashboardGridProps) {
   const { snapToGrid } = useUI();
   const CANVAS_PADDING = 40;
@@ -202,6 +206,8 @@ export function DashboardGrid({
                 onShowWidgetInBookmarksView={onShowWidgetInBookmarksView}
                 onChangeWidgetColor={onChangeWidgetColor}
                 onTagAnalyticsSettingsChange={onTagAnalyticsSettingsChange}
+                onEditBookmark={onEditBookmark}
+                onToggleFavoriteBookmark={onToggleFavoriteBookmark}
               />
             );
           })}

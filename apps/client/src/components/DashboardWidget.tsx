@@ -35,6 +35,8 @@ interface DashboardWidgetProps {
   onOpenAllWidgetBookmarks?: (widgetIndex: number) => void;
   onShowWidgetInBookmarksView?: (widgetType: string, widgetId: string) => void;
   onChangeWidgetColor?: (widgetIndex: number, color: string) => void;
+  onEditBookmark?: (bookmark: Bookmark) => void;
+  onToggleFavoriteBookmark?: (bookmark: Bookmark) => void;
   onTagAnalyticsSettingsChange?: (
     widgetIndex: number,
     settings: {
@@ -84,6 +86,8 @@ function renderWidgetBody(
       };
     },
   ) => void,
+  onEditBookmark?: (bookmark: Bookmark) => void,
+  onToggleFavoriteBookmark?: (bookmark: Bookmark) => void,
 ) {
   if (widget.type === "tag-analytics" && tagAnalyticsData) {
     return (
@@ -101,7 +105,13 @@ function renderWidgetBody(
     return <StaticWidgetContent data={metrics} />;
   }
 
-  return <PreviewWidgetContent bookmarks={previewBookmarks} />;
+  return (
+    <PreviewWidgetContent
+      bookmarks={previewBookmarks}
+      onEdit={onEditBookmark}
+      onToggleFavorite={onToggleFavoriteBookmark}
+    />
+  );
 }
 
 export function DashboardWidget({
@@ -121,6 +131,8 @@ export function DashboardWidget({
   onShowWidgetInBookmarksView,
   onChangeWidgetColor,
   onTagAnalyticsSettingsChange,
+  onEditBookmark,
+  onToggleFavoriteBookmark,
 }: DashboardWidgetProps) {
   const MIN_WIDGET_WIDTH = 200;
   const MIN_WIDGET_HEIGHT = 150;
@@ -387,6 +399,8 @@ export function DashboardWidget({
           metrics,
           tagAnalyticsData,
           onTagAnalyticsSettingsChange,
+          onEditBookmark,
+          onToggleFavoriteBookmark,
         )}
       </div>
       <div

@@ -190,12 +190,7 @@ function bulkUpdateParents(db, ids, userId, newParentId) {
 }
 
 function deleteFolder(db, id, userId) {
-  db.prepare(
-    "UPDATE bookmarks SET folder_id = NULL WHERE folder_id = ? AND user_id = ?",
-  ).run(id, userId);
-  return db
-    .prepare("DELETE FROM folders WHERE id = ? AND user_id = ?")
-    .run(id, userId);
+  return bulkDeleteFolders(db, [id], userId).deleted;
 }
 
 function deleteAllForUser(db, userId) {
@@ -207,6 +202,24 @@ function deleteAllForUser(db, userId) {
 function mergeFolders(db, sourceIds, targetId, userId) {
   const placeholders = sourceIds.map(() => "?").join(", ");
   db.transaction(() => {
+    const target = getFolderById(db, targetId, userId);
+    if (!target) {
+      throw new AppError("Target folder not found", {
+        statusCode: 404,
+        clientMessage: "Target folder not found",
+      });
+    }
+
+    for (const sourceId of sourceIds) {
+      if (wouldCreateCycle(db, sourceId, targetId, userId)) {
+        throw new AppError("Cannot merge a parent folder into its descendant", {
+          statusCode: 422,
+          clientMessage: "Cannot merge a folder into one of its own subfolders",
+        });
+      }
+      assertValidParent(db, null, userId, targetId);
+    }
+
     db.prepare(
       `UPDATE bookmarks SET folder_id = ? WHERE folder_id IN (${placeholders}) AND user_id = ?`,
     ).run(targetId, ...sourceIds, userId);
@@ -219,20 +232,52 @@ function mergeFolders(db, sourceIds, targetId, userId) {
   })();
 }
 
-// Delete multiple folders: bookmarks → uncategorized, children → top level.
+// Delete multiple folders: bookmarks -> uncategorized, children -> nearest
+// surviving ancestor.
 function bulkDeleteFolders(db, ids, userId) {
-  const placeholders = ids.map(() => "?").join(", ");
+  const rows = db
+    .prepare(
+      `SELECT id, parent_id FROM folders
+       WHERE user_id = ? AND id IN (${ids.map(() => "?").join(", ")})`,
+    )
+    .all(userId, ...ids);
+  const deleting = new Set(rows.map((row) => row.id));
+  const replacements = new Map();
+
+  for (const row of rows) {
+    let parentId = row.parent_id;
+    const visited = new Set();
+    while (parentId && deleting.has(parentId) && !visited.has(parentId)) {
+      visited.add(parentId);
+      const parent = db
+        .prepare("SELECT parent_id FROM folders WHERE id = ? AND user_id = ?")
+        .get(parentId, userId);
+      parentId = parent?.parent_id ?? null;
+    }
+    replacements.set(row.id, parentId ?? null);
+  }
+
+  const result = { deleted: rows.length };
   db.transaction(() => {
+    const placeholders = rows.map(() => "?").join(", ");
+    if (rows.length === 0) return;
+
     db.prepare(
       `UPDATE bookmarks SET folder_id = NULL WHERE folder_id IN (${placeholders}) AND user_id = ?`,
-    ).run(...ids, userId);
-    db.prepare(
-      `UPDATE folders SET parent_id = NULL WHERE parent_id IN (${placeholders}) AND user_id = ?`,
-    ).run(...ids, userId);
+    ).run(...rows.map((row) => row.id), userId);
+
+    const childStatement = db.prepare(
+      "UPDATE folders SET parent_id = ? WHERE id != ? AND parent_id = ? AND user_id = ?",
+    );
+    for (const row of rows) {
+      childStatement.run(replacements.get(row.id), row.id, row.id, userId);
+    }
+
     db.prepare(
       `DELETE FROM folders WHERE id IN (${placeholders}) AND user_id = ?`,
-    ).run(...ids, userId);
+    ).run(...rows.map((row) => row.id), userId);
   })();
+  return result;
 }
 
 function createFolder(

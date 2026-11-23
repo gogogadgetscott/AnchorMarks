@@ -25,7 +25,7 @@ export function BulkBar() {
   const handleMove = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const folderId = e.target.value;
     if (!folderId) return;
-    await bulkMove(folderId);
+    await bulkMove(folderId === "__uncategorized__" ? null : folderId);
   };
 
   return (
@@ -76,6 +76,7 @@ export function BulkBar() {
             <option value="" disabled>
               Move to...
             </option>
+            <option value="__uncategorized__">Uncategorized</option>
             {folders.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.name}

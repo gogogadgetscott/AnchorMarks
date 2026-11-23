@@ -3,16 +3,16 @@ const http = require("http");
 const { isPrivateAddress, resolveToPublicIp } = require("../utils/ssrfUtils");
 
 function getStats(db, userId) {
-  const bookmarkCount = db
+  const bookmarkStats = db
     .prepare("SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ?")
-    .get(userId);
-  const folderCount = db
-    .prepare("SELECT COUNT(*) as count FROM folders WHERE user_id = ?")
     .get(userId);
   const favoriteCount = db
     .prepare(
       "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND is_favorite = 1",
     )
+    .get(userId);
+  const folderCount = db
+    .prepare("SELECT COUNT(*) as count FROM folders WHERE user_id = ?")
     .get(userId);
   const topClicked = db
     .prepare(
@@ -42,7 +42,7 @@ function getStats(db, userId) {
   const usedTags = tagCounts.filter((t) => t.count > 0);
 
   return {
-    total_bookmarks: bookmarkCount.count,
+    total_bookmarks: bookmarkStats.count,
     total_folders: folderCount.count,
     total_tags: usedTags.length,
     favorites: favoriteCount.count,
@@ -62,15 +62,29 @@ function getMonthlyGrowth(db, userId) {
   for (let i = 5; i >= 0; i--) {
     const d = new Date();
     d.setMonth(d.getMonth() - i);
-    const monthStr = d.toISOString().slice(0, 7); // YYYY-MM
-    const count = db
-      .prepare(
-        "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND strftime('%Y-%m', created_at) = ?",
-      )
-      .get(userId, monthStr).count;
-    months.push({ month: monthStr, count });
+    months.push(d.toISOString().slice(0, 7)); // YYYY-MM
   }
-  return months;
+
+  const monthlyCounts = db
+    .prepare(
+      `
+      SELECT strftime('%Y-%m', created_at) as month, COUNT(*) as count
+      FROM bookmarks
+      WHERE user_id = ?
+        AND created_at >= date('now', 'start of month', '-5 months')
+      GROUP BY month
+    `,
+    )
+    .all(userId);
+
+  const countByMonth = new Map(
+    monthlyCounts.map((row) => [row.month, row.count]),
+  );
+
+  return months.map((month) => ({
+    month,
+    count: countByMonth.get(month) || 0,
+  }));
 }
 
 function getTopDomains(db, userId) {

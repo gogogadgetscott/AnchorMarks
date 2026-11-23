@@ -11,6 +11,7 @@ import { TagCloud } from "@components/TagCloud.tsx";
 import { AnalyticsView } from "@components/AnalyticsView.tsx";
 import { Dashboard } from "@components/Dashboard.tsx";
 import { FolderOrganizerView } from "@components/folders/FolderOrganizerView.tsx";
+import { TagOrganizer } from "@components/TagOrganizer.tsx";
 import { useAuth } from "./contexts/AuthContext";
 import { useBookmarks } from "./contexts/BookmarksContext";
 import { useUI } from "./contexts/UIContext";
@@ -33,6 +34,8 @@ export function AppShell() {
         return <AnalyticsView />;
       case "folder-organizer":
         return <FolderOrganizerView />;
+      case "tag-organizer":
+        return <TagOrganizer />;
       default:
         return (
           <>
@@ -68,7 +71,9 @@ export function AppShell() {
             <div id="bulk-bar-container">
               {bulkMode &&
                 currentView !== "tag-cloud" &&
-                currentView !== "analytics" && <BulkBar />}
+                currentView !== "analytics" &&
+                currentView !== "folder-organizer" &&
+                currentView !== "tag-organizer" && <BulkBar />}
             </div>
 
             <div className="content-body">{renderMainContent()}</div>

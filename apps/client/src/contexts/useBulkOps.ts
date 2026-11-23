@@ -12,6 +12,8 @@ export function useBulkOps() {
     setBookmarks,
     setSelectedBookmarks,
     setBulkMode,
+    loadBookmarks,
+    clearViewCache,
   } = useBookmarks();
 
   const clearSelections = useCallback(() => {
@@ -35,9 +37,18 @@ export function useBulkOps() {
     }
 
     setBookmarks(bookmarks.filter((b) => !selectedBookmarks.has(b.id)));
+    clearViewCache();
+    await loadBookmarks();
     clearSelections();
     showToast("Bookmarks deleted", "success");
-  }, [selectedBookmarks, bookmarks, setBookmarks, clearSelections]);
+  }, [
+    selectedBookmarks,
+    bookmarks,
+    setBookmarks,
+    clearViewCache,
+    loadBookmarks,
+    clearSelections,
+  ]);
 
   const bulkFavorite = useCallback(async () => {
     if (selectedBookmarks.size === 0) return;
@@ -59,8 +70,8 @@ export function useBulkOps() {
   }, [selectedBookmarks, bookmarks, setBookmarks]);
 
   const bulkMove = useCallback(
-    async (folderId: string) => {
-      if (!folderId || selectedBookmarks.size === 0) return;
+    async (folderId: string | null) => {
+      if (selectedBookmarks.size === 0) return;
 
       const ids = Array.from(selectedBookmarks);
       for (const id of ids) {
@@ -72,13 +83,27 @@ export function useBulkOps() {
 
       setBookmarks(
         bookmarks.map((b) =>
-          selectedBookmarks.has(b.id) ? { ...b, folder_id: folderId } : b,
+          selectedBookmarks.has(b.id)
+            ? { ...b, folder_id: folderId ?? undefined }
+            : b,
         ),
       );
+      clearViewCache();
+      await loadBookmarks();
       clearSelections();
-      showToast("Bookmarks moved", "success");
+      showToast(
+        folderId ? "Bookmarks moved" : "Bookmarks moved to Uncategorized",
+        "success",
+      );
     },
-    [selectedBookmarks, bookmarks, setBookmarks, clearSelections],
+    [
+      selectedBookmarks,
+      bookmarks,
+      setBookmarks,
+      clearViewCache,
+      loadBookmarks,
+      clearSelections,
+    ],
   );
 
   const bulkAddTags = useCallback(async () => {
@@ -94,7 +119,10 @@ export function useBulkOps() {
     const ids = Array.from(selectedBookmarks);
     await api("/tags/bulk-add", {
       method: "POST",
-      body: JSON.stringify({ bookmark_ids: ids, tags: tagsToAdd }),
+      body: JSON.stringify({
+        bookmark_ids: ids,
+        tags: tagsToAdd.join(","),
+      }),
     });
 
     setBookmarks(
@@ -108,9 +136,18 @@ export function useBulkOps() {
         };
       }),
     );
+    clearViewCache();
+    await loadBookmarks();
     clearSelections();
     showToast("Tags added to selection", "success");
-  }, [selectedBookmarks, bookmarks, setBookmarks, clearSelections]);
+  }, [
+    selectedBookmarks,
+    bookmarks,
+    setBookmarks,
+    clearViewCache,
+    loadBookmarks,
+    clearSelections,
+  ]);
 
   const bulkRemoveTags = useCallback(async () => {
     if (selectedBookmarks.size === 0) return;
@@ -125,7 +162,10 @@ export function useBulkOps() {
     const ids = Array.from(selectedBookmarks);
     await api("/tags/bulk-remove", {
       method: "POST",
-      body: JSON.stringify({ bookmark_ids: ids, tags: tagsToRemove }),
+      body: JSON.stringify({
+        bookmark_ids: ids,
+        tags: tagsToRemove.join(","),
+      }),
     });
 
     const removeSet = new Set(tagsToRemove.map((t) => t.toLowerCase()));
@@ -138,9 +178,18 @@ export function useBulkOps() {
         return { ...b, tags: filtered.join(", "), tags_detailed: undefined };
       }),
     );
+    clearViewCache();
+    await loadBookmarks();
     clearSelections();
     showToast("Tags removed from selection", "success");
-  }, [selectedBookmarks, bookmarks, setBookmarks, clearSelections]);
+  }, [
+    selectedBookmarks,
+    bookmarks,
+    setBookmarks,
+    clearViewCache,
+    loadBookmarks,
+    clearSelections,
+  ]);
 
   const bulkArchive = useCallback(async () => {
     if (selectedBookmarks.size === 0) return;

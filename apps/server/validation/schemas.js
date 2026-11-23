@@ -181,6 +181,7 @@ const folderMetadataSchema = z
     domain: z
       .enum(["Solar", "Homelab", "Finance", "Research", "Other"])
       .optional(),
+    description: optionalString,
   })
   .optional();
 
@@ -196,7 +197,7 @@ const folderCreate = z
 
 const folderUpdate = z
   .object({
-    name: optionalString,
+    name: z.string().trim().min(1, "Folder name is required").optional(),
     parent_id: uuidLike,
     color: hexColor,
     icon: optionalString,
@@ -252,7 +253,7 @@ const tagCreate = z
 
 const tagUpdate = z
   .object({
-    name: optionalString,
+    name: z.string().trim().min(1, "Tag name is required").optional(),
     color: optionalString,
     icon: optionalString,
     position: z.coerce.number().int().optional(),
@@ -270,8 +271,11 @@ const tagsBulkAddRemove = z
 
 const tagsRename = z
   .object({
-    from: z.string({ error: "from is required" }).min(1, "from is required"),
-    to: z.string({ error: "to is required" }).min(1, "to is required"),
+    from: z
+      .string({ error: "from is required" })
+      .trim()
+      .min(1, "from is required"),
+    to: z.string({ error: "to is required" }).trim().min(1, "to is required"),
   })
   .strict();
 

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useMemo } from "react";
 import { useModal } from "@contexts/ModalContext";
 import { useFolders } from "@contexts/FoldersContext";
 import { createFocusTrap, removeFocusTrap } from "@utils/focus-trap.ts";
@@ -100,7 +100,7 @@ export default function FolderModal() {
 
   const handleDelete = async () => {
     if (folderFormData.id) {
-      await deleteFolder(folderFormData.id);
+      if (await deleteFolder(folderFormData.id)) closeModal();
     }
   };
 
@@ -113,9 +113,21 @@ export default function FolderModal() {
   const submitLabel = isEditing ? "Update Folder" : "Create Folder";
 
   // Filter out current folder from parent options if editing
-  const availableParents = folderFormData.id
-    ? folders.filter((f: any) => f.id !== folderFormData.id)
-    : folders;
+  const availableParents = useMemo(() => {
+    if (!folderFormData.id) return folders;
+
+    return folders.filter((candidate) => {
+      if (candidate.id === folderFormData.id) return false;
+      let parentId = candidate.parent_id;
+      const visited = new Set<string>();
+      while (parentId && !visited.has(parentId)) {
+        if (parentId === folderFormData.id) return false;
+        visited.add(parentId);
+        parentId = folders.find((folder) => folder.id === parentId)?.parent_id;
+      }
+      return true;
+    });
+  }, [folderFormData.id, folders]);
 
   return (
     <div
@@ -226,7 +238,7 @@ export default function FolderModal() {
             <button
               type="button"
               className="btn btn-secondary modal-cancel"
-              onClick={closeModal}
+              onClick={handleClose}
             >
               Cancel
             </button>

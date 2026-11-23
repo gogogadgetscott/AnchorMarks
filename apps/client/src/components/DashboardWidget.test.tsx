@@ -79,6 +79,35 @@ describe("DashboardWidget", () => {
     expect(screen.getByText("Bookmarks")).toBeTruthy();
   });
 
+  it("forwards edit and favorite actions from bookmark previews", () => {
+    const onEditBookmark = vi.fn();
+    const onToggleFavoriteBookmark = vi.fn();
+    const bookmark = {
+      id: "bookmark-1",
+      title: "Saved article",
+      url: "https://example.com/article",
+      is_favorite: false,
+    };
+
+    renderWithProviders(
+      <DashboardWidget
+        widget={{ ...baseWidget, type: "folder", title: "Reading" }}
+        widgetIndex={0}
+        isEditing={true}
+        linkedWidgetId="folder-1"
+        previewBookmarks={[bookmark]}
+        onEditBookmark={onEditBookmark}
+        onToggleFavoriteBookmark={onToggleFavoriteBookmark}
+      />,
+    );
+
+    fireEvent.click(screen.getByTitle("Edit bookmark"));
+    expect(onEditBookmark).toHaveBeenCalledWith(bookmark);
+
+    fireEvent.click(screen.getByTitle("Add to favorites"));
+    expect(onToggleFavoriteBookmark).toHaveBeenCalledWith(bookmark);
+  });
+
   it("calls onRemove callback in edit mode", () => {
     const onRemove = vi.fn();
 

@@ -23,6 +23,7 @@ export interface BookmarkFormData {
 export interface TagFormData {
   id?: string;
   name: string;
+  originalName?: string;
   color: string;
 }
 
@@ -124,7 +125,7 @@ export function ModalProvider({ children }: { children: ReactNode }) {
       const name = normalized.name ?? "";
       const color = normalized.color ?? "#f59e0b";
 
-      setTagFormDataState({ id, name, color });
+      setTagFormDataState({ id, name, originalName: name, color });
       setOpenModal("tag");
     },
     [],

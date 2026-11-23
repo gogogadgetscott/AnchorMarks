@@ -68,8 +68,9 @@ interface BookmarksState {
 
 interface TagManagementMethods {
   fetchTagStats: () => Promise<TagStatItem[]>;
+  refreshTagData: () => Promise<void>;
   renameTag: (from: string, to: string) => Promise<void>;
-  deleteTag: (id: string, name: string) => Promise<void>;
+  deleteTag: (id: string, name: string) => Promise<boolean>;
   updateTag: (id: string, name: string, color?: string) => Promise<void>;
   createTag: (name: string, color?: string) => Promise<boolean>;
 }
@@ -489,6 +490,25 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     }
   }, [filterConfig.tagSort]);
 
+  const refreshTagData = useCallback(async () => {
+    const tags = await api<TagStatItem[]>("/tags");
+    const metadata: Record<
+      string,
+      { color?: string; icon?: string; id?: string; count?: number }
+    > = {};
+    tags.forEach((tag) => {
+      metadata[tag.name] = {
+        color: tag.color,
+        id: tag.id,
+        count: tag.count,
+      };
+    });
+    setTagMetadata(metadata);
+    vanillaState.setTagMetadata(metadata);
+    viewCacheRef.current.clear();
+    await loadBookmarks();
+  }, [loadBookmarks]);
+
   const renameTag = useCallback(
     async (from: string, to: string): Promise<void> => {
       if (!from || !to) return;
@@ -498,56 +518,38 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
           method: "POST",
           body: JSON.stringify({ from, to }),
         });
-
-        // Update bookmarks with renamed tag
-        const updatedBookmarks = bookmarks.map((b) => {
-          if (!b.tags) return b;
-          const tags = b.tags
-            .split(",")
-            .map((t) => t.trim())
-            .map((t) => (t === from ? to : t));
-          const merged = Array.from(new Set(tags)).join(", ");
-          return { ...b, tags: merged };
-        });
-
-        setBookmarks(updatedBookmarks);
-
-        // Trigger re-render
-        const event = new CustomEvent("tag-updated");
-        window.dispatchEvent(event);
-
+        await refreshTagData();
         showToast(`Renamed ${from} → ${to}`, "success");
       } catch (err) {
         logger.error("Failed to rename tag:", err);
         showToast("Failed to rename tag", "error");
+        throw err;
       }
     },
-    [bookmarks],
+    [refreshTagData],
   );
 
   const deleteTag = useCallback(
-    async (id: string, name: string): Promise<void> => {
+    async (id: string, name: string): Promise<boolean> => {
       const confirmed = await showConfirm(
         `Delete tag "${name}"? It will be removed from all bookmarks.`,
         { title: "Delete Tag", destructive: true },
       );
 
-      if (!confirmed) return;
+      if (!confirmed) return false;
 
       try {
         await api(`/tags/${id}`, { method: "DELETE" });
-
-        // Trigger re-render
-        const event = new CustomEvent("tag-updated");
-        window.dispatchEvent(event);
-
+        await refreshTagData();
         showToast(`Tag "${name}" deleted`, "success");
+        return true;
       } catch (err) {
         logger.error("Failed to delete tag:", err);
         showToast("Failed to delete tag", "error");
+        throw err;
       }
     },
-    [],
+    [refreshTagData],
   );
 
   const updateTag = useCallback(
@@ -559,18 +561,15 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
           method: "PUT",
           body: JSON.stringify({ name, color }),
         });
-
-        // Trigger re-render
-        const event = new CustomEvent("tag-updated");
-        window.dispatchEvent(event);
-
+        await refreshTagData();
         showToast("Tag updated successfully", "success");
       } catch (err) {
         logger.error("Failed to update tag:", err);
         showToast("Failed to update tag", "error");
+        throw err;
       }
     },
-    [],
+    [refreshTagData],
   );
 
   const createTag = useCallback(
@@ -585,7 +584,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
           method: "POST",
           body: JSON.stringify({ name: name.trim(), color }),
         });
-
+        await refreshTagData();
         showToast("Tag created successfully", "success");
         return true;
       } catch (err) {
@@ -594,7 +593,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         return false;
       }
     },
-    [],
+    [refreshTagData],
   );
 
   const value: BookmarksContextValue = {
@@ -636,6 +635,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     setBulkMode: useCallback((val) => setBulkMode(val), []),
     resetPagination,
     fetchTagStats,
+    refreshTagData,
     renameTag,
     deleteTag,
     updateTag,
@@ -724,10 +724,13 @@ export function useBookmarks(): BookmarksContextValue {
     resetPagination: () => state?.resetPagination && state.resetPagination(),
     fetchTagStats: async () =>
       state?.fetchTagStats ? state.fetchTagStats() : [],
+    refreshTagData: async () => {
+      if (state?.refreshTagData) await state.refreshTagData();
+    },
     renameTag: async (from: string, to: string) =>
       state?.renameTag && state.renameTag(from, to),
     deleteTag: async (id: string, name: string) =>
-      state?.deleteTag && state.deleteTag(id, name),
+      state?.deleteTag ? state.deleteTag(id, name) : false,
     updateTag: async (id: string, name: string, color?: string) =>
       state?.updateTag && state.updateTag(id, name, color),
     createTag: async (name: string, color?: string) =>

@@ -57,6 +57,12 @@ describe("Sidebar (React)", () => {
     expect(screen.getByTitle("Add Bookmark")).toBeTruthy();
   });
 
+  it("shows add buttons for folders and tags on the dashboard", () => {
+    renderWithProviders(<Sidebar />);
+    expect(screen.getByLabelText("New Folder")).toBeTruthy();
+    expect(screen.getByLabelText("New Tag")).toBeTruthy();
+  });
+
   it("renders all nav items", () => {
     renderWithProviders(<Sidebar />);
     expect(screen.getByText("Dashboard")).toBeTruthy();
@@ -67,6 +73,8 @@ describe("Sidebar (React)", () => {
     expect(screen.getByText("Archived")).toBeTruthy();
     expect(screen.getByText("Tag Cloud")).toBeTruthy();
     expect(screen.getByText("Analytics")).toBeTruthy();
+    expect(screen.getAllByText("Tags").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Folders").length).toBeGreaterThan(0);
   });
 
   it("marks the active nav item based on currentView (default: dashboard)", () => {

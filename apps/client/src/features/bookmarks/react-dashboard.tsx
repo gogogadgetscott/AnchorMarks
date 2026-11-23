@@ -29,6 +29,8 @@ interface RenderReactDashboardInput {
   onOpenAllWidgetBookmarks?: (widgetIndex: number) => void;
   onShowWidgetInBookmarksView?: (widgetType: string, widgetId: string) => void;
   onChangeWidgetColor?: (widgetIndex: number, color: string) => void;
+  onEditBookmark?: (bookmark: Bookmark) => void;
+  onToggleFavoriteBookmark?: (bookmark: Bookmark) => void;
   onTagAnalyticsSettingsChange?: (
     widgetIndex: number,
     settings: {
@@ -64,6 +66,8 @@ export function renderReactDashboard({
   onShowWidgetInBookmarksView,
   onChangeWidgetColor,
   onTagAnalyticsSettingsChange,
+  onEditBookmark,
+  onToggleFavoriteBookmark,
 }: RenderReactDashboardInput): void {
   let mountPoint = outlet.querySelector(
     "#dashboard-react-root",
@@ -103,6 +107,8 @@ export function renderReactDashboard({
       onShowWidgetInBookmarksView,
       onChangeWidgetColor,
       onTagAnalyticsSettingsChange,
+      onEditBookmark,
+      onToggleFavoriteBookmark,
     }),
   );
 }

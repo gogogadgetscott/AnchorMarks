@@ -51,7 +51,7 @@ function updateFolder(req, res) {
   try {
     // Build fields object — only include keys that were actually provided
     const fields = {};
-    if (name !== undefined) fields.name = name;
+    if (name !== undefined) fields.name = name.trim();
     if (parent_id !== undefined) fields.parent_id = parent_id || null;
     if (color !== undefined) fields.color = color;
     if (icon !== undefined) fields.icon = icon;
@@ -116,8 +116,10 @@ function deleteFolder(req, res) {
   const db = req.app.get("db");
   const folderModel = require("../models/folder");
   try {
-    folderModel.deleteFolder(db, req.params.id, req.user.id);
+    const deleted = folderModel.deleteFolder(db, req.params.id, req.user.id);
+    if (!deleted) return res.status(404).json({ error: "Folder not found" });
     broadcast(req.user.id, { type: "folders:changed" });
+    broadcast(req.user.id, { type: "bookmarks:changed" });
     res.json({ success: true });
   } catch (err) {
     return reportAndSend(res, err, logger, "Error deleting folder");
@@ -151,9 +153,10 @@ function bulkDeleteFoldersCtrl(req, res) {
   const folderModel = require("../models/folder");
   const { ids } = req.validated;
   try {
-    folderModel.bulkDeleteFolders(db, ids, req.user.id);
+    const result = folderModel.bulkDeleteFolders(db, ids, req.user.id);
     broadcast(req.user.id, { type: "folders:changed" });
-    res.json({ deleted: ids.length });
+    broadcast(req.user.id, { type: "bookmarks:changed" });
+    res.json(result);
   } catch (err) {
     return reportAndSend(res, err, logger, "Error bulk-deleting folders");
   }

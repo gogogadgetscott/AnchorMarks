@@ -4,6 +4,20 @@ import TagModal from "../TagModal";
 import { ModalProvider } from "../../../contexts/ModalContext";
 import { vi } from "vitest";
 
+const tagActions = vi.hoisted(() => ({
+  createTag: vi.fn(() => Promise.resolve(true)),
+  renameTag: vi.fn(() => Promise.resolve()),
+  updateTag: vi.fn(() => Promise.resolve()),
+  deleteTag: vi.fn(() => Promise.resolve(true)),
+}));
+
+vi.mock("@contexts/BookmarksContext", () => ({
+  useBookmarks: () => ({
+    ...tagActions,
+    tagMetadata: {},
+  }),
+}));
+
 // Mock focus-trap utilities
 vi.mock("@utils/focus-trap.ts", () => ({
   createFocusTrap: vi.fn(),
@@ -21,7 +35,7 @@ describe("TagModal (React)", () => {
 
   it("renders the modal with title", () => {
     renderTagModal();
-    expect(screen.getByText("Edit Tag")).toBeTruthy();
+    expect(screen.getByText("New Tag")).toBeTruthy();
   });
 
   it("renders tag name input field", () => {
@@ -54,15 +68,15 @@ describe("TagModal (React)", () => {
     expect(colorButtons[0].classList.contains("active")).toBe(true);
   });
 
-  it("renders delete button", () => {
+  it("does not render delete for a new tag", () => {
     renderTagModal();
-    expect(screen.getByText("Delete Tag")).toBeTruthy();
+    expect(screen.queryByText("Delete Tag")).toBeNull();
   });
 
-  it("renders cancel and save buttons", () => {
+  it("renders cancel and create buttons", () => {
     renderTagModal();
     expect(screen.getByText("Cancel")).toBeTruthy();
-    expect(screen.getByText("Save Tag")).toBeTruthy();
+    expect(screen.getByText("Create Tag")).toBeTruthy();
   });
 
   it("has accessibility attributes", () => {
@@ -77,6 +91,16 @@ describe("TagModal (React)", () => {
     const closeBtn = screen.getByLabelText(/Close modal/);
     fireEvent.click(closeBtn);
     // Modal should still be rendered but hidden (handled by context)
-    expect(screen.getByText("Edit Tag")).toBeTruthy();
+    expect(screen.getByText("New Tag")).toBeTruthy();
+  });
+
+  it("creates a tag when the new-tag form is submitted", () => {
+    renderTagModal();
+    fireEvent.change(screen.getByLabelText(/Tag Name/), {
+      target: { value: "research" },
+    });
+    fireEvent.click(screen.getByText("Create Tag"));
+
+    expect(tagActions.createTag).toHaveBeenCalledWith("research", "#f59e0b");
   });
 });
