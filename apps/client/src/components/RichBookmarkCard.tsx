@@ -8,6 +8,7 @@ import { useBookmarks } from "@/contexts/index.ts";
 import { fetchMetadata } from "@features/bookmarks/bookmarks.ts";
 import { api } from "@services/api.ts";
 import type { Bookmark } from "../types/index";
+import { enqueueMetadata } from "@utils/metadata-queue.ts";
 
 const fetchingIds = new Set<string>();
 
@@ -66,6 +67,7 @@ export function RichBookmarkCard({
     useBookmarks();
 
   const [autoImage, setAutoImage] = useState<string | undefined>(undefined);
+  const cardRef = useRef<HTMLDivElement>(null);
   const bookmarksRef = useRef(bookmarks);
   useEffect(() => {
     bookmarksRef.current = bookmarks;
@@ -156,23 +158,60 @@ export function RichBookmarkCard({
 
   useEffect(() => {
     if (imageSrc || fetchingIds.has(bookmark.id)) return;
-    fetchingIds.add(bookmark.id);
-    fetchMetadata(bookmark.url)
-      .then(async (meta) => {
-        if (!meta.og_image) return;
-        setAutoImage(meta.og_image);
-        await api(`/bookmarks/${bookmark.id}`, {
-          method: "PUT",
-          body: JSON.stringify({ og_image: meta.og_image }),
-        });
-        setBookmarks(
-          bookmarksRef.current.map((b) =>
-            b.id === bookmark.id ? { ...b, og_image: meta.og_image } : b,
-          ),
-        );
-      })
-      .catch(() => {})
-      .finally(() => fetchingIds.delete(bookmark.id));
+    const card = cardRef.current;
+    if (!card) return;
+
+    if (typeof IntersectionObserver === "undefined") {
+      fetchingIds.add(bookmark.id);
+      void enqueueMetadata(bookmark.url, () => fetchMetadata(bookmark.url))
+        .then(async (meta) => {
+          if (!meta.og_image) return;
+          setAutoImage(meta.og_image);
+          await api(
+            `/bookmarks/${bookmark.id}`,
+            {
+              method: "PUT",
+              body: JSON.stringify({ og_image: meta.og_image }),
+            },
+            5000,
+          );
+        })
+        .catch(() => {})
+        .finally(() => fetchingIds.delete(bookmark.id));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return;
+        observer.disconnect();
+        if (fetchingIds.has(bookmark.id)) return;
+        fetchingIds.add(bookmark.id);
+        void enqueueMetadata(bookmark.url, () => fetchMetadata(bookmark.url))
+          .then(async (meta) => {
+            if (!meta.og_image) return;
+            setAutoImage(meta.og_image);
+            await api(
+              `/bookmarks/${bookmark.id}`,
+              {
+                method: "PUT",
+                body: JSON.stringify({ og_image: meta.og_image }),
+              },
+              5000,
+            );
+            setBookmarks(
+              bookmarksRef.current.map((b) =>
+                b.id === bookmark.id ? { ...b, og_image: meta.og_image } : b,
+              ),
+            );
+          })
+          .catch(() => {})
+          .finally(() => fetchingIds.delete(bookmark.id));
+      },
+      { rootMargin: "300px" },
+    );
+    observer.observe(card);
+    return () => observer.disconnect();
   }, [bookmark.id, bookmark.url, imageSrc, setBookmarks]);
 
   const imageEl = imageSrc ? (
@@ -183,6 +222,9 @@ export function RichBookmarkCard({
         className="img-loading"
         loading="lazy"
         onLoad={(e) => e.currentTarget.classList.add("img-loaded")}
+        onError={(event) => {
+          event.currentTarget.style.display = "none";
+        }}
       />
     </div>
   ) : (
@@ -222,6 +264,7 @@ export function RichBookmarkCard({
 
   return (
     <div
+      ref={cardRef}
       className={`rich-bookmark-card ${isSelected ? "selected" : ""} ${bookmark.color ? "has-custom-color" : ""} entrance-animation ${delayClass}`}
       data-id={bookmark.id}
       data-index={index}

@@ -446,14 +446,25 @@ export async function fetchMetadata(url: string): Promise<{
       title?: string;
       description?: string;
       og_image?: string;
-    }>("/bookmarks/fetch-metadata", {
-      method: "POST",
-      body: JSON.stringify({ url }),
-    });
+    }>(
+      "/bookmarks/fetch-metadata",
+      {
+        method: "POST",
+        body: JSON.stringify({ url }),
+      },
+      3500,
+    );
     return metadata;
-  } catch (err) {
-    logger.error("Failed to fetch metadata", { url, err });
-    throw err;
+  } catch {
+    try {
+      return {
+        title: new URL(url).hostname,
+        description: "",
+        url,
+      };
+    } catch {
+      return { title: url, description: "", url };
+    }
   }
 }
 

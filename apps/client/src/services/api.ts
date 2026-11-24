@@ -39,7 +39,7 @@ const pendingRequests = new Map<string, Promise<unknown>>();
 const requestMetadata = new Map<string, { timestamp: number }>();
 
 // Default timeout for requests (30 seconds)
-const DEFAULT_TIMEOUT_MS = 30000;
+const DEFAULT_TIMEOUT_MS = 12000;
 
 // Max cache size to prevent memory leaks
 const MAX_CACHE_SIZE = 100;

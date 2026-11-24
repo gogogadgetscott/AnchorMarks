@@ -211,9 +211,12 @@ async function fetchMetadata(req, res) {
   const { url } = req.validated;
   try {
     if (config.NODE_ENV === "production" && (await isPrivateAddress(url)))
-      return res
-        .status(403)
-        .json({ error: "Cannot fetch metadata from private addresses" });
+      return res.json({
+        title: new URL(url).hostname,
+        description: "",
+        url,
+        previewUnavailable: true,
+      });
     const metadata = await fetchUrlMetadata(url);
     res.json(metadata);
   } catch (metaErr) {
@@ -247,22 +250,6 @@ async function createBookmark(req, res) {
   try {
     if (!hasOwnedFolder(db, req.user.id, folder_id)) {
       return res.status(400).json({ error: "Invalid folder" });
-    }
-    if (!title || !description || !og_image) {
-      try {
-        const metadata = await fetchUrlMetadata(url);
-        if (metadata) {
-          if (!title) title = metadata.title;
-          if (!description) description = metadata.description;
-          if (!og_image) og_image = metadata.og_image;
-        }
-      } catch (metaErr) {
-        if (config.NODE_ENV !== "test")
-          logger.warn(
-            "Could not fetch metadata during bookmark creation",
-            metaErr,
-          );
-      }
     }
     const maxPos = db
       .prepare("SELECT MAX(position) as max FROM bookmarks WHERE user_id = ?")
@@ -301,6 +288,30 @@ async function createBookmark(req, res) {
     );
     const bookmark = bookmarkModel.getBookmarkById(db, req.user.id, id);
     bookmark.tags_detailed = parseTagsDetailed(bookmark.tags_detailed);
+    if (!title || !description || !og_image) {
+      // Metadata enrichment is fire-and-forget after the insert, so saving
+      // is never blocked by slow or unauthenticated external services.
+      void fetchUrlMetadata(url)
+        .then((metadata) => {
+          if (!metadata) return;
+          const updates = {};
+          const current = bookmarkModel.getBookmarkById(db, req.user.id, id);
+          if (!title && metadata.title && current?.title === url)
+            updates.title = metadata.title;
+          if (!description && metadata.description && !current?.description)
+            updates.description = metadata.description;
+          if (!og_image && metadata.og_image && !current?.og_image)
+            updates.og_image = metadata.og_image;
+          if (Object.keys(updates).length > 0) {
+            bookmarkModel.updateBookmark(db, req.user.id, id, updates);
+            broadcast(req.user.id, { type: "bookmarks:changed" });
+          }
+        })
+        .catch((metaErr) => {
+          if (config.NODE_ENV !== "test")
+            logger.debug("Deferred metadata fetch failed", metaErr);
+        });
+    }
     broadcast(req.user.id, { type: "bookmarks:changed" });
     res.json(bookmark);
   } catch (err) {

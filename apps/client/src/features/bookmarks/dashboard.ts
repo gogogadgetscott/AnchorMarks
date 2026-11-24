@@ -648,7 +648,7 @@ export async function renderDashboard(): Promise<void> {
         cooccurrence: Array.isArray(res?.cooccurrence) ? res.cooccurrence : [],
       };
     } catch (err) {
-      console.error("Failed to load tag analytics", err);
+      console.debug("Tag analytics deferred or timed out", err);
       tagAnalyticsData = { tags: [], cooccurrence: [] };
     }
   }
@@ -1047,7 +1047,7 @@ export async function initTagAnalyticsWidgets(): Promise<void> {
       }
     });
   } catch (err) {
-    console.error("Failed to load tag analytics", err);
+    console.debug("Tag analytics deferred or timed out", err);
   }
 }
 
@@ -1064,41 +1064,45 @@ async function ensureWidgetsData(): Promise<void> {
     widgetsLoading.add(getWidgetCacheKey(widget));
   });
 
-  await Promise.all(
-    widgetsToLoad.map(async (widget) => {
-      const linkedId = getWidgetLinkedId(widget);
-      const cacheKey = getWidgetCacheKey(widget);
+  for (let start = 0; start < widgetsToLoad.length; start += 4) {
+    await Promise.all(
+      widgetsToLoad.slice(start, start + 4).map(async (widget) => {
+        const linkedId = getWidgetLinkedId(widget);
+        const cacheKey = getWidgetCacheKey(widget);
 
-      if (!linkedId) {
-        widgetsLoading.delete(cacheKey);
-        return;
-      }
+        if (!linkedId) {
+          widgetsLoading.delete(cacheKey);
+          return;
+        }
 
-      let endpoint = "";
-      if (widget.type === "folder") {
-        endpoint = `/bookmarks?folder_id=${encodeURIComponent(linkedId)}&limit=500`;
-        if (state.includeChildBookmarks) endpoint += "&include_children=true";
-      } else if (widget.type === "tag") {
-        endpoint = `/bookmarks?tags=${encodeURIComponent(linkedId)}&limit=500`;
-      }
+        let endpoint = "";
+        if (widget.type === "folder") {
+          endpoint = `/bookmarks?folder_id=${encodeURIComponent(linkedId)}&limit=500`;
+          if (state.includeChildBookmarks) endpoint += "&include_children=true";
+        } else if (widget.type === "tag") {
+          endpoint = `/bookmarks?tags=${encodeURIComponent(linkedId)}&limit=500`;
+        }
 
-      try {
-        const response = await api<Bookmark[] | { bookmarks?: Bookmark[] }>(
-          endpoint,
-        );
-        const bookmarks = Array.isArray(response)
-          ? response
-          : Array.isArray(response?.bookmarks)
-            ? response.bookmarks
-            : [];
-        state.setWidgetDataCache(cacheKey, bookmarks);
-      } catch (err) {
-        console.error("Failed to load dashboard widget data", err);
-      } finally {
-        widgetsLoading.delete(cacheKey);
-      }
-    }),
-  );
+        try {
+          const response = await api<Bookmark[] | { bookmarks?: Bookmark[] }>(
+            endpoint,
+            {},
+            6000,
+          );
+          const bookmarks = Array.isArray(response)
+            ? response
+            : Array.isArray(response?.bookmarks)
+              ? response.bookmarks
+              : [];
+          state.setWidgetDataCache(cacheKey, bookmarks);
+        } catch (err) {
+          console.debug("Dashboard widget deferred or timed out", err);
+        } finally {
+          widgetsLoading.delete(cacheKey);
+        }
+      }),
+    );
+  }
 
   if (state.currentView === "dashboard") {
     renderDashboard();

@@ -5,7 +5,65 @@ const { parseHtmlMetadata } = require("../utils/htmlUtils");
 const config = require("../config");
 const { resolveToPublicIp } = require("../utils/ssrfUtils");
 
-async function fetchUrlMetadata(url, redirectCount = 0) {
+const successCache = new Map();
+const negativeCache = new Map();
+const inFlight = new Map();
+const pendingQueue = [];
+let activeRequests = 0;
+const MAX_CONCURRENT = 2;
+const SUCCESS_TTL_MS = 60 * 60 * 1000;
+const NEGATIVE_TTL_MS = 10 * 60 * 1000;
+
+function cacheGet(cache, key, ttl) {
+  const entry = cache.get(key);
+  if (!entry) return undefined;
+  if (Date.now() - entry.timestamp > ttl) {
+    cache.delete(key);
+    return undefined;
+  }
+  return entry.value;
+}
+
+function enqueueMetadataRequest(key, loader) {
+  const cachedSuccess = cacheGet(successCache, key, SUCCESS_TTL_MS);
+  if (cachedSuccess) return Promise.resolve(cachedSuccess);
+  const cachedFailure = cacheGet(negativeCache, key, NEGATIVE_TTL_MS);
+  if (cachedFailure)
+    return Promise.reject(new Error("cached metadata failure"));
+  const existing = inFlight.get(key);
+  if (existing) return existing;
+
+  const promise = new Promise((resolve, reject) => {
+    pendingQueue.push(async () => {
+      try {
+        const value = await loader();
+        successCache.set(key, { timestamp: Date.now(), value });
+        resolve(value);
+      } catch (error) {
+        negativeCache.set(key, { timestamp: Date.now(), value: true });
+        reject(error);
+      } finally {
+        activeRequests--;
+        inFlight.delete(key);
+        const next = pendingQueue.shift();
+        if (next) {
+          activeRequests++;
+          void next();
+        }
+      }
+    });
+  });
+  inFlight.set(key, promise);
+
+  if (activeRequests < MAX_CONCURRENT) {
+    activeRequests++;
+    const next = pendingQueue.shift();
+    if (next) void next();
+  }
+  return promise;
+}
+
+async function fetchUrlMetadataInternal(url, redirectCount = 0) {
   if (redirectCount > 5) {
     throw new Error("Too many redirects");
   }
@@ -35,7 +93,7 @@ async function fetchUrlMetadata(url, redirectCount = 0) {
       hostname: resolvedIp || urlObj.hostname,
       port: urlObj.port || (isHttps ? 443 : 80),
       path: urlObj.pathname + urlObj.search,
-      timeout: 5000,
+      timeout: 3500,
       headers: {
         Host: urlObj.host,
         "User-Agent":
@@ -57,7 +115,7 @@ async function fetchUrlMetadata(url, redirectCount = 0) {
             response.headers.location,
             url,
           ).toString();
-          return fetchUrlMetadata(redirectUrl, redirectCount + 1)
+          return fetchUrlMetadataInternal(redirectUrl, redirectCount + 1)
             .then(resolve)
             .catch(reject);
         } catch (e) {
@@ -118,6 +176,13 @@ async function fetchUrlMetadata(url, redirectCount = 0) {
 
     request.end();
   });
+}
+
+async function fetchUrlMetadata(url, redirectCount = 0) {
+  if (redirectCount > 0) {
+    return fetchUrlMetadataInternal(url, redirectCount);
+  }
+  return enqueueMetadataRequest(url, () => fetchUrlMetadataInternal(url, 0));
 }
 
 function detectContentType(url) {

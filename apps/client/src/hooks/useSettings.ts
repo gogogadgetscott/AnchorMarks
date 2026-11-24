@@ -43,7 +43,7 @@ export function useSettings() {
 
   const loadSettings = useCallback(async (): Promise<void> => {
     try {
-      const settings = await api<any>("/settings");
+      const settings = await api<any>("/settings", {}, 8000);
 
       // UI settings
       setViewMode(settings.view_mode || "grid");
@@ -123,7 +123,7 @@ export function useSettings() {
         if (section) section.classList.add("collapsed");
       });
     } catch (err) {
-      logger.error("Failed to load settings", err);
+      logger.debug("Settings load deferred or timed out", err);
     }
   }, [
     setViewMode,

@@ -3,12 +3,16 @@ export async function saveSettings(
   updates: Record<string, any>,
 ): Promise<void> {
   try {
-    await api("/settings", {
-      method: "PUT",
-      body: JSON.stringify(updates),
-    });
+    await api(
+      "/settings",
+      {
+        method: "PUT",
+        body: JSON.stringify(updates),
+      },
+      8000,
+    );
   } catch (err) {
-    logger.error("Failed to save settings", err);
+    logger.debug("Settings save deferred or timed out", err);
   }
 }
 import { applyTheme } from "@features/state.ts";
@@ -48,7 +52,7 @@ import {
 // For initial app load, use the useSettings() React hook instead.
 export async function loadSettings(): Promise<void> {
   try {
-    const settings = await api<any>("/settings");
+    const settings = await api<any>("/settings", {}, 8000);
 
     // Write to React context bridges (preferred path)
     try {
