@@ -5,10 +5,11 @@ import { showConfirm } from "./ConfirmContext";
 import { showToast } from "./ToastContext";
 import { api } from "@services/api.ts";
 import * as legacyState from "@features/state.ts";
-import type { Bookmark } from "../types/index";
+import type { Bookmark, ReadingState } from "../types/index";
 
 export function useBookmarkActions() {
-  const { bookmarks, setBookmarks, clearViewCache } = useBookmarks();
+  const { bookmarks, setBookmarks, clearViewCache, loadBookmarks } =
+    useBookmarks();
   const { openBookmarkModal, closeModal } = useModal();
 
   const archiveBookmark = useCallback(
@@ -103,9 +104,41 @@ export function useBookmarkActions() {
         folderId: bookmark.folder_id || null,
         color: bookmark.color || "",
         og_image: bookmark.og_image || undefined,
+        readingState: bookmark.reading_state || "unread",
       });
     },
     [bookmarks, openBookmarkModal],
+  );
+
+  const setReadingState = useCallback(
+    async (
+      id: string,
+      readingState: ReadingState,
+      options: { archive?: boolean } = {},
+    ) => {
+      try {
+        await api(`/bookmarks/${id}/reading-state`, {
+          method: "POST",
+          body: JSON.stringify({
+            reading_state: readingState,
+            ...(options.archive === undefined
+              ? {}
+              : { archive: options.archive }),
+          }),
+        });
+        clearViewCache();
+        await loadBookmarks();
+        const messages: Record<ReadingState, string> = {
+          unread: "Moved back to your reading queue",
+          reading: "Marked as currently reading",
+          done: options.archive ? "Finished and archived" : "Marked as read",
+        };
+        showToast(messages[readingState], "success");
+      } catch (err: unknown) {
+        showToast((err as Error).message, "error");
+      }
+    },
+    [clearViewCache, loadBookmarks],
   );
 
   const createBookmark = useCallback(
@@ -160,5 +193,6 @@ export function useBookmarkActions() {
     editBookmark,
     createBookmark,
     updateBookmark,
+    setReadingState,
   };
 }

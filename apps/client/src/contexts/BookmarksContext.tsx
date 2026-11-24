@@ -119,6 +119,7 @@ const initialFilterConfig: FilterConfig = {
   tags: [],
   tagSort: "count_desc",
   tagMode: "OR",
+  readingState: "all",
 };
 
 export function BookmarksProvider({ children }: { children: ReactNode }) {
@@ -252,6 +253,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
             activeFilters.tagMode ?? "OR",
             activeFilters.search ?? "",
             activeFilters.sort ?? "",
+            activeFilters.readingState ?? "all",
           ].join("|")
         : null;
 
@@ -287,6 +289,10 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         if (currentView === "favorites") params.append("favorites", "true");
         if (currentView === "archived") params.append("archived", "true");
         if (currentView === "most-used") params.append("most_used", "true");
+        if (currentView === "read-later")
+          params.append("reading_queue", "true");
+        if (activeFilters.readingState && activeFilters.readingState !== "all")
+          params.append("reading_state", activeFilters.readingState);
 
         // Folder navigation ("folder" view) or sidebar folder filter (all other views)
         // Always include folder_id if currentFolder is set, regardless of view
@@ -404,6 +410,9 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       if (currentView === "favorites") params.append("favorites", "true");
       if (currentView === "archived") params.append("archived", "true");
       if (currentView === "most-used") params.append("most_used", "true");
+      if (currentView === "read-later") params.append("reading_queue", "true");
+      if (filterConfig.readingState && filterConfig.readingState !== "all")
+        params.append("reading_state", filterConfig.readingState);
 
       // UIBridge currentFolder (filter-dropdown path) or filterConfig.folder (sidebar path)
       const folderForMore = currentFolder ?? filterConfig.folder ?? null;

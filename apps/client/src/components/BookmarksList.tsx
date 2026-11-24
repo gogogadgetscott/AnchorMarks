@@ -136,6 +136,7 @@ export function BookmarksList() {
     deleteBookmark,
     toggleFavorite,
     editBookmark,
+    setReadingState,
   } = useBookmarkActions();
 
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -180,6 +181,9 @@ export function BookmarksList() {
       if (currentView === "favorites") params.append("favorites", "true");
       if (currentView === "archived") params.append("archived", "true");
       if (currentView === "most-used") params.append("most_used", "true");
+      if (currentView === "read-later") params.append("reading_queue", "true");
+      if (filterConfig.readingState && filterConfig.readingState !== "all")
+        params.append("reading_state", filterConfig.readingState);
       const folderFilter = filterConfig.folder ?? null;
       if (
         folderFilter &&
@@ -333,6 +337,14 @@ export function BookmarksList() {
             // onArchive handles both directions based on current archived state
             onArchive: () =>
               b.is_archived ? unarchiveBookmark(b.id) : archiveBookmark(b.id),
+            onReadingState: () => {
+              const readingState = b.reading_state ?? "unread";
+              if (readingState === "unread")
+                void setReadingState(b.id, "reading");
+              else if (readingState === "reading")
+                void setReadingState(b.id, "done", { archive: true });
+              else void setReadingState(b.id, "unread", { archive: false });
+            },
             onDelete: () => deleteBookmark(b.id),
             onTagClick: handleTagClick,
             onSelect: (idx: number, shiftKey: boolean) =>

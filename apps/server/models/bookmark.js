@@ -73,6 +73,8 @@ function listBookmarks(db, userId, opts = {}) {
     offset,
     archived,
     most_used,
+    reading_state,
+    reading_queue,
   } = opts;
 
   const isFavoritesView = favorites === true || favorites === "true";
@@ -134,6 +136,15 @@ function listBookmarks(db, userId, opts = {}) {
     whereClauses.push("b.click_count > 0");
   }
 
+  if (reading_state && ["unread", "reading", "done"].includes(reading_state)) {
+    whereClauses.push("COALESCE(b.reading_state, 'unread') = ?");
+    filterParams.push(reading_state);
+  } else if (reading_queue === true || reading_queue === "true") {
+    whereClauses.push(
+      "COALESCE(b.reading_state, 'unread') IN ('unread', 'reading')",
+    );
+  }
+
   // Handle search matching
   if (hasSearch) {
     whereClauses.push("bookmarks_fts MATCH ?");
@@ -176,6 +187,11 @@ function listBookmarks(db, userId, opts = {}) {
   // Handle archiving filter
   if (isFavoritesView) {
     whereClauses.push("b.is_archived = 0");
+  } else if (
+    (reading_queue === true || reading_queue === "true") &&
+    reading_state === "done"
+  ) {
+    // Completed items can be archived; keep them in the completed status view.
   } else {
     if (isArchivedView) {
       whereClauses.push("b.is_archived = 1");
@@ -299,7 +315,16 @@ function listBookmarks(db, userId, opts = {}) {
 }
 
 function listViewTags(db, userId, opts = {}) {
-  const { folder_id, favorites, archived, most_used, tags, tagMode } = opts;
+  const {
+    folder_id,
+    favorites,
+    archived,
+    most_used,
+    tags,
+    tagMode,
+    reading_state,
+    reading_queue,
+  } = opts;
   const isFavoritesView = favorites === true || favorites === "true";
   const isArchivedView = archived === true || archived === "true";
   const isMostUsedView = most_used === true || most_used === "true";
@@ -318,6 +343,11 @@ function listViewTags(db, userId, opts = {}) {
     bookmarkClauses.push("b.is_archived = 1");
   } else if (isMostUsedView) {
     bookmarkClauses.push("b.click_count > 0 AND b.is_archived = 0");
+  } else if (
+    (reading_queue === true || reading_queue === "true") &&
+    reading_state === "done"
+  ) {
+    // Completed read-later items may already be archived.
   } else {
     bookmarkClauses.push("b.is_archived = 0");
   }
@@ -325,6 +355,15 @@ function listViewTags(db, userId, opts = {}) {
   if (folder_id) {
     bookmarkClauses.push("b.folder_id = ?");
     params.push(folder_id);
+  }
+
+  if (reading_state && ["unread", "reading", "done"].includes(reading_state)) {
+    bookmarkClauses.push("COALESCE(b.reading_state, 'unread') = ?");
+    params.push(reading_state);
+  } else if (reading_queue === true || reading_queue === "true") {
+    bookmarkClauses.push(
+      "COALESCE(b.reading_state, 'unread') IN ('unread', 'reading')",
+    );
   }
 
   if (tags) {
@@ -376,7 +415,15 @@ function listViewTags(db, userId, opts = {}) {
 }
 
 function listViewFolderIds(db, userId, opts = {}) {
-  const { favorites, archived, most_used, tags, tagMode } = opts;
+  const {
+    favorites,
+    archived,
+    most_used,
+    tags,
+    tagMode,
+    reading_state,
+    reading_queue,
+  } = opts;
   const isFavoritesView = favorites === true || favorites === "true";
   const isArchivedView = archived === true || archived === "true";
   const isMostUsedView = most_used === true || most_used === "true";
@@ -394,8 +441,21 @@ function listViewFolderIds(db, userId, opts = {}) {
     query += " AND b.is_archived = 1";
   } else if (isMostUsedView) {
     query += " AND b.click_count > 0 AND b.is_archived = 0";
+  } else if (
+    (reading_queue === true || reading_queue === "true") &&
+    reading_state === "done"
+  ) {
+    // Completed read-later items may already be archived.
   } else {
     query += " AND b.is_archived = 0";
+  }
+
+  if (reading_state && ["unread", "reading", "done"].includes(reading_state)) {
+    query += " AND COALESCE(b.reading_state, 'unread') = ?";
+    params.push(reading_state);
+  } else if (reading_queue === true || reading_queue === "true") {
+    query +=
+      " AND COALESCE(b.reading_state, 'unread') IN ('unread', 'reading')";
   }
 
   if (tags) {
@@ -466,11 +526,16 @@ function createBookmark(db, userIdOrData, maybeData) {
   const content_type = data.content_type || data.contentType || "link";
   const color = data.color || null;
   const og_image = data.og_image || null;
+  const reading_state = ["unread", "reading", "done"].includes(
+    data.reading_state,
+  )
+    ? data.reading_state
+    : "unread";
 
   assertFolderOwnership(db, userId, folder_id);
 
   db.prepare(
-    "INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, position, content_type, color, og_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO bookmarks (id, user_id, folder_id, title, url, description, favicon, position, content_type, color, og_image, reading_state, read_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'done' THEN CURRENT_TIMESTAMP ELSE NULL END)",
   ).run(
     id,
     userId,
@@ -483,6 +548,8 @@ function createBookmark(db, userIdOrData, maybeData) {
     content_type,
     color,
     og_image,
+    reading_state,
+    reading_state,
   );
 
   return getBookmarkById(db, userId, id);
@@ -501,6 +568,9 @@ function updateBookmark(db, userId, id, fields = {}) {
     tag_colors,
     color,
     is_archived,
+    reading_state,
+    read_at,
+    archived_at,
     og_image,
   } = fields;
   assertFolderOwnership(db, userId, folder_id);
@@ -544,6 +614,26 @@ function updateBookmark(db, userId, id, fields = {}) {
   if (is_archived !== undefined) {
     setFields.push("is_archived = ?");
     values.push(is_archived);
+    setFields.push(
+      "archived_at = CASE WHEN ? = 1 THEN COALESCE(archived_at, CURRENT_TIMESTAMP) ELSE NULL END",
+    );
+    values.push(is_archived ? 1 : 0);
+  }
+  if (reading_state !== undefined) {
+    setFields.push("reading_state = ?");
+    values.push(reading_state);
+    setFields.push(
+      "read_at = CASE WHEN ? = 'done' THEN COALESCE(read_at, CURRENT_TIMESTAMP) ELSE NULL END",
+    );
+    values.push(reading_state);
+  }
+  if (read_at !== undefined && reading_state === undefined) {
+    setFields.push("read_at = ?");
+    values.push(read_at);
+  }
+  if (archived_at !== undefined && is_archived === undefined) {
+    setFields.push("archived_at = ?");
+    values.push(archived_at);
   }
   if (og_image !== undefined) {
     setFields.push("og_image = ?");
@@ -588,6 +678,58 @@ function deleteBookmark(db, userId, id) {
 
 function deleteAllForUser(db, userId) {
   return db.prepare("DELETE FROM bookmarks WHERE user_id = ?").run(userId);
+}
+
+function setReadingState(db, userId, ids, readingState, archive) {
+  const statements = [];
+  if (archive === true) {
+    statements.push(
+      db.prepare(`
+      UPDATE bookmarks
+      SET reading_state = ?,
+          read_at = CASE WHEN ? = 'done' THEN COALESCE(read_at, CURRENT_TIMESTAMP) ELSE NULL END,
+          is_archived = 1,
+          archived_at = CURRENT_TIMESTAMP,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND user_id = ?
+    `),
+    );
+  } else if (archive === false) {
+    statements.push(
+      db.prepare(`
+      UPDATE bookmarks
+      SET reading_state = ?,
+          read_at = CASE WHEN ? = 'done' THEN COALESCE(read_at, CURRENT_TIMESTAMP) ELSE NULL END,
+          is_archived = 0,
+          archived_at = NULL,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND user_id = ?
+    `),
+    );
+  } else {
+    statements.push(
+      db.prepare(`
+      UPDATE bookmarks
+      SET reading_state = ?,
+          read_at = CASE WHEN ? = 'done' THEN COALESCE(read_at, CURRENT_TIMESTAMP) ELSE NULL END,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND user_id = ?
+    `),
+    );
+  }
+
+  return db.transaction(() => {
+    let changes = 0;
+    for (const id of ids) {
+      changes += statements[0].run(
+        readingState,
+        readingState,
+        id,
+        userId,
+      ).changes;
+    }
+    return changes;
+  })();
 }
 
 function setThumbnailLocal(db, bookmarkId, localPath, userId) {
@@ -683,4 +825,5 @@ module.exports = {
   getSampleForSuggestion,
   getRecentCountForDomain,
   getMostClickedForDomain,
+  setReadingState,
 };

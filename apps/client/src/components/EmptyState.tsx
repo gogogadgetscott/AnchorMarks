@@ -69,6 +69,21 @@ export function EmptyState() {
       );
     }
 
+    if (currentView === "read-later") {
+      return (
+        <div className="empty-state-content">
+          <Icon
+            name="bookmark"
+            size={48}
+            className="empty-state-icon"
+            style={{ color: "var(--text-tertiary)" }}
+          />
+          <h3>Your reading queue is clear</h3>
+          <p>Mark a bookmark as unread or currently reading to keep it here.</p>
+        </div>
+      );
+    }
+
     if (currentView === "most-used") {
       return (
         <div className="empty-state-content">

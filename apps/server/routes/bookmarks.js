@@ -40,6 +40,13 @@ module.exports = function createBookmarksRouter(db) {
     validateBody(schemas.bulkIds),
     ctrl.bulkUnarchive,
   );
+  router.post(
+    "/bulk/reading-state",
+    auth,
+    csrf,
+    validateBody(schemas.bulkReadingState),
+    ctrl.bulkReadingState,
+  );
   router.get("/:id", auth, ctrl.getBookmark);
   router.put(
     "/:id",
@@ -51,6 +58,13 @@ module.exports = function createBookmarksRouter(db) {
   router.delete("/:id", auth, csrf, ctrl.deleteBookmark);
   router.post("/:id/archive", auth, csrf, ctrl.archiveBookmark);
   router.post("/:id/unarchive", auth, csrf, ctrl.unarchiveBookmark);
+  router.post(
+    "/:id/reading-state",
+    auth,
+    csrf,
+    validateBody(schemas.readingStateUpdate),
+    ctrl.updateReadingState,
+  );
   router.post("/:id/refresh-favicon", auth, csrf, ctrl.refreshFavicon);
   router.post("/:id/click", auth, csrf, ctrl.trackClick);
   router.post("/:id/thumbnail", auth, csrf, ctrl.generateThumbnail);

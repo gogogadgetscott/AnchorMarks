@@ -29,6 +29,7 @@ const defaultProps = {
   onFavorite: noop,
   onCopy: noop,
   onArchive: noop,
+  onReadingState: noop,
   onDelete: noop,
   onTagClick: noop,
   onSelect: noop,
@@ -71,6 +72,20 @@ describe("BookmarkCard (React)", () => {
     );
     expect(screen.getByTitle("Unarchive bookmark")).toBeTruthy();
     expect(screen.queryByTitle("Archive bookmark")).toBeNull();
+  });
+
+  it("offers the next reading action", () => {
+    const onReadingState = vi.fn();
+    renderWithProviders(
+      <BookmarkCard
+        {...defaultProps}
+        bookmark={{ ...mockBookmark, reading_state: "reading" }}
+        onReadingState={onReadingState}
+      />,
+    );
+    fireEvent.click(screen.getByTitle("Mark as done and archive"));
+    expect(onReadingState).toHaveBeenCalledOnce();
+    expect(screen.getByText("Currently reading")).toBeTruthy();
   });
 
   it("shows favorite indicator when is_favorite is true", () => {

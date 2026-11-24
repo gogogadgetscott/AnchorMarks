@@ -19,6 +19,7 @@ interface RichBookmarkCardProps {
   onFavorite: () => void;
   onCopy: () => void;
   onArchive: () => void;
+  onReadingState: () => void;
   onDelete: () => void;
   onTagClick: (tagName: string) => void;
   onSelect: (index: number, shiftKey: boolean) => void;
@@ -53,6 +54,7 @@ export function RichBookmarkCard({
   onFavorite,
   onCopy,
   onArchive,
+  onReadingState,
   onDelete,
   onTagClick,
   onSelect,
@@ -102,6 +104,20 @@ export function RichBookmarkCard({
       <Icon name="star-filled" size={12} />
     </span>
   ) : null;
+
+  const readingState = bookmark.reading_state ?? "unread";
+  const readingLabel =
+    readingState === "reading"
+      ? "Currently reading"
+      : readingState === "done"
+        ? "Done"
+        : "Unread";
+  const nextReadingTitle =
+    readingState === "unread"
+      ? "Start reading"
+      : readingState === "reading"
+        ? "Mark as done and archive"
+        : "Move back to reading queue";
 
   const tagsEl = tagEntries.length ? (
     <div className="bookmark-tags">
@@ -224,6 +240,9 @@ export function RichBookmarkCard({
         <div className="bookmark-title">
           {favoriteIndicator}
           {bookmark.title}
+          <span className={`reading-status reading-status-${readingState}`}>
+            {readingLabel}
+          </span>
         </div>
         {bookmark.description && (
           <div className="bookmark-description">{bookmark.description}</div>
@@ -237,6 +256,13 @@ export function RichBookmarkCard({
             icon="edit"
             title="Edit bookmark"
             onClick={onEdit}
+          />
+          <Button
+            variant={readingState === "reading" ? "primary" : "ghost"}
+            className="bookmark-action-btn"
+            icon={readingState === "reading" ? "check-square" : "bookmark"}
+            title={nextReadingTitle}
+            onClick={onReadingState}
           />
           <Button
             variant={bookmark.is_favorite ? "warning" : "ghost"}

@@ -5,6 +5,7 @@ import { createFocusTrap, removeFocusTrap } from "@utils/focus-trap.ts";
 import { fetchMetadata } from "@features/bookmarks/bookmarks.ts";
 import { useBookmarkActions } from "@/contexts/useBookmarkActions";
 import { SmartTagSuggestions } from "@components/SmartTagSuggestions";
+import type { ReadingState } from "@/types";
 
 const COLOR_OPTIONS = [
   { color: "", label: "No color" },
@@ -121,6 +122,7 @@ export default function BookmarkModal() {
       color: bookmarkFormData.color,
       tags: bookmarkFormData.tags,
       og_image: bookmarkFormData.og_image || undefined,
+      reading_state: bookmarkFormData.readingState,
     };
 
     if (bookmarkFormData.id) {
@@ -233,6 +235,23 @@ export default function BookmarkModal() {
           )}
 
           {/* URL field */}
+          <div className="form-group">
+            <label htmlFor="bookmark-reading-state">Reading status</label>
+            <select
+              id="bookmark-reading-state"
+              value={bookmarkFormData.readingState}
+              onChange={(e) =>
+                setBookmarkFormData({
+                  readingState: e.target.value as ReadingState,
+                })
+              }
+            >
+              <option value="unread">Unread</option>
+              <option value="reading">Currently reading</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+
           <div className="form-group">
             <label htmlFor="bookmark-url">URL *</label>
             <div

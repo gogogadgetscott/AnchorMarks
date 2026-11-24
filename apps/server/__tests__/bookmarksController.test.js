@@ -15,6 +15,7 @@ const app = require("../app");
 let agent;
 let csrfToken;
 let bookmarkId;
+let completedBookmarkId;
 
 beforeAll(async () => {
   agent = request.agent(app);
@@ -105,6 +106,94 @@ describe("Bookmarks Controller", () => {
       .send({ title: "Updated Title", tags: "test" });
     expect(res.status).toBe(200);
     expect(res.body.title).toBe("Updated Title");
+  });
+
+  it("updates reading state and timestamps completed reads", async () => {
+    const created = await agent
+      .post("/api/bookmarks")
+      .set("X-CSRF-Token", csrfToken)
+      .send({
+        url: "https://example.org/reading-state",
+        title: "Reading State",
+      });
+    expect(created.status).toBe(200);
+    completedBookmarkId = created.body.id;
+
+    const started = await agent
+      .post(`/api/bookmarks/${completedBookmarkId}/reading-state`)
+      .set("X-CSRF-Token", csrfToken)
+      .send({ reading_state: "reading" });
+    expect(started.status).toBe(200);
+    expect(started.body.data.reading_state).toBe("reading");
+    expect(started.body.data.read_at).toBeNull();
+
+    const finished = await agent
+      .post(`/api/bookmarks/${completedBookmarkId}/reading-state`)
+      .set("X-CSRF-Token", csrfToken)
+      .send({ reading_state: "done", archive: true });
+    expect(finished.status).toBe(200);
+    expect(finished.body.data.reading_state).toBe("done");
+    expect(finished.body.data.is_archived).toBe(1);
+    expect(finished.body.data.read_at).toBeTruthy();
+    expect(finished.body.data.archived_at).toBeTruthy();
+  });
+
+  it("bulk updates reading state only for the signed-in user", async () => {
+    const otherAgent = request.agent(app);
+    const registration = await otherAgent.post("/api/auth/register").send({
+      email: `other-reading-test${Date.now()}@example.com`,
+      password: "password123",
+    });
+    expect(registration.status).toBe(200);
+    const foreign = await otherAgent
+      .post("/api/bookmarks")
+      .set("X-CSRF-Token", registration.body.csrfToken)
+      .send({ url: "https://example.org/private-read", title: "Private" });
+    expect(foreign.status).toBe(200);
+
+    const own = await agent
+      .post("/api/bookmarks")
+      .set("X-CSRF-Token", csrfToken)
+      .send({ url: "https://example.org/own-read", title: "Own" });
+    expect(own.status).toBe(200);
+
+    const result = await agent
+      .post("/api/bookmarks/bulk/reading-state")
+      .set("X-CSRF-Token", csrfToken)
+      .send({ ids: [own.body.id, foreign.body.id], reading_state: "reading" });
+    expect(result.status).toBe(200);
+    expect(result.body.data.updated).toBe(1);
+
+    const foreignAfter = await otherAgent.get(
+      `/api/bookmarks/${foreign.body.id}`,
+    );
+    expect(foreignAfter.body.reading_state).toBe("unread");
+  });
+
+  it("lists the read-later queue and completed archived items", async () => {
+    const queued = await agent
+      .post("/api/bookmarks")
+      .set("X-CSRF-Token", csrfToken)
+      .send({
+        url: "https://example.org/queued-read",
+        title: "Queued",
+        reading_state: "reading",
+      });
+    expect(queued.status).toBe(200);
+
+    const queue = await agent.get("/api/bookmarks?reading_queue=true");
+    expect(queue.status).toBe(200);
+    expect(queue.body.map((item) => item.id)).toContain(queued.body.id);
+    expect(queue.body.map((item) => item.id)).not.toContain(
+      completedBookmarkId,
+    );
+
+    const completed = await agent.get(
+      "/api/bookmarks?reading_queue=true&reading_state=done",
+    );
+    expect(completed.body.map((item) => item.id)).toContain(
+      completedBookmarkId,
+    );
   });
 
   it("does not allow another user to modify bookmark tags", async () => {

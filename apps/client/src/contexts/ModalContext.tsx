@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { registerModalDispatcher } from "@utils/modal-controller";
+import type { ReadingState } from "../types/index";
 
 export interface BookmarkFormData {
   id?: string;
@@ -18,6 +19,7 @@ export interface BookmarkFormData {
   folderId: string | null;
   color?: string;
   og_image?: string;
+  readingState: ReadingState;
 }
 
 export interface TagFormData {
@@ -71,6 +73,7 @@ const initialBookmarkFormData: BookmarkFormData = {
   folderId: null,
   color: "",
   og_image: undefined,
+  readingState: "unread",
 };
 
 const initialTagFormData: TagFormData = {

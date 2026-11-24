@@ -70,4 +70,20 @@ describe("useBulkOps tag payloads", () => {
       }),
     });
   });
+
+  it("marks a selection done and archives it in one request", async () => {
+    const { result } = renderHook(() => useBulkOps());
+
+    await act(() => result.current.bulkReadingState("done"));
+
+    expect(mocks.api).toHaveBeenCalledWith("/bookmarks/bulk/reading-state", {
+      method: "POST",
+      body: JSON.stringify({
+        ids: ["bookmark-1"],
+        reading_state: "done",
+        archive: true,
+      }),
+    });
+    expect(mocks.loadBookmarks).toHaveBeenCalledOnce();
+  });
 });

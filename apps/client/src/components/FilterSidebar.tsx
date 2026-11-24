@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useModal } from "@contexts/ModalContext";
 import { useBookmarks } from "@contexts/BookmarksContext";
+import type { ReadingState } from "@/types";
 
 const SORT_OPTIONS: { value: string; label: string }[] = [
   { value: "recently_added", label: "Recently Added" },
@@ -18,7 +19,8 @@ const TAG_SORT_OPTIONS: { value: string; label: string }[] = [
 
 export function FilterSidebar() {
   const { closeModal } = useModal();
-  const { filterConfig, setFilterConfig, tagMetadata } = useBookmarks();
+  const { filterConfig, setFilterConfig, tagMetadata, loadBookmarks } =
+    useBookmarks();
   const [tagSearch, setTagSearch] = useState("");
 
   const allTags = Object.keys(tagMetadata || {});
@@ -50,6 +52,12 @@ export function FilterSidebar() {
     });
   };
 
+  const setReadingState = async (readingState: ReadingState | "all") => {
+    const next = { ...filterConfig, readingState };
+    setFilterConfig(next);
+    await loadBookmarks({ filterOverride: next });
+  };
+
   return (
     <div
       className="filter-sidebar"
@@ -78,6 +86,23 @@ export function FilterSidebar() {
       </div>
 
       <div className="filter-content">
+        <div className="filter-section">
+          <h4>Reading Status</h4>
+          <select
+            id="filter-reading-state"
+            className="form-input"
+            value={filterConfig.readingState ?? "all"}
+            onChange={(e) =>
+              setReadingState(e.target.value as ReadingState | "all")
+            }
+          >
+            <option value="all">Any status</option>
+            <option value="unread">Unread</option>
+            <option value="reading">Currently reading</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+
         {/* Sort Bookmarks */}
         <div className="filter-section">
           <h4>Sort Bookmarks</h4>
@@ -117,7 +142,8 @@ export function FilterSidebar() {
         <div className="filter-section">
           <h4>Active Filters</h4>
           <div className="selected-tags" id="filter-selected-tags">
-            {activeTags.length === 0 ? (
+            {activeTags.length === 0 &&
+            (filterConfig.readingState ?? "all") === "all" ? (
               <span
                 className="text-tertiary"
                 style={{ fontSize: "0.875rem", fontStyle: "italic" }}
@@ -126,19 +152,30 @@ export function FilterSidebar() {
                 No filters active
               </span>
             ) : (
-              activeTags.map((tag) => (
-                <span key={tag} className="tag-badge tag-active">
-                  {tag}
-                  <button
-                    type="button"
-                    className="tag-remove"
-                    onClick={() => removeTag(tag)}
-                    aria-label={`Remove filter ${tag}`}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))
+              <>
+                {filterConfig.readingState &&
+                  filterConfig.readingState !== "all" && (
+                    <span className="tag-badge tag-active">
+                      {filterConfig.readingState === "reading"
+                        ? "Currently reading"
+                        : filterConfig.readingState[0].toUpperCase() +
+                          filterConfig.readingState.slice(1)}
+                    </span>
+                  )}
+                {activeTags.map((tag) => (
+                  <span key={tag} className="tag-badge tag-active">
+                    {tag}
+                    <button
+                      type="button"
+                      className="tag-remove"
+                      onClick={() => removeTag(tag)}
+                      aria-label={`Remove filter ${tag}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </>
             )}
           </div>
         </div>

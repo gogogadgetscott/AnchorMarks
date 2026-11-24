@@ -56,6 +56,9 @@ function initializeDatabase(DB_PATH) {
         last_checked DATETIME,
         content_type TEXT,
         is_archived INTEGER DEFAULT 0,
+        archived_at DATETIME,
+        reading_state TEXT DEFAULT 'unread',
+        read_at DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -282,6 +285,13 @@ function initializeDatabase(DB_PATH) {
     { table: "bookmarks", column: "color", def: "TEXT" },
     { table: "bookmarks", column: "og_image", def: "TEXT" },
     {
+      table: "bookmarks",
+      column: "reading_state",
+      def: "TEXT DEFAULT 'unread'",
+    },
+    { table: "bookmarks", column: "read_at", def: "DATETIME" },
+    { table: "bookmarks", column: "archived_at", def: "DATETIME" },
+    {
       table: "user_settings",
       column: "rich_link_previews_enabled",
       def: "INTEGER DEFAULT 0",
@@ -290,14 +300,28 @@ function initializeDatabase(DB_PATH) {
   ];
 
   let migrationsRun = 0;
+  let readingStateAdded = false;
   for (const m of migrations) {
     if (addColumnIfNotExists(m.table, m.column, m.def)) {
       migrationsRun++;
+      if (m.table === "bookmarks" && m.column === "reading_state") {
+        readingStateAdded = true;
+      }
     }
+  }
+  if (readingStateAdded) {
+    db.prepare(
+      "UPDATE bookmarks SET reading_state = 'done', read_at = COALESCE(read_at, created_at)",
+    ).run();
   }
   if (migrationsRun > 0) {
     logger.info(`Migrations: added ${migrationsRun} column(s)`);
   }
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_bookmarks_reading
+      ON bookmarks(user_id, reading_state, updated_at DESC);
+  `);
 
   // Run formal migrations
   try {

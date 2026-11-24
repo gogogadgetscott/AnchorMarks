@@ -12,6 +12,7 @@ const mockFilterConfig: FilterConfig = {
 };
 
 const mockSetFilterConfig = vi.fn();
+const mockLoadBookmarks = vi.fn(() => Promise.resolve());
 
 vi.mock("@contexts/BookmarksContext", () => ({
   useBookmarks: () => ({
@@ -22,6 +23,7 @@ vi.mock("@contexts/BookmarksContext", () => ({
       react: { count: 8, color: "#0ea5e9" },
       typescript: { count: 5 },
     },
+    loadBookmarks: mockLoadBookmarks,
   }),
 }));
 
@@ -96,8 +98,9 @@ describe("FilterSidebar (React)", () => {
 
   it("calls setFilterConfig when sort changes", () => {
     renderSidebar();
-    const sortSelects = screen.getAllByRole("combobox");
-    fireEvent.change(sortSelects[0], { target: { value: "a_z" } });
+    fireEvent.change(document.querySelector("#filter-sort")!, {
+      target: { value: "a_z" },
+    });
     expect(mockSetFilterConfig).toHaveBeenCalledWith(
       expect.objectContaining({ sort: "a_z" }),
     );
@@ -105,11 +108,25 @@ describe("FilterSidebar (React)", () => {
 
   it("calls setFilterConfig when tag sort changes", () => {
     renderSidebar();
-    const sortSelects = screen.getAllByRole("combobox");
-    fireEvent.change(sortSelects[1], { target: { value: "name_asc" } });
+    fireEvent.change(document.querySelector("#filter-tag-sort")!, {
+      target: { value: "name_asc" },
+    });
     expect(mockSetFilterConfig).toHaveBeenCalledWith(
       expect.objectContaining({ tagSort: "name_asc" }),
     );
+  });
+
+  it("reloads bookmarks when the reading status changes", () => {
+    renderSidebar();
+    fireEvent.change(document.querySelector("#filter-reading-state")!, {
+      target: { value: "reading" },
+    });
+    expect(mockSetFilterConfig).toHaveBeenCalledWith(
+      expect.objectContaining({ readingState: "reading" }),
+    );
+    expect(mockLoadBookmarks).toHaveBeenCalledWith({
+      filterOverride: expect.objectContaining({ readingState: "reading" }),
+    });
   });
 
   it("filters tag list by search input", () => {

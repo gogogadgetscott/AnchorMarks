@@ -33,6 +33,12 @@ const NAV_ITEMS: NavItem[] = [
   { view: "favorites", label: "Favorites", icon: "star", countId: "fav-count" },
   { view: "recent", label: "Recent", icon: "clock", countId: "count-recent" },
   {
+    view: "read-later",
+    label: "Read Later",
+    icon: "bookmark",
+    countId: "count-read-later",
+  },
+  {
     view: "most-used",
     label: "Most Used",
     icon: "activity",
@@ -78,6 +84,7 @@ const BOOKMARK_LIST_VIEWS = new Set([
   "recent",
   "most-used",
   "archived",
+  "read-later",
 ]);
 
 export function Sidebar() {
@@ -202,6 +209,8 @@ export function Sidebar() {
         return viewCounts.recent ?? 0;
       case "most-used":
         return viewCounts.most_used ?? 0;
+      case "read-later":
+        return viewCounts.read_later ?? 0;
       case "archived":
         return viewCounts.archived ?? 0;
       case "folder-organizer":
@@ -248,7 +257,13 @@ export function Sidebar() {
       setCurrentFolder(null);
 
       // Clear tag and folder filters when switching views so sidebar reflects the new view cleanly
-      const nextFilterConfig = { ...filterConfig, tags: [], folder: null };
+      const nextFilterConfig = {
+        ...filterConfig,
+        tags: [],
+        folder: null,
+        readingState:
+          view === "read-later" ? ("all" as const) : filterConfig.readingState,
+      };
       setFilterConfig(nextFilterConfig);
 
       if (window.innerWidth <= 1024) {

@@ -116,6 +116,13 @@ const defaultViewToolbarConfig: Record<string, Record<string, unknown>> = {
     showSort: true,
     customActions: [],
   },
+  "read-later": {
+    title: "Read Later",
+    showViewToggle: true,
+    showSearch: true,
+    showFilters: true,
+    customActions: ["bulk-select"],
+  },
   recent: {
     title: "Recent",
     showViewToggle: true,

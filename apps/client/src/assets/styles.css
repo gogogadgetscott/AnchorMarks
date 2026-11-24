@@ -3210,6 +3210,42 @@ body.tag-cloud-active .content-body {
   flex: 0 0 auto;
 }
 
+.reading-status {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  vertical-align: middle;
+}
+
+.reading-status-unread {
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+}
+
+.reading-status-reading {
+  color: var(--primary-700, #4338ca);
+  background: color-mix(in srgb, var(--primary-500) 14%, transparent);
+}
+
+.reading-status-done {
+  color: var(--success-700, #047857);
+  background: color-mix(in srgb, var(--success-500, #10b981) 14%, transparent);
+}
+
+.bulk-reading-state-select {
+  min-width: 9.5rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md, 0.375rem);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
 /* Bookmark Card - Hover Actions */
 .bookmark-card {
   position: relative;

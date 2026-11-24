@@ -8,6 +8,7 @@ All notable changes to AnchorMarks are documented here.
 
 ### Added
 
+- **Read-later workflow** — bookmarks now support Unread, Currently Reading, and Done states with a dedicated Read Later view, status filters, card and modal controls, and bulk updates. Finishing from a reading card or bulk action atomically marks the item Done and archives it; returning a completed item to Unread restores it to the queue.
 - **One-stop folder and tag organization** — a searchable Tags view now supports creation, inline editing, similar/unused filters, multi-select merge, and bulk deletion; Tags and Folders can also be created or edited from navigation, sidebar controls, the Tag Cloud, Settings, and bookmark workflows
 - Bulk bookmark moves can now target Uncategorized, and folder deletion consistently preserves child folders by promoting them to the deleted folder's parent while unassigning affected bookmarks
 

@@ -14,6 +14,7 @@ export function BulkBar() {
     bulkAddTags,
     bulkRemoveTags,
     clearSelections,
+    bulkReadingState,
   } = useBulkOps();
 
   if (selectedBookmarks.size === 0) return null;
@@ -26,6 +27,15 @@ export function BulkBar() {
     const folderId = e.target.value;
     if (!folderId) return;
     await bulkMove(folderId === "__uncategorized__" ? null : folderId);
+  };
+
+  const handleReadingState = async (
+    e: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
+    const state = e.target.value as "unread" | "reading" | "done";
+    if (!state) return;
+    await bulkReadingState(state);
+    e.target.value = "";
   };
 
   return (
@@ -71,6 +81,20 @@ export function BulkBar() {
         >
           Remove Tags
         </button>
+        <select
+          id="bulk-reading-state-select"
+          className="bulk-reading-state-select"
+          onChange={handleReadingState}
+          defaultValue=""
+          aria-label="Set reading status"
+        >
+          <option value="" disabled>
+            Reading status...
+          </option>
+          <option value="unread">Unread</option>
+          <option value="reading">Currently reading</option>
+          <option value="done">Done &amp; archive</option>
+        </select>
         <div className="bulk-move">
           <select id="bulk-move-select" onChange={handleMove} defaultValue="">
             <option value="" disabled>

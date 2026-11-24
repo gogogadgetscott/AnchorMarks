@@ -138,6 +138,7 @@ const bookmarkCreate = z
       ])
       .optional(),
     tagColorOverrides: z.record(z.string()).optional(),
+    reading_state: z.enum(["unread", "reading", "done"]).optional(),
   })
   .strict();
 
@@ -159,6 +160,7 @@ const bookmarkUpdate = z
     tagColorOverrides: z.record(z.string()).optional(),
     is_favorite: z.union([z.boolean(), z.literal(0), z.literal(1)]).optional(),
     is_archived: z.union([z.boolean(), z.literal(0), z.literal(1)]).optional(),
+    reading_state: z.enum(["unread", "reading", "done"]).optional(),
   })
   .strict();
 
@@ -166,6 +168,19 @@ const fetchMetadata = z.object({ url: httpUrl }).strict();
 
 const bulkIds = z
   .object({
+    ids: z.array(z.string().uuid()).min(1, "At least one ID required"),
+  })
+  .strict();
+
+const readingStateUpdate = z
+  .object({
+    reading_state: z.enum(["unread", "reading", "done"]),
+    archive: z.boolean().optional(),
+  })
+  .strict();
+
+const bulkReadingState = readingStateUpdate
+  .extend({
     ids: z.array(z.string().uuid()).min(1, "At least one ID required"),
   })
   .strict();
@@ -547,6 +562,8 @@ module.exports = {
   bookmarkUpdate,
   fetchMetadata,
   bulkIds,
+  readingStateUpdate,
+  bulkReadingState,
   folderCreate,
   folderUpdate,
   folderParentUpdate,

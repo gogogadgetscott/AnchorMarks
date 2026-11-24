@@ -4,6 +4,7 @@ import { showConfirm, showTagPicker } from "./ConfirmContext";
 import { showToast } from "./ToastContext";
 import { api } from "@services/api.ts";
 import { parseTagInput } from "@utils/index.ts";
+import type { ReadingState } from "@/types";
 
 export function useBulkOps() {
   const {
@@ -233,6 +234,35 @@ export function useBulkOps() {
     showToast(`${ids.length} bookmarks unarchived`, "success");
   }, [selectedBookmarks, bookmarks, setBookmarks, clearSelections]);
 
+  const bulkReadingState = useCallback(
+    async (readingState: ReadingState) => {
+      if (selectedBookmarks.size === 0) return;
+
+      await api("/bookmarks/bulk/reading-state", {
+        method: "POST",
+        body: JSON.stringify({
+          ids: Array.from(selectedBookmarks),
+          reading_state: readingState,
+          ...(readingState === "done"
+            ? { archive: true }
+            : readingState === "unread"
+              ? { archive: false }
+              : {}),
+        }),
+      });
+      clearViewCache();
+      await loadBookmarks();
+      clearSelections();
+      showToast(
+        readingState === "done"
+          ? "Selection finished and archived"
+          : `Reading state updated to ${readingState}`,
+        "success",
+      );
+    },
+    [selectedBookmarks, clearViewCache, loadBookmarks, clearSelections],
+  );
+
   const bulkAutoTag = useCallback(async () => {
     if (selectedBookmarks.size === 0) return;
 
@@ -322,6 +352,7 @@ export function useBulkOps() {
     bulkArchive,
     bulkUnarchive,
     bulkAutoTag,
+    bulkReadingState,
     clearSelections,
   };
 }

@@ -49,6 +49,8 @@ function listBookmarks(req, res) {
     limit,
     offset,
     archived,
+    reading_state,
+    reading_queue,
   } = req.query;
   try {
     // Prevent browser caching of bookmark list to ensure fresh data on filter changes
@@ -68,6 +70,8 @@ function listBookmarks(req, res) {
       limit,
       offset,
       archived,
+      reading_state,
+      reading_queue,
     });
     if (result.total !== undefined) {
       result.bookmarks.forEach((b) => {
@@ -83,6 +87,8 @@ function listBookmarks(req, res) {
           most_used,
           tags,
           tagMode,
+          reading_state,
+          reading_queue,
         };
         const responseTags = bookmarkModel.listViewTags(
           db,
@@ -145,6 +151,13 @@ function getBookmarkCounts(req, res) {
         )
         .get(userId)?.count || 0,
     );
+    const readLaterCount = Number(
+      db
+        .prepare(
+          "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND COALESCE(reading_state, 'unread') IN ('unread', 'reading') AND is_archived = 0",
+        )
+        .get(userId)?.count || 0,
+    );
     const mostUsedCount = Number(
       db
         .prepare(
@@ -158,6 +171,7 @@ function getBookmarkCounts(req, res) {
       recent: recentCount,
       archived: archivedCount,
       most_used: mostUsedCount,
+      read_later: readLaterCount,
     });
   } catch (err) {
     return reportAndSend(res, err, logger, "Error fetching bookmark counts");
@@ -206,7 +220,16 @@ async function createBookmark(req, res) {
   const db = req.app.get("db");
   const fetchFaviconWrapper = req.app.get("fetchFaviconWrapper");
   const raw = req.validated;
-  let { title, url, description, folder_id, tags, color, og_image } = raw;
+  let {
+    title,
+    url,
+    description,
+    folder_id,
+    tags,
+    color,
+    og_image,
+    reading_state,
+  } = raw;
   const id = uuidv4();
   try {
     if (!hasOwnedFolder(db, req.user.id, folder_id)) {
@@ -245,6 +268,7 @@ async function createBookmark(req, res) {
       content_type: contentType,
       color: color || null,
       og_image: og_image || null,
+      reading_state,
     });
     if (tags && tags.trim()) {
       const tagResult = ensureTagsExist(db, req.user.id, tags, {
@@ -329,11 +353,12 @@ function bulkArchive(req, res) {
   const { ids } = req.validated;
   try {
     const stmt = db.prepare(
-      "UPDATE bookmarks SET is_archived = 1 WHERE id = ? AND user_id = ?",
+      "UPDATE bookmarks SET is_archived = 1, archived_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
     );
     db.transaction((ids, userId) => {
       for (const id of ids) stmt.run(id, userId);
     })(ids, req.user.id);
+    broadcast(req.user.id, { type: "bookmarks:changed" });
     res.json({ success: true, archived: ids.length });
   } catch (err) {
     return reportAndSend(res, err, logger, "Error bulk archiving bookmarks");
@@ -345,14 +370,59 @@ function bulkUnarchive(req, res) {
   const { ids } = req.validated;
   try {
     const stmt = db.prepare(
-      "UPDATE bookmarks SET is_archived = 0 WHERE id = ? AND user_id = ?",
+      "UPDATE bookmarks SET is_archived = 0, archived_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
     );
     db.transaction((ids, userId) => {
       for (const id of ids) stmt.run(id, userId);
     })(ids, req.user.id);
+    broadcast(req.user.id, { type: "bookmarks:changed" });
     res.json({ success: true, unarchived: ids.length });
   } catch (err) {
     return reportAndSend(res, err, logger, "Error bulk unarchiving bookmarks");
+  }
+}
+
+function updateReadingState(req, res) {
+  const db = req.app.get("db");
+  const ids = [req.params.id];
+  const { reading_state, archive } = req.validated;
+  try {
+    const updated = bookmarkModel.setReadingState(
+      db,
+      req.user.id,
+      ids,
+      reading_state,
+      archive,
+    );
+    if (!updated) return res.status(404).json({ error: "Bookmark not found" });
+    broadcast(req.user.id, { type: "bookmarks:changed" });
+    const bookmark = bookmarkModel.getBookmarkById(
+      db,
+      req.user.id,
+      req.params.id,
+    );
+    bookmark.tags_detailed = parseTagsDetailed(bookmark.tags_detailed);
+    res.json({ success: true, data: bookmark });
+  } catch (err) {
+    return reportAndSend(res, err, logger, "Error updating reading state");
+  }
+}
+
+function bulkReadingState(req, res) {
+  const db = req.app.get("db");
+  const { ids, reading_state, archive } = req.validated;
+  try {
+    const updated = bookmarkModel.setReadingState(
+      db,
+      req.user.id,
+      ids,
+      reading_state,
+      archive,
+    );
+    broadcast(req.user.id, { type: "bookmarks:changed" });
+    res.json({ success: true, data: { updated, reading_state } });
+  } catch (err) {
+    return reportAndSend(res, err, logger, "Error bulk updating reading state");
   }
 }
 
@@ -452,6 +522,8 @@ module.exports = {
   bulkUnarchive,
   archiveBookmark,
   unarchiveBookmark,
+  updateReadingState,
+  bulkReadingState,
   refreshFavicon,
   trackClick,
   generateThumbnail,

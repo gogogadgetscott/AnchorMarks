@@ -102,6 +102,7 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
     </>
   ),
+  bookmark: <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z" />,
   archive: (
     <>
       <polyline points="21 8 21 21 3 21 3 8" />

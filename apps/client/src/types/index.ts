@@ -35,6 +35,9 @@ export interface Bookmark {
   updated_at?: string;
   color?: string;
   is_archived?: number;
+  reading_state?: ReadingState;
+  read_at?: string | null;
+  archived_at?: string | null;
   og_image?: string;
   thumbnail_local?: string;
 }
@@ -96,7 +99,10 @@ export interface FilterConfig {
   tagMode: "AND" | "OR";
   search?: string;
   folder?: string | null;
+  readingState?: ReadingState | "all";
 }
+
+export type ReadingState = "unread" | "reading" | "done";
 
 export interface TourStep {
   title: string;
