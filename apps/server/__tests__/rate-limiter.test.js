@@ -128,17 +128,11 @@ describe("General API rate limiting", () => {
   it("uses a much higher general limit for logged-in users", () => {
     const cookies = { [cookieName]: tokenFor("user-a") };
     for (let i = 0; i < _effectiveAuthenticatedMax; i++) {
-      const { res, nextCount } = run(
-        null,
-        makeReq({ ip: "1.2.3.4", cookies }),
-      );
+      const { res, nextCount } = run(null, makeReq({ ip: "1.2.3.4", cookies }));
       expect(nextCount).toBe(1);
       expect(res.statusCode).toBeNull();
     }
-    const exhausted = run(
-      null,
-      makeReq({ ip: "1.2.3.4", cookies }),
-    );
+    const exhausted = run(null, makeReq({ ip: "1.2.3.4", cookies }));
     expect(exhausted.res.statusCode).toBe(429);
   });
 

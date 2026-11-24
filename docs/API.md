@@ -1148,8 +1148,23 @@ Import bookmarks from Netscape HTML format.
 
 Find duplicate bookmarks.
 
-**Endpoint**: `GET /api/maintenance/duplicates`  
+**Endpoints**:
+
+- `GET /api/health/duplicates`
+- `POST /api/health/duplicates/resolve`
+- `POST /api/health/duplicates/cleanup`
+
 **Auth Required**: Yes
+**CSRF Required**: Yes for state-changing resolve/cleanup routes
+
+Resolve a duplicate group by keeping one bookmark and merging the remaining owned IDs:
+
+```json
+{
+  "keep_id": "uuid1",
+  "merge_ids": ["uuid2", "uuid3"]
+}
+```
 
 **Response** (200 OK):
 

@@ -45,6 +45,12 @@ const NAV_ITEMS: NavItem[] = [
     countId: "count-dead-links",
   },
   {
+    view: "duplicates",
+    label: "Duplicates",
+    icon: "copy",
+    countId: "count-duplicates",
+  },
+  {
     view: "most-used",
     label: "Most Used",
     icon: "activity",
@@ -220,6 +226,8 @@ export function Sidebar() {
         return viewCounts.read_later ?? 0;
       case "dead-links":
         return viewCounts.dead_links ?? 0;
+      case "duplicates":
+        return viewCounts.duplicates ?? 0;
       case "archived":
         return viewCounts.archived ?? 0;
       case "folder-organizer":
@@ -289,7 +297,8 @@ export function Sidebar() {
         view !== "tag-cloud" &&
         view !== "analytics" &&
         view !== "folder-organizer" &&
-        view !== "tag-organizer"
+        view !== "tag-organizer" &&
+        view !== "duplicates"
       ) {
         await loadBookmarks({ view, filterOverride: nextFilterConfig });
       }

@@ -8,6 +8,7 @@ All notable changes to AnchorMarks are documented here.
 
 ### Added
 
+- **Duplicate Center** — canonical URL grouping now normalizes `www`, trailing slashes, fragments, default ports, and tracking parameters, with same-domain/title-similarity detection. A dedicated Duplicates view supports keep-newest, keep-oldest, manual keeper selection, and transactional merge that preserves tags, favorites, folders, reading state, descriptions, previews, colors, and click totals.
 - **Persistent dead-link health checks** — individual, selected, and batched library checks now store reachable, redirect, dead, blocked, timeout, and unchecked states. Link status badges, a Dead Links sidebar view, health filters, retry actions, and user-scoped bulk checks make broken-link cleanup discoverable from normal bookmark views
 - **Read-later workflow** — bookmarks now support Unread, Currently Reading, and Done states with a dedicated Read Later view, status filters, card and modal controls, and bulk updates. Finishing from a reading card or bulk action atomically marks the item Done and archives it; returning a completed item to Unread restores it to the queue.
 - **One-stop folder and tag organization** — a searchable Tags view now supports creation, inline editing, similar/unused filters, multi-select merge, and bulk deletion; Tags and Folders can also be created or edited from navigation, sidebar controls, the Tag Cloud, Settings, and bookmark workflows

@@ -12,6 +12,7 @@ import { AnalyticsView } from "@components/AnalyticsView.tsx";
 import { Dashboard } from "@components/Dashboard.tsx";
 import { FolderOrganizerView } from "@components/folders/FolderOrganizerView.tsx";
 import { TagOrganizer } from "@components/TagOrganizer.tsx";
+import { DuplicateCenter } from "@components/DuplicateCenter.tsx";
 import { useAuth } from "./contexts/AuthContext";
 import { useBookmarks } from "./contexts/BookmarksContext";
 import { useUI } from "./contexts/UIContext";
@@ -36,6 +37,8 @@ export function AppShell() {
         return <FolderOrganizerView />;
       case "tag-organizer":
         return <TagOrganizer />;
+      case "duplicates":
+        return <DuplicateCenter />;
       default:
         return (
           <>

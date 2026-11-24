@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const ctrl = require("../controllers/healthController");
 const { authenticateToken, validateCsrfToken } = require("../middleware/index");
-const { validateQuery, schemas } = require("../validation");
+const { validateQuery, validateBody, schemas } = require("../validation");
 
 module.exports = function createHealthRouter(db) {
   const router = Router();
@@ -10,6 +10,13 @@ module.exports = function createHealthRouter(db) {
 
   router.get("/duplicates", auth, ctrl.findDuplicates);
   router.post("/duplicates/cleanup", auth, csrf, ctrl.cleanupDuplicates);
+  router.post(
+    "/duplicates/resolve",
+    auth,
+    csrf,
+    validateBody(schemas.duplicateResolve),
+    ctrl.resolveDuplicates,
+  );
   router.get(
     "/deadlinks",
     auth,

@@ -517,6 +517,15 @@ const healthPerformanceQuery = z
   })
   .strict();
 
+const duplicateResolve = z
+  .object({
+    keep_id: z.string().uuid(),
+    merge_ids: z
+      .array(z.string().uuid())
+      .min(1, "At least one duplicate required"),
+  })
+  .strict();
+
 // ---- Tags suggest (non-AI) ----
 const tagsSuggestQuery = z
   .object({
@@ -592,6 +601,7 @@ module.exports = {
   smartOrgSuggestQuery,
   domainQuery,
   healthDeadlinksQuery,
+  duplicateResolve,
   healthPerformanceQuery,
   tagsSuggestQuery,
   tagsSuggestAiQuery,

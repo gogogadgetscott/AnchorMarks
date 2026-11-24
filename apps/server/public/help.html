@@ -85,6 +85,12 @@
                   >
                 </li>
                 <li>
+                  <a href="#duplicates"
+                    ><span class="nav-icon" aria-hidden="true">🧹</span
+                    ><span class="nav-text">Duplicates</span></a
+                  >
+                </li>
+                <li>
                   <a href="#tag-cloud"
                     ><span class="nav-icon" aria-hidden="true">☁️</span
                     ><span class="nav-text">Tag Cloud</span></a
@@ -760,6 +766,38 @@
                 <strong>Review problems:</strong> Open “Dead Links” in the
                 sidebar or use the Link Health filter to isolate dead, timeout,
                 blocked, redirect, reachable, or unchecked bookmarks.
+              </li>
+            </ul>
+
+            <h3 class="help-anchor" id="duplicates">
+              <span class="section-icon" aria-hidden="true">🧹</span>Duplicate
+              Center
+            </h3>
+            <p>
+              The Duplicate Center finds repeated bookmarks after normalizing
+              <code>www</code>, trailing slashes, default ports, URL fragments,
+              and common tracking parameters. It can also detect closely
+              matching bookmark titles on the same domain.
+            </p>
+            <ul>
+              <li>
+                <strong>Quick resolution:</strong> Choose Keep Newest or Keep
+                Oldest to preserve one bookmark and merge the rest.
+              </li>
+              <li>
+                <strong>Manual choice:</strong> Select the keeper, then use Keep
+                Selected &amp; Merge.
+              </li>
+              <li>
+                <strong>Preserved metadata:</strong> Tags, favorites, folders,
+                reading state, description, color, preview image, and click
+                count are merged where useful. Duplicate records are deleted
+                only after the keeper and merge IDs pass ownership checks.
+              </li>
+              <li>
+                <strong>Maintenance shortcut:</strong> The maintenance
+                Duplicates scan remains available for users who prefer
+                settings-based cleanup.
               </li>
             </ul>
 

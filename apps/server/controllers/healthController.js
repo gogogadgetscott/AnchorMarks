@@ -23,6 +23,22 @@ function cleanupDuplicates(req, res) {
   }
 }
 
+function resolveDuplicates(req, res) {
+  const db = req.app.get("db");
+  const { keep_id, merge_ids } = req.validated;
+  try {
+    statsModel.resolveDuplicateGroup(db, req.user.id, keep_id, merge_ids);
+    const broadcast = require("../services/websocketService").broadcast;
+    broadcast(req.user.id, { type: "bookmarks:changed" });
+    res.json({
+      success: true,
+      data: { keeper_id: keep_id, deleted: merge_ids.length },
+    });
+  } catch (err) {
+    return reportAndSend(res, err, logger, "Duplicate resolution error");
+  }
+}
+
 async function checkDeadlinks(req, res) {
   const db = req.app.get("db");
   try {
@@ -82,6 +98,7 @@ function getPerformanceStats(req, res) {
 module.exports = {
   findDuplicates,
   cleanupDuplicates,
+  resolveDuplicates,
   checkDeadlinks,
   getBookmarksByDomain,
   getPerformanceStats,

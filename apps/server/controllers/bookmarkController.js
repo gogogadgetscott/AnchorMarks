@@ -15,6 +15,7 @@ const {
 const { logger } = require("../lib/logger");
 const { reportAndSend } = require("../lib/errors");
 const { checkUrlHealth } = require("../services/linkHealthService");
+const statsModel = require("../models/stats");
 
 function parseTagsDetailed(raw) {
   if (!raw) return [];
@@ -168,6 +169,7 @@ function getBookmarkCounts(req, res) {
         )
         .get(userId)?.count || 0,
     );
+    const duplicateCount = statsModel.findDuplicates(db, userId).length;
     res.json({
       all: allCount,
       favorites: favoritesCount,
@@ -175,6 +177,7 @@ function getBookmarkCounts(req, res) {
       archived: archivedCount,
       most_used: mostUsedCount,
       read_later: readLaterCount,
+      duplicates: duplicateCount,
       dead_links: Number(
         db
           .prepare(

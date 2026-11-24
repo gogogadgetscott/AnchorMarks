@@ -1,5 +1,14 @@
 const { checkUrlHealth } = require("../services/linkHealthService");
 const bookmarkModel = require("./bookmark");
+const {
+  canonicalizeUrl,
+  normalizeTitle,
+  similarity,
+} = require("../utils/urlCanonicalizer");
+const {
+  ensureTagsExist,
+  updateBookmarkTags,
+} = require("../services/tagService");
 
 function getStats(db, userId) {
   const bookmarkStats = db
@@ -126,52 +135,224 @@ function getDeadlinkCount(db, userId) {
 }
 
 function findDuplicates(db, userId) {
-  const duplicates = db
+  const rows = db
     .prepare(
-      `
-        SELECT url, COUNT(*) as count, GROUP_CONCAT(id) as ids, GROUP_CONCAT(title, '|||') as titles
-        FROM bookmarks 
-        WHERE user_id = ?
-        GROUP BY url 
-        HAVING COUNT(*) > 1
-        ORDER BY count DESC
-    `,
+      `SELECT b.*,
+              COALESCE(GROUP_CONCAT(DISTINCT t.name), '') AS tags
+       FROM bookmarks b
+       LEFT JOIN bookmark_tags bt ON bt.bookmark_id = b.id
+       LEFT JOIN tags t ON t.id = bt.tag_id AND t.user_id = b.user_id
+       WHERE b.user_id = ?
+       GROUP BY b.id
+       ORDER BY b.created_at DESC`,
     )
     .all(userId);
 
-  return duplicates.map((d) => ({
-    url: d.url,
-    count: d.count,
-    ids: d.ids.split(","),
-    titles: d.titles.split("|||"),
-  }));
+  const urlGroups = new Map();
+  rows.forEach((bookmark) => {
+    const canonicalUrl = canonicalizeUrl(bookmark.url);
+    if (!canonicalUrl) return;
+    const existing = urlGroups.get(canonicalUrl) || [];
+    existing.push({
+      ...bookmark,
+      tags: bookmark.tags ? bookmark.tags.split(",").filter(Boolean) : [],
+    });
+    urlGroups.set(canonicalUrl, existing);
+  });
+
+  const groups = [];
+  urlGroups.forEach((bookmarks, canonicalUrl) => {
+    if (bookmarks.length > 1) {
+      groups.push({
+        canonical_url: canonicalUrl,
+        url: bookmarks[0].url,
+        ids: bookmarks.map((bookmark) => bookmark.id),
+        titles: bookmarks.map((bookmark) => bookmark.title),
+        match_type: "url",
+        count: bookmarks.length,
+        bookmarks,
+      });
+    }
+  });
+
+  const exactIds = new Set(
+    groups.flatMap((group) => group.bookmarks.map((bookmark) => bookmark.id)),
+  );
+  const titleCandidates = rows.filter((bookmark) => !exactIds.has(bookmark.id));
+  const titleUsed = new Set();
+  titleCandidates.forEach((bookmark) => {
+    if (titleUsed.has(bookmark.id)) return;
+    let host;
+    try {
+      host = new URL(bookmark.url).hostname.toLowerCase().replace(/^www\./, "");
+    } catch {
+      return;
+    }
+    const matches = titleCandidates.filter((candidate) => {
+      if (candidate.id === bookmark.id || titleUsed.has(candidate.id))
+        return false;
+      try {
+        const candidateHost = new URL(candidate.url).hostname
+          .toLowerCase()
+          .replace(/^www\./, "");
+        if (candidateHost !== host) return false;
+      } catch {
+        return false;
+      }
+      return (
+        similarity(
+          normalizeTitle(bookmark.title),
+          normalizeTitle(candidate.title),
+        ) >= 0.92
+      );
+    });
+    if (matches.length > 0) {
+      const bookmarksInGroup = [
+        {
+          ...bookmark,
+          tags: bookmark.tags ? bookmark.tags.split(",").filter(Boolean) : [],
+        },
+        ...matches.map((candidate) => ({
+          ...candidate,
+          tags: candidate.tags ? candidate.tags.split(",").filter(Boolean) : [],
+        })),
+      ];
+      groups.push({
+        canonical_url: canonicalizeUrl(bookmark.url) || bookmark.url,
+        url: bookmark.url,
+        ids: bookmarksInGroup.map((item) => item.id),
+        titles: bookmarksInGroup.map((item) => item.title),
+        match_type: "title",
+        count: bookmarksInGroup.length,
+        bookmarks: bookmarksInGroup,
+      });
+      titleUsed.add(bookmark.id);
+      matches.forEach((candidate) => titleUsed.add(candidate.id));
+    }
+  });
+
+  groups.sort(
+    (a, b) =>
+      b.count - a.count ||
+      String(b.bookmarks[0].created_at || "").localeCompare(
+        String(a.bookmarks[0].created_at || ""),
+      ),
+  );
+  return groups;
+}
+
+function resolveDuplicateGroup(db, userId, keepId, mergeIds) {
+  if (!keepId || !Array.isArray(mergeIds) || mergeIds.length === 0) {
+    throw new Error("A keeper and at least one duplicate are required");
+  }
+
+  const ids = [keepId, ...mergeIds];
+  const uniqueIds = [...new Set(ids)];
+  const bookmarks = uniqueIds
+    .map((id) =>
+      db
+        .prepare(
+          `SELECT b.*,
+                  COALESCE(GROUP_CONCAT(DISTINCT t.name), '') AS tags
+           FROM bookmarks b
+           LEFT JOIN bookmark_tags bt ON bt.bookmark_id = b.id
+           LEFT JOIN tags t ON t.id = bt.tag_id AND t.user_id = b.user_id
+           WHERE b.id = ? AND b.user_id = ?
+           GROUP BY b.id`,
+        )
+        .get(id, userId),
+    )
+    .filter(Boolean);
+
+  const keeper = bookmarks.find((bookmark) => bookmark.id === keepId);
+  if (!keeper || bookmarks.length !== uniqueIds.length) {
+    throw new Error(
+      "One or more duplicate bookmarks are not owned by this user",
+    );
+  }
+
+  const tagNames = new Set();
+  let favorite = Boolean(keeper.is_favorite);
+  let folderId = keeper.folder_id || null;
+  let description = keeper.description || null;
+  let color = keeper.color || null;
+  let ogImage = keeper.og_image || null;
+  let readingState = keeper.reading_state || "unread";
+  let clickCount = 0;
+  const rank = { unread: 0, reading: 1, done: 2 };
+
+  bookmarks.forEach((bookmark) => {
+    if (bookmark.tags) {
+      bookmark.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+        .forEach((tag) => tagNames.add(tag));
+    }
+    favorite = favorite || Boolean(bookmark.is_favorite);
+    if (!folderId && bookmark.folder_id) folderId = bookmark.folder_id;
+    if (!description && bookmark.description)
+      description = bookmark.description;
+    if (!color && bookmark.color) color = bookmark.color;
+    if (!ogImage && bookmark.og_image) ogImage = bookmark.og_image;
+    if (rank[bookmark.reading_state || "unread"] > rank[readingState]) {
+      readingState = bookmark.reading_state || "unread";
+    }
+    clickCount += Number(bookmark.click_count || 0);
+  });
+
+  return db.transaction(() => {
+    db.prepare(
+      `UPDATE bookmarks
+       SET folder_id = ?, description = ?, color = ?, og_image = ?,
+           is_favorite = ?, reading_state = ?, read_at = CASE WHEN ? = 'done' THEN COALESCE(read_at, CURRENT_TIMESTAMP) ELSE NULL END,
+           click_count = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ? AND user_id = ?`,
+    ).run(
+      folderId,
+      description,
+      color,
+      ogImage,
+      favorite ? 1 : 0,
+      readingState,
+      readingState,
+      clickCount,
+      keepId,
+      userId,
+    );
+
+    if (tagNames.size > 0) {
+      const tagResult = ensureTagsExist(db, userId, [...tagNames].join(", "), {
+        returnMap: true,
+      });
+      updateBookmarkTags(db, keepId, tagResult.tagIds, { userId });
+    } else {
+      updateBookmarkTags(db, keepId, [], { userId });
+    }
+
+    const deleteStatement = db.prepare(
+      "DELETE FROM bookmarks WHERE id = ? AND user_id = ?",
+    );
+    mergeIds.forEach((id) => deleteStatement.run(id, userId));
+  })();
 }
 
 function cleanupDuplicates(db, userId) {
-  const duplicates = db
-    .prepare(
-      `
-        SELECT url, GROUP_CONCAT(id) as ids
-        FROM bookmarks 
-        WHERE user_id = ?
-        GROUP BY url 
-        HAVING COUNT(*) > 1
-    `,
-    )
-    .all(userId);
-
+  const groups = findDuplicates(db, userId);
   let deleted = 0;
-  for (const dup of duplicates) {
-    const ids = dup.ids.split(",");
-    for (let i = 1; i < ids.length; i++) {
-      db.prepare("DELETE FROM bookmarks WHERE id = ? AND user_id = ?").run(
-        ids[i],
-        userId,
+  db.transaction(() => {
+    groups.forEach((group) => {
+      const ordered = [...group.bookmarks].sort((a, b) =>
+        String(b.created_at || "").localeCompare(String(a.created_at || "")),
       );
-      deleted++;
-    }
-  }
-
+      const keeper = ordered[0];
+      const mergeIds = ordered.slice(1).map((bookmark) => bookmark.id);
+      if (keeper && mergeIds.length > 0) {
+        resolveDuplicateGroup(db, userId, keeper.id, mergeIds);
+        deleted += mergeIds.length;
+      }
+    });
+  })();
   return { deleted, message: `Removed ${deleted} duplicate bookmarks` };
 }
 
@@ -256,6 +437,7 @@ module.exports = {
   cleanupDuplicates,
   getDeadlinksInfo,
   runDeadlinkChecks,
+  resolveDuplicateGroup,
 };
 
 function getEngagement(db, userId) {

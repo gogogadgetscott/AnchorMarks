@@ -69,6 +69,7 @@ describe("Sidebar (React)", () => {
     expect(screen.getByText("Bookmarks")).toBeTruthy();
     expect(screen.getByText("Favorites")).toBeTruthy();
     expect(screen.getByText("Recent")).toBeTruthy();
+    expect(screen.getByText("Duplicates")).toBeTruthy();
     expect(screen.getByText("Read Later")).toBeTruthy();
     expect(screen.getByText("Most Used")).toBeTruthy();
     expect(screen.getByText("Archived")).toBeTruthy();

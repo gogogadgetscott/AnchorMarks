@@ -79,6 +79,50 @@ describe("Health API", () => {
     expect(check.body.total_duplicates).toBe(0);
   });
 
+  it("canonicalizes and resolves duplicate bookmarks", async () => {
+    const first = await agent
+      .post("/api/bookmarks")
+      .set("X-CSRF-Token", csrfToken)
+      .send({
+        url: "https://canonical.example/article/?utm_source=test",
+        title: "Canonical Article",
+        tags: "one",
+      });
+    const second = await agent
+      .post("/api/bookmarks")
+      .set("X-CSRF-Token", csrfToken)
+      .send({
+        url: "https://www.canonical.example/article/",
+        title: "Canonical Article",
+        tags: "two",
+      });
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+
+    const duplicates = await agent
+      .get("/api/health/duplicates")
+      .set("X-CSRF-Token", csrfToken);
+    expect(duplicates.status).toBe(200);
+    const group = duplicates.body.duplicates.find((item) =>
+      item.bookmarks.some((bookmark) => bookmark.id === first.body.id),
+    );
+    expect(group).toBeTruthy();
+
+    const resolved = await agent
+      .post("/api/health/duplicates/resolve")
+      .set("X-CSRF-Token", csrfToken)
+      .send({
+        keep_id: first.body.id,
+        merge_ids: [second.body.id],
+      });
+    expect(resolved.status).toBe(200);
+    expect(resolved.body.data.deleted).toBe(1);
+
+    const keeper = await agent.get(`/api/bookmarks/${first.body.id}`);
+    expect(keeper.body.tags).toContain("one");
+    expect(keeper.body.tags).toContain("two");
+  });
+
   it("runs deadlink analysis (init)", async () => {
     const res = await agent
       .post("/api/health/deadlinks?check=true")

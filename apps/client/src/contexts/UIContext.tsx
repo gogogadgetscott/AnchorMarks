@@ -130,6 +130,12 @@ const defaultViewToolbarConfig: Record<string, Record<string, unknown>> = {
     showFilters: true,
     customActions: ["bulk-select"],
   },
+  duplicates: {
+    title: "Duplicates",
+    showViewToggle: false,
+    showSearch: false,
+    customActions: [],
+  },
   recent: {
     title: "Recent",
     showViewToggle: true,

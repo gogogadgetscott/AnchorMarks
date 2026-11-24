@@ -56,6 +56,7 @@ export function App() {
         view !== "tag-cloud" &&
         view !== "tag-organizer" &&
         view !== "folder-organizer" &&
+        view !== "duplicates" &&
         view !== "folder"
       ) {
         await loadBookmarksRef.current({ view });
@@ -84,6 +85,7 @@ export function App() {
       currentView !== "tag-cloud" &&
       currentView !== "tag-organizer" &&
       currentView !== "folder-organizer" &&
+      currentView !== "duplicates" &&
       currentView !== "folder"
     ) {
       loadBookmarksRef.current({ view: currentView });
