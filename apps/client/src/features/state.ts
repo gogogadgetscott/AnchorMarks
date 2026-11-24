@@ -99,6 +99,7 @@ export let filterConfig: FilterConfig = {
   tagSort: "count_desc",
   tagMode: "OR",
   readingState: "all",
+  linkHealth: "all",
 };
 
 // Tag metadata (colors, icons, counts) loaded from database

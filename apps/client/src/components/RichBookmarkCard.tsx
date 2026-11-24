@@ -20,6 +20,7 @@ interface RichBookmarkCardProps {
   onCopy: () => void;
   onArchive: () => void;
   onReadingState: () => void;
+  onCheckLink: () => void;
   onDelete: () => void;
   onTagClick: (tagName: string) => void;
   onSelect: (index: number, shiftKey: boolean) => void;
@@ -55,6 +56,7 @@ export function RichBookmarkCard({
   onCopy,
   onArchive,
   onReadingState,
+  onCheckLink,
   onDelete,
   onTagClick,
   onSelect,
@@ -118,6 +120,16 @@ export function RichBookmarkCard({
       : readingState === "reading"
         ? "Mark as done and archive"
         : "Move back to reading queue";
+  const healthStatus = bookmark.link_health_status ?? "unknown";
+  const healthLabel =
+    {
+      unknown: "",
+      ok: "Reachable",
+      redirect: "Redirects",
+      dead: "Dead link",
+      blocked: "Blocked",
+      timeout: "Timed out",
+    }[healthStatus] || "";
 
   const tagsEl = tagEntries.length ? (
     <div className="bookmark-tags">
@@ -243,6 +255,11 @@ export function RichBookmarkCard({
           <span className={`reading-status reading-status-${readingState}`}>
             {readingLabel}
           </span>
+          {healthLabel && (
+            <span className={`link-health-badge link-health-${healthStatus}`}>
+              {healthLabel}
+            </span>
+          )}
         </div>
         {bookmark.description && (
           <div className="bookmark-description">{bookmark.description}</div>
@@ -263,6 +280,13 @@ export function RichBookmarkCard({
             icon={readingState === "reading" ? "check-square" : "bookmark"}
             title={nextReadingTitle}
             onClick={onReadingState}
+          />
+          <Button
+            variant="ghost"
+            className="bookmark-action-btn"
+            icon="refresh-cw"
+            title="Check link health"
+            onClick={onCheckLink}
           />
           <Button
             variant={bookmark.is_favorite ? "warning" : "ghost"}

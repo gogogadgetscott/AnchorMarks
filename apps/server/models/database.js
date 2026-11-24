@@ -54,6 +54,8 @@ function initializeDatabase(DB_PATH) {
         last_clicked DATETIME,
         is_dead INTEGER DEFAULT 0,
         last_checked DATETIME,
+        link_health_status TEXT DEFAULT 'unknown',
+        link_http_code INTEGER,
         content_type TEXT,
         is_archived INTEGER DEFAULT 0,
         archived_at DATETIME,
@@ -292,6 +294,12 @@ function initializeDatabase(DB_PATH) {
     { table: "bookmarks", column: "read_at", def: "DATETIME" },
     { table: "bookmarks", column: "archived_at", def: "DATETIME" },
     {
+      table: "bookmarks",
+      column: "link_health_status",
+      def: "TEXT DEFAULT 'unknown'",
+    },
+    { table: "bookmarks", column: "link_http_code", def: "INTEGER" },
+    {
       table: "user_settings",
       column: "rich_link_previews_enabled",
       def: "INTEGER DEFAULT 0",
@@ -301,17 +309,31 @@ function initializeDatabase(DB_PATH) {
 
   let migrationsRun = 0;
   let readingStateAdded = false;
+  let linkHealthAdded = false;
   for (const m of migrations) {
     if (addColumnIfNotExists(m.table, m.column, m.def)) {
       migrationsRun++;
       if (m.table === "bookmarks" && m.column === "reading_state") {
         readingStateAdded = true;
       }
+      if (m.table === "bookmarks" && m.column === "link_health_status") {
+        linkHealthAdded = true;
+      }
     }
   }
   if (readingStateAdded) {
     db.prepare(
       "UPDATE bookmarks SET reading_state = 'done', read_at = COALESCE(read_at, created_at)",
+    ).run();
+  }
+  if (linkHealthAdded) {
+    db.prepare(
+      `UPDATE bookmarks
+       SET link_health_status = CASE
+         WHEN is_dead = 1 THEN 'dead'
+         WHEN last_checked IS NOT NULL THEN 'ok'
+         ELSE 'unknown'
+       END`,
     ).run();
   }
   if (migrationsRun > 0) {
@@ -322,6 +344,12 @@ function initializeDatabase(DB_PATH) {
     CREATE INDEX IF NOT EXISTS idx_bookmarks_reading
       ON bookmarks(user_id, reading_state, updated_at DESC);
   `);
+  db.prepare(
+    `
+    CREATE INDEX IF NOT EXISTS idx_bookmarks_link_health
+      ON bookmarks(user_id, link_health_status, last_checked)
+  `,
+  ).run();
 
   // Run formal migrations
   try {

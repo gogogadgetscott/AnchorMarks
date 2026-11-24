@@ -15,6 +15,7 @@ export function BulkBar() {
     bulkRemoveTags,
     clearSelections,
     bulkReadingState,
+    bulkCheckLinks,
   } = useBulkOps();
 
   if (selectedBookmarks.size === 0) return null;
@@ -80,6 +81,13 @@ export function BulkBar() {
           onClick={bulkRemoveTags}
         >
           Remove Tags
+        </button>
+        <button
+          className="btn btn-ghost"
+          id="bulk-check-links-btn"
+          onClick={bulkCheckLinks}
+        >
+          Check Links
         </button>
         <select
           id="bulk-reading-state-select"

@@ -15,6 +15,7 @@ const {
   getClientKey,
   _maps,
   _effectiveMax,
+  _effectiveAuthenticatedMax,
   _effectiveApiKeyWriteMax,
   _effectiveAuthMax,
 } = require("../middleware/rateLimiter");
@@ -97,7 +98,7 @@ describe("General API rate limiting", () => {
   it("keys authenticated traffic per user across IPs (proxy/Docker NAT)", () => {
     const cookies = { [cookieName]: tokenFor("user-a") };
     // Fill the bucket from several different source IPs (shared-NAT case)
-    for (let i = 0; i < _effectiveMax; i++) {
+    for (let i = 0; i < _effectiveAuthenticatedMax; i++) {
       const { nextCount } = run(
         null,
         makeReq({ ip: `10.0.0.${(i % 3) + 1}`, cookies }),
@@ -113,7 +114,7 @@ describe("General API rate limiting", () => {
     const cookiesA = { [cookieName]: tokenFor("user-a") };
     const cookiesB = { [cookieName]: tokenFor("user-b") };
 
-    for (let i = 0; i < _effectiveMax; i++) {
+    for (let i = 0; i < _effectiveAuthenticatedMax; i++) {
       run(null, makeReq({ ip: "1.2.3.4", cookies: cookiesA }));
     }
     const exhausted = run(null, makeReq({ ip: "1.2.3.4", cookies: cookiesA }));
@@ -122,6 +123,23 @@ describe("General API rate limiting", () => {
     // A different user on the same IP gets a fresh bucket
     const other = run(null, makeReq({ ip: "1.2.3.4", cookies: cookiesB }));
     expect(other.nextCount).toBe(1);
+  });
+
+  it("uses a much higher general limit for logged-in users", () => {
+    const cookies = { [cookieName]: tokenFor("user-a") };
+    for (let i = 0; i < _effectiveAuthenticatedMax; i++) {
+      const { res, nextCount } = run(
+        null,
+        makeReq({ ip: "1.2.3.4", cookies }),
+      );
+      expect(nextCount).toBe(1);
+      expect(res.statusCode).toBeNull();
+    }
+    const exhausted = run(
+      null,
+      makeReq({ ip: "1.2.3.4", cookies }),
+    );
+    expect(exhausted.res.statusCode).toBe(429);
   });
 
   it("falls back to IP keying when there is no session", () => {
@@ -240,6 +258,23 @@ describe("Auth brute-force limiting (SQLite-persisted)", () => {
       }),
     );
     expect(other.nextCount).toBe(1);
+  });
+
+  it("does not apply the anonymous auth bucket to a logged-in session", () => {
+    const cookies = { [cookieName]: tokenFor("logged-in-user") };
+    for (let i = 0; i < _effectiveAuthMax + 5; i++) {
+      const { res, nextCount } = run(
+        db,
+        makeReq({
+          method: "POST",
+          path: "/api/auth/login",
+          ip: "10.0.0.1",
+          cookies,
+        }),
+      );
+      expect(nextCount).toBe(1);
+      expect(res.statusCode).toBeNull();
+    }
   });
 
   it("never throws when the database is unavailable (fails open)", () => {

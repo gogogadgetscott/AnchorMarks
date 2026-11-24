@@ -196,6 +196,37 @@ describe("Bookmarks Controller", () => {
     );
   });
 
+  it("persists link health from single and bulk checks", async () => {
+    const created = await agent
+      .post("/api/bookmarks")
+      .set("X-CSRF-Token", csrfToken)
+      .send({
+        url: "bookmark-view:missing",
+        title: "Invalid health target",
+      });
+    expect(created.status).toBe(200);
+
+    const single = await agent
+      .post(`/api/bookmarks/${created.body.id}/check-link`)
+      .set("X-CSRF-Token", csrfToken);
+    expect(single.status).toBe(200);
+    expect(single.body.data.status).toBe("dead");
+
+    const bookmark = await agent.get(`/api/bookmarks/${created.body.id}`);
+    expect(bookmark.body.link_health_status).toBe("dead");
+    expect(bookmark.body.last_checked).toBeTruthy();
+
+    const bulk = await agent
+      .post("/api/bookmarks/bulk/check-links")
+      .set("X-CSRF-Token", csrfToken)
+      .send({ ids: [created.body.id] });
+    expect(bulk.status).toBe(200);
+    expect(bulk.body.data.checked).toBe(1);
+
+    const dead = await agent.get("/api/bookmarks?link_health_status=dead");
+    expect(dead.body.map((item) => item.id)).toContain(created.body.id);
+  });
+
   it("does not allow another user to modify bookmark tags", async () => {
     const otherAgent = request.agent(app);
     const register = await otherAgent.post("/api/auth/register").send({

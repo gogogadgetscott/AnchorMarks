@@ -79,6 +79,12 @@
                   >
                 </li>
                 <li>
+                  <a href="#dead-links"
+                    ><span class="nav-icon" aria-hidden="true">🔗</span
+                    ><span class="nav-text">Dead Links</span></a
+                  >
+                </li>
+                <li>
                   <a href="#tag-cloud"
                     ><span class="nav-icon" aria-hidden="true">☁️</span
                     ><span class="nav-text">Tag Cloud</span></a
@@ -723,6 +729,37 @@
               <li>
                 <strong>Resume a finished item:</strong> Use the reading action
                 on a completed bookmark to return it to Unread and unarchive it.
+              </li>
+            </ul>
+
+            <h3 class="help-anchor" id="dead-links">
+              <span class="section-icon" aria-hidden="true">🔗</span>Dead Link
+              Health
+            </h3>
+            <p>
+              AnchorMarks records whether saved links are reachable, redirect,
+              are blocked by the destination, time out, or return an error.
+              Private-network targets are blocked from server-side checks.
+            </p>
+            <ul>
+              <li>
+                <strong>Single link:</strong> Use the circular-arrow action on
+                any bookmark card to check it immediately.
+              </li>
+              <li>
+                <strong>Library batches:</strong> Open Settings → Maintenance
+                and run “Check Broken Links.” AnchorMarks checks the 100 oldest
+                or never-checked links and saves the results so large libraries
+                can be processed safely in repeated runs.
+              </li>
+              <li>
+                <strong>Bulk checks:</strong> Select several bookmarks and use
+                “Check Links” in the bulk action bar.
+              </li>
+              <li>
+                <strong>Review problems:</strong> Open “Dead Links” in the
+                sidebar or use the Link Health filter to isolate dead, timeout,
+                blocked, redirect, reachable, or unchecked bookmarks.
               </li>
             </ul>
 

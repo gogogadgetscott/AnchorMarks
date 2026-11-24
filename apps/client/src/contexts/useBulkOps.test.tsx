@@ -86,4 +86,15 @@ describe("useBulkOps tag payloads", () => {
     });
     expect(mocks.loadBookmarks).toHaveBeenCalledOnce();
   });
+
+  it("checks selected bookmark links in one request", async () => {
+    const { result } = renderHook(() => useBulkOps());
+
+    await act(() => result.current.bulkCheckLinks());
+
+    expect(mocks.api).toHaveBeenCalledWith("/bookmarks/bulk/check-links", {
+      method: "POST",
+      body: JSON.stringify({ ids: ["bookmark-1"] }),
+    });
+  });
 });

@@ -39,6 +39,12 @@ const NAV_ITEMS: NavItem[] = [
     countId: "count-read-later",
   },
   {
+    view: "dead-links",
+    label: "Dead Links",
+    icon: "link",
+    countId: "count-dead-links",
+  },
+  {
     view: "most-used",
     label: "Most Used",
     icon: "activity",
@@ -85,6 +91,7 @@ const BOOKMARK_LIST_VIEWS = new Set([
   "most-used",
   "archived",
   "read-later",
+  "dead-links",
 ]);
 
 export function Sidebar() {
@@ -211,6 +218,8 @@ export function Sidebar() {
         return viewCounts.most_used ?? 0;
       case "read-later":
         return viewCounts.read_later ?? 0;
+      case "dead-links":
+        return viewCounts.dead_links ?? 0;
       case "archived":
         return viewCounts.archived ?? 0;
       case "folder-organizer":
@@ -263,6 +272,8 @@ export function Sidebar() {
         folder: null,
         readingState:
           view === "read-later" ? ("all" as const) : filterConfig.readingState,
+        linkHealth:
+          view === "dead-links" ? ("dead" as const) : ("all" as const),
       };
       setFilterConfig(nextFilterConfig);
 

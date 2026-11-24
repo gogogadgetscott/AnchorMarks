@@ -38,6 +38,9 @@ export interface Bookmark {
   reading_state?: ReadingState;
   read_at?: string | null;
   archived_at?: string | null;
+  link_health_status?: LinkHealthStatus;
+  link_http_code?: number | null;
+  last_checked?: string | null;
   og_image?: string;
   thumbnail_local?: string;
 }
@@ -100,9 +103,12 @@ export interface FilterConfig {
   search?: string;
   folder?: string | null;
   readingState?: ReadingState | "all";
+  linkHealth?: LinkHealthStatus | "all";
 }
 
 export type ReadingState = "unread" | "reading" | "done";
+export type LinkHealthStatus =
+  "unknown" | "ok" | "redirect" | "dead" | "blocked" | "timeout";
 
 export interface TourStep {
   title: string;

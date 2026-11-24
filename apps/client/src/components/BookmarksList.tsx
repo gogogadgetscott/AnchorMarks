@@ -137,6 +137,7 @@ export function BookmarksList() {
     toggleFavorite,
     editBookmark,
     setReadingState,
+    checkBookmarkLink,
   } = useBookmarkActions();
 
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -184,6 +185,10 @@ export function BookmarksList() {
       if (currentView === "read-later") params.append("reading_queue", "true");
       if (filterConfig.readingState && filterConfig.readingState !== "all")
         params.append("reading_state", filterConfig.readingState);
+      if (filterConfig.linkHealth && filterConfig.linkHealth !== "all")
+        params.append("link_health_status", filterConfig.linkHealth);
+      else if (currentView === "dead-links")
+        params.append("link_health_status", "dead");
       const folderFilter = filterConfig.folder ?? null;
       if (
         folderFilter &&
@@ -346,6 +351,7 @@ export function BookmarksList() {
               else void setReadingState(b.id, "unread", { archive: false });
             },
             onDelete: () => deleteBookmark(b.id),
+            onCheckLink: () => checkBookmarkLink(b.id),
             onTagClick: handleTagClick,
             onSelect: (idx: number, shiftKey: boolean) =>
               handleSelect(b.id, idx, shiftKey),

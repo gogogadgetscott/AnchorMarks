@@ -8,12 +8,14 @@ All notable changes to AnchorMarks are documented here.
 
 ### Added
 
+- **Persistent dead-link health checks** — individual, selected, and batched library checks now store reachable, redirect, dead, blocked, timeout, and unchecked states. Link status badges, a Dead Links sidebar view, health filters, retry actions, and user-scoped bulk checks make broken-link cleanup discoverable from normal bookmark views
 - **Read-later workflow** — bookmarks now support Unread, Currently Reading, and Done states with a dedicated Read Later view, status filters, card and modal controls, and bulk updates. Finishing from a reading card or bulk action atomically marks the item Done and archives it; returning a completed item to Unread restores it to the queue.
 - **One-stop folder and tag organization** — a searchable Tags view now supports creation, inline editing, similar/unused filters, multi-select merge, and bulk deletion; Tags and Folders can also be created or edited from navigation, sidebar controls, the Tag Cloud, Settings, and bookmark workflows
 - Bulk bookmark moves can now target Uncategorized, and folder deletion consistently preserves child folders by promoting them to the deleted folder's parent while unassigning affected bookmarks
 
 ### Fixed
 
+- **Logged-in activity no longer exhausts the anonymous rate limit** — authenticated sessions now use a separate 600 requests-per-minute general tier instead of the anonymous 60 requests-per-minute bucket; maintenance, API-key writes, and anonymous login/register limits remain protected
 - **Standalone tag creation now works** — the Tag modal now distinguishes new and existing tags, supports merge-on-rename through the shared tag rename path, and reloads authoritative bookmark/tag state after mutations
 - Folder creation, rename, merge, deletion, and bulk bookmark tag/folder changes now refresh server-backed state so counts and visible assignments do not remain stale
 - **Plain-HTTP deployments no longer forced to HTTPS** — the CSP header no longer includes `upgrade-insecure-requests` when `SSL_ENABLED` is false, so browsers stop rewriting every `http://` subresource request to `https://` (breaking API calls and assets on non-TLS installs)

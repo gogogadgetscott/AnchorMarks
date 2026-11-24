@@ -3237,6 +3237,38 @@ body.tag-cloud-active .content-body {
   background: color-mix(in srgb, var(--success-500, #10b981) 14%, transparent);
 }
 
+.link-health-badge {
+  display: inline-flex;
+  margin-left: 0.375rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  vertical-align: middle;
+}
+
+.link-health-ok {
+  color: var(--success-700, #047857);
+  background: color-mix(in srgb, var(--success-500, #10b981) 14%, transparent);
+}
+
+.link-health-redirect {
+  color: var(--primary-700, #4338ca);
+  background: color-mix(in srgb, var(--primary-500) 14%, transparent);
+}
+
+.link-health-dead,
+.link-health-timeout {
+  color: var(--danger-700, #b91c1c);
+  background: color-mix(in srgb, var(--danger-500, #ef4444) 14%, transparent);
+}
+
+.link-health-blocked {
+  color: var(--warning-700, #b45309);
+  background: color-mix(in srgb, var(--warning-500, #f59e0b) 16%, transparent);
+}
+
 .bulk-reading-state-select {
   min-width: 9.5rem;
   padding: 0.5rem 0.625rem;

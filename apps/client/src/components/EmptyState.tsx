@@ -84,6 +84,24 @@ export function EmptyState() {
       );
     }
 
+    if (currentView === "dead-links") {
+      return (
+        <div className="empty-state-content">
+          <Icon
+            name="check"
+            size={48}
+            className="empty-state-icon"
+            style={{ color: "var(--success-500, #10b981)" }}
+          />
+          <h3>No dead links found</h3>
+          <p>
+            Use the link-check action on cards or run a full check from Settings
+            → Maintenance.
+          </p>
+        </div>
+      );
+    }
+
     if (currentView === "most-used") {
       return (
         <div className="empty-state-content">

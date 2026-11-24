@@ -33,6 +33,7 @@ const defaultProps = {
   onCopy: noop,
   onArchive: noop,
   onReadingState: noop,
+  onCheckLink: noop,
   onDelete: noop,
   onTagClick: noop,
   onSelect: noop,

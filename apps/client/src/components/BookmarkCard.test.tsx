@@ -30,6 +30,7 @@ const defaultProps = {
   onCopy: noop,
   onArchive: noop,
   onReadingState: noop,
+  onCheckLink: noop,
   onDelete: noop,
   onTagClick: noop,
   onSelect: noop,
@@ -86,6 +87,20 @@ describe("BookmarkCard (React)", () => {
     fireEvent.click(screen.getByTitle("Mark as done and archive"));
     expect(onReadingState).toHaveBeenCalledOnce();
     expect(screen.getByText("Currently reading")).toBeTruthy();
+  });
+
+  it("shows and refreshes dead-link health", () => {
+    const onCheckLink = vi.fn();
+    renderWithProviders(
+      <BookmarkCard
+        {...defaultProps}
+        bookmark={{ ...mockBookmark, link_health_status: "dead" }}
+        onCheckLink={onCheckLink}
+      />,
+    );
+    expect(screen.getByText("Dead link")).toBeTruthy();
+    fireEvent.click(screen.getByTitle("Check link health"));
+    expect(onCheckLink).toHaveBeenCalledOnce();
   });
 
   it("shows favorite indicator when is_favorite is true", () => {

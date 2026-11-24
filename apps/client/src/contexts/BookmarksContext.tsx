@@ -120,6 +120,7 @@ const initialFilterConfig: FilterConfig = {
   tagSort: "count_desc",
   tagMode: "OR",
   readingState: "all",
+  linkHealth: "all",
 };
 
 export function BookmarksProvider({ children }: { children: ReactNode }) {
@@ -254,6 +255,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
             activeFilters.search ?? "",
             activeFilters.sort ?? "",
             activeFilters.readingState ?? "all",
+            activeFilters.linkHealth ?? "all",
           ].join("|")
         : null;
 
@@ -293,6 +295,10 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
           params.append("reading_queue", "true");
         if (activeFilters.readingState && activeFilters.readingState !== "all")
           params.append("reading_state", activeFilters.readingState);
+        if (activeFilters.linkHealth && activeFilters.linkHealth !== "all")
+          params.append("link_health_status", activeFilters.linkHealth);
+        else if (currentView === "dead-links")
+          params.append("link_health_status", "dead");
 
         // Folder navigation ("folder" view) or sidebar folder filter (all other views)
         // Always include folder_id if currentFolder is set, regardless of view
@@ -413,6 +419,10 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       if (currentView === "read-later") params.append("reading_queue", "true");
       if (filterConfig.readingState && filterConfig.readingState !== "all")
         params.append("reading_state", filterConfig.readingState);
+      if (filterConfig.linkHealth && filterConfig.linkHealth !== "all")
+        params.append("link_health_status", filterConfig.linkHealth);
+      else if (currentView === "dead-links")
+        params.append("link_health_status", "dead");
 
       // UIBridge currentFolder (filter-dropdown path) or filterConfig.folder (sidebar path)
       const folderForMore = currentFolder ?? filterConfig.folder ?? null;

@@ -1,50 +1,18 @@
-const https = require("https");
-const http = require("http");
-const { URL } = require("url");
-const { isPrivateAddress } = require("../utils/ssrfUtils");
+const { checkUrlHealth } = require("../services/linkHealthService");
 const { logger } = require("../lib/logger");
 const bookmarkModel = require("../models/bookmark");
+const { broadcast } = require("../services/websocketService");
 
 async function checkLink(req, res) {
   const data = req.validated;
   if (!data) return res.status(400).json({ error: "Validation required" });
-  const { url } = data;
-  let responded = false;
-  try {
-    if (await isPrivateAddress(url))
-      return res.status(403).json({ error: "Private networks not allowed" });
-    const parsedUrl = new URL(url);
-    const protocol = parsedUrl.protocol === "https:" ? https : http;
-    const reqUrl = protocol.request(
-      url,
-      { method: "HEAD", timeout: 5000 },
-      (response) => {
-        if (responded) return;
-        responded = true;
-        res.json({
-          status: response.statusCode,
-          ok: response.statusCode >= 200 && response.statusCode < 400,
-        });
-      },
-    );
-    reqUrl.on("error", () => {
-      if (responded) return;
-      responded = true;
-      res.json({ status: 0, ok: false, error: "Connection failed" });
-    });
-    reqUrl.on("timeout", () => {
-      if (responded) return;
-      responded = true;
-      reqUrl.destroy();
-      res.json({ status: 408, ok: false, error: "Timeout" });
-    });
-    reqUrl.end();
-  } catch (err) {
-    if (responded) return;
-    responded = true;
-    logger.warn("Link check failed for URL", err);
-    res.json({ status: 0, ok: false, error: "Invalid URL" });
-  }
+  const result = await checkUrlHealth(data.url);
+  res.json({
+    status: result.httpCode || 0,
+    ok: ["ok", "redirect"].includes(result.status),
+    health_status: result.status,
+    error: result.error,
+  });
 }
 
 function findDuplicates(req, res) {
@@ -84,43 +52,28 @@ function optimizeDatabase(req, res) {
 async function checkLinks(req, res) {
   const db = req.app.get("db");
   try {
-    const { bookmarks } = bookmarkModel.listBookmarks(db, req.user.id);
+    const bookmarks = db
+      .prepare(
+        `SELECT id, url
+         FROM bookmarks
+         WHERE user_id = ?
+         ORDER BY last_checked ASC NULLS FIRST
+         LIMIT 100`,
+      )
+      .all(req.user.id);
     let ok = 0;
     let broken = 0;
     for (const bookmark of bookmarks) {
-      try {
-        const parsedUrl = new URL(bookmark.url);
-        if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-          continue;
-        }
-        if (await isPrivateAddress(bookmark.url)) {
-          continue;
-        }
-        const isOk = await new Promise((resolve) => {
-          const protocol = parsedUrl.protocol === "https:" ? https : http;
-          const req = protocol.request(
-            bookmark.url,
-            { method: "HEAD", timeout: 5000 },
-            (response) => {
-              resolve(response.statusCode >= 200 && response.statusCode < 400);
-            },
-          );
-          req.on("error", () => resolve(false));
-          req.on("timeout", () => {
-            req.destroy();
-            resolve(false);
-          });
-          req.end();
-        });
-        if (isOk) ok++;
-        else broken++;
-      } catch {
-        broken++;
-      }
+      const result = await checkUrlHealth(bookmark.url);
+      bookmarkModel.setLinkHealth(db, req.user.id, bookmark.id, result);
+      if (["ok", "redirect"].includes(result.status)) ok++;
+      else broken++;
     }
+    broadcast(req.user.id, { type: "bookmarks:changed" });
     res.json({
       success: true,
-      message: `${ok} reachable, ${broken} broken`,
+      message: `${ok} reachable, ${broken} need attention in this batch`,
+      checked: ok + broken,
     });
   } catch (err) {
     logger.error("Error checking links", err);

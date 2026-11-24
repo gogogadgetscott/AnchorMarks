@@ -16,6 +16,7 @@ interface BookmarkCardProps {
   onCopy: () => void;
   onArchive: () => void;
   onReadingState: () => void;
+  onCheckLink: () => void;
   onDelete: () => void;
   onTagClick: (tagName: string) => void;
   onSelect: (index: number, shiftKey: boolean) => void;
@@ -51,6 +52,7 @@ export function BookmarkCard({
   onCopy,
   onArchive,
   onReadingState,
+  onCheckLink,
   onDelete,
   onTagClick,
   onSelect,
@@ -109,6 +111,16 @@ export function BookmarkCard({
       {readingLabel}
     </span>
   );
+  const healthStatus = bookmark.link_health_status ?? "unknown";
+  const healthLabel =
+    {
+      unknown: "",
+      ok: "Reachable",
+      redirect: "Redirects",
+      dead: "Dead link",
+      blocked: "Blocked",
+      timeout: "Timed out",
+    }[healthStatus] || "";
   const nextReadingTitle =
     readingState === "unread"
       ? "Start reading"
@@ -188,6 +200,13 @@ export function BookmarkCard({
         onClick={onReadingState}
       />
       <Button
+        variant="ghost"
+        className="bookmark-action-btn"
+        icon="refresh-cw"
+        title="Check link health"
+        onClick={onCheckLink}
+      />
+      <Button
         variant={bookmark.is_favorite ? "warning" : "ghost"}
         className="bookmark-action-btn"
         icon={bookmark.is_favorite ? "star-filled" : "star"}
@@ -263,6 +282,13 @@ export function BookmarkCard({
               {favoriteIndicator}
               {bookmark.title}
               {readingIndicator}
+              {healthLabel && (
+                <span
+                  className={`link-health-badge link-health-${healthStatus}`}
+                >
+                  {healthLabel}
+                </span>
+              )}
             </div>
             {tagsEl}
           </div>
@@ -284,6 +310,13 @@ export function BookmarkCard({
                 {favoriteIndicator}
                 {bookmark.title}
                 {readingIndicator}
+                {healthLabel && (
+                  <span
+                    className={`link-health-badge link-health-${healthStatus}`}
+                  >
+                    {healthLabel}
+                  </span>
+                )}
               </div>
               <div className="bookmark-url" data-full-url={bookmark.url}>
                 {displayUrl}

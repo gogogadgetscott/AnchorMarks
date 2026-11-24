@@ -123,6 +123,13 @@ const defaultViewToolbarConfig: Record<string, Record<string, unknown>> = {
     showFilters: true,
     customActions: ["bulk-select"],
   },
+  "dead-links": {
+    title: "Dead Links",
+    showViewToggle: true,
+    showSearch: true,
+    showFilters: true,
+    customActions: ["bulk-select"],
+  },
   recent: {
     title: "Recent",
     showViewToggle: true,

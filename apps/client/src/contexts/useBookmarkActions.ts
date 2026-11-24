@@ -141,6 +141,28 @@ export function useBookmarkActions() {
     [clearViewCache, loadBookmarks],
   );
 
+  const checkBookmarkLink = useCallback(
+    async (id: string) => {
+      try {
+        const response = await api<{ data: { status: string } }>(
+          `/bookmarks/${id}/check-link`,
+          { method: "POST" },
+        );
+        clearViewCache();
+        await loadBookmarks();
+        showToast(
+          `Link status: ${response.data.status}`,
+          ["ok", "redirect"].includes(response.data.status)
+            ? "success"
+            : "info",
+        );
+      } catch (err: unknown) {
+        showToast((err as Error).message, "error");
+      }
+    },
+    [clearViewCache, loadBookmarks],
+  );
+
   const createBookmark = useCallback(
     async (data: Partial<Bookmark>) => {
       try {
@@ -194,5 +216,6 @@ export function useBookmarkActions() {
     createBookmark,
     updateBookmark,
     setReadingState,
+    checkBookmarkLink,
   };
 }

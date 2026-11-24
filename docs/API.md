@@ -1271,9 +1271,9 @@ curl -H "X-API-Key: lv_xxxxxxxxxxxxxxxx" \
 
 ## Rate Limiting
 
-- **General API**: 60 requests per minute per IP (configurable via `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_MS`).
+- **General API**: 60 requests per minute for anonymous traffic (configurable via `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_MS`). Logged-in users get a separate, higher 600 requests-per-minute tier (configurable via `RATE_LIMIT_AUTHENTICATED_MAX`) so normal UI activity is not rate limited.
 - **Auth (login/register)**: 10 requests per minute per IP (configurable via `RATE_LIMIT_AUTH_MAX`, `RATE_LIMIT_AUTH_WINDOW_MS`) to reduce brute-force risk.
-- **Maintenance** (`/api/maintenance/*`): 20 requests per minute per IP (configurable via `RATE_LIMIT_MAINTENANCE_MAX`, `RATE_LIMIT_MAINTENANCE_WINDOW_MS`) to limit resource-intensive operations.
+- **Maintenance** (`/api/maintenance/*`): 20 requests per minute per client/user bucket (configurable via `RATE_LIMIT_MAINTENANCE_MAX`, `RATE_LIMIT_MAINTENANCE_WINDOW_MS`) to limit resource-intensive operations.
 - Health, static assets, and read-only auth (`/api/auth/me`, `/api/auth/refresh`) are not rate-limited; login and register use the auth limit; maintenance uses the maintenance limit.
 - Returns `429 Too Many Requests` when exceeded; response may include a `Retry-After` header (seconds until the limit window resets).
 - Set `RATE_LIMIT_DISABLED=1` to disable (e.g. when all traffic is one IP behind a reverse proxy).

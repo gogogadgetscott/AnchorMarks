@@ -1,5 +1,6 @@
 // Config via env:
 // General API: RATE_LIMIT_MAX (default 60), RATE_LIMIT_WINDOW_MS (default 60000).
+// Authenticated API traffic: RATE_LIMIT_AUTHENTICATED_MAX (default 600), same window.
 // Auth (login/register): RATE_LIMIT_AUTH_MAX (default 10), RATE_LIMIT_AUTH_WINDOW_MS (default 60000).
 //   Auth attempts are persisted in SQLite so the brute-force window survives server restarts.
 // API key writes (POST/PUT via API key): RATE_LIMIT_API_KEY_WRITE_MAX (default 30), same window.
@@ -18,6 +19,16 @@ const RATE_LIMIT_WINDOW =
 const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX, 10);
 const effectiveMax =
   Number.isNaN(RATE_LIMIT_MAX) || RATE_LIMIT_MAX <= 0 ? 60 : RATE_LIMIT_MAX;
+
+const RATE_LIMIT_AUTHENTICATED_MAX = parseInt(
+  process.env.RATE_LIMIT_AUTHENTICATED_MAX,
+  10,
+);
+const effectiveAuthenticatedMax =
+  Number.isNaN(RATE_LIMIT_AUTHENTICATED_MAX) ||
+  RATE_LIMIT_AUTHENTICATED_MAX <= 0
+    ? 600
+    : RATE_LIMIT_AUTHENTICATED_MAX;
 
 const RATE_LIMIT_AUTH_WINDOW =
   parseInt(process.env.RATE_LIMIT_AUTH_WINDOW_MS, 10) || 60000; // 1 minute
@@ -176,6 +187,17 @@ function getClientKey(req) {
   );
 }
 
+function getAuthenticatedUserId(req) {
+  try {
+    const token = req.cookies && req.cookies[`${config.COOKIE_PREFIX}token`];
+    if (!token) return null;
+    const decoded = jwt.verify(token, config.JWT_SECRET);
+    return decoded.userId || decoded.id || null;
+  } catch {
+    return null;
+  }
+}
+
 function sendRateLimitExceeded(res, retryAfterSeconds) {
   if (retryAfterSeconds > 0 && retryAfterSeconds <= 3600) {
     res.setHeader("Retry-After", String(Math.ceil(retryAfterSeconds)));
@@ -195,6 +217,7 @@ function rateLimiterImpl(db, req, res, next) {
   try {
     const now = Date.now();
     const key = getClientKey(req);
+    const authenticatedUserId = getAuthenticatedUserId(req);
 
     // Stricter rate limit for login/register (brute-force protection).
     // Counts are persisted in SQLite so the window survives server restarts.
@@ -202,6 +225,10 @@ function rateLimiterImpl(db, req, res, next) {
       req.method === "POST" &&
       (req.path === "/api/auth/login" || req.path === "/api/auth/register");
     if (isAuthStrict) {
+      // A logged-in session does not need to consume the anonymous auth
+      // brute-force bucket. This also prevents normal re-login UI flows
+      // from triggering a 429.
+      if (authenticatedUserId) return next();
       const count = incrementAuthCount(db, key, RATE_LIMIT_AUTH_WINDOW);
       if (count > effectiveAuthMax) {
         const windowStart = getWindowStartMs(RATE_LIMIT_AUTH_WINDOW);
@@ -289,7 +316,10 @@ function rateLimiterImpl(db, req, res, next) {
     const recent = times.filter((t) => now - t < RATE_LIMIT_WINDOW);
     recent.push(now);
     requestCounts.set(key, recent);
-    if (recent.length > effectiveMax) {
+    const effectiveLimit = authenticatedUserId
+      ? effectiveAuthenticatedMax
+      : effectiveMax;
+    if (recent.length > effectiveLimit) {
       const retryAfter = (recent[0] + RATE_LIMIT_WINDOW - now) / 1000;
       return sendRateLimitExceeded(res, retryAfter);
     }
@@ -313,5 +343,6 @@ module.exports._maps = {
 // Effective limits resolved from env at module load — tests need them so a
 // 429 test can hit the exact threshold without hardcoding 60/30.
 module.exports._effectiveMax = effectiveMax;
+module.exports._effectiveAuthenticatedMax = effectiveAuthenticatedMax;
 module.exports._effectiveApiKeyWriteMax = effectiveApiKeyWriteMax;
 module.exports._effectiveAuthMax = effectiveAuthMax;

@@ -75,6 +75,7 @@ function listBookmarks(db, userId, opts = {}) {
     most_used,
     reading_state,
     reading_queue,
+    link_health_status,
   } = opts;
 
   const isFavoritesView = favorites === true || favorites === "true";
@@ -143,6 +144,11 @@ function listBookmarks(db, userId, opts = {}) {
     whereClauses.push(
       "COALESCE(b.reading_state, 'unread') IN ('unread', 'reading')",
     );
+  }
+
+  if (link_health_status) {
+    whereClauses.push("COALESCE(b.link_health_status, 'unknown') = ?");
+    filterParams.push(link_health_status);
   }
 
   // Handle search matching
@@ -324,6 +330,7 @@ function listViewTags(db, userId, opts = {}) {
     tagMode,
     reading_state,
     reading_queue,
+    link_health_status,
   } = opts;
   const isFavoritesView = favorites === true || favorites === "true";
   const isArchivedView = archived === true || archived === "true";
@@ -364,6 +371,11 @@ function listViewTags(db, userId, opts = {}) {
     bookmarkClauses.push(
       "COALESCE(b.reading_state, 'unread') IN ('unread', 'reading')",
     );
+  }
+
+  if (link_health_status) {
+    bookmarkClauses.push("COALESCE(b.link_health_status, 'unknown') = ?");
+    params.push(link_health_status);
   }
 
   if (tags) {
@@ -423,6 +435,7 @@ function listViewFolderIds(db, userId, opts = {}) {
     tagMode,
     reading_state,
     reading_queue,
+    link_health_status,
   } = opts;
   const isFavoritesView = favorites === true || favorites === "true";
   const isArchivedView = archived === true || archived === "true";
@@ -456,6 +469,11 @@ function listViewFolderIds(db, userId, opts = {}) {
   } else if (reading_queue === true || reading_queue === "true") {
     query +=
       " AND COALESCE(b.reading_state, 'unread') IN ('unread', 'reading')";
+  }
+
+  if (link_health_status) {
+    query += " AND COALESCE(b.link_health_status, 'unknown') = ?";
+    params.push(link_health_status);
   }
 
   if (tags) {
@@ -571,6 +589,9 @@ function updateBookmark(db, userId, id, fields = {}) {
     reading_state,
     read_at,
     archived_at,
+    link_health_status,
+    link_http_code,
+    last_checked,
     og_image,
   } = fields;
   assertFolderOwnership(db, userId, folder_id);
@@ -634,6 +655,18 @@ function updateBookmark(db, userId, id, fields = {}) {
   if (archived_at !== undefined && is_archived === undefined) {
     setFields.push("archived_at = ?");
     values.push(archived_at);
+  }
+  if (link_health_status !== undefined) {
+    setFields.push("link_health_status = ?");
+    values.push(link_health_status);
+  }
+  if (link_http_code !== undefined) {
+    setFields.push("link_http_code = ?");
+    values.push(link_http_code);
+  }
+  if (last_checked !== undefined) {
+    setFields.push("last_checked = ?");
+    values.push(last_checked);
   }
   if (og_image !== undefined) {
     setFields.push("og_image = ?");
@@ -732,6 +765,20 @@ function setReadingState(db, userId, ids, readingState, archive) {
   })();
 }
 
+function setLinkHealth(db, userId, id, health) {
+  return db
+    .prepare(
+      `UPDATE bookmarks
+       SET link_health_status = ?,
+           link_http_code = ?,
+           is_dead = CASE WHEN ? = 'dead' THEN 1 ELSE 0 END,
+           last_checked = CURRENT_TIMESTAMP,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = ? AND user_id = ?`,
+    )
+    .run(health.status, health.httpCode, health.status, id, userId);
+}
+
 function setThumbnailLocal(db, bookmarkId, localPath, userId) {
   if (!userId) throw new Error("setThumbnailLocal requires userId");
   return db
@@ -826,4 +873,5 @@ module.exports = {
   getRecentCountForDomain,
   getMostClickedForDomain,
   setReadingState,
+  setLinkHealth,
 };

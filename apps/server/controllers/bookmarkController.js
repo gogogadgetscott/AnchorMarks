@@ -14,6 +14,7 @@ const {
 } = require("../services/metadataService");
 const { logger } = require("../lib/logger");
 const { reportAndSend } = require("../lib/errors");
+const { checkUrlHealth } = require("../services/linkHealthService");
 
 function parseTagsDetailed(raw) {
   if (!raw) return [];
@@ -51,6 +52,7 @@ function listBookmarks(req, res) {
     archived,
     reading_state,
     reading_queue,
+    link_health_status,
   } = req.query;
   try {
     // Prevent browser caching of bookmark list to ensure fresh data on filter changes
@@ -72,6 +74,7 @@ function listBookmarks(req, res) {
       archived,
       reading_state,
       reading_queue,
+      link_health_status,
     });
     if (result.total !== undefined) {
       result.bookmarks.forEach((b) => {
@@ -172,6 +175,13 @@ function getBookmarkCounts(req, res) {
       archived: archivedCount,
       most_used: mostUsedCount,
       read_later: readLaterCount,
+      dead_links: Number(
+        db
+          .prepare(
+            "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND COALESCE(link_health_status, 'unknown') = 'dead' AND is_archived = 0",
+          )
+          .get(userId)?.count || 0,
+      ),
     });
   } catch (err) {
     return reportAndSend(res, err, logger, "Error fetching bookmark counts");
@@ -426,6 +436,43 @@ function bulkReadingState(req, res) {
   }
 }
 
+async function checkBookmarkLink(req, res) {
+  const db = req.app.get("db");
+  try {
+    const bookmark = bookmarkModel.getBookmarkById(
+      db,
+      req.user.id,
+      req.params.id,
+    );
+    if (!bookmark) return res.status(404).json({ error: "Bookmark not found" });
+    const health = await checkUrlHealth(bookmark.url);
+    bookmarkModel.setLinkHealth(db, req.user.id, bookmark.id, health);
+    broadcast(req.user.id, { type: "bookmarks:changed" });
+    res.json({ success: true, data: { ...bookmark, ...health } });
+  } catch (err) {
+    return reportAndSend(res, err, logger, "Error checking bookmark link");
+  }
+}
+
+async function bulkCheckBookmarkLinks(req, res) {
+  const db = req.app.get("db");
+  const { ids } = req.validated;
+  try {
+    const results = [];
+    for (const id of ids) {
+      const bookmark = bookmarkModel.getBookmarkById(db, req.user.id, id);
+      if (!bookmark) continue;
+      const health = await checkUrlHealth(bookmark.url);
+      bookmarkModel.setLinkHealth(db, req.user.id, id, health);
+      results.push({ id, ...health });
+    }
+    broadcast(req.user.id, { type: "bookmarks:changed" });
+    res.json({ success: true, data: { checked: results.length, results } });
+  } catch (err) {
+    return reportAndSend(res, err, logger, "Error checking bookmark links");
+  }
+}
+
 function archiveBookmark(req, res) {
   const db = req.app.get("db");
   try {
@@ -524,6 +571,8 @@ module.exports = {
   unarchiveBookmark,
   updateReadingState,
   bulkReadingState,
+  checkBookmarkLink,
+  bulkCheckBookmarkLinks,
   refreshFavicon,
   trackClick,
   generateThumbnail,

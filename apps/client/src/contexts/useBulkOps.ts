@@ -263,6 +263,18 @@ export function useBulkOps() {
     [selectedBookmarks, clearViewCache, loadBookmarks, clearSelections],
   );
 
+  const bulkCheckLinks = useCallback(async () => {
+    if (selectedBookmarks.size === 0) return;
+    await api("/bookmarks/bulk/check-links", {
+      method: "POST",
+      body: JSON.stringify({ ids: Array.from(selectedBookmarks) }),
+    });
+    clearViewCache();
+    await loadBookmarks();
+    clearSelections();
+    showToast("Selected links checked", "success");
+  }, [selectedBookmarks, clearViewCache, loadBookmarks, clearSelections]);
+
   const bulkAutoTag = useCallback(async () => {
     if (selectedBookmarks.size === 0) return;
 
@@ -353,6 +365,7 @@ export function useBulkOps() {
     bulkUnarchive,
     bulkAutoTag,
     bulkReadingState,
+    bulkCheckLinks,
     clearSelections,
   };
 }

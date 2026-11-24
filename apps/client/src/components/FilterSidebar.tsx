@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useModal } from "@contexts/ModalContext";
 import { useBookmarks } from "@contexts/BookmarksContext";
-import type { ReadingState } from "@/types";
+import type { LinkHealthStatus, ReadingState } from "@/types";
 
 const SORT_OPTIONS: { value: string; label: string }[] = [
   { value: "recently_added", label: "Recently Added" },
@@ -58,6 +58,12 @@ export function FilterSidebar() {
     await loadBookmarks({ filterOverride: next });
   };
 
+  const setLinkHealth = async (linkHealth: LinkHealthStatus | "all") => {
+    const next = { ...filterConfig, linkHealth };
+    setFilterConfig(next);
+    await loadBookmarks({ filterOverride: next });
+  };
+
   return (
     <div
       className="filter-sidebar"
@@ -103,6 +109,26 @@ export function FilterSidebar() {
           </select>
         </div>
 
+        <div className="filter-section">
+          <h4>Link Health</h4>
+          <select
+            id="filter-link-health"
+            className="form-input"
+            value={filterConfig.linkHealth ?? "all"}
+            onChange={(e) =>
+              setLinkHealth(e.target.value as LinkHealthStatus | "all")
+            }
+          >
+            <option value="all">Any status</option>
+            <option value="unknown">Not checked</option>
+            <option value="ok">Reachable</option>
+            <option value="redirect">Redirected</option>
+            <option value="dead">Dead</option>
+            <option value="blocked">Blocked by site</option>
+            <option value="timeout">Timed out</option>
+          </select>
+        </div>
+
         {/* Sort Bookmarks */}
         <div className="filter-section">
           <h4>Sort Bookmarks</h4>
@@ -143,7 +169,8 @@ export function FilterSidebar() {
           <h4>Active Filters</h4>
           <div className="selected-tags" id="filter-selected-tags">
             {activeTags.length === 0 &&
-            (filterConfig.readingState ?? "all") === "all" ? (
+            (filterConfig.readingState ?? "all") === "all" &&
+            (filterConfig.linkHealth ?? "all") === "all" ? (
               <span
                 className="text-tertiary"
                 style={{ fontSize: "0.875rem", fontStyle: "italic" }}
@@ -160,6 +187,12 @@ export function FilterSidebar() {
                         ? "Currently reading"
                         : filterConfig.readingState[0].toUpperCase() +
                           filterConfig.readingState.slice(1)}
+                    </span>
+                  )}
+                {filterConfig.linkHealth &&
+                  filterConfig.linkHealth !== "all" && (
+                    <span className="tag-badge tag-active">
+                      Link: {filterConfig.linkHealth}
                     </span>
                   )}
                 {activeTags.map((tag) => (

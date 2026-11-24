@@ -1,6 +1,5 @@
-const https = require("https");
-const http = require("http");
-const { isPrivateAddress, resolveToPublicIp } = require("../utils/ssrfUtils");
+const { checkUrlHealth } = require("../services/linkHealthService");
+const bookmarkModel = require("./bookmark");
 
 function getStats(db, userId) {
   const bookmarkStats = db
@@ -231,87 +230,15 @@ async function runDeadlinkChecks(db, userId, limit = 50) {
   const checkList = bookmarks.slice(0, 20);
 
   for (const bookmark of checkList) {
-    try {
-      const urlObj = new URL(bookmark.url);
-      if (!["http:", "https:"].includes(urlObj.protocol)) {
-        db.prepare(
-          "UPDATE bookmarks SET last_checked = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
-        ).run(bookmark.id, userId);
-        results.push({
-          id: bookmark.id,
-          url: bookmark.url,
-          title: bookmark.title,
-          error: "Invalid URL protocol",
-        });
-        continue;
-      }
-      if (
-        process.env.NODE_ENV === "production" &&
-        (await isPrivateAddress(bookmark.url))
-      ) {
-        db.prepare(
-          "UPDATE bookmarks SET last_checked = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
-        ).run(bookmark.id, userId);
-        results.push({
-          id: bookmark.id,
-          url: bookmark.url,
-          title: bookmark.title,
-          error: "Private networks not allowed",
-        });
-        continue;
-      }
-      const protocol = urlObj.protocol === "https:" ? https : http;
-      let requestOptions = {
-        method: "HEAD",
-        timeout: 5000,
-      };
-      if (process.env.NODE_ENV === "production") {
-        const publicIp = await resolveToPublicIp(urlObj.hostname);
-        requestOptions = {
-          ...requestOptions,
-          hostname: publicIp,
-          port: urlObj.port || undefined,
-          path: `${urlObj.pathname}${urlObj.search}`,
-          headers: { Host: urlObj.host },
-          ...(urlObj.protocol === "https:"
-            ? { servername: urlObj.hostname }
-            : {}),
-        };
-      } else {
-        requestOptions = bookmark.url;
-      }
-
-      const isDead = await new Promise((resolve) => {
-        const req = protocol.request(requestOptions, (response) => {
-          resolve(response.statusCode >= 400);
-        });
-        req.on("error", () => resolve(true));
-        req.on("timeout", () => {
-          req.destroy();
-          resolve(true);
-        });
-        req.end();
-      });
-
-      db.prepare(
-        "UPDATE bookmarks SET is_dead = ?, last_checked = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
-      ).run(isDead ? 1 : 0, bookmark.id, userId);
-
-      if (isDead)
-        results.push({
-          id: bookmark.id,
-          url: bookmark.url,
-          title: bookmark.title,
-        });
-    } catch (e) {
-      db.prepare(
-        "UPDATE bookmarks SET is_dead = 1, last_checked = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
-      ).run(bookmark.id, userId);
+    const health = await checkUrlHealth(bookmark.url);
+    bookmarkModel.setLinkHealth(db, userId, bookmark.id, health);
+    if (health.status === "dead" || health.status === "timeout") {
       results.push({
         id: bookmark.id,
         url: bookmark.url,
         title: bookmark.title,
-        error: e.message,
+        health_status: health.status,
+        error: health.error,
       });
     }
   }

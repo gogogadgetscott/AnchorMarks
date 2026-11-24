@@ -129,6 +129,16 @@ describe("FilterSidebar (React)", () => {
     });
   });
 
+  it("reloads bookmarks when link health changes", () => {
+    renderSidebar();
+    fireEvent.change(document.querySelector("#filter-link-health")!, {
+      target: { value: "dead" },
+    });
+    expect(mockLoadBookmarks).toHaveBeenCalledWith({
+      filterOverride: expect.objectContaining({ linkHealth: "dead" }),
+    });
+  });
+
   it("filters tag list by search input", () => {
     renderSidebar();
     const searchInput = screen.getByPlaceholderText("Search tags…");
