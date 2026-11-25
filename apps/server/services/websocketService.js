@@ -11,6 +11,7 @@
 const { WebSocketServer } = require("ws");
 const jwt = require("jsonwebtoken");
 const config = require("../config");
+const { invalidateUserCounts } = require("./bookmarkCountsCache");
 
 // userId → Set<WebSocket>
 const clients = new Map();
@@ -205,6 +206,9 @@ function initWebSocket(server, db) {
  * @param {{ type: string, payload?: any }} event - The event to send
  */
 function broadcast(userId, event) {
+  if (event?.type === "bookmarks:changed" || event?.type === "tags:changed") {
+    invalidateUserCounts(userId);
+  }
   if (!clients.has(userId)) return;
 
   const message = JSON.stringify(event);

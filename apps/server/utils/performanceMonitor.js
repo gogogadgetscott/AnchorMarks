@@ -10,6 +10,7 @@ class PerformanceMonitor {
       dbQueries: [],
       errors: [],
       slowQueries: [],
+      clientTelemetry: [],
     };
     this.maxMetrics = 1000; // Keep last 1000 entries
   }
@@ -18,6 +19,9 @@ class PerformanceMonitor {
    * Track API request
    */
   trackRequest(req, res, duration) {
+    const clientTelemetry = parseClientTelemetry(
+      req.headers["x-client-telemetry"],
+    );
     const metric = {
       method: req.method,
       path: req.path,
@@ -25,11 +29,23 @@ class PerformanceMonitor {
       timestamp: Date.now(),
       statusCode: res.statusCode,
       userId: req.user?.id || "anonymous",
+      ...(clientTelemetry ? { clientTelemetry } : {}),
     };
 
     this.metrics.apiRequests.push(metric);
     if (this.metrics.apiRequests.length > this.maxMetrics) {
       this.metrics.apiRequests.shift();
+    }
+
+    if (clientTelemetry) {
+      this.metrics.clientTelemetry.push({
+        timestamp: Date.now(),
+        userId: req.user?.id || "anonymous",
+        ...clientTelemetry,
+      });
+      if (this.metrics.clientTelemetry.length > this.maxMetrics) {
+        this.metrics.clientTelemetry.shift();
+      }
     }
 
     // Track slow requests (>1s)
@@ -105,6 +121,9 @@ class PerformanceMonitor {
     const recentErrors = this.metrics.errors.filter(
       (m) => m.timestamp > cutoff,
     );
+    const recentClientTelemetry = this.metrics.clientTelemetry.filter(
+      (m) => m.timestamp > cutoff,
+    );
 
     const avgRequestTime =
       recentRequests.length > 0
@@ -177,6 +196,54 @@ class PerformanceMonitor {
         timestamp: q.timestamp,
         type: q.type,
       })),
+      criticalEndpoints: this.getEndpointStats(
+        [
+          "GET /api/bookmarks",
+          "GET /api/tags",
+          "GET /api/bookmarks/counts",
+        ],
+        recentRequests,
+      ),
+      clientTelemetry: this.getClientTelemetrySummary(recentClientTelemetry),
+    };
+  }
+
+  getEndpointStats(endpointKeys, recentRequests) {
+    const byEndpoint = {};
+    endpointKeys.forEach((key) => {
+      const [method, path] = key.split(" ");
+      const entries = recentRequests.filter(
+        (m) => m.method === method && m.path === path,
+      );
+      byEndpoint[key] = {
+        total: entries.length,
+        avgDuration:
+          entries.length > 0
+            ? entries.reduce((sum, m) => sum + m.duration, 0) / entries.length
+            : 0,
+        p95: this.percentile(
+          entries.map((entry) => entry.duration),
+          95,
+        ),
+      };
+    });
+    return byEndpoint;
+  }
+
+  getClientTelemetrySummary(entries) {
+    if (entries.length === 0) {
+      return {
+        samples: 0,
+        avgTimeoutRatePct: 0,
+        p95TimeoutRatePct: 0,
+      };
+    }
+    const timeoutRates = entries.map((entry) => entry.timeoutRatePct || 0);
+    return {
+      samples: entries.length,
+      avgTimeoutRatePct:
+        timeoutRates.reduce((sum, rate) => sum + rate, 0) / timeoutRates.length,
+      p95TimeoutRatePct: this.percentile(timeoutRates, 95),
     };
   }
 
@@ -205,7 +272,34 @@ class PerformanceMonitor {
     this.metrics.errors = this.metrics.errors.filter(
       (m) => m.timestamp > cutoff,
     );
+    this.metrics.clientTelemetry = this.metrics.clientTelemetry.filter(
+      (m) => m.timestamp > cutoff,
+    );
   }
+}
+
+function parseClientTelemetry(raw) {
+  if (!raw || typeof raw !== "string") return null;
+  const parts = raw
+    .split(";")
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+  const values = {};
+  parts.forEach((part) => {
+    const [key, value] = part.split("=");
+    if (!key || value === undefined) return;
+    values[key] = value;
+  });
+  const requests = Number.parseInt(values.r || "0", 10);
+  const timeouts = Number.parseInt(values.t || "0", 10);
+  if (!Number.isFinite(requests) || requests < 0) return null;
+  if (!Number.isFinite(timeouts) || timeouts < 0) return null;
+  if (requests === 0) return null;
+  return {
+    requests,
+    timeouts,
+    timeoutRatePct: Math.min((timeouts / requests) * 100, 100),
+  };
 }
 
 // Create singleton instance

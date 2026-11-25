@@ -63,6 +63,7 @@ All notable changes to AnchorMarks are documented here.
 - **Sidebar nav badges no longer refetch counts on every bookmarks change** — the `/bookmarks/counts` request is now debounced (400 ms) and skipped when the counts are unchanged, so pagination and reloads no longer hammer the endpoint while scrolling
 - **Duplicate `loadBookmarks` requests are deduplicated** — a view change triggered by both the sidebar handler and the App-level `currentView` effect (plus every filterConfig change that recreated the loader callback) resulted in two identical network requests; an in-flight cache-key guard now collapses them into one
 - **Search now matches folder names** — the full-text index previously indexed only title, URL, description, and tags, so searching a folder name found nothing. The FTS index now includes a `folder` column (kept in sync on bookmark create/update/tag changes and folder rename), `/api/quick-search` also matches folder names, and the client-side fallback/omnibar search now matches description text too. Added search-coverage regression tests
+- **Bookmark count and latency visibility hardening** — `/api/bookmarks/counts` now uses short-lived per-user caching with invalidation on bookmark/tag change broadcasts, count SQL is consolidated into one aggregate query, and additional bookmark/tag/health indexes reduce filter and count latency on large libraries. `/api/health/performance` now includes focused stats for `GET /api/bookmarks`, `GET /api/tags`, and `GET /api/bookmarks/counts` plus client-reported timeout-rate telemetry.
 
 ---
 

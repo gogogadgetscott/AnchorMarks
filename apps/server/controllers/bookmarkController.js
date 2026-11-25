@@ -16,6 +16,10 @@ const { logger } = require("../lib/logger");
 const { reportAndSend } = require("../lib/errors");
 const { checkUrlHealth } = require("../services/linkHealthService");
 const statsModel = require("../models/stats");
+const {
+  getCachedCounts,
+  setCachedCounts,
+} = require("../services/bookmarkCountsCache");
 
 function parseTagsDetailed(raw) {
   if (!raw) return [];
@@ -39,6 +43,7 @@ function hasOwnedFolder(db, userId, folderId) {
 
 function listBookmarks(req, res) {
   const db = req.app.get("db");
+  const startedAt = Date.now();
   const {
     folder_id,
     include_children,
@@ -104,25 +109,55 @@ function listBookmarks(req, res) {
           req.user.id,
           viewOpts,
         );
-        return res.json({
+        const payload = {
           bookmarks: result.bookmarks,
           total: result.total,
           limit: parseInt(limit) || undefined,
           offset: safeOffset,
           tags: responseTags,
           viewFolderIds,
-        });
+        };
+        if (Date.now() - startedAt > 1500) {
+          logger.warn("Slow listBookmarks request", {
+            userId: req.user.id,
+            durationMs: Date.now() - startedAt,
+            search: Boolean(search),
+            tags: Boolean(tags),
+            favorites: favorites === "true" || favorites === true,
+            archived: archived === "true" || archived === true,
+            mostUsed: most_used === "true" || most_used === true,
+          });
+        }
+        return res.json(payload);
       }
-      return res.json({
+      const payload = {
         bookmarks: result.bookmarks,
         total: result.total,
         limit: parseInt(limit) || undefined,
         offset: safeOffset,
-      });
+      };
+      if (Date.now() - startedAt > 1500) {
+        logger.warn("Slow listBookmarks request", {
+          userId: req.user.id,
+          durationMs: Date.now() - startedAt,
+          search: Boolean(search),
+          tags: Boolean(tags),
+          favorites: favorites === "true" || favorites === true,
+          archived: archived === "true" || archived === true,
+          mostUsed: most_used === "true" || most_used === true,
+        });
+      }
+      return res.json(payload);
     }
     result.bookmarks.forEach((b) => {
       b.tags_detailed = parseTagsDetailed(b.tags_detailed);
     });
+    if (Date.now() - startedAt > 1500) {
+      logger.warn("Slow listBookmarks request", {
+        userId: req.user.id,
+        durationMs: Date.now() - startedAt,
+      });
+    }
     res.json(result.bookmarks);
   } catch (err) {
     return reportAndSend(res, err, logger, "Error listing bookmarks");
@@ -131,48 +166,36 @@ function listBookmarks(req, res) {
 
 function getBookmarkCounts(req, res) {
   const db = req.app.get("db");
+  const startedAt = Date.now();
   try {
     const userId = req.user.id;
-    const allCount = Number(
-      db
-        .prepare(
-          "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND is_archived = 0",
-        )
-        .get(userId)?.count || 0,
-    );
-    const favoritesCount = Number(
-      db
-        .prepare(
-          "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND is_favorite = 1 AND is_archived = 0",
-        )
-        .get(userId)?.count || 0,
-    );
+    const cached = getCachedCounts(userId);
+    if (cached) return res.json(cached);
+    const summary = db
+      .prepare(
+        `
+        SELECT
+          SUM(CASE WHEN is_archived = 0 THEN 1 ELSE 0 END) AS all_count,
+          SUM(CASE WHEN is_favorite = 1 AND is_archived = 0 THEN 1 ELSE 0 END) AS favorites_count,
+          SUM(CASE WHEN is_archived = 1 THEN 1 ELSE 0 END) AS archived_count,
+          SUM(CASE WHEN COALESCE(reading_state, 'unread') IN ('unread', 'reading') AND is_archived = 0 THEN 1 ELSE 0 END) AS read_later_count,
+          SUM(CASE WHEN click_count > 0 AND is_archived = 0 THEN 1 ELSE 0 END) AS most_used_count,
+          SUM(CASE WHEN COALESCE(link_health_status, 'unknown') = 'dead' AND is_archived = 0 THEN 1 ELSE 0 END) AS dead_links_count
+        FROM bookmarks
+        WHERE user_id = ?
+        `,
+      )
+      .get(userId);
+    const allCount = Number(summary?.all_count || 0);
+    const favoritesCount = Number(summary?.favorites_count || 0);
     const recentCount = Math.min(allCount, 20);
-    const archivedCount = Number(
-      db
-        .prepare(
-          "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND is_archived = 1",
-        )
-        .get(userId)?.count || 0,
-    );
-    const readLaterCount = Number(
-      db
-        .prepare(
-          "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND COALESCE(reading_state, 'unread') IN ('unread', 'reading') AND is_archived = 0",
-        )
-        .get(userId)?.count || 0,
-    );
-    const mostUsedCount = Number(
-      db
-        .prepare(
-          "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND click_count > 0 AND is_archived = 0",
-        )
-        .get(userId)?.count || 0,
-    );
+    const archivedCount = Number(summary?.archived_count || 0);
+    const readLaterCount = Number(summary?.read_later_count || 0);
+    const mostUsedCount = Number(summary?.most_used_count || 0);
     const duplicateCount = statsModel.findDuplicates(db, userId, {
       includeTitleMatches: false,
     }).length;
-    res.json({
+    const payload = {
       all: allCount,
       favorites: favoritesCount,
       recent: recentCount,
@@ -180,14 +203,16 @@ function getBookmarkCounts(req, res) {
       most_used: mostUsedCount,
       read_later: readLaterCount,
       duplicates: duplicateCount,
-      dead_links: Number(
-        db
-          .prepare(
-            "SELECT COUNT(*) as count FROM bookmarks WHERE user_id = ? AND COALESCE(link_health_status, 'unknown') = 'dead' AND is_archived = 0",
-          )
-          .get(userId)?.count || 0,
-      ),
-    });
+      dead_links: Number(summary?.dead_links_count || 0),
+    };
+    setCachedCounts(userId, payload);
+    if (Date.now() - startedAt > 1000) {
+      logger.warn("Slow getBookmarkCounts request", {
+        userId,
+        durationMs: Date.now() - startedAt,
+      });
+    }
+    res.json(payload);
   } catch (err) {
     return reportAndSend(res, err, logger, "Error fetching bookmark counts");
   }

@@ -1272,6 +1272,45 @@ Check API health status.
 
 ---
 
+### Performance Stats
+
+Inspect recent API/query latency metrics.
+
+**Endpoint**: `GET /api/health/performance?window=<milliseconds>`  
+**Auth Required**: Yes
+
+**Response** (200 OK):
+
+```json
+{
+  "requests": {
+    "total": 120,
+    "avgDuration": 43.1,
+    "p95": 180,
+    "p99": 420,
+    "byEndpoint": {
+      "GET /api/bookmarks": {
+        "count": 60,
+        "avgDuration": 51.2,
+        "errors": 0
+      }
+    }
+  },
+  "criticalEndpoints": {
+    "GET /api/bookmarks": { "total": 60, "avgDuration": 51.2, "p95": 170 },
+    "GET /api/tags": { "total": 30, "avgDuration": 22.4, "p95": 70 },
+    "GET /api/bookmarks/counts": { "total": 30, "avgDuration": 14.8, "p95": 40 }
+  },
+  "clientTelemetry": {
+    "samples": 30,
+    "avgTimeoutRatePct": 0.7,
+    "p95TimeoutRatePct": 2.1
+  }
+}
+```
+
+---
+
 ## Error Responses
 
 All endpoints may return the following error responses:

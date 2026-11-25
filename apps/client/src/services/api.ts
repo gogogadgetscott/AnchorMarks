@@ -46,6 +46,7 @@ const MAX_CACHE_SIZE = 100;
 
 // Cleanup threshold: remove entries older than this (5 minutes)
 const CLEANUP_THRESHOLD_MS = 5 * 60 * 1000;
+const CLIENT_TELEMETRY_KEY = "anchormarks_api_telemetry";
 
 let cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
 
@@ -116,6 +117,57 @@ function getErrorMessage(payload: unknown, fallback: string): string {
     const errorField = (payload as Record<string, unknown>).error;
     if (typeof errorField === "string") return errorField;
   }
+
+  type ClientTelemetry = {
+    requests: number;
+    timeouts: number;
+  };
+
+  function readClientTelemetry(): ClientTelemetry {
+    if (typeof window === "undefined") return { requests: 0, timeouts: 0 };
+    try {
+      const raw = window.localStorage.getItem(CLIENT_TELEMETRY_KEY);
+      if (!raw) return { requests: 0, timeouts: 0 };
+      const parsed = JSON.parse(raw);
+      const requests = Number(parsed?.requests ?? 0);
+      const timeouts = Number(parsed?.timeouts ?? 0);
+      if (!Number.isFinite(requests) || !Number.isFinite(timeouts)) {
+        return { requests: 0, timeouts: 0 };
+      }
+      return {
+        requests: Math.max(0, Math.floor(requests)),
+        timeouts: Math.max(0, Math.floor(timeouts)),
+      };
+    } catch {
+      return { requests: 0, timeouts: 0 };
+    }
+  }
+
+  function writeClientTelemetry(next: ClientTelemetry): void {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(CLIENT_TELEMETRY_KEY, JSON.stringify(next));
+    } catch {
+      // Ignore storage quota/access failures.
+    }
+  }
+
+  function getClientTelemetryHeader(incrementRequest = false): string | null {
+    const telemetry = readClientTelemetry();
+    const requests = telemetry.requests + (incrementRequest ? 1 : 0);
+    const next = { requests, timeouts: telemetry.timeouts };
+    if (incrementRequest) writeClientTelemetry(next);
+    if (requests <= 0) return null;
+    return `r=${requests};t=${next.timeouts}`;
+  }
+
+  function markClientTimeout(): void {
+    const telemetry = readClientTelemetry();
+    writeClientTelemetry({
+      requests: telemetry.requests,
+      timeouts: telemetry.timeouts + 1,
+    });
+  }
   return fallback;
 }
 
@@ -161,6 +213,8 @@ export async function api<T = unknown>(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
+  const telemetryHeader = getClientTelemetryHeader(true);
+  if (telemetryHeader) headers["X-Client-Telemetry"] = telemetryHeader;
   // Always send CSRF token for state-changing requests
   const method = (options.method || "GET").toUpperCase();
   let authBridge: ReturnType<typeof getAuthBridge> | null = null;
@@ -382,6 +436,7 @@ export async function api<T = unknown>(
           isGet &&
           !options.signal
         ) {
+          markClientTimeout();
           if (requestKey) {
             pendingRequests.delete(requestKey);
             requestMetadata.delete(requestKey);
@@ -393,9 +448,13 @@ export async function api<T = unknown>(
           err.message === "Request cancelled" ||
           err.message === "Request timeout or cancelled"
         ) {
+          if (err.message === "Request timeout or cancelled") {
+            markClientTimeout();
+          }
           throw err;
         }
         if (err.name === "AbortError") {
+          markClientTimeout();
           throw new Error("Request timeout or cancelled");
         }
       }

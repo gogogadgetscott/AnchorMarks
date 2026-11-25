@@ -71,6 +71,9 @@ function initializeDatabase(DB_PATH) {
       CREATE INDEX IF NOT EXISTS idx_bookmarks_folder ON bookmarks(folder_id);
       CREATE INDEX IF NOT EXISTS idx_bookmarks_archived ON bookmarks(user_id, is_archived);
       CREATE INDEX IF NOT EXISTS idx_bookmarks_favorite ON bookmarks(user_id, is_favorite, is_archived);
+      CREATE INDEX IF NOT EXISTS idx_bookmarks_reading_archived ON bookmarks(user_id, reading_state, is_archived);
+      CREATE INDEX IF NOT EXISTS idx_bookmarks_health_archived ON bookmarks(user_id, link_health_status, is_archived);
+      CREATE INDEX IF NOT EXISTS idx_bookmarks_folder_archived_created ON bookmarks(user_id, folder_id, is_archived, created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_bookmarks_created ON bookmarks(user_id, created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_bookmarks_clicked ON bookmarks(user_id, click_count DESC, last_clicked DESC);
       CREATE INDEX IF NOT EXISTS idx_bookmarks_title ON bookmarks(user_id, title);

@@ -8,9 +8,16 @@ const { reportAndSend } = require("../lib/errors");
 
 function listTags(req, res) {
   const db = req.app.get("db");
+  const startedAt = Date.now();
   try {
     const tagModel = require("../models/tag");
     const tags = tagModel.listTags(db, req.user.id);
+    if (Date.now() - startedAt > 1000) {
+      logger.warn("Slow listTags request", {
+        userId: req.user.id,
+        durationMs: Date.now() - startedAt,
+      });
+    }
     res.json(tags);
   } catch (err) {
     return reportAndSend(res, err, logger, "Error fetching tags");
