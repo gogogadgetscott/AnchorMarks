@@ -42,7 +42,11 @@ function getStatus(db, userId) {
   };
 }
 
-function push(db, userId, { bookmarks = [], folders = [] }) {
+function push(
+  db,
+  userId,
+  { bookmarks = [], folders = [], tag_aliases = [] } = {},
+) {
   const results = {
     created: 0,
     updated: 0,
@@ -53,6 +57,19 @@ function push(db, userId, { bookmarks = [], folders = [] }) {
   };
   /** Map client-provided folder id -> server-generated id for folders created in this push */
   const clientFolderIdToServerId = {};
+  tag_aliases.forEach((alias) => {
+    if (!alias?.alias || !alias?.canonical_name) return;
+    try {
+      require("../services/tagService").createTagAlias(
+        db,
+        userId,
+        alias.alias,
+        alias.canonical_name,
+      );
+    } catch (err) {
+      logger.warn("Sync push tag alias failed", err);
+    }
+  });
 
   // Parent ids must belong to this user (cross-tenant isolation) — mirrors
   // ownedFolderId() for bookmarks: an unowned parent degrades to top level.
@@ -260,7 +277,12 @@ function pull(db, userId) {
     .prepare("SELECT * FROM folders WHERE user_id = ? ORDER BY position")
     .all(userId);
 
-  return { bookmarks, folders };
+  const tag_aliases = db
+    .prepare(
+      "SELECT alias, canonical_name FROM tag_aliases WHERE user_id = ? ORDER BY alias COLLATE NOCASE",
+    )
+    .all(userId);
+  return { bookmarks, folders, tag_aliases };
 }
 
 module.exports = { getStatus, push, pull };

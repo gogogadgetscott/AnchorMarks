@@ -139,6 +139,7 @@ export async function api<T = unknown>(
   endpoint: string,
   options: RequestInit = {},
   timeout: number = DEFAULT_TIMEOUT_MS,
+  retryOnTimeout: boolean = true,
 ): Promise<T> {
   // For GET requests, check if there's already a pending request
   const isGet = !options.method || options.method === "GET";
@@ -375,6 +376,19 @@ export async function api<T = unknown>(
     } catch (err) {
       // Handle abort: rethrow our typed errors, or map AbortError to timeout message
       if (err instanceof Error) {
+        if (
+          err.message === "Request timeout or cancelled" &&
+          retryOnTimeout &&
+          isGet &&
+          !options.signal
+        ) {
+          if (requestKey) {
+            pendingRequests.delete(requestKey);
+            requestMetadata.delete(requestKey);
+          }
+          const retryTimeout = Math.min(timeout + 8000, 45000);
+          return api<T>(endpoint, options, retryTimeout, false);
+        }
         if (
           err.message === "Request cancelled" ||
           err.message === "Request timeout or cancelled"

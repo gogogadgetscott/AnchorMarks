@@ -169,7 +169,9 @@ function getBookmarkCounts(req, res) {
         )
         .get(userId)?.count || 0,
     );
-    const duplicateCount = statsModel.findDuplicates(db, userId).length;
+    const duplicateCount = statsModel.findDuplicates(db, userId, {
+      includeTitleMatches: false,
+    }).length;
     res.json({
       all: allCount,
       favorites: favoritesCount,

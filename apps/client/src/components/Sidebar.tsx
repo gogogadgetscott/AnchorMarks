@@ -100,6 +100,25 @@ const BOOKMARK_LIST_VIEWS = new Set([
   "dead-links",
 ]);
 
+const SIDEBAR_COUNTS_STORAGE_KEY = "anchormarks_sidebar_counts";
+
+function readStoredViewCounts(): Record<string, number> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(SIDEBAR_COUNTS_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return {};
+    return Object.fromEntries(
+      Object.entries(parsed).filter(
+        ([, value]) => typeof value === "number" && Number.isFinite(value),
+      ),
+    );
+  } catch {
+    return {};
+  }
+}
+
 export function Sidebar() {
   const { currentView, setCurrentView, setCurrentFolder } = useUI();
   const {
@@ -121,7 +140,9 @@ export function Sidebar() {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["folders", "tags"]),
   );
-  const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
+  const [viewCounts, setViewCounts] = useState<Record<string, number>>(
+    () => readStoredViewCounts(),
+  );
   const countsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -158,15 +179,28 @@ export function Sidebar() {
     if (countsTimeoutRef.current) clearTimeout(countsTimeoutRef.current);
     countsTimeoutRef.current = setTimeout(() => {
       api<Record<string, number>>("/bookmarks/counts")
-        .then((data) =>
+        .then((data) => {
           setViewCounts((prev) => {
+            const merged = { ...prev, ...data };
             // Avoid pointless re-renders when the counts did not change.
-            for (const key of Object.keys(data)) {
-              if (prev[key] !== data[key]) return data;
+            for (const key of Object.keys(merged)) {
+              if (prev[key] !== merged[key]) {
+                if (typeof window !== "undefined") {
+                  try {
+                    window.localStorage.setItem(
+                      SIDEBAR_COUNTS_STORAGE_KEY,
+                      JSON.stringify(merged),
+                    );
+                  } catch {
+                    // ignore localStorage quota/access errors
+                  }
+                }
+                return merged;
+              }
             }
             return prev;
-          }),
-        )
+          });
+        })
         .catch(() => {});
     }, 400);
     return () => {

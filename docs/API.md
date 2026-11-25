@@ -1142,6 +1142,39 @@ Import bookmarks from Netscape HTML format.
 
 ---
 
+## Tag Aliases
+
+### List aliases
+
+`GET /api/tags/aliases`
+
+### Create or replace an alias
+
+`POST /api/tags/aliases`
+
+```json
+{
+  "alias": "js",
+  "canonical": "javascript"
+}
+```
+
+### Delete an alias
+
+`DELETE /api/tags/aliases/:id`
+
+### Preview normalization
+
+`GET /api/tags/normalize-preview`
+
+### Normalize existing tags
+
+`POST /api/tags/normalize`
+
+Aliases are scoped per user and are included in JSON export/import and sync payloads.
+
+---
+
 ## Maintenance
 
 ### Find Duplicates

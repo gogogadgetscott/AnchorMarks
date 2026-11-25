@@ -30,6 +30,8 @@ interface TagStatItem {
 }
 
 export const BOOKMARKS_PER_PAGE = 50;
+const PRIMARY_LOAD_TIMEOUT_MS = 25000;
+const TAG_STATS_TIMEOUT_MS = 20000;
 
 interface BookmarksListResponse {
   bookmarks: Bookmark[];
@@ -332,11 +334,15 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         const queryString = params.toString();
         const url = queryString ? `${endpoint}?${queryString}` : endpoint;
 
-        const data = await api<BookmarksListResponse>(url, {
-          headers: {
-            "Cache-Control": "no-cache",
+        const data = await api<BookmarksListResponse>(
+          url,
+          {
+            headers: {
+              "Cache-Control": "no-cache",
+            },
           },
-        });
+          PRIMARY_LOAD_TIMEOUT_MS,
+        );
 
         // Ignore stale responses when a newer loadBookmarks call has started.
         if (requestSeq !== loadBookmarksRequestSeq.current) {
@@ -485,7 +491,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
   // Tag Management Methods
   const fetchTagStats = useCallback(async (): Promise<TagStatItem[]> => {
     try {
-      const tags = await api<TagStatItem[]>("/tags");
+      const tags = await api<TagStatItem[]>("/tags", {}, TAG_STATS_TIMEOUT_MS);
       if (!tags || tags.length === 0) return [];
 
       const sortMode = filterConfig.tagSort || "count_desc";
@@ -505,12 +511,17 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       return tags;
     } catch (err) {
       logger.error("Failed to fetch tag stats:", err);
-      return [];
+      return Object.entries(tagMetadata).map(([name, metadata]) => ({
+        id: metadata.id || name,
+        name,
+        count: metadata.count ?? 0,
+        color: metadata.color,
+      }));
     }
-  }, [filterConfig.tagSort]);
+  }, [filterConfig.tagSort, tagMetadata]);
 
   const refreshTagData = useCallback(async () => {
-    const tags = await api<TagStatItem[]>("/tags");
+    const tags = await api<TagStatItem[]>("/tags", {}, TAG_STATS_TIMEOUT_MS);
     const metadata: Record<
       string,
       { color?: string; icon?: string; id?: string; count?: number }
@@ -607,6 +618,11 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         showToast("Tag created successfully", "success");
         return true;
       } catch (err) {
+        if (err instanceof ApiError && err.status === 409) {
+          await refreshTagData();
+          showToast("Tag already exists", "success");
+          return true;
+        }
         logger.error("Failed to create tag:", err);
         showToast("Failed to create tag", "error");
         return false;

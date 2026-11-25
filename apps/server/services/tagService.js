@@ -5,6 +5,152 @@
 
 const { v4: uuidv4 } = require("uuid");
 
+function normalizeTagKey(input) {
+  return String(input || "")
+    .normalize("NFKC")
+    .trim()
+    .toLowerCase()
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+function resolveCanonicalTagName(db, userId, input) {
+  const name = String(input || "").trim();
+  if (!name) return "";
+  const aliasKey = normalizeTagKey(name);
+
+  const alias = db
+    .prepare(
+      "SELECT canonical_name FROM tag_aliases WHERE user_id = ? AND alias_key = ?",
+    )
+    .get(userId, aliasKey);
+  if (alias?.canonical_name) return alias.canonical_name;
+
+  const exact = db
+    .prepare(
+      "SELECT name FROM tags WHERE user_id = ? AND name = ? COLLATE NOCASE",
+    )
+    .get(userId, name);
+  if (exact?.name) return exact.name;
+
+  const variantsStatement = db.prepare(
+    "SELECT name FROM tags WHERE user_id = ?",
+  );
+  const variants =
+    typeof variantsStatement.all === "function"
+      ? variantsStatement.all(userId)
+      : [];
+  const normalizedMatch = variants.find(
+    (tag) => normalizeTagKey(tag.name) === aliasKey,
+  );
+  if (normalizedMatch?.name) return normalizedMatch.name;
+  return name;
+}
+
+function createTagAlias(db, userId, alias, canonicalName) {
+  const aliasKey = normalizeTagKey(alias);
+  const canonical = String(canonicalName || "").trim();
+  if (!aliasKey || !canonical)
+    throw new Error("Alias and canonical tag are required");
+
+  const canonicalTag =
+    db
+      .prepare(
+        "SELECT id FROM tags WHERE user_id = ? AND name = ? COLLATE NOCASE",
+      )
+      .get(userId, canonical) ||
+    db
+      .prepare("SELECT id FROM tags WHERE user_id = ?")
+      .all(userId)
+      .find((tag) => normalizeTagKey(tag.name) === normalizeTagKey(canonical));
+
+  const canonicalTagId = canonicalTag?.id || null;
+  const id = uuidv4();
+  db.prepare(
+    `INSERT INTO tag_aliases
+     (id, user_id, alias_key, alias, canonical_name, canonical_tag_id)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(user_id, alias_key) DO UPDATE SET
+       alias = excluded.alias,
+       canonical_name = excluded.canonical_name,
+       canonical_tag_id = excluded.canonical_tag_id,
+       updated_at = CURRENT_TIMESTAMP`,
+  ).run(id, userId, aliasKey, String(alias).trim(), canonical, canonicalTagId);
+  return db
+    .prepare("SELECT * FROM tag_aliases WHERE user_id = ? AND alias_key = ?")
+    .get(userId, aliasKey);
+}
+
+function deleteTagAlias(db, userId, id) {
+  return db
+    .prepare("DELETE FROM tag_aliases WHERE id = ? AND user_id = ?")
+    .run(id, userId);
+}
+
+function listTagAliases(db, userId) {
+  return db
+    .prepare(
+      "SELECT * FROM tag_aliases WHERE user_id = ? ORDER BY alias COLLATE NOCASE",
+    )
+    .all(userId);
+}
+
+function getTagNormalizationPreview(db, userId) {
+  const tags = db
+    .prepare(
+      `SELECT t.id, t.name,
+              COUNT(bt.bookmark_id) AS count
+       FROM tags t
+       LEFT JOIN bookmark_tags bt ON bt.tag_id = t.id
+       WHERE t.user_id = ?
+       GROUP BY t.id
+       ORDER BY count DESC, t.name COLLATE NOCASE`,
+    )
+    .all(userId);
+  const groups = new Map();
+  tags.forEach((tag) => {
+    const key = normalizeTagKey(tag.name);
+    if (!key) return;
+    const group = groups.get(key) || [];
+    group.push(tag);
+    groups.set(key, group);
+  });
+  return [...groups.entries()]
+    .filter(([, variants]) => variants.length > 1)
+    .map(([key, variants]) => {
+      const target = [...variants].sort(
+        (a, b) =>
+          b.count - a.count ||
+          a.name.length - b.name.length ||
+          a.name.localeCompare(b.name),
+      )[0];
+      return {
+        key,
+        target: target.name,
+        variants: variants.map((tag) => ({
+          id: tag.id,
+          name: tag.name,
+          count: tag.count,
+        })),
+      };
+    });
+}
+
+function normalizeAllExistingTags(db, userId) {
+  return db.transaction(() => {
+    const preview = getTagNormalizationPreview(db, userId);
+    let merged = 0;
+    preview.forEach((group) => {
+      group.variants.forEach((variant) => {
+        if (variant.name === group.target) return;
+        const result = renameOrMergeTag(db, userId, variant.name, group.target);
+        if (!result.error) merged += 1;
+      });
+    });
+    return { groups: preview.length, merged };
+  })();
+}
+
 /**
  * Parse tag string (comma-separated) and ensure all tags exist
  * @param {object} db - Database instance
@@ -34,22 +180,28 @@ function ensureTagsExist(db, userId, tagsInput, options = {}) {
   const tagMap = {};
 
   for (const tagName of tagNames) {
+    const resolvedName = resolveCanonicalTagName(db, userId, tagName);
     // Check if tag exists (case-insensitive so "React" and "react" resolve to
     // the same tag instead of silently creating duplicates).
     let tag = db
       .prepare(
         "SELECT id FROM tags WHERE user_id = ? AND name = ? COLLATE NOCASE",
       )
-      .get(userId, tagName);
+      .get(userId, resolvedName);
 
     if (!tag) {
       // Create new tag
       const tagId = uuidv4();
       db.prepare(
         "INSERT INTO tags (id, user_id, name, color, icon) VALUES (?, ?, ?, ?, ?)",
-      ).run(tagId, userId, tagName, "#f59e0b", "tag");
+      ).run(tagId, userId, resolvedName, "#f59e0b", "tag");
       tagIds.push(tagId);
-      tagMap[tagName] = tagId;
+      tagMap[resolvedName] = tagId;
+      db.prepare(
+        `UPDATE tag_aliases
+         SET canonical_tag_id = ?
+         WHERE user_id = ? AND canonical_name = ? COLLATE NOCASE`,
+      ).run(tagId, userId, resolvedName);
     } else {
       tagIds.push(tag.id);
       tagMap[tagName] = tag.id;
@@ -279,6 +431,13 @@ function sourceRelationsCount(db, tagId) {
 }
 
 module.exports = {
+  normalizeTagKey,
+  resolveCanonicalTagName,
+  createTagAlias,
+  deleteTagAlias,
+  listTagAliases,
+  getTagNormalizationPreview,
+  normalizeAllExistingTags,
   ensureTagsExist,
   updateBookmarkTags,
   getBookmarkTagsString,

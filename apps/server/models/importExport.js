@@ -1,11 +1,25 @@
 const { v4: uuidv4 } = require("uuid");
 const { logger } = require("../lib/logger");
 
-function importJson(db, userId, { bookmarks = [], folders = [] } = {}) {
+function importJson(
+  db,
+  userId,
+  { bookmarks = [], folders = [], tag_aliases = [] } = {},
+) {
   const imported = [];
   let skipped = 0;
   const importLog = [];
   const folderIdMap = new Map();
+
+  tag_aliases.forEach((alias) => {
+    if (!alias?.alias || !alias?.canonical_name) return;
+    try {
+      const tagHelpers = require("../services/tagService");
+      tagHelpers.createTagAlias(db, userId, alias.alias, alias.canonical_name);
+    } catch (err) {
+      logger.warn("Import: skipped invalid tag alias", err);
+    }
+  });
 
   const ensureFolder = (folder) => {
     if (folderIdMap.has(folder.id)) return folderIdMap.get(folder.id);
@@ -197,8 +211,13 @@ function exportData(db, userId) {
   const folders = db
     .prepare("SELECT * FROM folders WHERE user_id = ?")
     .all(userId);
+  const tag_aliases = db
+    .prepare(
+      "SELECT alias, canonical_name FROM tag_aliases WHERE user_id = ? ORDER BY alias COLLATE NOCASE",
+    )
+    .all(userId);
 
-  return { bookmarks, folders };
+  return { bookmarks, folders, tag_aliases };
 }
 
 module.exports = { importJson, exportData };

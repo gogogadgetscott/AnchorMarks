@@ -35,10 +35,11 @@ function importJson(req, res) {
   try {
     const data = req.validated;
     if (!data) return res.status(400).json({ error: "Validation required" });
-    const { bookmarks = [], folders = [] } = data;
+    const { bookmarks = [], folders = [], tag_aliases = [] } = data;
     const result = importExportModel.importJson(db, req.user.id, {
       bookmarks,
       folders,
+      tag_aliases,
     });
     const bookmarkIds = result.imported.map((b) => b.id);
     if (bookmarkIds.length > 0) queueMetadataFetch(bookmarkIds, req.user.id);
@@ -69,7 +70,11 @@ function exportData(req, res) {
       );
       res.send(generateBookmarkHtml(data.bookmarks, data.folders));
     } else {
-      res.json({ bookmarks: data.bookmarks, folders: data.folders });
+      res.json({
+        bookmarks: data.bookmarks,
+        folders: data.folders,
+        tag_aliases: data.tag_aliases,
+      });
     }
   } catch (err) {
     return reportAndSend(res, err, logger, "Export error");

@@ -13,6 +13,18 @@ interface ManagedTag {
   color?: string;
 }
 
+interface ManagedAlias {
+  id: string;
+  alias: string;
+  canonical_name: string;
+}
+
+interface NormalizationGroup {
+  key: string;
+  target: string;
+  variants: Array<{ id: string; name: string; count: number }>;
+}
+
 type TagFilter = "all" | "unused" | "similar";
 
 export function TagOrganizer() {
@@ -23,6 +35,12 @@ export function TagOrganizer() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [mergeTarget, setMergeTarget] = useState("");
   const [isBusy, setIsBusy] = useState(false);
+  const [aliases, setAliases] = useState<ManagedAlias[]>([]);
+  const [normalizationGroups, setNormalizationGroups] = useState<
+    NormalizationGroup[]
+  >([]);
+  const [aliasName, setAliasName] = useState("");
+  const [canonicalName, setCanonicalName] = useState("");
 
   const loadTags = useCallback(async () => {
     const data = await fetchTagStats();
@@ -36,9 +54,26 @@ export function TagOrganizer() {
     );
   }, [fetchTagStats]);
 
+  const loadAliases = useCallback(async () => {
+    try {
+      const [aliasData, previewData] = await Promise.all([
+        api<ManagedAlias[]>("/tags/aliases"),
+        api<{ groups: NormalizationGroup[] }>("/tags/normalize-preview"),
+      ]);
+      setAliases(aliasData);
+      setNormalizationGroups(previewData.groups || []);
+    } catch (error) {
+      showToast(
+        (error as Error).message || "Failed to load tag aliases",
+        "error",
+      );
+    }
+  }, []);
+
   useEffect(() => {
     void loadTags();
-  }, [loadTags, tagMetadata]);
+    void loadAliases();
+  }, [loadAliases, loadTags, tagMetadata]);
 
   const duplicateIds = useMemo(() => {
     const groups = new Map<string, string[]>();
@@ -159,6 +194,68 @@ export function TagOrganizer() {
     }
   };
 
+  const handleCreateAlias = async () => {
+    if (!aliasName.trim() || !canonicalName.trim()) return;
+    setIsBusy(true);
+    try {
+      await api("/tags/aliases", {
+        method: "POST",
+        body: JSON.stringify({
+          alias: aliasName.trim(),
+          canonical: canonicalName.trim(),
+        }),
+      });
+      setAliasName("");
+      setCanonicalName("");
+      await loadAliases();
+      await refreshTagData();
+      showToast("Tag alias created", "success");
+    } catch (error) {
+      showToast((error as Error).message || "Failed to create alias", "error");
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const handleDeleteAlias = async (alias: ManagedAlias) => {
+    const confirmed = await showConfirm(
+      `Delete alias "${alias.alias}"? It will no longer resolve to "${alias.canonical_name}".`,
+      { title: "Delete Tag Alias", destructive: true },
+    );
+    if (!confirmed) return;
+    try {
+      await api(`/tags/aliases/${alias.id}`, { method: "DELETE" });
+      await loadAliases();
+      showToast("Tag alias deleted", "success");
+    } catch (error) {
+      showToast((error as Error).message || "Failed to delete alias", "error");
+    }
+  };
+
+  const handleNormalize = async () => {
+    if (normalizationGroups.length === 0) return;
+    const confirmed = await showConfirm(
+      `Normalize ${normalizationGroups.length} tag group${normalizationGroups.length === 1 ? "" : "s"}? Similar case, underscore, dash, and spacing variants will be merged transactionally.`,
+      { title: "Normalize Tags", confirmText: "Normalize Tags" },
+    );
+    if (!confirmed) return;
+    setIsBusy(true);
+    try {
+      await api("/tags/normalize", { method: "POST" });
+      await loadTags();
+      await loadAliases();
+      await refreshTagData();
+      showToast("Tags normalized", "success");
+    } catch (error) {
+      showToast(
+        (error as Error).message || "Failed to normalize tags",
+        "error",
+      );
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
   return (
     <div className="tag-organizer">
       <div className="organization-header">
@@ -214,6 +311,85 @@ export function TagOrganizer() {
             Similar names ({duplicateIds.size})
           </button>
         </div>
+
+        <section className="tag-alias-panel">
+          <div className="tag-alias-panel-header">
+            <div>
+              <h2>Aliases &amp; normalization</h2>
+              <p>
+                Map variants to one canonical tag automatically during create,
+                import, sync, and bulk operations.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              disabled={isBusy || normalizationGroups.length === 0}
+              onClick={() => void handleNormalize()}
+            >
+              Normalize ({normalizationGroups.length})
+            </button>
+          </div>
+
+          <div className="tag-alias-form">
+            <input
+              type="text"
+              className="form-input"
+              value={aliasName}
+              onChange={(event) => setAliasName(event.target.value)}
+              placeholder="Alias, e.g. js"
+              aria-label="Tag alias"
+            />
+            <span aria-hidden="true">→</span>
+            <input
+              type="text"
+              className="form-input"
+              value={canonicalName}
+              onChange={(event) => setCanonicalName(event.target.value)}
+              placeholder="Canonical tag, e.g. javascript"
+              aria-label="Canonical tag"
+            />
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              disabled={isBusy || !aliasName.trim() || !canonicalName.trim()}
+              onClick={() => void handleCreateAlias()}
+            >
+              Add Alias
+            </button>
+          </div>
+
+          {normalizationGroups.length > 0 && (
+            <div className="tag-normalization-preview">
+              {normalizationGroups.slice(0, 6).map((group) => (
+                <span key={group.key}>
+                  {group.variants.map((variant) => variant.name).join(" / ")}
+                  <strong>→ {group.target}</strong>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {aliases.length > 0 && (
+            <div className="tag-alias-list">
+              {aliases.map((alias) => (
+                <div className="tag-alias-row" key={alias.id}>
+                  <strong>{alias.alias}</strong>
+                  <span>→</span>
+                  <span>{alias.canonical_name}</span>
+                  <button
+                    type="button"
+                    className="btn-icon btn-sm text-danger"
+                    title={`Delete alias ${alias.alias}`}
+                    onClick={() => void handleDeleteAlias(alias)}
+                  >
+                    <Icon name="trash" size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
 
       {selected.size > 0 && (

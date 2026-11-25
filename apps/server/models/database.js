@@ -130,6 +130,21 @@ function initializeDatabase(DB_PATH) {
         UNIQUE(user_id, name)
       );
 
+      CREATE TABLE IF NOT EXISTS tag_aliases (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        alias_key TEXT NOT NULL,
+        alias TEXT NOT NULL,
+        canonical_name TEXT NOT NULL,
+        canonical_tag_id TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (canonical_tag_id) REFERENCES tags(id) ON DELETE SET NULL,
+        UNIQUE(user_id, alias_key)
+      );
+      CREATE INDEX IF NOT EXISTS idx_tag_aliases_user ON tag_aliases(user_id);
+
       CREATE TABLE IF NOT EXISTS bookmark_tags (
         bookmark_id TEXT NOT NULL,
         tag_id TEXT NOT NULL,
@@ -491,6 +506,28 @@ function initializeDatabase(DB_PATH) {
     `);
   } catch (err) {
     logger.error("Failed to backfill FTS index:", err.message);
+  }
+
+  // Normalize legacy separator/case variants once at startup. Each relation
+  // merge is scoped to a user and transactionally moves bookmark links to the
+  // selected canonical tag, preserving existing bookmark data.
+  try {
+    const tagHelpers = require("../services/tagService");
+    const users = db.prepare("SELECT id FROM users").all();
+    users.forEach((user) => tagHelpers.normalizeAllExistingTags(db, user.id));
+    db.exec("DELETE FROM bookmarks_fts");
+    db.exec(`
+      INSERT INTO bookmarks_fts (rowid, id, user_id, title, url, description, tags, folder)
+      SELECT b.rowid, b.id, b.user_id, b.title, b.url, b.description,
+             COALESCE((SELECT GROUP_CONCAT(t.name, ', ')
+                       FROM bookmark_tags bt
+                       JOIN tags t ON t.id = bt.tag_id
+                       WHERE bt.bookmark_id = b.id), ''),
+             (SELECT f.name FROM folders f WHERE f.id = b.folder_id)
+      FROM bookmarks b
+    `);
+  } catch (err) {
+    logger.warn("Startup tag normalization skipped:", err.message);
   }
 
   return db;

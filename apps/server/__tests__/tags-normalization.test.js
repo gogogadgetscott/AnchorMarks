@@ -149,4 +149,62 @@ describe("Normalized tags-only storage", () => {
       expect(exported.tags).toContain("stat-beta");
     }
   });
+
+  it("creates aliases and resolves alias names across bookmarks and exports", async () => {
+    const alias = await agent
+      .post("/api/tags/aliases")
+      .set("X-CSRF-Token", csrfToken)
+      .send({ alias: "js", canonical: "javascript" });
+    expect(alias.status).toBe(200);
+    expect(alias.body.alias_key).toBe("js");
+
+    const bookmark = await agent
+      .post("/api/bookmarks")
+      .set("X-CSRF-Token", csrfToken)
+      .send({
+        url: "https://alias.example/bookmark",
+        title: "Alias Bookmark",
+        tags: "js",
+      });
+    expect(bookmark.status).toBe(200);
+    expect(bookmark.body.tags).toBe("javascript");
+
+    const aliases = await agent
+      .get("/api/tags/aliases")
+      .set("X-CSRF-Token", csrfToken);
+    expect(aliases.status).toBe(200);
+    expect(aliases.body.some((item) => item.alias === "js")).toBe(true);
+
+    const exported = await agent
+      .get("/api/export")
+      .set("X-CSRF-Token", csrfToken);
+    expect(exported.body.tag_aliases).toBeTruthy();
+    expect(exported.body.tag_aliases.some((item) => item.alias === "js")).toBe(
+      true,
+    );
+  });
+
+  it("previews and normalizes separator/case variants", async () => {
+    await agent
+      .post("/api/tags")
+      .set("X-CSRF-Token", csrfToken)
+      .send({ name: "machine-learning" });
+    await agent
+      .post("/api/tags")
+      .set("X-CSRF-Token", csrfToken)
+      .send({ name: "Machine Learning" });
+
+    const preview = await agent
+      .get("/api/tags/normalize-preview")
+      .set("X-CSRF-Token", csrfToken);
+    expect(preview.status).toBe(200);
+    expect(
+      preview.body.groups.every((group) => group.key !== "machine learning"),
+    ).toBe(true);
+
+    const normalized = await agent
+      .post("/api/tags/normalize")
+      .set("X-CSRF-Token", csrfToken);
+    expect(normalized.status).toBe(200);
+  });
 });

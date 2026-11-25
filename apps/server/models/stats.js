@@ -134,19 +134,29 @@ function getDeadlinkCount(db, userId) {
     .get(userId).count;
 }
 
-function findDuplicates(db, userId) {
-  const rows = db
-    .prepare(
-      `SELECT b.*,
-              COALESCE(GROUP_CONCAT(DISTINCT t.name), '') AS tags
-       FROM bookmarks b
-       LEFT JOIN bookmark_tags bt ON bt.bookmark_id = b.id
-       LEFT JOIN tags t ON t.id = bt.tag_id AND t.user_id = b.user_id
-       WHERE b.user_id = ?
-       GROUP BY b.id
-       ORDER BY b.created_at DESC`,
-    )
-    .all(userId);
+function findDuplicates(db, userId, options = {}) {
+  const includeTitleMatches = options.includeTitleMatches !== false;
+  const rows = includeTitleMatches
+    ? db
+        .prepare(
+          `SELECT b.*,
+                  COALESCE(GROUP_CONCAT(DISTINCT t.name), '') AS tags
+           FROM bookmarks b
+           LEFT JOIN bookmark_tags bt ON bt.bookmark_id = b.id
+           LEFT JOIN tags t ON t.id = bt.tag_id AND t.user_id = b.user_id
+           WHERE b.user_id = ?
+           GROUP BY b.id
+           ORDER BY b.created_at DESC`,
+        )
+        .all(userId)
+    : db
+        .prepare(
+          `SELECT id, user_id, title, url, created_at
+           FROM bookmarks
+           WHERE user_id = ?
+           ORDER BY created_at DESC`,
+        )
+        .all(userId);
 
   const urlGroups = new Map();
   rows.forEach((bookmark) => {
@@ -175,61 +185,65 @@ function findDuplicates(db, userId) {
     }
   });
 
-  const exactIds = new Set(
-    groups.flatMap((group) => group.bookmarks.map((bookmark) => bookmark.id)),
-  );
-  const titleCandidates = rows.filter((bookmark) => !exactIds.has(bookmark.id));
-  const titleUsed = new Set();
-  titleCandidates.forEach((bookmark) => {
-    if (titleUsed.has(bookmark.id)) return;
-    let host;
-    try {
-      host = new URL(bookmark.url).hostname.toLowerCase().replace(/^www\./, "");
-    } catch {
-      return;
-    }
-    const matches = titleCandidates.filter((candidate) => {
-      if (candidate.id === bookmark.id || titleUsed.has(candidate.id))
-        return false;
+  if (includeTitleMatches) {
+    const exactIds = new Set(
+      groups.flatMap((group) => group.bookmarks.map((bookmark) => bookmark.id)),
+    );
+    const titleCandidates = rows.filter((bookmark) => !exactIds.has(bookmark.id));
+    const titleUsed = new Set();
+    titleCandidates.forEach((bookmark) => {
+      if (titleUsed.has(bookmark.id)) return;
+      let host;
       try {
-        const candidateHost = new URL(candidate.url).hostname
-          .toLowerCase()
-          .replace(/^www\./, "");
-        if (candidateHost !== host) return false;
+        host = new URL(bookmark.url).hostname.toLowerCase().replace(/^www\./, "");
       } catch {
-        return false;
+        return;
       }
-      return (
-        similarity(
-          normalizeTitle(bookmark.title),
-          normalizeTitle(candidate.title),
-        ) >= 0.92
-      );
-    });
-    if (matches.length > 0) {
-      const bookmarksInGroup = [
-        {
-          ...bookmark,
-          tags: bookmark.tags ? bookmark.tags.split(",").filter(Boolean) : [],
-        },
-        ...matches.map((candidate) => ({
-          ...candidate,
-          tags: candidate.tags ? candidate.tags.split(",").filter(Boolean) : [],
-        })),
-      ];
-      groups.push({
-        canonical_url: canonicalizeUrl(bookmark.url) || bookmark.url,
-        url: bookmark.url,
-        ids: bookmarksInGroup.map((item) => item.id),
-        titles: bookmarksInGroup.map((item) => item.title),
-        match_type: "title",
-        count: bookmarksInGroup.length,
-        bookmarks: bookmarksInGroup,
+      const matches = titleCandidates.filter((candidate) => {
+        if (candidate.id === bookmark.id || titleUsed.has(candidate.id))
+          return false;
+        try {
+          const candidateHost = new URL(candidate.url).hostname
+            .toLowerCase()
+            .replace(/^www\./, "");
+          if (candidateHost !== host) return false;
+        } catch {
+          return false;
+        }
+        return (
+          similarity(
+            normalizeTitle(bookmark.title),
+            normalizeTitle(candidate.title),
+          ) >= 0.92
+        );
       });
-      titleUsed.add(bookmark.id);
-      matches.forEach((candidate) => titleUsed.add(candidate.id));
-    }
-  });
+      if (matches.length > 0) {
+        const bookmarksInGroup = [
+          {
+            ...bookmark,
+            tags: bookmark.tags ? bookmark.tags.split(",").filter(Boolean) : [],
+          },
+          ...matches.map((candidate) => ({
+            ...candidate,
+            tags: candidate.tags
+              ? candidate.tags.split(",").filter(Boolean)
+              : [],
+          })),
+        ];
+        groups.push({
+          canonical_url: canonicalizeUrl(bookmark.url) || bookmark.url,
+          url: bookmark.url,
+          ids: bookmarksInGroup.map((item) => item.id),
+          titles: bookmarksInGroup.map((item) => item.title),
+          match_type: "title",
+          count: bookmarksInGroup.length,
+          bookmarks: bookmarksInGroup,
+        });
+        titleUsed.add(bookmark.id);
+        matches.forEach((candidate) => titleUsed.add(candidate.id));
+      }
+    });
+  }
 
   groups.sort(
     (a, b) =>

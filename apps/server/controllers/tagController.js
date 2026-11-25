@@ -23,14 +23,38 @@ function createTag(req, res) {
   const id = uuidv4();
   const tagModel = require("../models/tag");
   try {
+    const resolvedName = tagHelpers.resolveCanonicalTagName(
+      db,
+      req.user.id,
+      name,
+    );
+    const aliasRow = db
+      .prepare(
+        "SELECT canonical_name FROM tag_aliases WHERE user_id = ? AND alias_key = ?",
+      )
+      .get(req.user.id, tagHelpers.normalizeTagKey(name));
+    const aliasControlled = Boolean(aliasRow);
     // Case-insensitive duplicate detection so "React" cannot be created
     // alongside an existing "react" tag.
     const existing = db
       .prepare(
         "SELECT id FROM tags WHERE user_id = ? AND name = ? COLLATE NOCASE",
       )
-      .get(req.user.id, name.trim());
-    if (existing) return res.status(409).json({ error: "Tag already exists" });
+      .get(req.user.id, resolvedName);
+    if (existing) {
+      if (!aliasControlled)
+        return res.status(409).json({ error: "Tag already exists" });
+      const tag = db
+        .prepare(
+          `SELECT t.*, COUNT(bt.bookmark_id) as count
+           FROM tags t
+           LEFT JOIN bookmark_tags bt ON bt.tag_id = t.id
+           WHERE t.id = ? AND t.user_id = ?
+           GROUP BY t.id`,
+        )
+        .get(existing.id, req.user.id);
+      return res.json(tag);
+    }
 
     const maxPos = db
       .prepare("SELECT MAX(position) as max FROM tags WHERE user_id = ?")
@@ -39,7 +63,7 @@ function createTag(req, res) {
     tagModel.createTag(db, {
       id,
       user_id: req.user.id,
-      name: name.trim(),
+      name: resolvedName,
       color: color || "#f59e0b",
       icon: icon || "tag",
       position,
@@ -59,9 +83,10 @@ function createTag(req, res) {
 function updateTag(req, res) {
   const db = req.app.get("db");
   const tagModel = require("../models/tag");
-  const { name, color, icon, position } = req.validated;
+  let { name, color, icon, position } = req.validated;
   try {
     if (name !== undefined) {
+      name = tagHelpers.resolveCanonicalTagName(db, req.user.id, name);
       // Prevent renaming a tag into a name that already exists
       // (case-insensitively) for this user.
       const existing = db
@@ -105,6 +130,67 @@ function deleteTag(req, res) {
     res.json({ success: true });
   } catch (err) {
     return reportAndSend(res, err, logger, "Error deleting tag");
+  }
+}
+
+function listTagAliases(req, res) {
+  const db = req.app.get("db");
+  try {
+    res.json(tagHelpers.listTagAliases(db, req.user.id));
+  } catch (err) {
+    return reportAndSend(res, err, logger, "Error fetching tag aliases");
+  }
+}
+
+function createTagAlias(req, res) {
+  const db = req.app.get("db");
+  try {
+    const alias = tagHelpers.createTagAlias(
+      db,
+      req.user.id,
+      req.validated.alias,
+      req.validated.canonical,
+    );
+    broadcast(req.user.id, { type: "tags:changed" });
+    res.json(alias);
+  } catch (err) {
+    return reportAndSend(res, err, logger, "Error creating tag alias");
+  }
+}
+
+function deleteTagAlias(req, res) {
+  const db = req.app.get("db");
+  try {
+    const result = tagHelpers.deleteTagAlias(db, req.user.id, req.params.id);
+    if (result.changes === 0)
+      return res.status(404).json({ error: "Tag alias not found" });
+    broadcast(req.user.id, { type: "tags:changed" });
+    res.json({ success: true });
+  } catch (err) {
+    return reportAndSend(res, err, logger, "Error deleting tag alias");
+  }
+}
+
+function getTagNormalizationPreview(req, res) {
+  const db = req.app.get("db");
+  try {
+    res.json({
+      groups: tagHelpers.getTagNormalizationPreview(db, req.user.id),
+    });
+  } catch (err) {
+    return reportAndSend(res, err, logger, "Tag normalization preview error");
+  }
+}
+
+function normalizeTags(req, res) {
+  const db = req.app.get("db");
+  try {
+    const result = tagHelpers.normalizeAllExistingTags(db, req.user.id);
+    broadcast(req.user.id, { type: "tags:changed" });
+    broadcast(req.user.id, { type: "bookmarks:changed" });
+    res.json({ success: true, data: result });
+  } catch (err) {
+    return reportAndSend(res, err, logger, "Tag normalization error");
   }
 }
 
@@ -231,9 +317,13 @@ function bulkAddTags(req, res) {
 function bulkRemoveTags(req, res) {
   const db = req.app.get("db");
   const { bookmark_ids, tags } = req.validated;
-  const removeSet = new Set(parseTags(tags).map((t) => t.toLowerCase()));
-  const updated = [];
   const userId = req.user.id;
+  const removeSet = new Set(
+    parseTags(tags).map((tag) =>
+      tagHelpers.resolveCanonicalTagName(db, userId, tag).toLowerCase(),
+    ),
+  );
+  const updated = [];
   bookmark_ids.forEach((id) => {
     const owned = db
       .prepare("SELECT id FROM bookmarks WHERE id = ? AND user_id = ?")
@@ -263,7 +353,18 @@ function renameTag(req, res) {
   const db = req.app.get("db");
   const { from, to } = req.validated;
   try {
-    const result = tagHelpers.renameOrMergeTag(db, req.user.id, from, to);
+    const resolvedFrom = tagHelpers.resolveCanonicalTagName(
+      db,
+      req.user.id,
+      from,
+    );
+    const resolvedTo = tagHelpers.resolveCanonicalTagName(db, req.user.id, to);
+    const result = tagHelpers.renameOrMergeTag(
+      db,
+      req.user.id,
+      resolvedFrom,
+      resolvedTo,
+    );
     if (result.error === "not_found")
       return res.status(404).json({ error: "Tag not found" });
     broadcast(req.user.id, { type: "tags:changed" });
@@ -320,5 +421,10 @@ module.exports = {
   bulkAddTags,
   bulkRemoveTags,
   renameTag,
+  listTagAliases,
+  createTagAlias,
+  deleteTagAlias,
+  getTagNormalizationPreview,
+  normalizeTags,
   suggestTagsAI,
 };

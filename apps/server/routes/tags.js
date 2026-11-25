@@ -9,6 +9,17 @@ module.exports = function createTagsRouter(db) {
   const csrf = validateCsrfToken(db);
 
   router.get("/", auth, ctrl.listTags);
+  router.get("/aliases", auth, ctrl.listTagAliases);
+  router.post(
+    "/aliases",
+    auth,
+    csrf,
+    validateBody(schemas.tagAliasCreate),
+    ctrl.createTagAlias,
+  );
+  router.delete("/aliases/:id", auth, csrf, ctrl.deleteTagAlias);
+  router.get("/normalize-preview", auth, ctrl.getTagNormalizationPreview);
+  router.post("/normalize", auth, csrf, ctrl.normalizeTags);
   router.post("/", auth, csrf, validateBody(schemas.tagCreate), ctrl.createTag);
   router.put(
     "/:id",

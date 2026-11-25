@@ -294,6 +294,13 @@ const tagsRename = z
   })
   .strict();
 
+const tagAliasCreate = z
+  .object({
+    alias: nonEmptyString("Alias is required"),
+    canonical: nonEmptyString("Canonical tag is required"),
+  })
+  .strict();
+
 // Validated bookmark for import/sync (ensures URLs are valid) — must be defined before syncPush/importJson
 const importedBookmark = z
   .object({
@@ -337,6 +344,15 @@ const syncPush = z
   .object({
     bookmarks: z.array(importedBookmark).optional().default([]),
     folders: z.array(importedFolder).optional().default([]),
+    tag_aliases: z
+      .array(
+        z.object({
+          alias: z.string().min(1),
+          canonical_name: z.string().min(1),
+        }),
+      )
+      .optional()
+      .default([]),
   })
   .strict();
 
@@ -353,6 +369,15 @@ const importJson = z
   .object({
     bookmarks: z.array(importedBookmark).optional().default([]),
     folders: z.array(importedFolder).optional().default([]),
+    tag_aliases: z
+      .array(
+        z.object({
+          alias: z.string().min(1),
+          canonical_name: z.string().min(1),
+        }),
+      )
+      .optional()
+      .default([]),
   })
   .strict();
 
@@ -583,6 +608,7 @@ module.exports = {
   tagUpdate,
   tagsBulkAddRemove,
   tagsRename,
+  tagAliasCreate,
   syncPush,
   importHtml,
   importJson,

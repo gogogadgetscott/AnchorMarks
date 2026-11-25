@@ -31,6 +31,14 @@ vi.mock("@contexts/ToastContext", () => ({
   showToast: vi.fn(),
 }));
 
+vi.mock("@services/api.ts", () => ({
+  api: vi.fn(async (endpoint: string) => {
+    if (endpoint === "/tags/aliases") return [];
+    if (endpoint === "/tags/normalize-preview") return { groups: [] };
+    return {};
+  }),
+}));
+
 describe("TagOrganizer", () => {
   beforeEach(() => {
     vi.clearAllMocks();

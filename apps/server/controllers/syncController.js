@@ -18,8 +18,12 @@ function syncPush(req, res) {
   try {
     const data = req.validated;
     if (!data) return res.status(400).json({ error: "Validation required" });
-    const { bookmarks, folders } = data;
-    const results = syncModel.push(db, req.user.id, { bookmarks, folders });
+    const { bookmarks, folders, tag_aliases } = data;
+    const results = syncModel.push(db, req.user.id, {
+      bookmarks,
+      folders,
+      tag_aliases,
+    });
     if (bookmarks && bookmarks.length) {
       for (const bm of bookmarks) {
         if (!bm.url) continue;
